@@ -1,0 +1,97 @@
+name: Bug report
+description: Report a reproducible non-sensitive CourseFlix defect
+title: "[BUG] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report vulnerabilities, credentials, personal data exposure, authorization bypasses, or cross-course leaks publicly. Follow SECURITY.md instead.
+  - type: input
+    id: jira
+    attributes:
+      label: Jira ticket
+      description: Link the existing CF-BUG ticket or write "needs triage".
+      placeholder: CF-BUG-000
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web UI
+        - Authentication and authorization
+        - API and data
+        - Lessons and quizzes
+        - PDF ingestion and worker
+        - AI Tutor and RAG
+        - Proctor and notifications
+        - Checkout and orders
+        - Sales and Analytics Agent
+        - GTM and GA4
+        - CI, deployment, or tooling
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Proposed severity
+      description: Security-sensitive Severity 1 or 2 reports must follow SECURITY.md privately.
+      options:
+        - Severity 3 - significant functional defect
+        - Severity 4 - minor or cosmetic defect
+        - Needs triage
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Branch or commit
+      placeholder: dev / abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Sign in as the seeded student
+        2. Open ...
+        3. Select ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence
+      description: Add screenshots, trace IDs, or logs only after removing secrets, personal data, document text, and payment details.
+  - type: textarea
+    id: regression
+    attributes:
+      label: Regression information
+      description: State whether this worked before and provide the last known good commit when available.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Reporter checklist
+      options:
+        - label: I reproduced this on the latest relevant branch.
+          required: true
+        - label: I removed secrets and private data from this report.
+          required: true
+        - label: This report is not a security-sensitive issue covered by SECURITY.md.
+          required: true
