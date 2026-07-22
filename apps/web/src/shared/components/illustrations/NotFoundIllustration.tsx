@@ -1,5 +1,3 @@
-import React from 'react'
-
 export function NotFoundIllustration({ className = 'w-full max-w-sm sm:max-w-md h-auto' }: { className?: string }) {
   return (
     <svg
