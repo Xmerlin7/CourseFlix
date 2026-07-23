@@ -1,4 +1,3 @@
-import { Bell, Settings } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 
 export type TopbarProps = {
@@ -32,7 +31,7 @@ export function Topbar({
       <ThemeToggle />
 
       <button className="icon-btn" onClick={onNotificationsClick} aria-label="الإشعارات">
-        <Bell className="w-5 h-5" />
+        <span className="ms">notifications</span>
         {notificationCount > 0 && (
           <span className="badge">
             {notificationCount > 99 ? '99+' : notificationCount}
@@ -41,7 +40,7 @@ export function Topbar({
       </button>
 
       <button className="icon-btn" onClick={onSettingsClick} aria-label="الإعدادات">
-        <Settings className="w-5 h-5" />
+        <span className="ms">settings</span>
       </button>
     </header>
   )

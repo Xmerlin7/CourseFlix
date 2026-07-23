@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Moon, Sun } from 'lucide-react'
 
 const STORAGE_KEY = 'cf-theme'
 
@@ -48,7 +47,7 @@ export function ThemeToggle() {
       aria-label="تبديل المظهر"
       title={isDark ? 'التحويل إلى الوضع الفاتح' : 'التحويل إلى الوضع الداكن'}
     >
-      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      <span className="ms">{isDark ? 'light_mode' : 'dark_mode'}</span>
     </button>
   )
 }

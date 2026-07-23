@@ -484,3 +484,63 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ===== Responsive: sidebar becomes a bottom nav bar ===== */
+@media (max-width: 860px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .main {
+    padding: 10px;
+    padding-bottom: 86px;
+  }
+
+  .sheet {
+    border-radius: 22px;
+  }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    inset-inline: 0;
+    width: 100% !important;
+    height: 72px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 6px 10px;
+    background: var(--surface-container-high);
+    z-index: 70;
+    box-shadow: 0 -2px 14px rgba(20, 10, 40, 0.14);
+  }
+
+  .sidebar .rail-toggle,
+  .side-footer .profile-item {
+    display: none;
+  }
+
+  .sidebar nav {
+    flex-direction: row;
+    flex: 1;
+    justify-content: space-around;
+    gap: 2px;
+  }
+
+  .nav-item {
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 12px;
+    font-size: 11px;
+    border-radius: 16px;
+  }
+
+  .side-footer {
+    margin: 0;
+  }
+
+  .side-footer .nav-item .lbl {
+    display: none;
+  }
+}

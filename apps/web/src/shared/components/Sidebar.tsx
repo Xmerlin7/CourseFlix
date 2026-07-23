@@ -1,5 +1,3 @@
-import { Home, BookOpen, Bot, BarChart3, Users, ClipboardList, LogOut, Menu, User } from 'lucide-react'
-
 export type SidebarProps = {
   role: 'student' | 'teacher'
   userName: string
@@ -12,17 +10,17 @@ export type SidebarProps = {
 }
 
 const studentNavItems = [
-  { path: '/student/dashboard', label: 'الرئيسية', icon: Home },
-  { path: '/student/courses', label: 'دوراتي', icon: BookOpen },
-  { path: '/student/assistant', label: 'المساعد', icon: Bot },
-  { path: '/student/progress', label: 'التقدم', icon: BarChart3 },
+  { path: '/student/dashboard', label: 'الرئيسية', icon: 'home' },
+  { path: '/student/courses', label: 'دوراتي', icon: 'menu_book' },
+  { path: '/student/assistant', label: 'المساعد', icon: 'smart_toy' },
+  { path: '/student/progress', label: 'التقدم', icon: 'monitoring' },
 ]
 
 const teacherNavItems = [
-  { path: '/teacher/dashboard', label: 'الرئيسية', icon: Home },
-  { path: '/teacher/course', label: 'إدارة الدورة', icon: BookOpen },
-  { path: '/teacher/students', label: 'الطلاب', icon: Users },
-  { path: '/teacher/quizzes', label: 'الاختبارات', icon: ClipboardList },
+  { path: '/teacher/dashboard', label: 'الرئيسية', icon: 'home' },
+  { path: '/teacher/course', label: 'إدارة الدورة', icon: 'menu_book' },
+  { path: '/teacher/students', label: 'الطلاب', icon: 'group' },
+  { path: '/teacher/quizzes', label: 'الاختبارات', icon: 'quiz' },
 ]
 
 export function Sidebar({
@@ -46,13 +44,12 @@ export function Sidebar({
         className="icon-btn rail-toggle"
         aria-label="طي القائمة"
       >
-        <Menu className="w-5 h-5" />
+        <span className="ms">menu_open</span>
       </button>
 
       <nav>
         {navItems.map((item) => {
           const isActive = item.path === activePath
-          const Icon = item.icon
 
           return (
             <a
@@ -60,7 +57,7 @@ export function Sidebar({
               href={item.path}
               className={`nav-item ${isActive ? 'active' : ''}`}
             >
-              <Icon className="w-5 h-5 flex-none" />
+              <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
               <span className="lbl">{item.label}</span>
             </a>
           )
@@ -70,13 +67,13 @@ export function Sidebar({
       <div className="side-footer">
         <a href="/settings" className="nav-item profile-item">
           <span className="avatar">
-            <User className="w-5 h-5" />
+            <span className="ms">person</span>
           </span>
           <span className="lbl">{userName}</span>
         </a>
 
         <button onClick={onLogout} className="nav-item logout">
-          <LogOut className="w-5 h-5 flex-none" />
+          <span className="ms">logout</span>
           <span className="lbl">تسجيل الخروج</span>
         </button>
       </div>
