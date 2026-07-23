@@ -54,6 +54,7 @@ function SuspenseWrapper({ children }: { children: React.ReactNode }) {
  * Data Router configuration for CourseFlix Sprint 1 MVP.
  * Supports nested layout routes, lazy page loading, ErrorBoundary, and centralized path constants.
  */
+// eslint-disable-next-line react-refresh/only-export-components -- router config is not a component; co-locating it here keeps route wiring in one place.
 export const router = createBrowserRouter([
   {
     path: ROUTE_PATHS.ROOT,

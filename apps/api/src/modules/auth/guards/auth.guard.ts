@@ -19,7 +19,8 @@ export class AuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { user?: AuthenticatedUser }>();
 
-    const token = request.signedCookies?.[SESSION_COOKIE_NAME] as string | undefined;
+    const token = request.signedCookies?.[SESSION_COOKIE_NAME] as
+      string | undefined;
     if (!token) {
       throw new UnauthorizedException('Not authenticated.');
     }

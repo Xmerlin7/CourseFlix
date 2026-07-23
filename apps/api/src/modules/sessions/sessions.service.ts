@@ -35,7 +35,10 @@ export class SessionsService {
 
   async revokeSession(token: string): Promise<void> {
     const tokenHash = this.hashToken(token);
-    await this.sessionsRepository.update({ tokenHash }, { revokedAt: new Date() });
+    await this.sessionsRepository.update(
+      { tokenHash },
+      { revokedAt: new Date() },
+    );
   }
 
   async findActiveSession(token: string): Promise<SessionEntity | null> {
@@ -45,7 +48,11 @@ export class SessionsService {
       relations: { user: true },
     });
 
-    if (!session || session.revokedAt || session.expiresAt.getTime() <= Date.now()) {
+    if (
+      !session ||
+      session.revokedAt ||
+      session.expiresAt.getTime() <= Date.now()
+    ) {
       return null;
     }
 

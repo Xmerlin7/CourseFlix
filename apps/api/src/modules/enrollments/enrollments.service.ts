@@ -1,7 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
-import { EnrollmentEntity, EnrollmentStatus } from './entities/enrollment.entity';
+import {
+  EnrollmentEntity,
+  EnrollmentStatus,
+} from './entities/enrollment.entity';
 
 export interface StudentEnrollmentFilters {
   status?: EnrollmentStatus;

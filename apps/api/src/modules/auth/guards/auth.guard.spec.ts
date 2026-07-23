@@ -27,21 +27,31 @@ describe('AuthGuard', () => {
 
   it('rejects a request with no session cookie', async () => {
     const { context } = createContext({});
-    await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('rejects a request with an expired or unknown session', async () => {
     sessionsService.findActiveSession.mockResolvedValue(null);
     const { context } = createContext({ 'courseflix.sid': 'stale-token' });
 
-    await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('attaches the authenticated user and allows the request through', async () => {
     sessionsService.findActiveSession.mockResolvedValue({
-      user: { id: 'user-1', email: 'student@courseflix.local', role: 'student' },
+      user: {
+        id: 'user-1',
+        email: 'student@courseflix.local',
+        role: 'student',
+      },
     });
-    const { context, request } = createContext({ 'courseflix.sid': 'valid-token' });
+    const { context, request } = createContext({
+      'courseflix.sid': 'valid-token',
+    });
 
     const result = await guard.canActivate(context);
 

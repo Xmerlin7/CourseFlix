@@ -25,12 +25,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
-    const passwordMatches = await argon2.verify(user.passwordHash, loginDto.password);
+    const passwordMatches = await argon2.verify(
+      user.passwordHash,
+      loginDto.password,
+    );
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
-    const { token, session } = await this.sessionsService.createSession(user.id);
+    const { token, session } = await this.sessionsService.createSession(
+      user.id,
+    );
 
     return {
       token,

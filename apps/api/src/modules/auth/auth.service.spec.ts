@@ -67,7 +67,10 @@ describe('AuthService', () => {
     usersService.findByEmail.mockResolvedValue({ ...activeUser, passwordHash });
 
     await expect(
-      authService.login({ email: activeUser.email, password: 'wrong-password' }),
+      authService.login({
+        email: activeUser.email,
+        password: 'wrong-password',
+      }),
     ).rejects.toThrow(UnauthorizedException);
     expect(sessionsService.createSession).not.toHaveBeenCalled();
   });
@@ -76,7 +79,10 @@ describe('AuthService', () => {
     usersService.findByEmail.mockResolvedValue(null);
 
     await expect(
-      authService.login({ email: 'nobody@courseflix.local', password: 'whatever' }),
+      authService.login({
+        email: 'nobody@courseflix.local',
+        password: 'whatever',
+      }),
     ).rejects.toThrow(UnauthorizedException);
   });
 

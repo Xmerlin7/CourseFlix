@@ -15,14 +15,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './guards/auth.guard';
-import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME ?? 'courseflix.sid';
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 const COOKIE_SAME_SITE = (process.env.COOKIE_SAME_SITE ?? 'lax') as
-  | 'lax'
-  | 'strict'
-  | 'none';
+  'lax' | 'strict' | 'none';
 
 @Controller('api/v1')
 export class AuthController {
@@ -54,7 +52,8 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ success: true }> {
-    const token = request.signedCookies?.[SESSION_COOKIE_NAME] as string | undefined;
+    const token = request.signedCookies?.[SESSION_COOKIE_NAME] as
+      string | undefined;
     await this.authService.logout(token);
 
     response.clearCookie(SESSION_COOKIE_NAME, {

@@ -17,12 +17,20 @@ describe('TeacherRoleGuard', () => {
   const guard = new TeacherRoleGuard();
 
   it('allows a teacher through', () => {
-    const context = createContext({ id: '1', email: 't@courseflix.local', role: 'teacher' });
+    const context = createContext({
+      id: '1',
+      email: 't@courseflix.local',
+      role: 'teacher',
+    });
     expect(guard.canActivate(context)).toBe(true);
   });
 
   it('rejects a student', () => {
-    const context = createContext({ id: '2', email: 's@courseflix.local', role: 'student' });
+    const context = createContext({
+      id: '2',
+      email: 's@courseflix.local',
+      role: 'student',
+    });
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 

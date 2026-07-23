@@ -20,7 +20,9 @@ export class UsersService {
   }
 
   // Safe profile shape — passwordHash is stripped before returning.
-  async findById(userId: string): Promise<Omit<UserEntity, 'passwordHash'> | null> {
+  async findById(
+    userId: string,
+  ): Promise<Omit<UserEntity, 'passwordHash'> | null> {
     const user = await this.usersRepository.findOne({
       where: { id: userId, deletedAt: IsNull() },
     });
