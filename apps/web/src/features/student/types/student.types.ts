@@ -1,8 +1,5 @@
 export type EnrollmentStatus = 'active' | 'suspended' | 'completed'
 
-// NOTE: fixed from the old 'active' | 'completed' | 'cancelled' union to
-// match the real backend enum in schemaV2.sql / enrollment.entity.ts.
-
 export interface StudentDashboardStats {
   enrolledCoursesCount: number
   activeCoursesCount: number
@@ -27,8 +24,12 @@ export interface StudentDashboard {
 export interface StudentEnrollment {
   id: string
   courseId: string
-  courseTitle: string
-  gradeLevel: string
+  // TODO(blocked on Seif's course service): these become required once
+  // CourseEntity is real and enrollments can join into it. Until then the
+  // backend genuinely can't populate them — optional here rather than
+  // pretending we have real course data.
+  courseTitle?: string
+  gradeLevel?: string
   status: EnrollmentStatus
 }
 

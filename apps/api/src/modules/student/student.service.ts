@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import type { EnrollmentStatus } from '../enrollments/entities/enrollment.entity';
 
@@ -17,6 +17,26 @@ export interface StudentDashboardResponse {
   overallProgressPercent: null;
   continueLearning: null;
   recentCourses: StudentDashboardRecentCourse[];
+}
+
+const VALID_ENROLLMENT_STATUSES: readonly EnrollmentStatus[] = [
+  'active',
+  'suspended',
+  'completed',
+];
+
+function parseEnrollmentStatus(value?: string): EnrollmentStatus | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!VALID_ENROLLMENT_STATUSES.includes(value as EnrollmentStatus)) {
+    throw new BadRequestException(
+      `Invalid status filter: "${value}". Must be one of ${VALID_ENROLLMENT_STATUSES.join(', ')}.`,
+    );
+  }
+
+  return value as EnrollmentStatus;
 }
 
 @Injectable()
@@ -59,11 +79,13 @@ export class StudentService {
     studentId: string,
     filters: { status?: string; gradeLevel?: string },
   ) {
-    // Real filter validation/mapping is CF-TASK-014 (Branch 3). For now
-    // this just passes the authenticated studentId through correctly
-    // instead of the previous hardcoded placeholder id.
+    // `status` is now actually validated (400 on garbage input) instead of
+    // being blindly cast. `gradeLevel` still can't be applied — see
+    // enrollments.service.ts TODO: `courses` has no `grade_level` column
+    // in schemaV2.sql (it has `category` instead). Unresolved pending a
+    // decision with Seif/Nabile.
     return this.enrollmentsService.findStudentEnrollments(studentId, {
-      status: filters.status as EnrollmentStatus | undefined,
+      status: parseEnrollmentStatus(filters.status),
       gradeLevel: filters.gradeLevel,
     });
   }
