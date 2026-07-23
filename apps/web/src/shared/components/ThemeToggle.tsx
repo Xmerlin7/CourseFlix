@@ -23,7 +23,6 @@ export function ThemeToggle() {
     localStorage.setItem(STORAGE_KEY, theme)
   }, [theme])
 
-  // Listen to OS color scheme changes if user hasn't explicitly set a preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = (e: MediaQueryListEvent) => {
@@ -45,22 +44,11 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
+      className="icon-btn"
       aria-label="تبديل المظهر"
       title={isDark ? 'التحويل إلى الوضع الفاتح' : 'التحويل إلى الوضع الداكن'}
-      className="group w-10 h-10 rounded-full flex items-center justify-center 
-                 text-gray-600 dark:text-gray-300 
-                 hover:text-primary dark:hover:text-primary 
-                 hover:bg-gray-100 dark:hover:bg-gray-800 
-                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 
-                 active:scale-95 transition-all duration-200 cursor-pointer"
     >
-      <div className="relative w-5 h-5 flex items-center justify-center">
-        {isDark ? (
-          <Sun className="w-5 h-5 transition-transform duration-300 rotate-0 group-hover:rotate-45" />
-        ) : (
-          <Moon className="w-5 h-5 transition-transform duration-300 rotate-0 group-hover:-rotate-12" />
-        )}
-      </div>
+      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
     </button>
   )
 }

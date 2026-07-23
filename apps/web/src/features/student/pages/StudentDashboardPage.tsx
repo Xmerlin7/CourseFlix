@@ -29,9 +29,7 @@ export function StudentDashboardPage() {
 
   return (
     <div>
-      <PageHeader>
-        <h1>Dashboard</h1>
-      </PageHeader>
+      <PageHeader title="Dashboard" />
 
       <section>
         <p>Enrolled courses: {data.stats.enrolledCoursesCount}</p>
