@@ -11,8 +11,10 @@ import {
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { AuthGuard } from './guards/auth.guard';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME ?? 'courseflix.sid';
@@ -65,8 +67,8 @@ export class AuthController {
   }
 
   @Get('me')
-  async getMe(@Req() request: Request): Promise<AuthenticatedUser> {
-    const token = request.signedCookies?.[SESSION_COOKIE_NAME] as string | undefined;
-    return this.authService.getCurrentUser(token);
+  @UseGuards(AuthGuard)
+  getMe(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
+    return user;
   }
 }
