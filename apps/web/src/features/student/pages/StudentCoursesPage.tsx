@@ -23,9 +23,7 @@ export function StudentCoursesPage() {
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <PageHeader>
-        <h1>كورساتي</h1>
-      </PageHeader>
+      <PageHeader title="كورساتي" />
 
       <label className="flex flex-col gap-1 text-sm sm:w-48">
         <span className="text-gray-600 dark:text-gray-400">الحالة</span>
