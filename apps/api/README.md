@@ -23,13 +23,6 @@
 
 ## Description
 
-## API Conventions
- 
-Before touching any endpoint, read [`docs/api-conventions.md`](../../docs/api-conventions.md)
-for the current auth, validation, and response-shape conventions — including
-a few open items (response envelope, `AuthGuard` still being a stub) that
-aren't resolved yet and shouldn't be worked around silently in new code.
-
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
 ## Project setup

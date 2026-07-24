@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -13,14 +12,6 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      autoLoadEntities: true,
-      // Never true outside a throwaway local sandbox — migrations are the
-      // only supported way to change the schema (see CONTRIBUTING.md).
-      synchronize: false,
-    }),
     HealthModule,
     AuthModule,
     UsersModule,

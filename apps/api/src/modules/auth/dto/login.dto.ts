@@ -1,10 +1,5 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
-
 export class LoginDto {
-  @IsEmail()
+  // TODO: add validation decorators after class-validator is installed.
   email!: string;
-
-  @IsString()
-  @MinLength(8)
   password!: string;
 }
