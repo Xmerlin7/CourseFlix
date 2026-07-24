@@ -1,24 +1,9 @@
-// teacher-role.guard.ts
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
-import type { Request } from 'express';
-import { AuthenticatedUser } from '../interfaces/authenticated-user.interface';
+import { CanActivate, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class TeacherRoleGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const request = context
-      .switchToHttp()
-      .getRequest<Request & { user?: AuthenticatedUser }>();
-
-    if (request.user?.role !== 'teacher') {
-      throw new ForbiddenException('Teachers only.');
-    }
-
+  canActivate(): boolean {
+    // TODO: allow only authenticated users with role "teacher".
     return true;
   }
 }
