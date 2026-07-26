@@ -3,12 +3,14 @@ import type { PropsWithChildren } from 'react'
 
 export function AuthLayout({ children }: PropsWithChildren) {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900"
-      dir="rtl"
-    >
-      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        {children ?? <Outlet />}
+    <div className="login-screen">
+      <div className="login-wrap">
+        <div className="login-card">
+          <div className="logo">COURSEFLIX</div>
+          <p className="tag">منصة الفيزياء للمرحلتين الإعدادية والثانوية</p>
+          {children ? <>{children}</> : <Outlet />}
+        </div>
+        <p className="foot">جميع الحقوق محفوظة لمنصة CourseFlix · 2026</p>
       </div>
     </div>
   )

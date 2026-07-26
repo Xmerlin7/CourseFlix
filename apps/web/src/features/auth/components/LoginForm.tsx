@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { ROUTE_PATHS } from '../../../app/routes/route-paths'
+import { ApiError } from '../../../shared/api/api-error'
 import { useAuth } from '../hooks/useAuth'
+import { getRoleHomePath } from '../utils/get-role-home-path'
 
 export function LoginForm() {
   const { login } = useAuth()
@@ -19,63 +19,59 @@ export function LoginForm() {
 
     try {
       const user = await login({ email, password })
-      navigate(
-        user.role === 'teacher' ? ROUTE_PATHS.TEACHER.DASHBOARD : ROUTE_PATHS.STUDENT.DASHBOARD,
-        { replace: true },
+      navigate(getRoleHomePath(user.role), { replace: true })
+    } catch (caughtError) {
+      // Same generic message regardless of the underlying reason — never
+      // reveal whether the email exists or the password was wrong.
+      setError(
+        caughtError instanceof ApiError && caughtError.status === 401
+          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+          : 'حدث خطأ ما، حاول مرة أخرى',
       )
-    } catch {
-      // Generic on purpose — never reveal whether the email exists.
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <form
-      onSubmit={(event) => void handleSubmit(event)}
-      className="flex w-full max-w-sm flex-col gap-4"
-      dir="rtl"
-    >
-      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">تسجيل الدخول</h1>
-
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-600 dark:text-gray-400">البريد الإلكتروني</span>
+    <form onSubmit={(event) => void handleSubmit(event)} noValidate>
+      <div className="tf">
+        <label htmlFor="email">البريد الإلكتروني</label>
         <input
           type="email"
+          id="email"
+          placeholder="name@example.com"
+          autoComplete="email"
+          required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          required
-          autoComplete="email"
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
         />
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-600 dark:text-gray-400">كلمة المرور</span>
+      <div className="tf">
+        <label htmlFor="password">كلمة المرور</label>
         <input
           type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          id="password"
+          placeholder="********"
+          autoComplete="current-password"
           required
           minLength={8}
-          autoComplete="current-password"
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
         />
-      </label>
+        {error ? (
+          <span className="error-text" role="alert">
+            {error}
+          </span>
+        ) : (
+          <span className="hint">يتم توجيهك تلقائيًا حسب نوع الحساب (طالب أو معلم)</span>
+        )}
+      </div>
 
-      {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        {isSubmitting ? 'جارٍ الدخول...' : 'دخول'}
+      <button className="btn big" type="submit" disabled={isSubmitting} style={{ width: '100%' }}>
+        <span className="ms">login</span>
+        {isSubmitting ? 'جارٍ الدخول...' : 'تسجيل الدخول'}
       </button>
     </form>
   )
