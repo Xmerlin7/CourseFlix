@@ -7,7 +7,17 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install:all": "npm install --prefix apps/api && npm install --prefix apps/web",
+    "dev:api": "npm run start:dev --prefix apps/api",
+    "dev:web": "npm run dev --prefix apps/web",
+    "build:api": "npm run build --prefix apps/api",
+    "build:web": "npm run build --prefix apps/web",
+    "lint:api": "npm run lint --prefix apps/api",
+    "lint:web": "npm run lint --prefix apps/web",
+    "test:api": "npm run test --prefix apps/api",
+    "migration:run": "npm run migration:run --prefix apps/api",
+    "seed": "npm run seed --prefix apps/api",
+    "test": "npm run test:api"
   },
   "repository": {
     "type": "git",

@@ -14,11 +14,7 @@ Session-based via an HTTP-only, signed cookie — not a bearer token.
 - Signed with `SESSION_SECRET` (via `cookie-parser`, configured in `main.ts`) — a tampered cookie fails signature verification before any session lookup happens.
 - `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, and `GET /api/v1/me` all read/write this cookie directly inside `AuthController` / `AuthService`. They do **not** go through `AuthGuard`.
 
-### Open item: `AuthGuard` is still a stub
-
-`AuthGuard`, `StudentRoleGuard`, and `TeacherRoleGuard` (`apps/api/src/modules/auth/guards/`) currently all just `return true` and never attach `request.user`. Real session validation already exists (`SessionsService.findActiveSession`) — it's just not wired into these guards yet.
-
-Practical effect: any endpoint behind `@UseGuards(AuthGuard, ...)` (all of `/api/v1/student/*`, for example) has **no real 401/403 enforcement yet**. Controllers that need the current user throw a plain `Error` if `request.user` is missing, as an interim fail-loud placeholder — not a real `401`.
+`AuthGuard` validates the signed session cookie against `SessionsService.findActiveSession` and attaches `request.user` (`{ id, email, role, fullName, avatarUrl }`); it throws `401` if the cookie is missing or the session is expired/revoked. `StudentRoleGuard` / `TeacherRoleGuard` check `request.user.role` and throw `403` otherwise. Every controller that needs the current user reads it via the `@CurrentUser()` param decorator (`apps/api/src/common/decorators/current-user.decorator.ts`), not `request.user` directly.
 
 ## Request validation
 
@@ -32,15 +28,11 @@ Plain query params not yet wrapped in a DTO — like `status` / `gradeLevel` on 
 
 ## Response envelope
 
-### Open item: the envelope is inconsistent right now
+**Decided:** no `data` wrapper, anywhere. `sprint1-plan.md`'s endpoint table specified `{ data: {...} }`, but nothing shipped ever used it, so as of CF-TASK-010 this is the standardized convention rather than an open item — every endpoint returns its payload directly:
 
-`sprint1-plan.md`'s endpoint table specifies every response wrapped as `{ data: {...} }`. As actually implemented:
-
-- `GET /api/v1/health` returns `{ status, service, dependencies }` directly — no wrapper, and different field names than the documented `{ api, database, timestamp }`.
-- `POST /api/v1/auth/login` returns `{ user }` directly — this one does match its own contract row (which never specified a wrapper).
-- `GET /api/v1/student/dashboard` and `GET /api/v1/student/enrollments` (this doc's scope) also return the raw object/array directly, for consistency with what's already shipped — not because the original contract table was followed.
-
-**This needs a one-time team decision, not something to resolve unilaterally in a docs PR.** Recommend confirming with Seif (health/course owner) and Albraa (auth owner) whether to standardize on a `data` wrapper everywhere going forward, or drop it from the contract table since nothing currently uses it.
+- `GET /api/v1/health` returns `{ api, database, timestamp }` directly.
+- `POST /api/v1/auth/login` returns `{ user }` directly.
+- `GET /api/v1/student/dashboard`, `GET /api/v1/student/enrollments`, `GET /api/v1/courses/:courseId`, `GET /api/v1/teacher/dashboard`, `GET /api/v1/teacher/courses`, and `PATCH /api/v1/teacher/courses/:courseId` all return their object/array directly.
 
 ## Error shape
 
@@ -49,15 +41,15 @@ No global exception filter is registered, so every error is Nest's default `Http
 { "statusCode": 400, "message": "Invalid status filter: \"foo\". Must be one of active, suspended, completed.", "error": "Bad Request" }
 ```
 
-## Student endpoints (this doc's scope — CF-TASK-023)
+## Student endpoints (CF-TASK-023, updated for CF-TASK-013/014)
 
 ### `GET /api/v1/student/dashboard`
 
-Guards: `AuthGuard`, `StudentRoleGuard` (see open item above — not enforced yet).
+Guards: `AuthGuard`, `StudentRoleGuard`.
 
 ```json
 {
-  "student": { "id": "uuid" },
+  "student": { "id": "uuid", "fullName": "عبدالله حبسه", "email": "student@courseflix.local", "avatarUrl": null },
   "stats": {
     "enrolledCoursesCount": 2,
     "activeCoursesCount": 1
@@ -65,49 +57,73 @@ Guards: `AuthGuard`, `StudentRoleGuard` (see open item above — not enforced ye
   "overallProgressPercent": null,
   "continueLearning": null,
   "recentCourses": [
-    { "courseId": "uuid", "status": "active", "enrolledAt": "2026-07-01T12:00:00.000Z" }
+    { "courseId": "uuid", "courseTitle": "الميكانيكا الكلاسيكية", "coverImageUrl": null, "status": "active", "enrolledAt": "2026-07-01T12:00:00.000Z" }
   ]
 }
 ```
 
 - `overallProgressPercent` / `continueLearning` are `null` on purpose — out of scope until Sprint 2 per `sprint1-plan.md`'s Sprint 1 boundaries.
-- `recentCourses[].courseId` only — no title/cover image yet. Blocked on `CourseEntity` becoming a real TypeORM entity (Seif's track).
-- `student` only carries `id` — no `fullName` / `email` / `avatarUrl` yet. Blocked on `UsersService` exposing a real profile lookup.
+- `recentCourses[].courseTitle`/`coverImageUrl` come from `CoursesService.findByIds()` (bulk lookup, no course relation on `EnrollmentEntity` — see its docblock); `null` if the course was soft-deleted.
+- `student` is enriched via `UsersService.findById()`.
 
 ### `GET /api/v1/student/enrollments?status=&gradeLevel=`
 
 Guards: same as above.
 
 - `status` — optional, one of `active | suspended | completed`. Invalid value → `400 Bad Request`.
-- `gradeLevel` — accepted as a query param but **not applied**. `courses` has no `grade_level` column in `schemaV2.sql` (it has `category` instead). Left as a documented no-op rather than silently filtering on the wrong field. Needs a decision from Seif/Nabile: map to `category`, or add a real column.
+- `gradeLevel` — optional, exact match against the enrolled course's `gradeLevel`. Applied in `StudentService` after bulk-fetching the enrolled courses (post-enrichment filter, since `EnrollmentEntity` has no course relation).
 
 ```json
 [
   {
     "id": "uuid",
     "courseId": "uuid",
-    "courseTitle": "optional — blocked on course join, see gradeLevel note above",
-    "gradeLevel": "optional — same",
+    "courseTitle": "الميكانيكا الكلاسيكية",
+    "gradeLevel": "الصف الأول الثانوي",
     "status": "active"
   }
 ]
 ```
 
-`EnrollmentsService.assertStudentEnrolled(studentId, courseId)` is the shared ownership check other modules should call before exposing course-scoped data to a student — e.g. Seif's `GET /api/v1/courses/:courseId`.
+`EnrollmentsService.assertStudentEnrolled(studentId, courseId)` is the shared ownership check other modules call before exposing course-scoped data to a student — used by `GET /api/v1/courses/:courseId` below.
 
-## Enrollment status enum
+## Courses and teacher endpoints (CF-TASK-010/017/018/019)
 
-Canonical values (from `schemaV2.sql`, mirrored in `enrollment.entity.ts`): `active | suspended | completed`.
+### `GET /api/v1/courses/:courseId`
 
-Don't confuse this with the *course* `status` enum. The current `CourseEntity` stub says `draft | active | archived`, but `schemaV2.sql` says `draft | published | archived` — another unresolved mismatch, out of this doc's scope to fix, but worth the team's attention.
+Guards: `AuthGuard` only (no role guard — shared by both roles). Enrolled student or owning teacher; `403` otherwise, `404` if the course doesn't exist. Returns ordered sections/lessons and `canEdit: true` only for the owning teacher.
 
-## Running migrations locally
+```json
+{
+  "id": "uuid", "title": "...", "slug": "classical-mechanics", "description": "...",
+  "coverImageUrl": null, "gradeLevel": "الصف الأول الثانوي", "status": "published",
+  "teacher": { "id": "uuid", "fullName": "محمد عبدالرحمن" },
+  "canEdit": false,
+  "sections": [{ "id": "uuid", "title": "...", "sortOrder": 1, "lessons": [{ "id": "uuid", "title": "...", "videoUrl": null, "sortOrder": 1 }] }]
+}
+```
+
+### `GET /api/v1/teacher/dashboard`, `GET /api/v1/teacher/courses?status=`, `PATCH /api/v1/teacher/courses/:courseId`
+
+Guards: `AuthGuard`, `TeacherRoleGuard`. `courses` list/dashboard are owned-only (`teacher_id` filter); `status` query param is `draft | published | archived`, validated manually (400 on garbage, same pattern as the student `status` filter). `PATCH` accepts `title` (3-150 chars), `description` (max 5000), `coverImageUrl` (URL or `null`), `gradeLevel` (max 100 or `null`), `status` (`draft | published` only — `archived` isn't settable via patch); validated by `UpdateCourseDto`. `slug` is not editable.
+
+## `GET /api/v1/health`
+
+No guard. Returns `{ "api": "ok", "database": "ok" | "error", "timestamp": "<ISO>" }`. `database` is a real `SELECT 1` connectivity check; on failure it only ever reports `"error"` — the underlying exception (host, connection string, stack trace) is never surfaced.
+
+## Course and enrollment status enums
+
+- Enrollment status (`schemaV2.sql`, mirrored in `enrollment.entity.ts`): `active | suspended | completed`.
+- Course status (`course.entity.ts`, matching `schemaV2.sql`'s `course_status` enum): `draft | published | archived`. `gradeLevel` is a real `courses.grade_level` column — an authorized Sprint 1 deviation from `schemaV2.sql`'s `category` column (see `CourseEntity`'s docblock for why).
+
+## Running migrations and seeds locally
 
 ```bash
 cd apps/api
 npm run migration:run      # apply all pending migrations
+npm run seed                # reset to the Sprint 1 fixture (upserts, repeatable)
 npm run migration:revert   # roll back the most recent one
 npm run migration:generate -- src/database/migrations/SomeName
 ```
 
-Migrations live in `src/database/migrations/`; CLI config is in `src/database/data-source.ts`. `synchronize` is always `false` — migrations are the only supported way to change the schema (per root `CONTRIBUTING.md`).
+Migrations live in `src/database/migrations/`; CLI config is in `src/database/data-source.ts`. `synchronize` is always `false` — migrations are the only supported way to change the schema (per root `CONTRIBUTING.md`). Seeds live in `src/database/seeds/` and are run together by `src/database/seed.ts`.

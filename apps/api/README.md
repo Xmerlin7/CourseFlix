@@ -26,9 +26,7 @@
 ## API Conventions
  
 Before touching any endpoint, read [`docs/api-conventions.md`](../../docs/api-conventions.md)
-for the current auth, validation, and response-shape conventions — including
-a few open items (response envelope, `AuthGuard` still being a stub) that
-aren't resolved yet and shouldn't be worked around silently in new code.
+for the current auth, validation, and response-shape conventions.
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
@@ -37,6 +35,26 @@ aren't resolved yet and shouldn't be worked around silently in new code.
 ```bash
 $ npm install
 ```
+
+Copy the root `.env.example` to `.env` (one file, shared by `apps/web` and `apps/api`) and point `DATABASE_URL` at a local PostgreSQL instance.
+
+## Database migrations and seed data
+
+```bash
+# apply all pending migrations (repeatable — safe to run again)
+$ npm run migration:run
+
+# reset to the Sprint 1 fixture: one teacher, one student, one published
+# owned course with one section and three lessons, and one active
+# enrollment linking them. Upserts, so it's safe to run again after
+# migration:run without duplicating rows.
+$ npm run seed
+
+# roll back the most recent migration
+$ npm run migration:revert
+```
+
+Seeded credentials come from `SEED_TEACHER_EMAIL`/`SEED_TEACHER_PASSWORD` and `SEED_STUDENT_EMAIL`/`SEED_STUDENT_PASSWORD` in `.env` (see `.env.example` for the local defaults) — never hardcoded in source.
 
 ## Compile and run the project
 
