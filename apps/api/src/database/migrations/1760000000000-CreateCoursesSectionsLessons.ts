@@ -10,9 +10,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * This migration must run BEFORE CreateEnrollments1784500000000, which
  * references `courses` via FK — hence the earlier timestamp.
  */
-export class CreateCoursesSectionsLessons1760000000000
-  implements MigrationInterface
-{
+export class CreateCoursesSectionsLessons1760000000000 implements MigrationInterface {
   name = 'CreateCoursesSectionsLessons1760000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

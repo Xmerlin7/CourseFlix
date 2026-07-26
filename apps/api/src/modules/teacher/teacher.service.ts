@@ -1,35 +1,101 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CoursesService } from '../courses/courses.service';
+import { CourseEntity, CourseStatus } from '../courses/entities/course.entity';
 import { UpdateCourseDto } from './dto/update-course.dto';
+
+export interface TeacherCourseListItem {
+  id: string;
+  title: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  gradeLevel: string | null;
+  status: CourseStatus;
+}
+
+export interface TeacherDashboardResponse {
+  teacher: { id: string };
+  stats: {
+    ownedCourseCount: number;
+    publishedCourseCount: number;
+  };
+  recentCourses: Array<{ id: string; title: string; status: CourseStatus }>;
+}
+
+const VALID_COURSE_STATUSES: readonly CourseStatus[] = [
+  'draft',
+  'published',
+  'archived',
+];
+
+function parseCourseStatus(value?: string): CourseStatus | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!VALID_COURSE_STATUSES.includes(value as CourseStatus)) {
+    throw new BadRequestException(
+      `Invalid status filter: "${value}". Must be one of ${VALID_COURSE_STATUSES.join(', ')}.`,
+    );
+  }
+
+  return value as CourseStatus;
+}
 
 @Injectable()
 export class TeacherService {
   constructor(private readonly coursesService: CoursesService) {}
 
-  getDashboard() {
+  async getDashboard(teacherId: string): Promise<TeacherDashboardResponse> {
+    const courses = await this.coursesService.findOwnedCourses(teacherId);
+
     return {
-      TODO: 'Build real owned-course statistics for the authenticated teacher.',
+      teacher: { id: teacherId },
+      stats: {
+        ownedCourseCount: courses.length,
+        publishedCourseCount: courses.filter(
+          (course) => course.status === 'published',
+        ).length,
+      },
+      recentCourses: courses.slice(0, 5).map((course) => ({
+        id: course.id,
+        title: course.title,
+        status: course.status,
+      })),
     };
   }
 
-  getCourses() {
-    return {
-      TODO: 'Use authenticated teacher id and return owned course list only.',
-      serviceLayer: this.coursesService.findOwnedCourses(
-        'TODO-authenticated-teacher-id',
-      ),
-    };
+  async getCourses(
+    teacherId: string,
+    status?: string,
+  ): Promise<TeacherCourseListItem[]> {
+    const courses = await this.coursesService.findOwnedCourses(
+      teacherId,
+      parseCourseStatus(status),
+    );
+    return courses.map((course) => this.toListItem(course));
   }
 
-  updateCourse(courseId: string, updateCourseDto: UpdateCourseDto) {
-    return {
-      TODO: 'Validate allowed fields and persist metadata after owner check.',
+  async updateCourse(
+    courseId: string,
+    teacherId: string,
+    updateCourseDto: UpdateCourseDto,
+  ): Promise<TeacherCourseListItem> {
+    const course = await this.coursesService.updateCourseMetadata(
       courseId,
+      teacherId,
       updateCourseDto,
-      serviceLayer: this.coursesService.updateCourseMetadata(
-        courseId,
-        'TODO-authenticated-teacher-id',
-      ),
+    );
+    return this.toListItem(course);
+  }
+
+  private toListItem(course: CourseEntity): TeacherCourseListItem {
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      coverImageUrl: course.coverImageUrl,
+      gradeLevel: course.gradeLevel,
+      status: course.status,
     };
   }
 }
