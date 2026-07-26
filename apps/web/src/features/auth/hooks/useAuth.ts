@@ -1,14 +1,10 @@
-import type { AuthUser, LoginPayload } from '../types/auth.types'
+import { useContext } from 'react'
+import { AuthContext } from '../context/AuthContext'
 
 export function useAuth() {
-  // TODO: connect auth queries/mutations and expose role-aware redirect helpers.
-  const user: AuthUser | null = null
-
-  return {
-    user,
-    login: async (payload: LoginPayload) => {
-      void payload
-    },
-    logout: async () => {},
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
+  return context
 }

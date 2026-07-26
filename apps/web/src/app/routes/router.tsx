@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, useRouteError } from 'react-router'
 import { ROUTE_PATHS } from './route-paths'
+import { RequireRole } from './RequireRole'
 import { AuthLayout } from '../layouts/AuthLayout'
 import { StudentLayout } from '../layouts/StudentLayout'
 import { TeacherLayout } from '../layouts/TeacherLayout'
@@ -77,73 +78,79 @@ export const router = createBrowserRouter([
     ],
   },
 
-  /*
-   * TODO: ProtectedRoute - Wrap /student and /teacher route branches with authentication check once auth provider is integrated.
-   * TODO: RoleGuard - Enforce role-based access control (role === 'student' vs role === 'teacher') for student and teacher routes.
-   */
-
-  /* Student Routes */
+  /* Student Routes — gated behind RequireRole("student"): unauthenticated
+     users are sent to /login, wrong-role users to /403. */
   {
-    path: ROUTE_PATHS.STUDENT.ROOT,
-    element: <StudentLayout />,
+    element: <RequireRole role="student" />,
     errorElement: <RouteErrorBoundary />,
     children: [
       {
-        path: ROUTE_PATHS.STUDENT.DASHBOARD,
-        element: (
-          <SuspenseWrapper>
-            <StudentDashboardPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: ROUTE_PATHS.STUDENT.COURSES,
-        element: (
-          <SuspenseWrapper>
-            <StudentCoursesPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: ROUTE_PATHS.STUDENT.COURSE_DETAIL,
-        element: (
-          <SuspenseWrapper>
-            <StudentCourseDetailPage />
-          </SuspenseWrapper>
-        ),
+        path: ROUTE_PATHS.STUDENT.ROOT,
+        element: <StudentLayout />,
+        children: [
+          {
+            path: ROUTE_PATHS.STUDENT.DASHBOARD,
+            element: (
+              <SuspenseWrapper>
+                <StudentDashboardPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COURSES,
+            element: (
+              <SuspenseWrapper>
+                <StudentCoursesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COURSE_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <StudentCourseDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+        ],
       },
     ],
   },
 
-  /* Teacher Routes */
+  /* Teacher Routes — gated behind RequireRole("teacher"). */
   {
-    path: ROUTE_PATHS.TEACHER.ROOT,
-    element: <TeacherLayout />,
+    element: <RequireRole role="teacher" />,
     errorElement: <RouteErrorBoundary />,
     children: [
       {
-        path: ROUTE_PATHS.TEACHER.DASHBOARD,
-        element: (
-          <SuspenseWrapper>
-            <TeacherDashboardPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: ROUTE_PATHS.TEACHER.COURSES,
-        element: (
-          <SuspenseWrapper>
-            <TeacherCoursesPage />
-          </SuspenseWrapper>
-        ),
-      },
-      {
-        path: ROUTE_PATHS.TEACHER.COURSE_DETAIL,
-        element: (
-          <SuspenseWrapper>
-            <TeacherCourseDetailPage />
-          </SuspenseWrapper>
-        ),
+        path: ROUTE_PATHS.TEACHER.ROOT,
+        element: <TeacherLayout />,
+        children: [
+          {
+            path: ROUTE_PATHS.TEACHER.DASHBOARD,
+            element: (
+              <SuspenseWrapper>
+                <TeacherDashboardPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.COURSES,
+            element: (
+              <SuspenseWrapper>
+                <TeacherCoursesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.COURSE_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <TeacherCourseDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+        ],
       },
     ],
   },

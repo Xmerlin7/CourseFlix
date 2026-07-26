@@ -4,6 +4,8 @@ export interface AuthUser {
   id: string
   email: string
   role: UserRole
+  fullName: string
+  avatarUrl: string | null
 }
 
 export interface LoginPayload {
