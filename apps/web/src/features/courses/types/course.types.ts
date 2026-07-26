@@ -12,11 +12,20 @@ export interface CourseSection {
   lessons: CourseLesson[]
 }
 
+export type CourseStatus = 'draft' | 'published' | 'archived'
+
 export interface CourseDetail {
   id: string
   title: string
-  description: string
-  gradeLevel: string
+  slug: string
+  description: string | null
+  coverImageUrl: string | null
+  gradeLevel: string | null
+  status: CourseStatus
+  teacher: {
+    id: string
+    fullName: string
+  }
   canEdit: boolean
   sections: CourseSection[]
 }
