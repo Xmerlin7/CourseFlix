@@ -21,6 +21,8 @@ describe('StudentRoleGuard', () => {
       id: '1',
       email: 's@courseflix.local',
       role: 'student',
+      fullName: 'Student One',
+      avatarUrl: null,
     });
     expect(guard.canActivate(context)).toBe(true);
   });
@@ -30,6 +32,8 @@ describe('StudentRoleGuard', () => {
       id: '2',
       email: 't@courseflix.local',
       role: 'teacher',
+      fullName: 'Teacher One',
+      avatarUrl: null,
     });
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });

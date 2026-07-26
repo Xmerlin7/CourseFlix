@@ -40,7 +40,13 @@ export class AuthService {
     return {
       token,
       maxAgeMs: session.expiresAt.getTime() - Date.now(),
-      user: { id: user.id, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        fullName: user.fullName,
+        avatarUrl: user.avatarUrl,
+      },
     };
   }
 

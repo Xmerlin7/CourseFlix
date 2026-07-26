@@ -47,6 +47,8 @@ describe('AuthGuard', () => {
         id: 'user-1',
         email: 'student@courseflix.local',
         role: 'student',
+        fullName: 'عبدالله حبسه',
+        avatarUrl: null,
       },
     });
     const { context, request } = createContext({
@@ -60,6 +62,8 @@ describe('AuthGuard', () => {
       id: 'user-1',
       email: 'student@courseflix.local',
       role: 'student',
+      fullName: 'عبدالله حبسه',
+      avatarUrl: null,
     });
   });
 });

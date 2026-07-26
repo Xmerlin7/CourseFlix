@@ -19,6 +19,8 @@ describe('AuthService', () => {
     email: 'student@courseflix.local',
     role: 'student' as const,
     status: 'active' as const,
+    fullName: 'عبدالله حبسه',
+    avatarUrl: null,
   };
 
   beforeEach(async () => {
@@ -58,6 +60,8 @@ describe('AuthService', () => {
       id: activeUser.id,
       email: activeUser.email,
       role: activeUser.role,
+      fullName: activeUser.fullName,
+      avatarUrl: activeUser.avatarUrl,
     });
     expect(sessionsService.createSession).toHaveBeenCalledWith(activeUser.id);
   });

@@ -1,9 +1,16 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
+import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { CoursesService } from './courses.service';
 import { CourseEntity } from './entities/course.entity';
+
+function viewer(
+  overrides: Pick<AuthenticatedUser, 'id' | 'email' | 'role'>,
+): AuthenticatedUser {
+  return { fullName: 'Test User', avatarUrl: null, ...overrides };
+}
 
 describe('CoursesService', () => {
   let coursesService: CoursesService;
@@ -74,11 +81,14 @@ describe('CoursesService', () => {
     it('returns the course for the owning teacher and marks it editable', async () => {
       queryBuilder.getOne.mockResolvedValue(course);
 
-      const result = await coursesService.getCourseDetail(course.id, {
-        id: teacher.id,
-        email: 'teacher@courseflix.local',
-        role: 'teacher',
-      });
+      const result = await coursesService.getCourseDetail(
+        course.id,
+        viewer({
+          id: teacher.id,
+          email: 'teacher@courseflix.local',
+          role: 'teacher',
+        }),
+      );
 
       expect(result.canEdit).toBe(true);
       expect(result.teacher).toEqual({
@@ -92,11 +102,14 @@ describe('CoursesService', () => {
       queryBuilder.getOne.mockResolvedValue(course);
 
       await expect(
-        coursesService.getCourseDetail(course.id, {
-          id: 'someone-else',
-          email: 'other@courseflix.local',
-          role: 'teacher',
-        }),
+        coursesService.getCourseDetail(
+          course.id,
+          viewer({
+            id: 'someone-else',
+            email: 'other@courseflix.local',
+            role: 'teacher',
+          }),
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -104,11 +117,14 @@ describe('CoursesService', () => {
       queryBuilder.getOne.mockResolvedValue(course);
       enrollmentsService.assertStudentEnrolled.mockResolvedValue({});
 
-      const result = await coursesService.getCourseDetail(course.id, {
-        id: 'student-1',
-        email: 'student@courseflix.local',
-        role: 'student',
-      });
+      const result = await coursesService.getCourseDetail(
+        course.id,
+        viewer({
+          id: 'student-1',
+          email: 'student@courseflix.local',
+          role: 'student',
+        }),
+      );
 
       expect(result.canEdit).toBe(false);
       expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledWith(
@@ -124,11 +140,14 @@ describe('CoursesService', () => {
       );
 
       await expect(
-        coursesService.getCourseDetail(course.id, {
-          id: 'student-1',
-          email: 'student@courseflix.local',
-          role: 'student',
-        }),
+        coursesService.getCourseDetail(
+          course.id,
+          viewer({
+            id: 'student-1',
+            email: 'student@courseflix.local',
+            role: 'student',
+          }),
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -136,11 +155,14 @@ describe('CoursesService', () => {
       queryBuilder.getOne.mockResolvedValue(null);
 
       await expect(
-        coursesService.getCourseDetail('missing', {
-          id: 'student-1',
-          email: 'student@courseflix.local',
-          role: 'student',
-        }),
+        coursesService.getCourseDetail(
+          'missing',
+          viewer({
+            id: 'student-1',
+            email: 'student@courseflix.local',
+            role: 'student',
+          }),
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });
