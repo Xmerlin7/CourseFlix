@@ -63,4 +63,22 @@ export class EnrollmentsService {
 
     return enrollment;
   }
+
+  /**
+   * Count of distinct active students enrolled across the given courses.
+   * Used by the teacher dashboard (Nabile) — never exposes which student,
+   * only a total.
+   */
+  async countActiveStudentsByCourseIds(courseIds: string[]): Promise<number> {
+    if (courseIds.length === 0) {
+      return 0;
+    }
+
+    return this.enrollmentsRepository
+      .createQueryBuilder('enrollment')
+      .where('enrollment.course_id IN (:...courseIds)', { courseIds })
+      .andWhere('enrollment.status = :status', { status: 'active' })
+      .andWhere('enrollment.deleted_at IS NULL')
+      .getCount();
+  }
 }

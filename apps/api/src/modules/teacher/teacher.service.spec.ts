@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { CoursesService } from '../courses/courses.service';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { TeacherService } from './teacher.service';
 
 describe('TeacherService', () => {
@@ -9,6 +10,7 @@ describe('TeacherService', () => {
     findOwnedCourses: jest.Mock;
     updateCourseMetadata: jest.Mock;
   };
+  let enrollmentsService: { countActiveStudentsByCourseIds: jest.Mock };
 
   const teacherId = 'teacher-1';
 
@@ -36,11 +38,13 @@ describe('TeacherService', () => {
       findOwnedCourses: jest.fn(),
       updateCourseMetadata: jest.fn(),
     };
+    enrollmentsService = { countActiveStudentsByCourseIds: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         TeacherService,
         { provide: CoursesService, useValue: coursesService },
+        { provide: EnrollmentsService, useValue: enrollmentsService },
       ],
     }).compile();
 
@@ -48,15 +52,20 @@ describe('TeacherService', () => {
   });
 
   describe('getDashboard', () => {
-    it('summarizes owned/published course counts', async () => {
+    it('summarizes owned/published course counts and enrolled students', async () => {
       coursesService.findOwnedCourses.mockResolvedValue(courses);
+      enrollmentsService.countActiveStudentsByCourseIds.mockResolvedValue(12);
 
       const result = await teacherService.getDashboard(teacherId);
 
       expect(coursesService.findOwnedCourses).toHaveBeenCalledWith(teacherId);
+      expect(
+        enrollmentsService.countActiveStudentsByCourseIds,
+      ).toHaveBeenCalledWith(['course-1', 'course-2']);
       expect(result.stats).toEqual({
         ownedCourseCount: 2,
         publishedCourseCount: 1,
+        enrolledStudentCount: 12,
       });
       expect(result.recentCourses).toHaveLength(2);
     });

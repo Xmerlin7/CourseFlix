@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CoursesService } from '../courses/courses.service';
 import { CourseEntity, CourseStatus } from '../courses/entities/course.entity';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UpdateCourseDto } from './dto/update-course.dto';
 
 export interface TeacherCourseListItem {
@@ -17,6 +18,7 @@ export interface TeacherDashboardResponse {
   stats: {
     ownedCourseCount: number;
     publishedCourseCount: number;
+    enrolledStudentCount: number;
   };
   recentCourses: Array<{ id: string; title: string; status: CourseStatus }>;
 }
@@ -43,10 +45,17 @@ function parseCourseStatus(value?: string): CourseStatus | undefined {
 
 @Injectable()
 export class TeacherService {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(
+    private readonly coursesService: CoursesService,
+    private readonly enrollmentsService: EnrollmentsService,
+  ) {}
 
   async getDashboard(teacherId: string): Promise<TeacherDashboardResponse> {
     const courses = await this.coursesService.findOwnedCourses(teacherId);
+    const enrolledStudentCount =
+      await this.enrollmentsService.countActiveStudentsByCourseIds(
+        courses.map((course) => course.id),
+      );
 
     return {
       teacher: { id: teacherId },
@@ -55,6 +64,7 @@ export class TeacherService {
         publishedCourseCount: courses.filter(
           (course) => course.status === 'published',
         ).length,
+        enrolledStudentCount,
       },
       recentCourses: courses.slice(0, 5).map((course) => ({
         id: course.id,
