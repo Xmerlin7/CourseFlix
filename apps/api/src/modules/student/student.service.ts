@@ -1,15 +1,28 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { CoursesService } from '../courses/courses.service';
+import type { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
-import type { EnrollmentStatus } from '../enrollments/entities/enrollment.entity';
+import type {
+  EnrollmentEntity,
+  EnrollmentStatus,
+} from '../enrollments/entities/enrollment.entity';
+import { UsersService } from '../users/users.service';
 
 export interface StudentDashboardRecentCourse {
   courseId: string;
+  courseTitle: string | null;
+  coverImageUrl: string | null;
   status: EnrollmentStatus;
   enrolledAt: Date;
 }
 
 export interface StudentDashboardResponse {
-  student: { id: string };
+  student: {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+  };
   stats: {
     enrolledCoursesCount: number;
     activeCoursesCount: number;
@@ -17,6 +30,14 @@ export interface StudentDashboardResponse {
   overallProgressPercent: null;
   continueLearning: null;
   recentCourses: StudentDashboardRecentCourse[];
+}
+
+export interface StudentEnrollmentResponse {
+  id: string;
+  courseId: string;
+  courseTitle?: string;
+  gradeLevel?: string;
+  status: EnrollmentStatus;
 }
 
 const VALID_ENROLLMENT_STATUSES: readonly EnrollmentStatus[] = [
@@ -41,27 +62,47 @@ function parseEnrollmentStatus(value?: string): EnrollmentStatus | undefined {
 
 @Injectable()
 export class StudentService {
-  constructor(private readonly enrollmentsService: EnrollmentsService) {}
+  constructor(
+    private readonly enrollmentsService: EnrollmentsService,
+    private readonly coursesService: CoursesService,
+    private readonly usersService: UsersService,
+  ) {}
 
   async getDashboard(studentId: string): Promise<StudentDashboardResponse> {
     const enrollments =
       await this.enrollmentsService.findStudentEnrollments(studentId);
 
-    const recentCourses: StudentDashboardRecentCourse[] = [...enrollments]
+    const recentEnrollments = [...enrollments]
       .sort((a, b) => b.enrolledAt.getTime() - a.enrolledAt.getTime())
-      .slice(0, 5)
-      .map((enrollment) => ({
-        courseId: enrollment.courseId,
-        status: enrollment.status,
-        enrolledAt: enrollment.enrolledAt,
-        // TODO(blocked on Seif's course service): enrich with course
-        // title/coverImageUrl once GET /api/v1/courses/:courseId lands.
-      }));
+      .slice(0, 5);
+
+    const courses = await this.coursesService.findByIds(
+      recentEnrollments.map((enrollment) => enrollment.courseId),
+    );
+    const courseById = this.indexCoursesById(courses);
+
+    const recentCourses: StudentDashboardRecentCourse[] = recentEnrollments.map(
+      (enrollment) => {
+        const course = courseById.get(enrollment.courseId);
+        return {
+          courseId: enrollment.courseId,
+          courseTitle: course?.title ?? null,
+          coverImageUrl: course?.coverImageUrl ?? null,
+          status: enrollment.status,
+          enrolledAt: enrollment.enrolledAt,
+        };
+      },
+    );
+
+    const profile = await this.usersService.findById(studentId);
 
     return {
-      // TODO(blocked on Users module): enrich with fullName/email/avatarUrl
-      // once UsersService reads from a real DB instead of being a stub.
-      student: { id: studentId },
+      student: {
+        id: studentId,
+        fullName: profile?.fullName ?? null,
+        email: profile?.email ?? null,
+        avatarUrl: profile?.avatarUrl ?? null,
+      },
       stats: {
         enrolledCoursesCount: enrollments.length,
         activeCoursesCount: enrollments.filter((e) => e.status === 'active')
@@ -78,15 +119,45 @@ export class StudentService {
   async getEnrollments(
     studentId: string,
     filters: { status?: string; gradeLevel?: string },
-  ) {
-    // `status` is now actually validated (400 on garbage input) instead of
-    // being blindly cast. `gradeLevel` still can't be applied — see
-    // enrollments.service.ts TODO: `courses` has no `grade_level` column
-    // in schemaV2.sql (it has `category` instead). Unresolved pending a
-    // decision with Seif/Nabile.
-    return this.enrollmentsService.findStudentEnrollments(studentId, {
-      status: parseEnrollmentStatus(filters.status),
-      gradeLevel: filters.gradeLevel,
-    });
+  ): Promise<StudentEnrollmentResponse[]> {
+    const enrollments = await this.enrollmentsService.findStudentEnrollments(
+      studentId,
+      { status: parseEnrollmentStatus(filters.status) },
+    );
+
+    const courses = await this.coursesService.findByIds(
+      enrollments.map((enrollment) => enrollment.courseId),
+    );
+    const courseById = this.indexCoursesById(courses);
+
+    return enrollments
+      .map((enrollment) => ({
+        enrollment,
+        course: courseById.get(enrollment.courseId),
+      }))
+      .filter(
+        ({ course }) =>
+          !filters.gradeLevel || course?.gradeLevel === filters.gradeLevel,
+      )
+      .map(({ enrollment, course }) =>
+        this.toEnrollmentResponse(enrollment, course),
+      );
+  }
+
+  private indexCoursesById(courses: CourseEntity[]): Map<string, CourseEntity> {
+    return new Map(courses.map((course) => [course.id, course]));
+  }
+
+  private toEnrollmentResponse(
+    enrollment: EnrollmentEntity,
+    course: CourseEntity | undefined,
+  ): StudentEnrollmentResponse {
+    return {
+      id: enrollment.id,
+      courseId: enrollment.courseId,
+      courseTitle: course?.title,
+      gradeLevel: course?.gradeLevel ?? undefined,
+      status: enrollment.status,
+    };
   }
 }

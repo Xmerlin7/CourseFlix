@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { CourseDetailResponseDto } from './dto/course-detail-response.dto';
@@ -97,6 +97,23 @@ export class CoursesService {
 
     Object.assign(course, fields);
     return this.coursesRepository.save(course);
+  }
+
+  /**
+   * Bulk lookup for other modules that need to enrich their own data with
+   * course title/gradeLevel without duplicating course access logic —
+   * e.g. the student dashboard/enrollments list (Habsa). No permission
+   * check here: callers only ever use this to enrich data the viewer is
+   * already independently authorized to see (their own enrollments).
+   */
+  async findByIds(courseIds: string[]): Promise<CourseEntity[]> {
+    if (courseIds.length === 0) {
+      return [];
+    }
+
+    return this.coursesRepository.find({
+      where: { id: In(courseIds), deletedAt: IsNull() },
+    });
   }
 
   private async loadCourseWithSectionsAndLessons(

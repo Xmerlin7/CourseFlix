@@ -13,11 +13,12 @@ export type StatusChangedBy = 'system_agent' | 'teacher';
  * Mirrors the `enrollments` table in `schemaV2.sql` exactly.
  *
  * NOTE: `studentId` / `courseId` are kept as plain UUID columns, not
- * `@ManyToOne` relations, because `UserEntity` / `CourseEntity` are still
- * plain TODO stub classes (not real TypeORM entities yet — that's
- * Albraa's / Seif's track). Wiring relations now would break the moment
- * those land in a different shape. Add the relations once both sides
- * exist as real entities.
+ * `@ManyToOne` relations, even though `UserEntity` / `CourseEntity` are
+ * now both real TypeORM entities. Callers that need course data for an
+ * enrollment (e.g. StudentService) use `CoursesService.findByIds()` for
+ * bulk lookup instead of a relation, to avoid a module import cycle
+ * (CoursesModule already imports EnrollmentsModule for
+ * `assertStudentEnrolled`).
  *
  * `suspendedBySubmissionId` intentionally has no FK: it points at
  * `homework_submissions`, which is out of Sprint 1 scope (quiz/homework

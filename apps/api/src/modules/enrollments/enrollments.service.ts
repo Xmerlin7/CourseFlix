@@ -8,7 +8,6 @@ import {
 
 export interface StudentEnrollmentFilters {
   status?: EnrollmentStatus;
-  gradeLevel?: string;
 }
 
 @Injectable()
@@ -36,13 +35,6 @@ export class EnrollmentsService {
         status: filters.status,
       });
     }
-
-    // TODO(follow-up on CF-TASK-012): `courses` has no `grade_level` column
-    // in schemaV2.sql (it has `category` instead). Confirm with Seif/Nabile
-    // whether the API's `gradeLevel` filter should map to `category` or a
-    // new column, then join `courses` here and apply it. Left
-    // unimplemented on purpose rather than silently filtering wrong.
-    void filters.gradeLevel;
 
     return query.orderBy('enrollment.enrolled_at', 'DESC').getMany();
   }
