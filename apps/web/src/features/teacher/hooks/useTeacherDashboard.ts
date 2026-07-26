@@ -1,23 +1,20 @@
 import { useEffect, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
-import { getTeacherCourses } from '../api/teacher.api'
-import type { TeacherCourse } from '../types/teacher.types'
+import { getTeacherDashboard } from '../api/teacher.api'
+import type { TeacherDashboard } from '../types/teacher.types'
 
-interface UseTeacherCoursesResult {
-  data: TeacherCourse[]
+interface UseTeacherDashboardResult {
+  data: TeacherDashboard | null
   isLoading: boolean
   error: ApiError | null
-  refetch: () => void
 }
 
-// NOTE: plain useEffect/useState, matching useStudentEnrollments.ts — no
+// NOTE: plain useEffect/useState, matching useStudentDashboard.ts — no
 // data-fetching library is installed in apps/web yet.
-export function useTeacherCourses(filters: { status?: string } = {}): UseTeacherCoursesResult {
-  const { status } = filters
-  const [data, setData] = useState<TeacherCourse[]>([])
+export function useTeacherDashboard(): UseTeacherDashboardResult {
+  const [data, setData] = useState<TeacherDashboard | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
-  const [refetchToken, setRefetchToken] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -27,9 +24,9 @@ export function useTeacherCourses(filters: { status?: string } = {}): UseTeacher
       setError(null)
 
       try {
-        const courses = await getTeacherCourses({ status })
+        const dashboard = await getTeacherDashboard()
         if (!controller.signal.aborted) {
-          setData(courses)
+          setData(dashboard)
         }
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -45,12 +42,7 @@ export function useTeacherCourses(filters: { status?: string } = {}): UseTeacher
     void load()
 
     return () => controller.abort()
-  }, [status, refetchToken])
+  }, [])
 
-  return {
-    data,
-    isLoading,
-    error,
-    refetch: () => setRefetchToken((token) => token + 1),
-  }
+  return { data, isLoading, error }
 }

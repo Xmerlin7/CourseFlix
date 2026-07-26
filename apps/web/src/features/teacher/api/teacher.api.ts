@@ -9,8 +9,8 @@ export async function getTeacherDashboard(): Promise<TeacherDashboard> {
   return httpClient.get<TeacherDashboard>('/teacher/dashboard')
 }
 
-export async function getTeacherCourses(): Promise<TeacherCourse[]> {
-  return httpClient.get<TeacherCourse[]>('/teacher/courses')
+export async function getTeacherCourses(filters: { status?: string } = {}): Promise<TeacherCourse[]> {
+  return httpClient.get<TeacherCourse[]>('/teacher/courses', { searchParams: filters })
 }
 
 export async function updateTeacherCourse(
