@@ -1,0 +1,37 @@
+import { randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+
+export interface StoredFile {
+  storageProvider: string;
+  storagePath: string;
+}
+
+/**
+ * Interface-first so an S3 adapter can replace `LocalStorageAdapter`
+ * later without `DocumentsService` changing.
+ */
+export interface StorageAdapter {
+  save(buffer: Buffer): Promise<StoredFile>;
+}
+
+/**
+ * Writes uploaded files to disk under `STORAGE_ROOT` — a directory
+ * that must sit outside anything Express/Nest serves statically, so a
+ * stored PDF is never reachable by guessing a URL.
+ *
+ * The on-disk filename is always a generated UUID, never the
+ * caller's original filename, so a hostile filename (path traversal,
+ * embedded script) never reaches the filesystem.
+ */
+export class LocalStorageAdapter implements StorageAdapter {
+  private readonly root = resolve(process.env.STORAGE_ROOT ?? './storage');
+
+  async save(buffer: Buffer): Promise<StoredFile> {
+    await mkdir(this.root, { recursive: true });
+    const key = randomUUID();
+    const storagePath = join(this.root, key);
+    await writeFile(storagePath, buffer);
+    return { storageProvider: 'local', storagePath };
+  }
+}

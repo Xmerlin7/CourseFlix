@@ -19,6 +19,9 @@ lerna-debug.log*
 .env.*
 !.env.example
 
+# Local document storage runtime data (STORAGE_ROOT default = ./storage, cwd = apps/api)
+/apps/api/storage/
+
 # Editors and OS
 .DS_Store
 .idea/
