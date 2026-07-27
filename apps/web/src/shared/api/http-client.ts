@@ -8,6 +8,18 @@ interface RequestOptions {
   searchParams?: object
 }
 
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    throw new ApiError('Request failed', response.status, await response.json().catch(() => null))
+  }
+
+  if (response.status === 204) {
+    return undefined as T
+  }
+
+  return response.json() as Promise<T>
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -30,15 +42,23 @@ async function request<T>(
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   })
 
-  if (!response.ok) {
-    throw new ApiError('Request failed', response.status, await response.json().catch(() => null))
-  }
+  return parseResponse<T>(response)
+}
 
-  if (response.status === 204) {
-    return undefined as T
-  }
+// No Content-Type header here — the browser sets `multipart/form-data`
+// with the correct boundary itself when the body is a FormData instance.
+async function requestMultipart<T>(
+  method: string,
+  path: string,
+  formData: FormData,
+): Promise<T> {
+  const response = await fetch(new URL(`${env.apiBaseUrl}${path}`), {
+    method,
+    credentials: 'include',
+    body: formData,
+  })
 
-  return response.json() as Promise<T>
+  return parseResponse<T>(response)
 }
 
 export const httpClient = {
@@ -46,4 +66,5 @@ export const httpClient = {
   post: <T>(path: string, body?: JsonValue | object) => request<T>('POST', path, { body }),
   patch: <T>(path: string, body?: JsonValue | object) => request<T>('PATCH', path, { body }),
   delete: <T>(path: string) => request<T>('DELETE', path),
+  postMultipart: <T>(path: string, formData: FormData) => requestMultipart<T>('POST', path, formData),
 }
