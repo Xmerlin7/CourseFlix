@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../features/auth/hooks/useAuth'
+import { useUnreadNotificationsCount } from '../../features/notifications/hooks/useUnreadNotificationsCount'
 import { Sidebar } from '../../shared/components/Sidebar'
 import { Topbar } from '../../shared/components/Topbar'
 import { ROUTE_PATHS } from '../routes/route-paths'
@@ -11,6 +12,7 @@ export function StudentLayout({ children }: PropsWithChildren) {
   const location = useLocation()
   const navigate = useNavigate()
   const [isRail, setIsRail] = useState(false)
+  const unreadCount = useUnreadNotificationsCount()
 
   async function handleLogout() {
     await logout()
@@ -31,8 +33,8 @@ export function StudentLayout({ children }: PropsWithChildren) {
       <div className="main">
         <div className="sheet">
           <Topbar
-            notificationCount={0}
-            onNotificationsClick={() => {}}
+            notificationCount={unreadCount}
+            onNotificationsClick={() => navigate(ROUTE_PATHS.STUDENT.NOTIFICATIONS)}
             onSettingsClick={() => {}}
             onLogoClick={() => navigate(ROUTE_PATHS.STUDENT.DASHBOARD)}
           />
