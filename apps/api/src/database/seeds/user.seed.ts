@@ -3,37 +3,88 @@ import * as argon2 from 'argon2';
 import { UserEntity } from '../../modules/users/entities/user.entity';
 
 export interface SeededUsers {
+  /** The primary demo teacher — a named field because the rest of the
+   *  fixture, and every doc that quotes credentials, points at this
+   *  specific account. */
   teacher: UserEntity;
+  /** The primary demo student, same reasoning. */
   student: UserEntity;
+  teachers: UserEntity[];
+  students: UserEntity[];
 }
 
 /**
- * Seeds exactly the one teacher and one student the Sprint 1 fixture
- * needs (see sprint1-plan.md "Shared Team Task: DB and Seeds"). Safe to
- * run on every reseed: upserts by email instead of inserting duplicates.
+ * Seeds the demo roster: two teachers and ten students, enough for the
+ * dashboards, enrollment lists and notification feeds to look like a real
+ * class instead of a single row.
  *
- * Credentials come from env (`SEED_TEACHER_EMAIL`/`SEED_TEACHER_PASSWORD`,
- * `SEED_STUDENT_EMAIL`/`SEED_STUDENT_PASSWORD` in `.env.example`) so no
- * secret is committed to source.
+ * Safe to run on every reseed: upserts by email instead of inserting
+ * duplicates.
+ *
+ * The two primary accounts take their credentials from env
+ * (`SEED_TEACHER_*` / `SEED_STUDENT_*` in `.env.example`) so no secret is
+ * committed. The extra accounts are local-fixture-only and reuse the same
+ * student password so any of them can be logged into during a demo.
  */
 export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
   const repository = dataSource.getRepository(UserEntity);
 
+  const teacherPassword = requireEnv('SEED_TEACHER_PASSWORD');
+  const studentPassword = requireEnv('SEED_STUDENT_PASSWORD');
+
   const teacher = await upsertUser(repository, {
     fullName: 'محمد عبدالرحمن',
     email: requireEnv('SEED_TEACHER_EMAIL'),
-    password: requireEnv('SEED_TEACHER_PASSWORD'),
+    password: teacherPassword,
+    role: 'teacher',
+  });
+
+  const secondTeacher = await upsertUser(repository, {
+    fullName: 'سارة إبراهيم',
+    email: 'sara.teacher@courseflix.local',
+    password: teacherPassword,
     role: 'teacher',
   });
 
   const student = await upsertUser(repository, {
     fullName: 'عبدالله حبسه',
     email: requireEnv('SEED_STUDENT_EMAIL'),
-    password: requireEnv('SEED_STUDENT_PASSWORD'),
+    password: studentPassword,
     role: 'student',
   });
 
-  return { teacher, student };
+  const extraStudentNames = [
+    'مريم أحمد',
+    'يوسف خالد',
+    'نور الدين سامي',
+    'حبيبة مصطفى',
+    'أحمد فتحي',
+    'ملك عادل',
+    'زياد طارق',
+    'جنى وليد',
+    'كريم هشام',
+  ];
+
+  const extraStudents: UserEntity[] = [];
+  for (const [index, fullName] of extraStudentNames.entries()) {
+    extraStudents.push(
+      await upsertUser(repository, {
+        fullName,
+        email: `student${index + 2}@courseflix.local`,
+        password: studentPassword,
+        role: 'student',
+        // One suspended account so that user state is demonstrable.
+        status: index === extraStudentNames.length - 1 ? 'suspended' : 'active',
+      }),
+    );
+  }
+
+  return {
+    teacher,
+    student,
+    teachers: [teacher, secondTeacher],
+    students: [student, ...extraStudents],
+  };
 }
 
 async function upsertUser(
@@ -43,6 +94,7 @@ async function upsertUser(
     email: string;
     password: string;
     role: 'student' | 'teacher';
+    status?: 'active' | 'suspended' | 'inactive';
   },
 ): Promise<UserEntity> {
   const email = input.email.trim().toLowerCase();
@@ -58,7 +110,7 @@ async function upsertUser(
       email,
       passwordHash,
       role: input.role,
-      status: 'active',
+      status: input.status ?? 'active',
     }),
   );
 }

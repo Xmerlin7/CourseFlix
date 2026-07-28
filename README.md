@@ -4,6 +4,56 @@ CourseFlix is an Arabic-first, RTL learning platform for teachers and students. 
 
 > Status: planning and repository setup. Sprint 1 starts on Sunday, July 19, 2026. Application scaffolding is the first committed implementation work.
 
+## Running it locally
+
+One command brings up everything — Postgres, Redis and Chroma in Docker, then migrations, demo data, the API and the web app:
+
+```bash
+./dev.sh
+```
+
+It prints the URLs and sign-in credentials when it finishes. Open <http://localhost:5173>.
+
+| Command | What it does |
+|---|---|
+| `./dev.sh` | Start the whole stack (installs dependencies on first run) |
+| `./dev.sh stop` | Stop the app processes and the Docker services (keeps your data) |
+| `./dev.sh reset` | Wipe the database volume and rebuild from scratch |
+| `./dev.sh status` | Show what is currently running |
+| `./dev.sh logs` | Follow the API and web logs |
+
+Flags: `--no-seed` (migrate but don't seed), `--no-infra` (assume Docker services are already up).
+
+### Prerequisites
+
+- Node 20+ and npm
+- Docker with the `docker compose` plugin (`sudo pacman -S docker-compose` on Arch)
+
+If Docker reports a permission error, you need to be in the `docker` group:
+
+```bash
+sudo usermod -aG docker $USER   # then log out and back in
+```
+
+`dev.sh` detects the case where the group is granted but your current shell hasn't picked it up yet, and works around it for the session.
+
+### Seeded demo accounts
+
+`./dev.sh` seeds a full fixture: 2 teachers, 10 students, 7 courses (covering every course status and both school stages) with 14 sections and 44 lessons, ~30 enrollments, document rows in every processing status, and a notification feed per user. Re-running the seed is safe — every step upserts, so it never duplicates.
+
+| Role | Email | Password |
+|---|---|---|
+| Teacher | `teacher@courseflix.local` | `Teacher123!` |
+| Teacher | `sara.teacher@courseflix.local` | `Teacher123!` |
+| Student | `student@courseflix.local` | `Student123!` |
+| Students | `student2@…` through `student10@courseflix.local` | `Student123!` |
+
+Passwords for the two primary accounts come from `.env` (`SEED_*` vars), so change them there rather than in the seed code.
+
+### Known gap in the demo
+
+An uploaded PDF stays at **"في الانتظار"** forever. The upload, storage, checksum and versioning are real, but the ingestion worker that would process the file (`apps/worker`) hasn't been built yet, so nothing picks the job up. Everything else on screen is live data from Postgres.
+
 ## MVP
 
 ### Student experience
