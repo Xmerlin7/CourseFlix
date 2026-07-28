@@ -1,3 +1,6 @@
+import { NavLink } from 'react-router'
+import { ROUTE_PATHS } from '../../app/routes/route-paths'
+
 export type SidebarProps = {
   role: 'student' | 'teacher'
   userName: string
@@ -9,24 +12,28 @@ export type SidebarProps = {
   onToggleRail?: () => void
 }
 
-const studentNavItems = [
-  { path: '/student/dashboard', label: 'الرئيسية', icon: 'home' },
-  { path: '/student/courses', label: 'دوراتي', icon: 'menu_book' },
-  { path: '/student/assistant', label: 'المساعد', icon: 'smart_toy' },
-  { path: '/student/progress', label: 'التقدم', icon: 'monitoring' },
+type NavItem = { path: string; label: string; icon: string }
+
+// Only routes that actually exist in router.tsx are listed. The earlier
+// version linked to /student/progress, /student/assistant, /teacher/students,
+// /teacher/quizzes and /settings — none of which are routed, so every one of
+// them dropped the user on the 404 page. They come back as each owner's
+// slice ships, not before.
+const studentNavItems: NavItem[] = [
+  { path: ROUTE_PATHS.STUDENT.DASHBOARD, label: 'الرئيسية', icon: 'home' },
+  { path: ROUTE_PATHS.STUDENT.COURSES, label: 'دوراتي', icon: 'menu_book' },
+  { path: ROUTE_PATHS.STUDENT.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
 ]
 
-const teacherNavItems = [
-  { path: '/teacher/dashboard', label: 'الرئيسية', icon: 'home' },
-  { path: '/teacher/course', label: 'إدارة الدورة', icon: 'menu_book' },
-  { path: '/teacher/students', label: 'الطلاب', icon: 'group' },
-  { path: '/teacher/quizzes', label: 'الاختبارات', icon: 'quiz' },
+const teacherNavItems: NavItem[] = [
+  { path: ROUTE_PATHS.TEACHER.DASHBOARD, label: 'الرئيسية', icon: 'home' },
+  { path: ROUTE_PATHS.TEACHER.COURSES, label: 'دوراتي', icon: 'menu_book' },
+  { path: ROUTE_PATHS.TEACHER.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
 ]
 
 export function Sidebar({
   role,
   userName,
-  activePath,
   onLogout,
   isOpen = true,
   isRail = false,
@@ -38,41 +45,47 @@ export function Sidebar({
   if (!isOpen) return null
 
   return (
-    <aside className={`sidebar ${isRail ? 'rail' : ''}`}>
+    <aside className={`sidebar${isRail ? ' rail' : ''}`}>
       <button
-        onClick={onToggleRail || onToggle}
+        onClick={onToggleRail ?? onToggle}
         className="icon-btn rail-toggle"
-        aria-label="طي القائمة"
+        aria-label={isRail ? 'توسيع القائمة' : 'طي القائمة'}
+        type="button"
       >
         <span className="ms">menu_open</span>
       </button>
 
       <nav>
-        {navItems.map((item) => {
-          const isActive = item.path === activePath
-
-          return (
-            <a
-              key={item.path}
-              href={item.path}
-              className={`nav-item ${isActive ? 'active' : ''}`}
-            >
-              <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
-              <span className="lbl">{item.label}</span>
-            </a>
-          )
-        })}
+        {navItems.map((item) => (
+          // NavLink, not <a href>: an anchor did a full document load on
+          // every nav click, remounting the app and flashing the login
+          // screen before the session re-resolved.
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            {({ isActive }) => (
+              <>
+                <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
+                <span className="lbl">{item.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="side-footer">
-        <a href="/settings" className="nav-item profile-item">
+        {/* Not a link — there is no settings route yet. Kept as a plain
+            identity row so the sidebar still shows who is signed in. */}
+        <div className="nav-item profile-item" title={userName}>
           <span className="avatar">
             <span className="ms">person</span>
           </span>
           <span className="lbl">{userName}</span>
-        </a>
+        </div>
 
-        <button onClick={onLogout} className="nav-item logout">
+        <button onClick={onLogout} className="nav-item logout" type="button">
           <span className="ms">logout</span>
           <span className="lbl">تسجيل الخروج</span>
         </button>

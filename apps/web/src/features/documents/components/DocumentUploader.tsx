@@ -71,19 +71,13 @@ export function DocumentUploader({ onUpload }: DocumentUploaderProps) {
             void handleFile(file)
           }
         }}
-        className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
-          isDragging
-            ? 'border-primary bg-primary/5'
-            : 'border-gray-300 hover:border-primary dark:border-gray-600'
-        }`}
-        dir="rtl"
+        className={`dropzone${isDragging ? ' dragging' : ''}`}
       >
-        <span className="font-semibold text-gray-900 dark:text-gray-100">
+        <span className="ms">{isUploading ? 'progress_activity' : 'upload_file'}</span>
+        <span style={{ fontWeight: 700, color: 'var(--on-surface)' }}>
           {isUploading ? 'جارٍ الرفع...' : 'اسحب ملف PDF هنا أو اضغط للاختيار'}
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
-          PDF فقط، بحد أقصى 20 ميجابايت
-        </span>
+        <span style={{ fontSize: 12.5 }}>PDF فقط، بحد أقصى 20 ميجابايت</span>
         <input
           ref={inputRef}
           type="file"
@@ -100,7 +94,7 @@ export function DocumentUploader({ onUpload }: DocumentUploaderProps) {
       </label>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
           {error}
         </p>
       )}
