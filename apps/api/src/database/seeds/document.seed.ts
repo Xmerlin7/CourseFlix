@@ -1,0 +1,117 @@
+import { createHash } from 'node:crypto';
+import { DataSource } from 'typeorm';
+import {
+  DocumentEntity,
+  DocumentProcessingStatus,
+} from '../../modules/documents/entities/document.entity';
+import { FileEntity } from '../../modules/documents/entities/file.entity';
+
+interface DocumentBlueprint {
+  fileName: string;
+  status: DocumentProcessingStatus;
+  version: number;
+  errorMessage: string | null;
+}
+
+/**
+ * One document per processing status, so the teacher Files tab shows every
+ * row variant — including the retry button, which only renders on
+ * `failed`, and the version badge, which only renders above version 1.
+ */
+const DOCUMENT_BLUEPRINTS: DocumentBlueprint[] = [
+  {
+    fileName: 'ملخص-قوانين-نيوتن.pdf',
+    status: 'completed',
+    version: 1,
+    errorMessage: null,
+  },
+  {
+    fileName: 'مسائل-محلولة-الشغل-والطاقة.pdf',
+    status: 'completed',
+    version: 3,
+    errorMessage: null,
+  },
+  {
+    fileName: 'مذكرة-كمية-الحركة.pdf',
+    status: 'processing',
+    version: 1,
+    errorMessage: null,
+  },
+  {
+    fileName: 'امتحان-الفصل-الأول.pdf',
+    status: 'pending',
+    version: 1,
+    errorMessage: null,
+  },
+  {
+    fileName: 'ورقة-ممسوحة-ضوئيا.pdf',
+    status: 'failed',
+    version: 2,
+    errorMessage:
+      'تعذر استخراج أي نص من الملف — قد يكون ملفًا ممسوحًا ضوئيًا بدون طبقة نصية',
+  },
+];
+
+/**
+ * Seeds `files` + `documents` rows for the primary course.
+ *
+ * These rows are fixtures for the UI only: no bytes are written to
+ * `STORAGE_ROOT` and no ingestion job is enqueued, because the worker that
+ * would consume one doesn't exist yet. `storagePath` therefore points at a
+ * clearly-fake path — nothing reads it, and a real upload through
+ * `POST /teacher/courses/:courseId/documents` still stores properly.
+ *
+ * Safe to run on every reseed: upserts by (courseId, fileName).
+ */
+export async function seedDocuments(
+  dataSource: DataSource,
+  { courseId, teacherId }: { courseId: string; teacherId: string },
+): Promise<number> {
+  const documentRepository = dataSource.getRepository(DocumentEntity);
+  const fileRepository = dataSource.getRepository(FileEntity);
+  let created = 0;
+
+  for (const blueprint of DOCUMENT_BLUEPRINTS) {
+    const existing = await documentRepository.findOne({
+      where: { courseId, fileName: blueprint.fileName },
+    });
+    if (existing) {
+      continue;
+    }
+
+    // Deterministic so a reseed against a wiped DB reproduces byte-identical
+    // checksums, and so no two fixtures collide on the dedup index.
+    const checksum = createHash('sha256')
+      .update(blueprint.fileName)
+      .digest('hex');
+
+    const file = await fileRepository.save(
+      fileRepository.create({
+        fileName: blueprint.fileName,
+        mimeType: 'application/pdf',
+        sizeBytes: String(180_000 + blueprint.fileName.length * 1_000),
+        storageProvider: 'local',
+        storagePath: `seed-fixture/${checksum}`,
+        checksum,
+        uploadedBy: teacherId,
+      }),
+    );
+
+    await documentRepository.save(
+      documentRepository.create({
+        courseId,
+        uploadedBy: teacherId,
+        fileId: file.id,
+        fileName: blueprint.fileName,
+        fileType: 'pdf',
+        processingStatus: blueprint.status,
+        checksum,
+        version: blueprint.version,
+        errorMessage: blueprint.errorMessage,
+      }),
+    );
+    created += 1;
+  }
+
+  return created;
+}
