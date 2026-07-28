@@ -6,17 +6,25 @@
   "directories": {
     "doc": "docs"
   },
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "apps/worker"
+  ],
   "scripts": {
-    "install:all": "npm install --prefix apps/api && npm install --prefix apps/web",
-    "dev:api": "npm run start:dev --prefix apps/api",
-    "dev:web": "npm run dev --prefix apps/web",
-    "build:api": "npm run build --prefix apps/api",
-    "build:web": "npm run build --prefix apps/web",
-    "lint:api": "npm run lint --prefix apps/api",
-    "lint:web": "npm run lint --prefix apps/web",
-    "test:api": "npm run test --prefix apps/api",
-    "migration:run": "npm run migration:run --prefix apps/api",
-    "seed": "npm run seed --prefix apps/api",
+    "install:all": "npm install",
+    "dev:api": "npm run start:dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:worker": "npm run dev -w apps/worker",
+    "build:api": "npm run build -w apps/api",
+    "build:web": "npm run build -w apps/web",
+    "build:worker": "npm run build -w apps/worker",
+    "lint:api": "npm run lint -w apps/api",
+    "lint:web": "npm run lint -w apps/web",
+    "test:api": "npm run test -w apps/api",
+    "test:worker": "npm run test -w apps/worker",
+    "migration:run": "npm run migration:run -w apps/api",
+    "seed": "npm run seed -w apps/api",
     "test": "npm run test:api"
   },
   "repository": {
