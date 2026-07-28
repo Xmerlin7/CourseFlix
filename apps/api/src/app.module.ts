@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './modules/health/health.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { StudentModule } from './modules/student/student.module';
@@ -31,6 +32,7 @@ import { UsersModule } from './modules/users/users.module';
     StudentModule,
     TeacherModule,
     DocumentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
