@@ -13,13 +13,26 @@ import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
+    // TypeOrmModule.forRoot({
+    //   type: 'postgres',
+    //   url: process.env.DATABASE_URL,
+    //   autoLoadEntities: true,
+    //   // Never true outside a throwaway local sandbox — migrations are the
+    //   // only supported way to change the schema (see CONTRIBUTING.md).
+    //   synchronize: false,
+    // }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      // Never true outside a throwaway local sandbox — migrations are the
-      // only supported way to change the schema (see CONTRIBUTING.md).
-      synchronize: false,
+      synchronize: true,
+      port: 5432,
+      ssl: true,
+      extra: {
+        ssl: {
+          rejectUnauthorized: false, // Allows connection to Neon over safe TLS
+        },
+      },
     }),
     HealthModule,
     AuthModule,
@@ -33,4 +46,4 @@ import { UsersModule } from './modules/users/users.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
