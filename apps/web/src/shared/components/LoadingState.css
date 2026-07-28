@@ -74,16 +74,11 @@
   border-radius: 6px;
 }
 
-/* Light mode */
+/* Driven by the M3 token, so it follows the explicit `.dark` class that
+   ThemeToggle owns. A `prefers-color-scheme` query here would ignore an
+   explicit "light" choice on a dark-OS machine. */
 .skeleton {
-  background-color: #e5e7eb; /* gray-200 */
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .skeleton {
-    background-color: #374151; /* gray-700 */
-  }
+  background-color: var(--surface-container-highest);
 }
 
 /* Height variants */

@@ -38,29 +38,23 @@ export function TeacherCourseDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700" role="tablist" dir="rtl">
+    <>
+      <div className="tabs" role="tablist">
         <button
+          type="button"
           role="tab"
           aria-selected={activeTab === 'content'}
           onClick={() => setActiveTab('content')}
-          className={`px-4 py-2 text-sm font-semibold transition-colors ${
-            activeTab === 'content'
-              ? 'border-b-2 border-primary text-primary'
-              : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
-          }`}
+          className={`tab${activeTab === 'content' ? ' active' : ''}`}
         >
           المحتوى
         </button>
         <button
+          type="button"
           role="tab"
           aria-selected={activeTab === 'files'}
           onClick={() => setActiveTab('files')}
-          className={`px-4 py-2 text-sm font-semibold transition-colors ${
-            activeTab === 'files'
-              ? 'border-b-2 border-primary text-primary'
-              : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
-          }`}
+          className={`tab${activeTab === 'files' ? ' active' : ''}`}
         >
           الملفات
         </button>
@@ -87,18 +81,20 @@ export function TeacherCourseDetailPage() {
       )}
 
       {activeTab === 'files' && (
-        <div className="flex flex-col gap-4">
+        <section className="section">
           <DocumentUploader onUpload={documents.upload} />
 
-          {documents.isLoading ? (
-            <LoadingState variant="list" />
-          ) : documents.error ? (
-            <ErrorState onRetry={documents.refetch} />
-          ) : (
-            <DocumentStatusList documents={documents.data} onRetry={documents.retry} />
-          )}
-        </div>
+          <div style={{ marginTop: 22 }}>
+            {documents.isLoading ? (
+              <LoadingState variant="list" />
+            ) : documents.error ? (
+              <ErrorState onRetry={documents.refetch} />
+            ) : (
+              <DocumentStatusList documents={documents.data} onRetry={documents.retry} />
+            )}
+          </div>
+        </section>
       )}
-    </div>
+    </>
   )
 }
