@@ -832,8 +832,24 @@ a.list-item:hover, .list-item.hoverable:hover { background: var(--surface-contai
 .lead.pink { background: var(--tertiary-container); color: var(--on-tertiary-container); }
 .lead.red { background: var(--error-container); color: var(--on-error-container); }
 .list-item .body { flex: 1; min-width: 0; }
-.list-item .body .t { font-weight: 700; }
-.list-item .body .s { font-size: 13.5px; color: var(--on-surface-variant); }
+/* display:block matters: callers render these as <span>, so without it the
+   title and subtitle run together on one line. Truncation keeps a long
+   filename or message from pushing the trailing chip off the row. */
+.list-item .body .t {
+  font-weight: 700;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.list-item .body .s {
+  font-size: 13.5px;
+  color: var(--on-surface-variant);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .list-item .end {
   flex: none;
   display: flex;
