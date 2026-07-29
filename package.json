@@ -15,7 +15,7 @@
     "install:all": "npm install",
     "dev:api": "npm run start:dev -w apps/api",
     "dev:web": "npm run dev -w apps/web",
-    "dev:worker": "npm run dev -w apps/worker",
+    "dev:worker": "npm run start:dev -w apps/worker",
     "build:api": "npm run build -w apps/api",
     "build:web": "npm run build -w apps/web",
     "build:worker": "npm run build -w apps/worker",
