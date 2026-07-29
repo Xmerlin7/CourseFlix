@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -15,6 +16,8 @@ export interface StorageAdapter {
   save(buffer: Buffer): Promise<StoredFile>;
 }
 
+export const STORAGE_ADAPTER = Symbol('STORAGE_ADAPTER');
+
 /**
  * Writes uploaded files to disk under `STORAGE_ROOT` — a directory
  * that must sit outside anything Express/Nest serves statically, so a
@@ -24,6 +27,7 @@ export interface StorageAdapter {
  * caller's original filename, so a hostile filename (path traversal,
  * embedded script) never reaches the filesystem.
  */
+@Injectable()
 export class LocalStorageAdapter implements StorageAdapter {
   private readonly root = resolve(process.env.STORAGE_ROOT ?? './storage');
 

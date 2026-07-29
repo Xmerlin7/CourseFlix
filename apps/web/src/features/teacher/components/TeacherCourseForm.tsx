@@ -48,88 +48,78 @@ export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
   }
 
   return (
-    <form
-      onSubmit={(event) => void handleSubmit(event)}
-      className="flex flex-col gap-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700"
-      dir="rtl"
-    >
-      <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-        تعديل بيانات الكورس
-      </h3>
+    <form onSubmit={(event) => void handleSubmit(event)} className="card">
+      <h3>تعديل بيانات الدورة</h3>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-600 dark:text-gray-400">العنوان</span>
+      <div className="tf">
+        <label htmlFor="course-title">العنوان</label>
         <input
+          id="course-title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           minLength={3}
           maxLength={150}
           required
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
         />
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-600 dark:text-gray-400">الوصف</span>
+      <div className="tf">
+        <label htmlFor="course-description">الوصف</label>
         <textarea
+          id="course-description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           maxLength={5000}
           rows={4}
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
         />
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-600 dark:text-gray-400">رابط صورة الغلاف</span>
+      <div className="tf">
+        <label htmlFor="course-cover">رابط صورة الغلاف</label>
         <input
+          id="course-cover"
           value={coverImageUrl}
           onChange={(event) => setCoverImageUrl(event.target.value)}
           type="url"
           placeholder="https://..."
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
         />
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-gray-600 dark:text-gray-400">الصف الدراسي</span>
+      <div className="tf">
+        <label htmlFor="course-grade">الصف الدراسي</label>
         <input
+          id="course-grade"
           value={gradeLevel}
           onChange={(event) => setGradeLevel(event.target.value)}
           maxLength={100}
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
         />
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm sm:w-48">
-        <span className="text-gray-600 dark:text-gray-400">الحالة</span>
+      <div className="tf">
+        <label htmlFor="course-status">الحالة</label>
         <select
+          id="course-status"
           value={status}
           onChange={(event) => setStatus(event.target.value as 'draft' | 'published')}
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
         >
           <option value="draft">مسودة</option>
           <option value="published">منشورة</option>
         </select>
-      </label>
+      </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
           {error}
         </p>
       )}
 
       {savedAt && !error && (
-        <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">
+        <p role="status" style={{ color: 'var(--on-success-container)', fontSize: 13.5, fontWeight: 600 }}>
           تم حفظ التعديلات بنجاح
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={isSaving}
-        className="w-fit rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
+      <button type="submit" disabled={isSaving} className="btn" style={{ alignSelf: 'flex-start' }}>
         {isSaving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
       </button>
     </form>

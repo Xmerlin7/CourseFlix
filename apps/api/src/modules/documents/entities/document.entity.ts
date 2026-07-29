@@ -83,6 +83,13 @@ export class DocumentEntity {
   @Column({ type: 'integer', default: 1 })
   version!: number;
 
+  // Not in schemaV2.sql — added by migration 1785000032000 because the
+  // Sprint 2 endpoint contract (sprint2-plan.md §8) requires surfacing
+  // a failure reason to the teacher, and the worker's own failure
+  // record (`ai_jobs.error_message`) doesn't exist yet this sprint.
+  @Column({ name: 'error_message', type: 'text', nullable: true })
+  errorMessage!: string | null;
+
   // Soft delete — every read query must filter `deletedAt IS NULL`.
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;

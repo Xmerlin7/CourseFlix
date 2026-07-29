@@ -3,7 +3,6 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { LoadingState } from '../../../shared/components/LoadingState'
-import { PageHeader } from '../../../shared/components/PageHeader'
 import { StudentCourseCard } from '../components/StudentCourseCard'
 import { useStudentEnrollments } from '../hooks/useStudentEnrollments'
 import type { EnrollmentStatus } from '../types/student.types'
@@ -22,53 +21,50 @@ export function StudentCoursesPage() {
   })
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <PageHeader title="كورساتي" />
+    <>
+      <h1 className="page-title">دوراتي</h1>
+      <p className="subtitle">كل الدورات اللي مسجّل فيها</p>
 
-      <label className="flex flex-col gap-1 text-sm sm:w-48">
-        <span className="text-gray-600 dark:text-gray-400">الحالة</span>
-        <select
-          value={status}
-          onChange={(event) => setStatus(event.target.value as EnrollmentStatus | '')}
-          className="rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-800"
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      {/* gradeLevel filter intentionally left out of the UI: the API can't
-          apply it yet (courses has no grade_level column — see
-          enrollments.service.ts TODO). No point shipping a control that
-          silently does nothing. */}
+      {/* Filter chips instead of a <select>: matches the ui5 reference and
+          keeps every option one tap away on mobile.
+          gradeLevel filtering is deliberately absent — the API can't apply
+          it yet (see enrollments.service.ts), and a control that silently
+          does nothing is worse than no control. */}
+      <div className="actions section">
+        {STATUS_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setStatus(option.value)}
+            className={`chip clickable outline${status === option.value ? ' selected' : ''}`}
+            aria-pressed={status === option.value}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
       {isLoading && <LoadingState variant="cards" />}
 
-      {!isLoading && error && (
-        error.status === 403 ? (
-          <ForbiddenState />
-        ) : (
-          <ErrorState onRetry={refetch} />
-        )
-      )}
+      {!isLoading &&
+        error &&
+        (error.status === 403 ? <ForbiddenState /> : <ErrorState onRetry={refetch} />)}
 
       {!isLoading && !error && data.length === 0 && (
         <EmptyState
           variant="courses"
-          title="لسه مفيش كورسات هنا"
-          message="لما تنضم لكورس هيظهر هنا"
+          title="لسه مفيش دورات هنا"
+          message="لما تنضم لدورة هتظهر هنا"
         />
       )}
 
       {!isLoading && !error && data.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid-3">
           {data.map((enrollment) => (
             <StudentCourseCard key={enrollment.id} enrollment={enrollment} />
           ))}
         </div>
       )}
-    </div>
+    </>
   )
 }

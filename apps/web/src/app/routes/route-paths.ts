@@ -13,6 +13,7 @@ export const ROUTE_PATHS = {
     DASHBOARD: '/student/dashboard',
     COURSES: '/student/courses',
     COURSE_DETAIL: '/student/courses/:courseId',
+    NOTIFICATIONS: '/student/notifications',
   },
 
   TEACHER: {
@@ -20,6 +21,7 @@ export const ROUTE_PATHS = {
     DASHBOARD: '/teacher/dashboard',
     COURSES: '/teacher/courses',
     COURSE_DETAIL: '/teacher/courses/:courseId',
+    NOTIFICATIONS: '/teacher/notifications',
   },
 } as const
 

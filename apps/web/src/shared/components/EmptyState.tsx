@@ -87,13 +87,13 @@ export function EmptyState({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #eef2ff;          /* indigo-50 — soft light blue */
+          background: var(--secondary-container);
           flex-shrink: 0;
         }
 
         /* Icon-only variant (notifications) — same container, amber theme */
         .empty-state__blob--icon {
-          background: #fffbeb;          /* amber-50 — warm soft yellow */
+          background: #fffbeb;
           overflow: visible;            /* allow zzz to overflow */
         }
 
@@ -150,14 +150,14 @@ export function EmptyState({
         .empty-state__title {
           font-size: 1.25rem;
           font-weight: 700;
-          color: var(--text-h, #111827);
+          color: var(--on-surface);
           margin: 0;
           line-height: 1.4;
         }
 
         .empty-state__message {
           font-size: 0.9rem;
-          color: var(--text, #6b7280);
+          color: var(--on-surface-variant);
           max-width: 320px;
           line-height: 1.7;
           margin: 0 auto;
@@ -172,55 +172,43 @@ export function EmptyState({
         .empty-state__btn {
           margin-top: 4px;
           padding: 12px 32px;
-          background-color: #0037b0;
-          color: #ffffff;
+          background-color: var(--primary);
+          color: var(--on-primary);
           font-size: 0.95rem;
           font-weight: 600;
           border-radius: 10px;
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
-          box-shadow: 0 2px 8px rgba(0, 55, 176, 0.25);
+          box-shadow: var(--shadow);
           letter-spacing: 0.01em;
         }
         .empty-state__btn:hover {
-          background-color: #002d91;
+          filter: brightness(1.06);
           transform: translateY(-1px);
-          box-shadow: 0 4px 16px rgba(0, 55, 176, 0.35);
+          box-shadow: var(--shadow);
         }
         .empty-state__btn:active {
           transform: scale(0.97);
         }
 
-        /* ── Dark mode ─────────────────────────────── */
-        @media (prefers-color-scheme: dark) {
-          .empty-state__blob {
-            background: #1e293b;        /* slate-800 — soft dark surface */
-          }
+        /* ── Dark mode ─────────────────────────────────
+           Keyed off the explicit .dark class, not
+           prefers-color-scheme: the OS query would override a
+           deliberate "light" choice on a dark-OS machine. */
+        :where(.dark, .dark *) .empty-state__blob--icon {
+          background: rgba(120, 53, 15, 0.3);
+        }
 
-          .empty-state__blob--icon {
-            background: rgba(120, 53, 15, 0.3);  /* amber-900/30 — soft dark amber */
-          }
+        :where(.dark, .dark *) .empty-state__icon {
+          color: #fbbf24;
+        }
 
-          .empty-state__icon {
-            color: #fbbf24;             /* amber-400 — warm yellow on dark */
-          }
-
-          .empty-state__zzz {
-            color: rgba(251, 191, 36, 0.35);  /* amber-400/35 */
-          }
-          .empty-state__zzz--3 {
-            color: rgba(251, 191, 36, 0.6);   /* amber-400/60 — darkest Z */
-          }
-
-          .empty-state__btn {
-            background-color: #3b82f6;  /* blue-500 — brighter on dark */
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-          }
-          .empty-state__btn:hover {
-            background-color: #2563eb;
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-          }
+        :where(.dark, .dark *) .empty-state__zzz {
+          color: rgba(251, 191, 36, 0.35);
+        }
+        :where(.dark, .dark *) .empty-state__zzz--3 {
+          color: rgba(251, 191, 36, 0.6);
         }
       `}</style>
     </div>
