@@ -18,9 +18,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * PREREQUISITE: `users`, `courses`, `lessons`, and this sprint's `videos`
  * (1785000010000) must already exist.
  */
-export class CreateContentProgress1785000011000
-  implements MigrationInterface
-{
+export class CreateContentProgress1785000011000 implements MigrationInterface {
   name = 'CreateContentProgress1785000011000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -68,7 +66,9 @@ export class CreateContentProgress1785000011000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE IF EXISTS "content_progress";`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "content_progress_item_type";`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "content_progress_item_type";`,
+    );
     await queryRunner.query(`DROP TYPE IF EXISTS "content_progress_status";`);
   }
 }
