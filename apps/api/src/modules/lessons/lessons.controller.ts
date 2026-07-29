@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { StudentRoleGuard } from '../auth/guards/student-role.guard';
@@ -20,6 +29,7 @@ export class LessonsController {
   }
 
   @Post('lessons/:lessonId/progress')
+  @HttpCode(HttpStatus.OK)
   updateProgress(
     @Param('lessonId') lessonId: string,
     @CurrentUser() user: AuthenticatedUser,
