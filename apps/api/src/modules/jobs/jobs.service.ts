@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { Repository } from 'typeorm';
 import { AiJobEntity } from './entities/ai_jobs.entity';
 import { DocumentChunkEntity } from './entities/document-chunk.entity';
@@ -12,6 +14,9 @@ export class JobsService {
 
         @InjectRepository(DocumentChunkEntity)
         private readonly documentChunksRepository: Repository<DocumentChunkEntity>,
+
+        @InjectQueue('ingestion')
+        private readonly ingestionQueue: Queue,
     ) { }
 
     async createJob(
@@ -25,7 +30,16 @@ export class JobsService {
             targetEntityId,
         });
 
-        return this.aiJobsRepository.save(job);
+        const savedJob = await this.aiJobsRepository.save(job);
+
+        await this.ingestionQueue.add(
+            'ingestion',
+            {
+                jobId: savedJob.id,
+            },
+        );
+
+        return savedJob;
     }
 
     private async updateJob(
