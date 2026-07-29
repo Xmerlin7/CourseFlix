@@ -112,10 +112,20 @@ losing it — a playback failure must never look like lost progress.
 ## Seed data
 
 `apps/api/src/database/seeds/video.seed.ts` seeds one `recorded` video per seeded lesson,
-cycling across four public-domain Blender Foundation short films
-(`gtv-videos-bucket/sample/*.mp4`) for variety, with each film's documented runtime as
-`durationSeconds`. These are third-party-hosted files outside this repo's control —
-reverify playback and duration if the bucket's encode ever changes.
+cycling across three CC0 clips hosted by MDN (`interactive-examples.mdn.mozilla.net`),
+CORS-enabled and confirmed playable, with `durationSeconds` measured directly via
+`ffprobe` against the served file rather than assumed. These are third-party-hosted files
+outside this repo's control — reverify playback and duration the same way if MDN ever
+changes the encode.
+
+An earlier version pointed at Google's `storage.googleapis.com/gtv-videos-bucket/sample/*`
+URLs (the commonly quoted Big Buck Bunny/Sintel/etc. test set widely referenced in older
+tutorials). That bucket now returns `403 AccessDenied` for anonymous requests — a real,
+externally-caused regression with no warning, caught only by manually opening the lesson
+player in a browser, not by any unit test (nothing in this slice's test suite fetches the
+video byte stream). If lesson playback ever silently breaks again, check this class of
+issue first: a public third-party host revoking access is indistinguishable from a code
+bug until you open dev tools.
 
 ## Known gaps
 

@@ -8,29 +8,35 @@ interface VideoSource {
 }
 
 /**
- * Public-domain Blender Foundation short films hosted on Google's
- * `gtv-videos-bucket` sample set — real, browser-playable, CORS-enabled
- * MP4s with documented runtimes. Cycled across lessons (by index) instead
- * of repeating one clip everywhere, so the demo shows some variety.
- * Durations are each film's official runtime; reverify against the
- * actually-served file if the bucket ever changes its encode.
+ * CC0 clips hosted by MDN (`interactive-examples.mdn.mozilla.net`) — real,
+ * browser-playable, CORS-enabled (`Access-Control-Allow-Origin: *`) MP4s.
+ * `durationSeconds` was measured directly with `ffprobe` against the
+ * actually-served file, not copied from a listing — reverify the same way
+ * if MDN ever changes the encode.
+ *
+ * An earlier version of this file used Google's
+ * `storage.googleapis.com/gtv-videos-bucket/sample/*` URLs (the commonly
+ * quoted Big Buck Bunny/Sintel/etc. test set). That bucket now returns
+ * `403 AccessDenied` for anonymous requests — caught during manual
+ * browser verification of the lesson player (CF-US-007), not in a unit
+ * test, since no test in this slice actually fetches the video byte
+ * stream. These MDN clips are a few seconds long rather than full films;
+ * that is a feature for this fixture, not a shortcoming — it makes the
+ * attendance threshold and completion state reachable in a manual QA
+ * pass in seconds instead of minutes.
  */
 const VIDEO_SOURCES: VideoSource[] = [
   {
-    url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    durationSeconds: 596,
+    url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    durationSeconds: 5,
   },
   {
-    url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    durationSeconds: 654,
+    url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4',
+    durationSeconds: 6,
   },
   {
-    url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-    durationSeconds: 888,
-  },
-  {
-    url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-    durationSeconds: 734,
+    url: 'https://interactive-examples.mdn.mozilla.net/media/examples/stream-of-water.mp4',
+    durationSeconds: 3,
   },
 ];
 
