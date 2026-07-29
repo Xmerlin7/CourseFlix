@@ -127,6 +127,38 @@ video byte stream). If lesson playback ever silently breaks again, check this cl
 issue first: a public third-party host revoking access is indistinguishable from a code
 bug until you open dev tools.
 
+## CF-TASK-083 — cross-team review (course isolation, upload safety)
+
+Reviewed Habsa's documents/notifications work and Elgendy's worker scaffold, per
+sprint2-plan.md §A-5.
+
+**Documents (`documents.service.ts`) — no blocking finding.**
+
+- `assertTeacherOwnsCourse` runs before any read or write in all three methods
+  (`uploadDocument`, `listCourseDocuments`, `retryDocument`) and throws `403` on a
+  teacher/course mismatch — a non-owning teacher cannot read or act on another
+  teacher's course documents.
+- PDF validation (declared MIME **and** magic bytes) runs before a single byte is
+  written to storage or the database — an invalid upload never creates a row.
+- Checksum-based version-bump dedup is scoped by `courseId` (`findOne({ where: {
+  courseId, checksum } })`), so the same PDF uploaded to a different course correctly
+  creates a new document instead of bumping an unrelated one's version.
+
+**Notifications (`notifications.service.ts` / `.controller.ts`) — no blocking finding.**
+
+Every route derives the acting user from the session (`@CurrentUser()`), never from a
+route or query parameter — there is no code path where a `userId` value could be
+supplied by the caller. User A cannot read or mark-read user B's notification by
+construction, not just by a runtime check.
+
+**Elgendy's worker — could not review; flagged for a follow-up pass.**
+
+`apps/worker/src/processors/ingestion.processor.ts` and
+`apps/worker/src/queues/ingestion.queue.ts` are still empty scaffold files (0 lines) as
+of this review. The course/document/version isolation this task is meant to check —
+whether the ingestion pipeline enforces those filters when writing to Chroma — doesn't
+exist yet to review. **Re-run this half of CF-TASK-083 once E-2/E-3/E-4 land.**
+
 ## Known gaps
 
 - No live Postgres integration test for the attendance concurrency guarantee beyond the
