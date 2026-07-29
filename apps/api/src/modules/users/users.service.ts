@@ -8,7 +8,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
-  ) {}
+  ) { }
 
   // Includes passwordHash — only ever call this on the login path.
   // Never return the result of this method directly from an API response.
@@ -32,6 +32,26 @@ export class UsersService {
     }
 
     const { passwordHash: _passwordHash, ...safeUser } = user;
+    return safeUser;
+  }
+
+  async createUser(
+    fullName: string,
+    email: string,
+    passwordHash: string,
+    status: 'active' | 'suspended' | 'inactive',
+    role: 'student' | 'teacher',
+  ): Promise<Omit<UserEntity, 'passwordHash'>> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const newUser = this.usersRepository.create({
+      fullName,
+      email: normalizedEmail,
+      passwordHash,
+      status,
+      role,
+    });
+    const savedUser = await this.usersRepository.save(newUser);
+    const { passwordHash: _passwordHash, ...safeUser } = savedUser;
     return safeUser;
   }
 }

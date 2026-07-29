@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './guards/auth.guard';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import { RegisterDto } from './dto/register.dto';
 
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME ?? 'courseflix.sid';
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
@@ -24,7 +25,7 @@ const COOKIE_SAME_SITE = (process.env.COOKIE_SAME_SITE ?? 'lax') as
 
 @Controller('api/v1')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('auth/login')
   @HttpCode(HttpStatus.OK)
@@ -69,5 +70,22 @@ export class AuthController {
   @UseGuards(AuthGuard)
   getMe(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
     return user;
+  }
+
+  @Post('auth/register')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(ThrottlerGuard)  // public endpoint — rate limited
+  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) response: Response): Promise<{ user: AuthenticatedUser }> {
+    const { token, maxAgeMs, user } = await this.authService.register(dto);
+
+    response.cookie(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: COOKIE_SECURE,
+      sameSite: COOKIE_SAME_SITE,
+      signed: true,
+      maxAge: maxAgeMs,
+    });
+
+    return { user };
   }
 }
