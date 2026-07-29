@@ -28,9 +28,5 @@ export function StudentCourseDetailPage() {
     return <NotFoundState />
   }
 
-  return (
-    <div className="p-4 sm:p-6">
-      <CourseDetailView course={data} />
-    </div>
-  )
+  return <CourseDetailView course={data} />
 }

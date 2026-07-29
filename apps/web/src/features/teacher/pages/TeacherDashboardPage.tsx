@@ -3,77 +3,90 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { LoadingState } from '../../../shared/components/LoadingState'
-import { PageHeader } from '../../../shared/components/PageHeader'
+import { COURSE_STATUS } from '../../../shared/lib/status-labels'
+import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { useTeacherDashboard } from '../hooks/useTeacherDashboard'
 
 export function TeacherDashboardPage() {
   const { data, isLoading, error } = useTeacherDashboard()
 
-  if (isLoading) {
-    return <LoadingState variant="cards" />
-  }
+  if (isLoading) return <LoadingState variant="cards" />
 
   if (error) {
-    if (error.status === 403) {
-      return <ForbiddenState />
-    }
+    if (error.status === 403) return <ForbiddenState />
     return <ErrorState />
   }
 
-  if (!data) {
-    return <EmptyState />
-  }
+  if (!data) return <EmptyState />
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6" dir="rtl">
-      <PageHeader title="لوحة المعلم" />
+    <>
+      <h1 className="page-title">لوحة المعلم</h1>
+      <p className="subtitle">نظرة عامة على دوراتك وطلابك</p>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">دوراتي</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {data.stats.ownedCourseCount}
-          </p>
+      <div className="tiles section">
+        <div className="tile">
+          <span className="lead-ic">
+            <span className="ms">library_books</span>
+          </span>
+          <span className="lbl">دوراتي</span>
+          <span className="num">{data.stats.ownedCourseCount}</span>
         </div>
-        <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">دورات منشورة</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {data.stats.publishedCourseCount}
-          </p>
+
+        <div className="tile">
+          <span className="lead-ic">
+            <span className="ms">public</span>
+          </span>
+          <span className="lbl">دورات منشورة</span>
+          <span className="num">{data.stats.publishedCourseCount}</span>
         </div>
-        <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">الطلاب المسجّلين</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {data.stats.enrolledStudentCount}
-          </p>
+
+        <div className="tile">
+          <span className="lead-ic">
+            <span className="ms">group</span>
+          </span>
+          <span className="lbl">الطلاب المسجّلين</span>
+          <span className="num">{data.stats.enrolledStudentCount}</span>
         </div>
       </div>
 
-      {data.recentCourses.length === 0 ? (
-        <EmptyState
-          variant="courses"
-          title="لسه معندكش كورسات"
-          message="الكورسات اللي بتديرها هتظهر هنا"
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {data.recentCourses.map((course) => (
-            <li key={course.id}>
-              <Link
-                to={`/teacher/courses/${course.id}`}
-                className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 text-sm transition-shadow hover:shadow-md dark:border-gray-700"
-              >
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  {course.title}
-                </span>
-                <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  {course.status}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      <section className="section">
+        <div className="section-head">
+          <h2>أحدث الدورات</h2>
+          <Link to={ROUTE_PATHS.TEACHER.COURSES} className="see-all">
+            عرض الكل
+            <span className="ms">chevron_left</span>
+          </Link>
+        </div>
+
+        {data.recentCourses.length === 0 ? (
+          <EmptyState
+            variant="courses"
+            title="لسه معندكش دورات"
+            message="الدورات اللي بتديرها هتظهر هنا"
+          />
+        ) : (
+          <div className="list">
+            {data.recentCourses.map((course) => {
+              const status = COURSE_STATUS[course.status]
+
+              return (
+                <Link key={course.id} to={`/teacher/courses/${course.id}`} className="list-item">
+                  <span className="lead">
+                    <span className="ms">menu_book</span>
+                  </span>
+                  <span className="body">
+                    <span className="t">{course.title}</span>
+                  </span>
+                  <span className="end">
+                    <span className={`chip ${status.chip}`}>{status.label}</span>
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </section>
+    </>
   )
 }

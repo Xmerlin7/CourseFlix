@@ -1,22 +1,9 @@
-import { PlayCircle } from 'lucide-react'
 import { EmptyState } from '../../../shared/components/EmptyState'
-import { PageHeader } from '../../../shared/components/PageHeader'
+import { COURSE_STATUS } from '../../../shared/lib/status-labels'
 import type { CourseDetail } from '../types/course.types'
 
 interface CourseDetailViewProps {
   course: CourseDetail
-}
-
-const STATUS_LABELS: Record<CourseDetail['status'], string> = {
-  draft: 'مسودة',
-  published: 'منشورة',
-  archived: 'مؤرشفة',
-}
-
-const STATUS_CHIP_CLASSES: Record<CourseDetail['status'], string> = {
-  draft: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
-  published: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
-  archived: 'bg-gray-200 text-gray-600 dark:bg-gray-700/40 dark:text-gray-400',
 }
 
 /**
@@ -30,66 +17,58 @@ export function CourseDetailView({ course }: CourseDetailViewProps) {
     (total, section) => total + section.lessons.length,
     0,
   )
+  const status = COURSE_STATUS[course.status]
 
   return (
-    <div className="flex flex-col gap-6" dir="rtl">
-      <PageHeader
-        title={course.title}
-        description={[course.gradeLevel, course.teacher.fullName, `${lessonCount} درسًا`]
-          .filter(Boolean)
-          .join(' · ')}
-        actions={
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_CHIP_CLASSES[course.status]}`}
-          >
-            {STATUS_LABELS[course.status]}
-          </span>
-        }
-      />
+    <>
+      <div className="section-head">
+        <div>
+          <h1 className="page-title">{course.title}</h1>
+          <p className="subtitle" style={{ marginBottom: 0 }}>
+            {[course.gradeLevel, course.teacher.fullName, `${lessonCount} درسًا`]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        </div>
+        <span className={`chip ${status.chip}`}>{status.label}</span>
+      </div>
 
-      {course.description && (
-        <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-          {course.description}
-        </p>
-      )}
+      {course.description && <p className="subtitle">{course.description}</p>}
 
       {course.sections.length === 0 ? (
         <EmptyState
-          title="لسه مفيش محتوى في الكورس ده"
+          title="لسه مفيش محتوى في الدورة دي"
           message="لما يتم إضافة أقسام ودروس هتظهر هنا"
         />
       ) : (
-        <div className="flex flex-col gap-4">
-          {course.sections.map((section) => (
-            <div
-              key={section.id}
-              className="rounded-xl border border-gray-200 p-4 dark:border-gray-700"
-            >
-              <h3 className="mb-3 font-semibold text-gray-900 dark:text-gray-100">
-                {section.title}
-              </h3>
-
-              {section.lessons.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  لا يوجد دروس في هذا القسم بعد
-                </p>
-              ) : (
-                <ul className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
-                  {section.lessons.map((lesson) => (
-                    <li
-                      key={lesson.id}
-                      className="flex items-center gap-3 py-2.5 text-sm text-gray-700 dark:text-gray-200"
-                    >
-                      <PlayCircle className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                      <span>{lesson.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+        course.sections.map((section) => (
+          <section key={section.id} className="section">
+            <div className="section-head">
+              <h2>{section.title}</h2>
             </div>
-          ))}
-        </div>
+
+            {section.lessons.length === 0 ? (
+              <p className="subtitle">لا يوجد دروس في هذا القسم بعد</p>
+            ) : (
+              <div className="list">
+                {section.lessons.map((lesson) => (
+                  // Deliberately not a link: the lesson player route is
+                  // Albraa's slice and isn't in router.tsx yet, so this
+                  // stays a plain row rather than a dead link to /404.
+                  <div key={lesson.id} className="list-item">
+                    <span className="lead">
+                      <span className="ms">play_circle</span>
+                    </span>
+                    <span className="body">
+                      <span className="t">{lesson.title}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        ))
       )}
-    </div>
+    </>
   )
 }
