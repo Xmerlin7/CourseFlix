@@ -38,5 +38,9 @@
   "bugs": {
     "url": "https://github.com/Xmerlin7/CourseFlix/issues"
   },
-  "homepage": "https://github.com/Xmerlin7/CourseFlix#readme"
+  "homepage": "https://github.com/Xmerlin7/CourseFlix#readme",
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1"
+  }
 }

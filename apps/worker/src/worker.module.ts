@@ -14,6 +14,10 @@ import { IngestionProcessor } from './processors/ingestion.processor';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      // The monorepo .env lives two directories up from apps/worker/.
+      // This mirrors the `config({ path: resolve(cwd(), '../../.env') })`
+      // call in apps/api/src/main.ts.
+      envFilePath: '../../.env',
     }),
 
     TypeOrmModule.forRootAsync({
