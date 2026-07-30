@@ -1,8 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CoursesService } from '../courses/courses.service';
 import { CourseEntity, CourseStatus } from '../courses/entities/course.entity';
+import type { SectionEntity } from '../courses/entities/section.entity';
+import type { LessonEntity } from '../courses/entities/lesson.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UpdateCourseDto } from './dto/update-course.dto';
+import { CreateCourseDto } from '../courses/dto/create-course.dto';
+import { CreateSectionDto } from '../courses/dto/create-section.dto';
+import { UpdateSectionDto } from '../courses/dto/update-section.dto';
+import { CreateLessonDto } from '../courses/dto/create-lesson.dto';
+import { UpdateLessonDto } from '../courses/dto/update-lesson.dto';
+import { ReorderDto } from '../courses/dto/reorder.dto';
 
 export interface TeacherCourseListItem {
   id: string;
@@ -96,6 +104,85 @@ export class TeacherService {
       updateCourseDto,
     );
     return this.toListItem(course);
+  }
+
+  async createCourse(
+    teacherId: string,
+    dto: CreateCourseDto,
+  ): Promise<TeacherCourseListItem> {
+    const course = await this.coursesService.createCourse(teacherId, dto);
+    return this.toListItem(course);
+  }
+
+  async deleteCourse(courseId: string, teacherId: string): Promise<void> {
+    await this.coursesService.deleteCourse(courseId, teacherId);
+  }
+
+  async createSection(
+    courseId: string,
+    teacherId: string,
+    dto: CreateSectionDto,
+  ): Promise<SectionEntity> {
+    return this.coursesService.createSection(courseId, teacherId, dto.title);
+  }
+
+  async getSection(
+    sectionId: string,
+    teacherId: string,
+  ): Promise<SectionEntity> {
+    return this.coursesService.getSection(sectionId, teacherId);
+  }
+
+  async updateSection(
+    sectionId: string,
+    teacherId: string,
+    dto: UpdateSectionDto,
+  ): Promise<SectionEntity> {
+    return this.coursesService.updateSection(sectionId, teacherId, dto);
+  }
+
+  async deleteSection(sectionId: string, teacherId: string): Promise<void> {
+    await this.coursesService.deleteSection(sectionId, teacherId);
+  }
+
+  async reorderSections(
+    courseId: string,
+    teacherId: string,
+    dto: ReorderDto,
+  ): Promise<void> {
+    await this.coursesService.reorderSections(courseId, teacherId, dto.items);
+  }
+
+  async createLesson(
+    sectionId: string,
+    teacherId: string,
+    dto: CreateLessonDto,
+  ): Promise<LessonEntity> {
+    return this.coursesService.createLesson(sectionId, teacherId, dto);
+  }
+
+  async getLesson(lessonId: string, teacherId: string): Promise<LessonEntity> {
+    return this.coursesService.getLesson(lessonId, teacherId);
+  }
+
+  async updateLesson(
+    lessonId: string,
+    teacherId: string,
+    dto: UpdateLessonDto,
+  ): Promise<LessonEntity> {
+    return this.coursesService.updateLesson(lessonId, teacherId, dto);
+  }
+
+  async deleteLesson(lessonId: string, teacherId: string): Promise<void> {
+    await this.coursesService.deleteLesson(lessonId, teacherId);
+  }
+
+  async reorderLessons(
+    sectionId: string,
+    teacherId: string,
+    dto: ReorderDto,
+  ): Promise<void> {
+    await this.coursesService.reorderLessons(sectionId, teacherId, dto.items);
   }
 
   private toListItem(course: CourseEntity): TeacherCourseListItem {
