@@ -25,7 +25,7 @@ const COOKIE_SAME_SITE = (process.env.COOKIE_SAME_SITE ?? 'lax') as
 
 @Controller('api/v1')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('auth/login')
   @HttpCode(HttpStatus.OK)
@@ -74,8 +74,11 @@ export class AuthController {
 
   @Post('auth/register')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(ThrottlerGuard)  // public endpoint — rate limited
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) response: Response): Promise<{ user: AuthenticatedUser }> {
+  @UseGuards(ThrottlerGuard) // public endpoint — rate limited
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ user: AuthenticatedUser }> {
     const { token, maxAgeMs, user } = await this.authService.register(dto);
 
     response.cookie(SESSION_COOKIE_NAME, token, {

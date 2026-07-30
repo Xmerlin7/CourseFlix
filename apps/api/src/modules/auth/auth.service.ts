@@ -18,7 +18,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly sessionsService: SessionsService,
-  ) { }
+  ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResult> {
     const user = await this.usersService.findByEmail(loginDto.email);
@@ -74,7 +74,9 @@ export class AuthService {
       'student', // Default role for new registrations
     );
 
-    const { token, session } = await this.sessionsService.createSession(newUser.id);
+    const { token, session } = await this.sessionsService.createSession(
+      newUser.id,
+    );
 
     return {
       token,
