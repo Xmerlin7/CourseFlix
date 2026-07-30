@@ -1,5 +1,5 @@
 import { httpClient } from '../../../shared/api/http-client'
-import type { AuthUser, LoginPayload } from '../types/auth.types'
+import type { AuthUser, LoginPayload, RegisterPayload } from '../types/auth.types'
 
 // Backend wraps the login response as `{ user }` (see auth.controller.ts),
 // unlike GET /me which returns the user directly — unwrap here so callers
@@ -15,4 +15,9 @@ export async function logout(): Promise<void> {
 
 export async function getCurrentUser(): Promise<AuthUser> {
   return httpClient.get<AuthUser>('/me')
+}
+
+export async function register(payload: RegisterPayload): Promise<AuthUser> {
+  const { user } = await httpClient.post<{ user: AuthUser }>('/auth/register', payload)
+  return user
 }
