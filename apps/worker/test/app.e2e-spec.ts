@@ -1,19 +1,16 @@
 /**
  * Worker e2e smoke test.
  *
- * The worker is a NestJS standalone application context (no HTTP server).
- * This test verifies that the module graph compiles and that the
- * IngestionProcessor is registered — without needing a live Redis or Postgres
- * connection (both are mocked).
- *
- * A full integration test (real Redis + Postgres, real PDF fixture) belongs in
- * a separate file once E-3/E-4 are implemented (sprint2-plan.md §3 E-5 note).
+ * Verifies that the module graph compiles and that the IngestionProcessor is resolvable.
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { getQueueToken } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { IngestionProcessor } from '../src/processors/ingestion.processor';
+import { EMBEDDING_PROVIDER, MockEmbeddingProvider } from '../src/adapters/embedding.adapter';
+import { ChromaAdapter } from '../src/adapters/chroma.adapter';
+import { NOTIFICATION_PRODUCER_PORT, NoopNotificationProducer } from '../../api/src/common/ports/notification-producer.port';
 
 describe('WorkerModule (smoke)', () => {
   let moduleRef: TestingModule;
@@ -23,22 +20,34 @@ describe('WorkerModule (smoke)', () => {
       imports: [ConfigModule.forRoot({ isGlobal: true })],
       providers: [
         IngestionProcessor,
-        // Stub TypeORM DataSource — processor only uses it for raw SQL.
         {
           provide: getDataSourceToken(),
           useValue: { query: jest.fn().mockResolvedValue({ rowCount: 1 }) },
         },
-        // Stub BullMQ queue — not needed for unit-level smoke.
         {
           provide: getQueueToken('ingestion'),
           useValue: { add: jest.fn() },
+        },
+        {
+          provide: EMBEDDING_PROVIDER,
+          useClass: MockEmbeddingProvider,
+        },
+        {
+          provide: ChromaAdapter,
+          useValue: { upsert: jest.fn() },
+        },
+        {
+          provide: NOTIFICATION_PRODUCER_PORT,
+          useClass: NoopNotificationProducer,
         },
       ],
     }).compile();
   });
 
   afterAll(async () => {
-    await moduleRef.close();
+    if (moduleRef) {
+      await moduleRef.close();
+    }
   });
 
   it('IngestionProcessor is resolvable', () => {

@@ -3,20 +3,27 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { IngestionProcessor } from './processors/ingestion.processor';
+import {
+  EMBEDDING_PROVIDER,
+  MockEmbeddingProvider,
+  OpenAIEmbeddingProvider,
+} from './adapters/embedding.adapter';
+import { ChromaAdapter } from './adapters/chroma.adapter';
+import {
+  NOTIFICATION_PRODUCER_PORT,
+  NoopNotificationProducer,
+} from '../../api/src/common/ports/notification-producer.port';
 
 /**
  * Root module for the standalone BullMQ worker application.
  *
- * Connects to the same Postgres instance as the API so the processor can
- * update `ai_jobs` rows directly via the TypeORM {@link DataSource}.
+ * Configures Redis connection, Postgres database connection via TypeORM,
+ * Embedding & Chroma vector store adapters, and the IngestionProcessor worker.
  */
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // The monorepo .env lives two directories up from apps/worker/.
-      // This mirrors the `config({ path: resolve(cwd(), '../../.env') })`
-      // call in apps/api/src/main.ts.
       envFilePath: '../../.env',
     }),
 
@@ -26,7 +33,6 @@ import { IngestionProcessor } from './processors/ingestion.processor';
       useFactory: (config: ConfigService) => ({
         type: 'postgres' as const,
         url: config.get<string>('DATABASE_URL'),
-        // No entities needed here — the processor uses raw SQL via DataSource.
         entities: [],
         synchronize: false,
       }),
@@ -47,6 +53,27 @@ import { IngestionProcessor } from './processors/ingestion.processor';
       name: 'ingestion',
     }),
   ],
-  providers: [IngestionProcessor],
+  providers: [
+    IngestionProcessor,
+    ChromaAdapter,
+    {
+      provide: EMBEDDING_PROVIDER,
+      useFactory: (configService: ConfigService) => {
+        const apiKey = configService.get<string>('EMBEDDING_API_KEY');
+        const env = configService.get<string>('NODE_ENV');
+
+        // Use MockEmbeddingProvider for test/development when no valid API key is set
+        if (!apiKey || apiKey === 'replace-me' || env === 'test') {
+          return new MockEmbeddingProvider();
+        }
+        return new OpenAIEmbeddingProvider(configService);
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: NOTIFICATION_PRODUCER_PORT,
+      useClass: NoopNotificationProducer,
+    },
+  ],
 })
 export class WorkerModule {}
