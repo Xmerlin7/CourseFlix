@@ -20,6 +20,7 @@ lerna-debug.log*
 !.env.example
 nabile-s2-plan.md
 plan.md
+commit.sh
 # Local document storage runtime data (STORAGE_ROOT default = ./storage, cwd = apps/api)
 /apps/api/storage/
 
