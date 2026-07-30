@@ -1,0 +1,2641 @@
+{
+  "info": {
+    "_postman_id": "6d02b5df-51cf-4e4e-93d1-06ef15f0bada",
+    "name": "CourceFlex",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "34320045",
+    "_collection_link": "https://go.postman.co/collection/34320045-6d02b5df-51cf-4e4e-93d1-06ef15f0bada?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//take token from cokiie and set it to pm.environment variables",
+                  "",
+                  "const cookie = pm.cookies.get(\"courseflix.sid\");",
+                  "",
+                  "if (cookie) {",
+                  "    pm.environment.set(\"sessionToken\", cookie);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \n    \"fullName\": \"student\",\n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \n    \"fullName\": \"student\",\n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/auth/register",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "X-RateLimit-Limit",
+                  "value": "5"
+                },
+                {
+                  "key": "X-RateLimit-Remaining",
+                  "value": "3"
+                },
+                {
+                  "key": "X-RateLimit-Reset",
+                  "value": "873"
+                },
+                {
+                  "key": "Set-Cookie",
+                  "value": "courseflix.sid=s%3A167505a113606be1493edfac1d961ebd61edfc8f1bca7dee266711d7fa00d918.fCTdTZQmEutTfNlu9LXcloTvt9RzZB0B6Z6cHC0GBLg; Max-Age=604799; Path=/; Expires=Tue, 04 Aug 2026 15:00:46 GMT; HttpOnly; SameSite=Lax"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "133"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"85-E37YIKCao14cf+R4iS2rOVVZ3Wg\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 28 Jul 2026 15:00:47 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"user\": {\n        \"id\": \"a77db68d-35a7-4df2-b580-afe7dbae260a\",\n        \"email\": \"st1@gmail.com\",\n        \"role\": \"student\",\n        \"fullName\": \"student\",\n        \"avatarUrl\": null\n    }\n}"
+            },
+            {
+              "name": "fail",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \n    \"fullName\": \"student\",\n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/auth/register",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "X-RateLimit-Limit",
+                  "value": "5"
+                },
+                {
+                  "key": "X-RateLimit-Remaining",
+                  "value": "4"
+                },
+                {
+                  "key": "X-RateLimit-Reset",
+                  "value": "900"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "75"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"4b-5xhiMzzN+nOD0NCDwCTS0DVyKmE\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 28 Jul 2026 15:34:38 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Email already in use.\",\n    \"error\": \"Unauthorized\",\n    \"statusCode\": 401\n}"
+            }
+          ]
+        },
+        {
+          "name": "login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//take token from cokiie and set it to pm.environment variables",
+                  "",
+                  "const cookie = pm.cookies.get(\"courseflix.sid\");",
+                  "",
+                  "if (cookie) {",
+                  "    pm.environment.set(\"sessionToken\", cookie);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \n    \"email\": \"st@gmail.com\", \n    \"password\": \"00000000\" \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/auth/login",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "X-RateLimit-Limit",
+                  "value": "5"
+                },
+                {
+                  "key": "X-RateLimit-Remaining",
+                  "value": "4"
+                },
+                {
+                  "key": "X-RateLimit-Reset",
+                  "value": "900"
+                },
+                {
+                  "key": "Set-Cookie",
+                  "value": "courseflix.sid=s%3A8123b4530857a66f6bb4fe134d255f33a201b7d1a2cc0425b314652133b13d2f.tY66oW0to13Lv52TNiI%2BC0pMugmszUMYOVbdQFO4dC8; Max-Age=604799; Path=/; Expires=Tue, 04 Aug 2026 15:31:46 GMT; HttpOnly; SameSite=Lax"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "133"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"85-E37YIKCao14cf+R4iS2rOVVZ3Wg\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 28 Jul 2026 15:31:47 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [
+                {
+                  "expires": "Invalid Date",
+                  "domain": "",
+                  "path": ""
+                }
+              ],
+              "body": "{\n    \"user\": {\n        \"id\": \"a77db68d-35a7-4df2-b580-afe7dbae260a\",\n        \"email\": \"st1@gmail.com\",\n        \"role\": \"student\",\n        \"fullName\": \"student\",\n        \"avatarUrl\": null\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//take token from cokiie and set it to pm.environment variables",
+                  "",
+                  "const cookie = pm.cookies.get(\"courseflix.sid\");",
+                  "",
+                  "if (cookie) {",
+                  "    pm.environment.set(\"sessionToken\", cookie);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/auth/logout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "logout",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/auth/logout",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Set-Cookie",
+                  "value": "courseflix.sid=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "16"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"10-oV4hJxRVSENxc/wX8+mA4/Pe4tA\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 28 Jul 2026 15:32:07 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"success\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//take token from cokiie and set it to pm.environment variables",
+                  "",
+                  "const cookie = pm.cookies.get(\"courseflix.sid\");",
+                  "",
+                  "if (cookie) {",
+                  "    pm.environment.set(\"sessionToken\", cookie);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \n    \"fullName\": \"student\",\n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "me"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "fail",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \n    \"fullName\": \"student\",\n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/me",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "72"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"48-hIIKkn40ctp4VmWknDDEy5obPmo\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 28 Jul 2026 15:32:25 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [
+                {
+                  "expires": "Invalid Date",
+                  "domain": "",
+                  "path": ""
+                }
+              ],
+              "body": "{\n    \"message\": \"Not authenticated.\",\n    \"error\": \"Unauthorized\",\n    \"statusCode\": 401\n}"
+            },
+            {
+              "name": "success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \n    \"fullName\": \"student\",\n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/me",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "me"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "",
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "124"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"7c-K3/hyPqFOTcrBaB003Xw5Wifank\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 28 Jul 2026 15:33:48 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [
+                {
+                  "expires": "Invalid Date",
+                  "domain": "",
+                  "path": ""
+                }
+              ],
+              "body": "{\n    \"id\": \"a77db68d-35a7-4df2-b580-afe7dbae260a\",\n    \"email\": \"st1@gmail.com\",\n    \"role\": \"student\",\n    \"fullName\": \"student\",\n    \"avatarUrl\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "create course",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"physics\",\n  \"description\": \"An introduction to physics course\",\n  \"gradeLevel\": \"Grade 11\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get teacher cources",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete course",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses/489e66b3-4695-46a6-8a23-910ca047be1e",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses",
+                "489e66b3-4695-46a6-8a23-910ca047be1e"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update course",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics (Updated)\",\n  \"status\": \"published\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses/e849b3e6-320f-4c24-bb12-f6f12767c6a3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses",
+                "e849b3e6-320f-4c24-bb12-f6f12767c6a3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get course details (for both roles)",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Introduction to Vectors\",\n  \"videoUrl\": \"https://example.com/vectors.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/courses/e849b3e6-320f-4c24-bb12-f6f12767c6a3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "courses",
+                "e849b3e6-320f-4c24-bb12-f6f12767c6a3"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "get notifications",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "read notification",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/notifications/:notificationId/read",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                ":notificationId",
+                "read"
+              ],
+              "variable": [
+                {
+                  "key": "notificationId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "unread notification",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboards",
+      "item": [
+        {
+          "name": "get student dashboard",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Introduction to Vectors\",\n  \"videoUrl\": \"https://example.com/vectors.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/student/dashboard",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "student",
+                "dashboard"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teacher dashboard",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \n    \"fullName\": \"student\",\n    \"email\": \"st1@gmail.com\", \n    \"password\": \"00000000\" \n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/dashboard",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "dashboard"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "upload doc",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "38b0e274-6a05-431b-8c27-b94a303127b2",
+                  "src": "/home/mnabil/Gp(plan).pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses/c2e24555-fbc2-4cb8-a1fa-55ac079c09c6/documents",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses",
+                "c2e24555-fbc2-4cb8-a1fa-55ac079c09c6",
+                "documents"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list documents",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "38b0e274-6a05-431b-8c27-b94a303127b2",
+                  "src": "/home/mnabil/Gp(plan).pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses/e849b3e6-320f-4c24-bb12-f6f12767c6a3/documents",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses",
+                "e849b3e6-320f-4c24-bb12-f6f12767c6a3",
+                "documents"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "retry document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "38b0e274-6a05-431b-8c27-b94a303127b2",
+                  "src": "/home/mnabil/Gp(plan).pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/documents/27c503d5-e648-4d7a-b162-e0a81c4f5c74/retry",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "documents",
+                "27c503d5-e648-4d7a-b162-e0a81c4f5c74",
+                "retry"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Enrollmets",
+      "item": [
+        {
+          "name": "get student enrollments",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/lessons/09f59c71-4d65-4ec8-9533-3e89c857573f",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "lessons",
+                "09f59c71-4d65-4ec8-9533-3e89c857573f"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/student/enrollments",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "student",
+                    "enrollments"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "369"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"171-GP6LQ0G8OX7BS9qDCIfk/1HnkbY\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Thu, 30 Jul 2026 09:06:18 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"id\": \"3c89785c-7f12-41af-9278-743105026212\",\n        \"courseId\": \"c159cb53-7a2e-4e6b-a325-bbb70ff756b8\",\n        \"courseTitle\": \"Classical Mechanics (Updated)\",\n        \"gradeLevel\": \"Grade 10\",\n        \"status\": \"active\"\n    },\n    {\n        \"id\": \"355da535-ab73-499d-ba08-d75ed25b16fe\",\n        \"courseId\": \"e849b3e6-320f-4c24-bb12-f6f12767c6a3\",\n        \"courseTitle\": \"Classical Mechanics (Updated)\",\n        \"gradeLevel\": \"Grade 11\",\n        \"status\": \"active\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "enroll student",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Introduction to Vectors\",\n  \"videoUrl\": \"https://example.com/vectors.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/sections/c2e24555-fbc2-4cb8-a1fa-55ac079c09c6/lessons",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "sections",
+                "c2e24555-fbc2-4cb8-a1fa-55ac079c09c6",
+                "lessons"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"courseId\" :\"c159cb53-7a2e-4e6b-a325-bbb70ff756b8\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/student/enroll",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "student",
+                    "enroll"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "183"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"b7-8Hp1b2YBWG6hQjf5acOPdf+Oqxw\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Thu, 30 Jul 2026 08:59:45 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"id\": \"3c89785c-7f12-41af-9278-743105026212\",\n    \"courseId\": \"c159cb53-7a2e-4e6b-a325-bbb70ff756b8\",\n    \"courseTitle\": \"Classical Mechanics (Updated)\",\n    \"gradeLevel\": \"Grade 10\",\n    \"status\": \"active\"\n}"
+            },
+            {
+              "name": "failed(already enrolled)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"courseId\" :\"c159cb53-7a2e-4e6b-a325-bbb70ff756b8\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/student/enroll",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "student",
+                    "enroll"
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "90"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"5a-HKidDCE4a5xg5At0vrJShYYAM8I\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Thu, 30 Jul 2026 09:00:26 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"You are already enrolled in this course.\",\n    \"error\": \"Conflict\",\n    \"statusCode\": 409\n}"
+            },
+            {
+              "name": "failed(course not found)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"courseId\" :\"c159cb53-7a2e-4e6b-a325-bbb70ff75618\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/student/enroll",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "student",
+                    "enroll"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "68"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"44-VU9IMzq5NbdoczW/New++Mml50A\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Thu, 30 Jul 2026 09:01:38 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Course not found.\",\n    \"error\": \"Not Found\",\n    \"statusCode\": 404\n}"
+            },
+            {
+              "name": "failed(course not published)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"courseId\" :\"d38eac3b-4554-4e29-a5ad-fbcad75342c8\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/student/enroll",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "student",
+                    "enroll"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "X-Powered-By",
+                  "value": "Express"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://localhost:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Access-Control-Allow-Credentials",
+                  "value": "true"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "84"
+                },
+                {
+                  "key": "ETag",
+                  "value": "W/\"54-1VjYXvIqEVZLJzJrG1RawGF7Nr4\""
+                },
+                {
+                  "key": "Date",
+                  "value": "Thu, 30 Jul 2026 09:03:34 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"This course is not yet published.\",\n    \"error\": \"Forbidden\",\n    \"statusCode\": 403\n}"
+            }
+          ]
+        },
+        {
+          "name": "get  enrollment by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/student/enrollments/3c89785c-7f12-41af-9278-743105026212",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "student",
+                "enrollments",
+                "3c89785c-7f12-41af-9278-743105026212"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update enrollment",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\":\"completed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/student/enrollments/3c89785c-7f12-41af-9278-743105026212",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "student",
+                "enrollments",
+                "3c89785c-7f12-41af-9278-743105026212"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "un-enroll student",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/sections/f195b0c0-68e0-45b8-aa24-7421e54dca60",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "sections",
+                "f195b0c0-68e0-45b8-aa24-7421e54dca60"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quizzes",
+      "item": [
+        {
+          "name": "teacher",
+          "item": [
+            {
+              "name": "create quiz",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"courseId\": \"e849b3e6-320f-4c24-bb12-f6f12767c6a3\",\n  \"lessonId\": \"09f59c71-4d65-4ec8-9533-3e89c857573f\",\n  \"title\": \"Physics Quiz 1\",\n  \"questions\": [\n    { \"type\": \"mcq\", \"text\": \"What is the unit of force?\", \"options\": [\"Newton\", \"Joule\", \"Watt\"], \"correctAnswer\": \"Newton\" },\n    { \"type\": \"true_false\", \"text\": \"Mass and weight are the same thing\", \"options\": [\"True\", \"False\"], \"correctAnswer\": \"False\" }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/teacher/quizzes",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "teacher",
+                    "quizzes"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"courseId\": \"e849b3e6-320f-4c24-bb12-f6f12767c6a3\",\n  \"lessonId\": \"09f59c71-4d65-4ec8-9533-3e89c857573f\",\n  \"title\": \"Physics Quiz 1\",\n  \"questions\": [\n    { \"type\": \"mcq\", \"text\": \"What is the unit of force?\", \"options\": [\"Newton\", \"Joule\", \"Watt\"], \"correctAnswer\": \"Newton\" },\n    { \"type\": \"true_false\", \"text\": \"Mass and weight are the same thing\", \"options\": [\"True\", \"False\"], \"correctAnswer\": \"False\" }\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "http://localhost:3000/api/v1/teacher/quizzes",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "3000",
+                      "path": [
+                        "api",
+                        "v1",
+                        "teacher",
+                        "quizzes"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "X-Powered-By",
+                      "value": "Express"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Origin",
+                      "value": "http://localhost:5173"
+                    },
+                    {
+                      "key": "Vary",
+                      "value": "Origin"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Credentials",
+                      "value": "true"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "413"
+                    },
+                    {
+                      "key": "ETag",
+                      "value": "W/\"19d-p2WsihtiSTCpMH5eDWLhkBL1nw0\""
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Thu, 30 Jul 2026 09:28:39 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "keep-alive"
+                    },
+                    {
+                      "key": "Keep-Alive",
+                      "value": "timeout=5"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"id\": \"0a114221-2958-4006-b566-45990708a700\",\n    \"title\": \"Physics Quiz 1\",\n    \"version\": 1,\n    \"questions\": [\n        {\n            \"id\": \"e6da5b2e-123e-448a-be5e-bf62849243e3\",\n            \"type\": \"mcq\",\n            \"text\": \"What is the unit of force?\",\n            \"options\": [\n                \"Newton\",\n                \"Joule\",\n                \"Watt\"\n            ],\n            \"correctAnswer\": \"Newton\"\n        },\n        {\n            \"id\": \"00eef4b9-9fd8-4cf3-8652-0d9bbf57861d\",\n            \"type\": \"true_false\",\n            \"text\": \"Mass and weight are the same thing\",\n            \"options\": [\n                \"True\",\n                \"False\"\n            ],\n            \"correctAnswer\": \"False\"\n        }\n    ]\n}"
+                }
+              ]
+            },
+            {
+              "name": "view quiz(with correct)",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/teacher/quizzes/0a114221-2958-4006-b566-45990708a700",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "teacher",
+                    "quizzes",
+                    "0a114221-2958-4006-b566-45990708a700"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "update quiz",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Physics Quiz 1 (Updated)\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/teacher/quizzes/0a114221-2958-4006-b566-45990708a700",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "teacher",
+                    "quizzes",
+                    "0a114221-2958-4006-b566-45990708a700"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "delete quiz",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Physics Quiz 1 (Updated)\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/teacher/quizzes/a656a407-0509-405f-ac6f-cdb83d7f92a2",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "teacher",
+                    "quizzes",
+                    "a656a407-0509-405f-ac6f-cdb83d7f92a2"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get course quizes",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/teacher/courses/e849b3e6-320f-4c24-bb12-f6f12767c6a3/quizzes",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "teacher",
+                    "courses",
+                    "e849b3e6-320f-4c24-bb12-f6f12767c6a3",
+                    "quizzes"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "student",
+          "item": [
+            {
+              "name": "view quiz(no correct)",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/teacher/quizzes/0a114221-2958-4006-b566-45990708a700",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "teacher",
+                    "quizzes",
+                    "0a114221-2958-4006-b566-45990708a700"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get lesson quizees",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Physics Quiz 1 (Updated)\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/lessons/09f59c71-4d65-4ec8-9533-3e89c857573f/quizzes",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "lessons",
+                    "09f59c71-4d65-4ec8-9533-3e89c857573f",
+                    "quizzes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "get section quizees",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Physics Quiz 1 (Updated)\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/sections/c2e24555-fbc2-4cb8-a1fa-55ac079c09c6/quizzes",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "sections",
+                    "c2e24555-fbc2-4cb8-a1fa-55ac079c09c6",
+                    "quizzes"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "subemit quiz",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"courseId\": \"e849b3e6-320f-4c24-bb12-f6f12767c6a3\",\n  \"lessonId\": \"09f59c71-4d65-4ec8-9533-3e89c857573f\",\n  \"title\": \"Physics Quiz 1\",\n  \"questions\": [\n    { \"type\": \"mcq\", \"text\": \"What is the unit of force?\", \"options\": [\"Newton\", \"Joule\", \"Watt\"], \"correctAnswer\": \"Newton\" },\n    { \"type\": \"true_false\", \"text\": \"Mass and weight are the same thing\", \"options\": [\"True\", \"False\"], \"correctAnswer\": \"False\" }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/v1/teacher/quizzes",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "3000",
+                  "path": [
+                    "api",
+                    "v1",
+                    "teacher",
+                    "quizzes"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "success",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"answers\": [\n    { \"questionId\": \"529b6d3f-7d88-42ce-aae2-9264f4498973\", \"selectedAnswer\": \"Newton\" },\n    { \"questionId\": \"d4030728-e8f0-4a52-9fd1-9e2822c674f3\", \"selectedAnswer\": \"True\" }\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "http://localhost:3000/api/v1/quizzes/68300f5c-139d-4b5b-bf50-bd7dec3c7f21/submissions",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "3000",
+                      "path": [
+                        "api",
+                        "v1",
+                        "quizzes",
+                        "68300f5c-139d-4b5b-bf50-bd7dec3c7f21",
+                        "submissions"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "X-Powered-By",
+                      "value": "Express"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Origin",
+                      "value": "http://localhost:5173"
+                    },
+                    {
+                      "key": "Vary",
+                      "value": "Origin"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Credentials",
+                      "value": "true"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "230"
+                    },
+                    {
+                      "key": "ETag",
+                      "value": "W/\"e6-RvoD8s+FQC2QIAcqgavz+IDQFaQ\""
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Thu, 30 Jul 2026 09:59:05 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "keep-alive"
+                    },
+                    {
+                      "key": "Keep-Alive",
+                      "value": "timeout=5"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"submissionId\": \"66a4207b-fc28-4c35-a8f1-4f1e109712b5\",\n    \"score\": 1,\n    \"total\": 2,\n    \"answers\": [\n        {\n            \"questionId\": \"529b6d3f-7d88-42ce-aae2-9264f4498973\",\n            \"isCorrect\": true\n        },\n        {\n            \"questionId\": \"d4030728-e8f0-4a52-9fd1-9e2822c674f3\",\n            \"isCorrect\": false\n        }\n    ]\n}"
+                },
+                {
+                  "name": "failed(already submitted)",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"answers\": [\n    { \"questionId\": \"529b6d3f-7d88-42ce-aae2-9264f4498973\", \"selectedAnswer\": \"Newton\" },\n    { \"questionId\": \"d4030728-e8f0-4a52-9fd1-9e2822c674f3\", \"selectedAnswer\": \"True\" }\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "http://localhost:3000/api/v1/quizzes/68300f5c-139d-4b5b-bf50-bd7dec3c7f21/submissions",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "3000",
+                      "path": [
+                        "api",
+                        "v1",
+                        "quizzes",
+                        "68300f5c-139d-4b5b-bf50-bd7dec3c7f21",
+                        "submissions"
+                      ]
+                    }
+                  },
+                  "status": "Conflict",
+                  "code": 409,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "X-Powered-By",
+                      "value": "Express"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Origin",
+                      "value": "http://localhost:5173"
+                    },
+                    {
+                      "key": "Vary",
+                      "value": "Origin"
+                    },
+                    {
+                      "key": "Access-Control-Allow-Credentials",
+                      "value": "true"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "86"
+                    },
+                    {
+                      "key": "ETag",
+                      "value": "W/\"56-gIRSkOAR5sXpRjXgbIe0qVdlcH8\""
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Thu, 30 Jul 2026 09:59:38 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "keep-alive"
+                    },
+                    {
+                      "key": "Keep-Alive",
+                      "value": "timeout=5"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"message\": \"You have already submitted this quiz\",\n    \"error\": \"Conflict\",\n    \"statusCode\": 409\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sections",
+      "item": [
+        {
+          "name": "create section",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chapter 1: Kinematics\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses/e849b3e6-320f-4c24-bb12-f6f12767c6a3/sections",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses",
+                "e849b3e6-320f-4c24-bb12-f6f12767c6a3",
+                "sections"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get section by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chapter 1: Kinematics\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/sections/c2e24555-fbc2-4cb8-a1fa-55ac079c09c6",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "sections",
+                "c2e24555-fbc2-4cb8-a1fa-55ac079c09c6"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update section",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chapter 1: Motion\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/sections/c2e24555-fbc2-4cb8-a1fa-55ac079c09c6",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "sections",
+                "c2e24555-fbc2-4cb8-a1fa-55ac079c09c6"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete section",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/sections/f195b0c0-68e0-45b8-aa24-7421e54dca60",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "sections",
+                "f195b0c0-68e0-45b8-aa24-7421e54dca60"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reorder section",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "\n{\n  \"items\": [\n    { \"id\": \"c2e24555-fbc2-4cb8-a1fa-55ac079c09c6\", \"sortOrder\": 1 },\n    { \"id\": \"a60069ab-843f-4e43-a832-4e057cbc9c6f\", \"sortOrder\": 2 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/courses/e849b3e6-320f-4c24-bb12-f6f12767c6a3/sections/reorder",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "courses",
+                "e849b3e6-320f-4c24-bb12-f6f12767c6a3",
+                "sections",
+                "reorder"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Lessons",
+      "item": [
+        {
+          "name": "update lesson",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Introduction to Vectors (Updated)\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/lessons/09f59c71-4d65-4ec8-9533-3e89c857573f",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "lessons",
+                "09f59c71-4d65-4ec8-9533-3e89c857573f"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get lesson by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/lessons/09f59c71-4d65-4ec8-9533-3e89c857573f",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "lessons",
+                "09f59c71-4d65-4ec8-9533-3e89c857573f"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create lesson",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Introduction to Vectors\",\n  \"videoUrl\": \"https://example.com/vectors.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/sections/c2e24555-fbc2-4cb8-a1fa-55ac079c09c6/lessons",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "sections",
+                "c2e24555-fbc2-4cb8-a1fa-55ac079c09c6",
+                "lessons"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete lesson",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Classical Mechanics\",\n  \"description\": \"An introduction to classical mechanics\",\n  \"gradeLevel\": \"Grade 10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/lessons/a34bafc2-61ae-443b-9f8f-017a132bcdfb",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "lessons",
+                "a34bafc2-61ae-443b-9f8f-017a132bcdfb"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "reorder section lessons",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"id\": \"09f59c71-4d65-4ec8-9533-3e89c857573f\", \"sortOrder\": 2 },\n    { \"id\": \"f0b7b20f-e5f6-41e7-973b-ae539149d109\", \"sortOrder\": 1 }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/teacher/sections/c2e24555-fbc2-4cb8-a1fa-55ac079c09c6/lessons/reorder",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "teacher",
+                "sections",
+                "c2e24555-fbc2-4cb8-a1fa-55ac079c09c6",
+                "lessons",
+                "reorder"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

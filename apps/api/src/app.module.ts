@@ -10,6 +10,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { HealthModule } from './modules/health/health.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { QuizzesModule } from './modules/quizzes/quiz.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { StudentModule } from './modules/student/student.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
@@ -19,6 +20,16 @@ import { RetrievalModule } from './modules/retrieval/retrieval.module';
 
 @Module({
   imports: [
+<<<<<<< HEAD
+    // TypeOrmModule.forRoot({
+    //   type: 'postgres',
+    //   url: process.env.DATABASE_URL,
+    //   autoLoadEntities: true,
+    //   // Never true outside a throwaway local sandbox — migrations are the
+    //   // only supported way to change the schema (see CONTRIBUTING.md).
+    //   synchronize: false,
+    // }),
+=======
     ConfigModule.forRoot({ isGlobal: true }),
 
     BullModule.forRootAsync({
@@ -32,13 +43,19 @@ import { RetrievalModule } from './modules/retrieval/retrieval.module';
       }),
     }),
 
+>>>>>>> dev
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      // Never true outside a throwaway local sandbox — migrations are the
-      // only supported way to change the schema (see CONTRIBUTING.md).
-      synchronize: false,
+      synchronize: true,
+      port: 5432,
+      ssl: true,
+      extra: {
+        ssl: {
+          rejectUnauthorized: false, // Allows connection to Neon over safe TLS
+        },
+      },
     }),
     HealthModule,
     AuthModule,
@@ -50,8 +67,12 @@ import { RetrievalModule } from './modules/retrieval/retrieval.module';
     TeacherModule,
     DocumentsModule,
     NotificationsModule,
+<<<<<<< HEAD
+    QuizzesModule,
+=======
     JobsModule,
     RetrievalModule,
+>>>>>>> dev
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -34,4 +34,24 @@ export class UsersService {
     const { passwordHash: _passwordHash, ...safeUser } = user;
     return safeUser;
   }
+
+  async createUser(
+    fullName: string,
+    email: string,
+    passwordHash: string,
+    status: 'active' | 'suspended' | 'inactive',
+    role: 'student' | 'teacher',
+  ): Promise<Omit<UserEntity, 'passwordHash'>> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const newUser = this.usersRepository.create({
+      fullName,
+      email: normalizedEmail,
+      passwordHash,
+      status,
+      role,
+    });
+    const savedUser = await this.usersRepository.save(newUser);
+    const { passwordHash: _passwordHash, ...safeUser } = savedUser;
+    return safeUser;
+  }
 }

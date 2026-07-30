@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import {
@@ -17,10 +22,6 @@ export class EnrollmentsService {
     private readonly enrollmentsRepository: Repository<EnrollmentEntity>,
   ) {}
 
-  /**
-   * Returns only the given student's own enrollments, never anyone else's,
-   * and never soft-deleted rows.
-   */
   async findStudentEnrollments(
     studentId: string,
     filters: StudentEnrollmentFilters = {},
@@ -39,11 +40,6 @@ export class EnrollmentsService {
     return query.orderBy('enrollment.enrolled_at', 'DESC').getMany();
   }
 
-  /**
-   * Throws 403 unless the student has an active, non-deleted enrollment in
-   * this course. Used to gate the shared course-detail endpoint (Seif) and
-   * any other student-only course access.
-   */
   async assertStudentEnrolled(
     studentId: string,
     courseId: string,
@@ -64,11 +60,6 @@ export class EnrollmentsService {
     return enrollment;
   }
 
-  /**
-   * Count of distinct active students enrolled across the given courses.
-   * Used by the teacher dashboard (Nabile) — never exposes which student,
-   * only a total.
-   */
   async countActiveStudentsByCourseIds(courseIds: string[]): Promise<number> {
     if (courseIds.length === 0) {
       return 0;
@@ -80,5 +71,69 @@ export class EnrollmentsService {
       .andWhere('enrollment.status = :status', { status: 'active' })
       .andWhere('enrollment.deleted_at IS NULL')
       .getCount();
+  }
+
+  async createEnrollment(
+    studentId: string,
+    courseId: string,
+  ): Promise<EnrollmentEntity> {
+    const existing = await this.enrollmentsRepository.findOne({
+      where: { studentId, courseId, deletedAt: IsNull() },
+      withDeleted: false,
+    });
+
+    if (existing) {
+      if (existing.status === 'active') {
+        throw new ConflictException('You are already enrolled in this course.');
+      }
+      if (existing.status === 'suspended') {
+        throw new ForbiddenException('Your enrollment has been suspended.');
+      }
+      if (existing.status === 'completed') {
+        throw new ConflictException('You have already completed this course.');
+      }
+    }
+
+    const enrollment = this.enrollmentsRepository.create({
+      studentId,
+      courseId,
+      status: 'active',
+    });
+    return this.enrollmentsRepository.save(enrollment);
+  }
+
+  async findEnrollmentById(
+    enrollmentId: string,
+    studentId: string,
+  ): Promise<EnrollmentEntity> {
+    const enrollment = await this.enrollmentsRepository.findOne({
+      where: { id: enrollmentId, deletedAt: IsNull() },
+    });
+    if (!enrollment) {
+      throw new NotFoundException('Enrollment not found.');
+    }
+    if (enrollment.studentId !== studentId) {
+      throw new ForbiddenException('This is not your enrollment.');
+    }
+    return enrollment;
+  }
+
+  async updateEnrollment(
+    enrollmentId: string,
+    studentId: string,
+    status: EnrollmentStatus,
+  ): Promise<EnrollmentEntity> {
+    const enrollment = await this.findEnrollmentById(enrollmentId, studentId);
+    enrollment.status = status;
+    return this.enrollmentsRepository.save(enrollment);
+  }
+
+  async deleteEnrollment(
+    enrollmentId: string,
+    studentId: string,
+  ): Promise<void> {
+    const enrollment = await this.findEnrollmentById(enrollmentId, studentId);
+    enrollment.deletedAt = new Date();
+    await this.enrollmentsRepository.save(enrollment);
   }
 }

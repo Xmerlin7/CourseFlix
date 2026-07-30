@@ -1,13 +1,14 @@
 import { createContext, useCallback, useEffect, useState } from 'react'
 import type { PropsWithChildren } from 'react'
-import { getCurrentUser, login as loginRequest, logout as logoutRequest } from '../api/auth.api'
-import type { AuthUser, LoginPayload } from '../types/auth.types'
+import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest } from '../api/auth.api'
+import type { AuthUser, LoginPayload, RegisterPayload } from '../types/auth.types'
 
 export interface AuthContextValue {
   user: AuthUser | null
   isLoading: boolean
   login: (payload: LoginPayload) => Promise<AuthUser>
   logout: () => Promise<void>
+  register: (payload: RegisterPayload) => Promise<AuthUser>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- context object is not a component; useAuth.ts needs it from this same module.
@@ -55,8 +56,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUser(null)
   }, [])
 
+  const register = useCallback(async (payload: RegisterPayload) => {
+    const user = await registerRequest(payload)
+    setUser(user)
+    return user
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   )

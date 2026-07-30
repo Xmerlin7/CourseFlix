@@ -5,6 +5,8 @@ import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.in
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { CoursesService } from './courses.service';
 import { CourseEntity } from './entities/course.entity';
+import { SectionEntity } from './entities/section.entity';
+import { LessonEntity } from './entities/lesson.entity';
 
 function viewer(
   overrides: Pick<AuthenticatedUser, 'id' | 'email' | 'role'>,
@@ -28,6 +30,20 @@ describe('CoursesService', () => {
     createQueryBuilder: jest.Mock;
     findOne: jest.Mock;
     save: jest.Mock;
+  };
+  let sectionsRepository: {
+    createQueryBuilder: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+    softRemove: jest.Mock;
+    update: jest.Mock;
+  };
+  let lessonsRepository: {
+    createQueryBuilder: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+    softRemove: jest.Mock;
+    update: jest.Mock;
   };
 
   const teacher = { id: 'teacher-1', fullName: 'محمد عبدالرحمن' };
@@ -61,6 +77,34 @@ describe('CoursesService', () => {
       findOne: jest.fn(),
       save: jest.fn(),
     };
+    sectionsRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn(),
+      }),
+      findOne: jest.fn(),
+      save: jest.fn(),
+      softRemove: jest.fn(),
+      update: jest.fn(),
+    };
+    lessonsRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn(),
+      }),
+      findOne: jest.fn(),
+      save: jest.fn(),
+      softRemove: jest.fn(),
+      update: jest.fn(),
+    };
     enrollmentsService = { assertStudentEnrolled: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
@@ -69,6 +113,14 @@ describe('CoursesService', () => {
         {
           provide: getRepositoryToken(CourseEntity),
           useValue: coursesRepository,
+        },
+        {
+          provide: getRepositoryToken(SectionEntity),
+          useValue: sectionsRepository,
+        },
+        {
+          provide: getRepositoryToken(LessonEntity),
+          useValue: lessonsRepository,
         },
         { provide: EnrollmentsService, useValue: enrollmentsService },
       ],
