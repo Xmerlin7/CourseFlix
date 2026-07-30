@@ -8,7 +8,7 @@ import { AppModule } from '../src/app.module';
 import { SessionEntity } from '../src/modules/sessions/entities/session.entity';
 import { UserEntity } from '../src/modules/users/entities/user.entity';
 import { configureApp } from '../src/bootstrap';
- 
+
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
@@ -20,15 +20,14 @@ describe('Auth (e2e)', () => {
     fullName: 'E2E Regression User',
     role: 'student' as const,
   };
- beforeAll(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    configureApp(app);  
+    configureApp(app);
     await app.init();
-
 
     dataSource = moduleFixture.get(DataSource);
 
@@ -67,7 +66,10 @@ describe('Auth (e2e)', () => {
     });
 
     const meResponse = await agent.get('/api/v1/me').expect(200);
-    expect(meResponse.body).toMatchObject({ email: testUser.email, role: testUser.role });
+    expect(meResponse.body).toMatchObject({
+      email: testUser.email,
+      role: testUser.role,
+    });
 
     await agent.post('/api/v1/auth/logout').expect(200);
 
@@ -109,7 +111,10 @@ describe('Auth (e2e)', () => {
     // Force-expire the session directly in the DB, bypassing the app.
     await dataSource
       .getRepository(SessionEntity)
-      .update({ userId: testUserId }, { expiresAt: new Date(Date.now() - 1000) });
+      .update(
+        { userId: testUserId },
+        { expiresAt: new Date(Date.now() - 1000) },
+      );
 
     await agent.get('/api/v1/me').expect(401);
   });

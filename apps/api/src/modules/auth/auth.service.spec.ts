@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let authService: AuthService;
-  let usersService: { findByEmail: jest.Mock };
+  let usersService: { findByEmail: jest.Mock; createUser: jest.Mock };
   let sessionsService: {
     createSession: jest.Mock;
     revokeSession: jest.Mock;
@@ -19,12 +19,12 @@ describe('AuthService', () => {
     email: 'student@courseflix.local',
     role: 'student' as const,
     status: 'active' as const,
-    fullName: 'عبدالله حبسه',
+    fullName: 'Abdullah Habseh',
     avatarUrl: null,
   };
 
   beforeEach(async () => {
-    usersService = { findByEmail: jest.fn() };
+    usersService = { findByEmail: jest.fn(), createUser: jest.fn() };
     sessionsService = {
       createSession: jest.fn(),
       revokeSession: jest.fn(),
@@ -98,5 +98,42 @@ describe('AuthService', () => {
   it('does nothing on logout when there is no session cookie', async () => {
     await authService.logout(undefined);
     expect(sessionsService.revokeSession).not.toHaveBeenCalled();
+  });
+
+  it('register creates a user and issues a session', async () => {
+    usersService.findByEmail.mockResolvedValue(null);
+    usersService.createUser.mockResolvedValue({
+      id: 'new-user',
+      email: 'new@test.com',
+      role: 'student',
+      fullName: 'New User',
+      avatarUrl: null,
+    });
+    sessionsService.createSession.mockResolvedValue({
+      token: 'session-token',
+      session: { expiresAt: new Date(Date.now() + 86400000) },
+    });
+    const result = await authService.register({
+      fullName: 'New User',
+      email: 'NEW@TEST.COM',
+      password: 'StrongPass1',
+    });
+    expect(result.token).toBe('session-token');
+    expect(result.user.role).toBe('student');
+    expect(usersService.createUser).toHaveBeenCalled();
+  });
+
+  it('register rejects duplicate email', async () => {
+    usersService.findByEmail.mockResolvedValue({
+      id: 'existing',
+      email: 'existing@test.com',
+    });
+    await expect(
+      authService.register({
+        fullName: 'Duplicate',
+        email: 'existing@test.com',
+        password: 'StrongPass1',
+      }),
+    ).rejects.toThrow('Email already in use.');
   });
 });
