@@ -1,8 +1,4 @@
-import {
-  chunkDocument,
-  DEFAULT_CHUNK_TOKENS,
-  DEFAULT_CHUNK_OVERLAP,
-} from './chunk.stage';
+import { chunkDocument } from './chunk.stage';
 import type { ExtractedPage } from './extract.stage';
 
 describe('chunkDocument stage', () => {
@@ -11,7 +7,10 @@ describe('chunkDocument stage', () => {
 
   it('splits single short page into a single chunk with correct metadata', () => {
     const pages: ExtractedPage[] = [
-      { page: 1, text: 'Newton third law states for every action equal opposite reaction.' },
+      {
+        page: 1,
+        text: 'Newton third law states for every action equal opposite reaction.',
+      },
     ];
 
     const chunks = chunkDocument({ documentId, version, pages });
@@ -30,9 +29,7 @@ describe('chunkDocument stage', () => {
   it('chunks deterministically with overlapping token windows across pages', () => {
     // Generate 1500 words for page 1
     const page1Words = Array.from({ length: 1500 }, (_, i) => `word${i}`);
-    const pages: ExtractedPage[] = [
-      { page: 1, text: page1Words.join(' ') },
-    ];
+    const pages: ExtractedPage[] = [{ page: 1, text: page1Words.join(' ') }];
 
     // Using chunkTokens = 800, chunkOverlap = 120 (step = 680)
     const chunks = chunkDocument({
@@ -64,8 +61,14 @@ describe('chunkDocument stage', () => {
 
   it('produces byte-identical output across multiple runs for identical input', () => {
     const pages: ExtractedPage[] = [
-      { page: 1, text: 'Arabic physics classical mechanics lesson text example.' },
-      { page: 2, text: 'Newtonian force equations momentum equilibrium vectors.' },
+      {
+        page: 1,
+        text: 'Arabic physics classical mechanics lesson text example.',
+      },
+      {
+        page: 2,
+        text: 'Newtonian force equations momentum equilibrium vectors.',
+      },
     ];
 
     const run1 = chunkDocument({ documentId, version, pages });
@@ -95,7 +98,13 @@ describe('chunkDocument stage', () => {
     ).toThrow('chunkTokens must be greater than 0');
 
     expect(() =>
-      chunkDocument({ documentId, version, pages, chunkTokens: 100, chunkOverlap: 100 }),
+      chunkDocument({
+        documentId,
+        version,
+        pages,
+        chunkTokens: 100,
+        chunkOverlap: 100,
+      }),
     ).toThrow('chunkOverlap must be non-negative and less than chunkTokens');
   });
 });

@@ -8,4 +8,4 @@ async function bootstrap() {
   console.log('Waiting for jobs...');
 }
 
-bootstrap();
+void bootstrap();

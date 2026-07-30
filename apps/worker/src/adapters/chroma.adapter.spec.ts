@@ -5,7 +5,6 @@ import type { DocumentChunk } from '../stages/chunk.stage';
 describe('ChromaAdapter', () => {
   let adapter: ChromaAdapter;
   let mockCollection: { upsert: jest.Mock };
-  let mockClient: { getOrCreateCollection: jest.Mock };
 
   const validChunk: DocumentChunk = {
     documentId: 'doc-123',
@@ -21,7 +20,6 @@ describe('ChromaAdapter', () => {
 
   beforeEach(() => {
     mockCollection = { upsert: jest.fn().mockResolvedValue(undefined) };
-    mockClient = { getOrCreateCollection: jest.fn().mockResolvedValue(mockCollection) };
 
     const configService = {
       get: jest.fn((key: string) => {
@@ -32,8 +30,11 @@ describe('ChromaAdapter', () => {
     } as unknown as ConfigService;
 
     adapter = new ChromaAdapter(configService);
-    // Inject mock collection directly
-    (adapter as any).collection = mockCollection;
+    // Inject mock collection directly via internal property
+    Object.defineProperty(adapter, 'collection', {
+      value: mockCollection,
+      writable: true,
+    });
   });
 
   it('upserts valid chunk with correct vector ID formatting `${documentId}:${version}:${chunkIndex}`', async () => {
@@ -64,20 +65,23 @@ describe('ChromaAdapter', () => {
   });
 
   it('throws error if courseId is missing from metadata', async () => {
-    const input = {
+    const input: ChromaUpsertInput = {
       chunk: validChunk,
       courseId: '',
       vector: validVector,
     };
 
-    await expect(adapter.upsert([input as any])).rejects.toThrow(
+    await expect(adapter.upsert([input])).rejects.toThrow(
       'Chroma metadata validation failed: courseId is required and must be a string',
     );
   });
 
   it('throws error if page is missing from metadata', async () => {
-    const invalidChunk = { ...validChunk, page: undefined as any };
-    const input = {
+    const invalidChunk = {
+      ...validChunk,
+      page: undefined as unknown as number,
+    };
+    const input: ChromaUpsertInput = {
       chunk: invalidChunk,
       courseId,
       vector: validVector,
@@ -89,8 +93,11 @@ describe('ChromaAdapter', () => {
   });
 
   it('throws error if chunkIndex is missing from metadata', async () => {
-    const invalidChunk = { ...validChunk, chunkIndex: undefined as any };
-    const input = {
+    const invalidChunk = {
+      ...validChunk,
+      chunkIndex: undefined as unknown as number,
+    };
+    const input: ChromaUpsertInput = {
       chunk: invalidChunk,
       courseId,
       vector: validVector,

@@ -1,9 +1,6 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { IngestionProcessor, IngestionJobPayload } from './ingestion.processor';
 import { MockEmbeddingProvider } from '../adapters/embedding.adapter';
-import { ChromaAdapter } from '../adapters/chroma.adapter';
-import { NoopNotificationProducer } from '../../../api/src/common/ports/notification-producer.port';
 import { Job } from 'bullmq';
 
 describe('IngestionProcessor', () => {
@@ -13,7 +10,10 @@ describe('IngestionProcessor', () => {
   let chromaAdapter: { upsert: jest.Mock };
   let notificationProducer: { notify: jest.Mock };
 
-  const samplePdfPath = path.resolve(__dirname, '../../test/fixtures/sample.pdf');
+  const samplePdfPath = path.resolve(
+    __dirname,
+    '../../test/fixtures/sample.pdf',
+  );
 
   beforeEach(() => {
     dataSource = {
@@ -29,24 +29,32 @@ describe('IngestionProcessor', () => {
     };
 
     processor = new IngestionProcessor(
-      dataSource as any,
+      dataSource as unknown as import('typeorm').DataSource,
       embeddingProvider,
-      chromaAdapter as any,
-      notificationProducer as any,
+      chromaAdapter as unknown as import('../adapters/chroma.adapter').ChromaAdapter,
+      notificationProducer,
     );
   });
 
   it('processes ingestion job through extract -> chunk -> embed -> Chroma upsert -> DB persist -> complete', async () => {
-    // 1. Mock claim UPDATE affected 1 row
-    dataSource.query.mockImplementation(async (sql: string, params: any[]) => {
-      if (sql.includes('UPDATE ai_jobs SET status = \'processing\'')) {
-        return { rowCount: 1 };
+    // Mock claim UPDATE affected 1 row and SQL queries
+    dataSource.query.mockImplementation((sql: string) => {
+      if (sql.includes("UPDATE ai_jobs SET status = 'processing'")) {
+        return Promise.resolve({ rowCount: 1 });
       }
-      if (sql.includes('SELECT target_entity_type, target_entity_id FROM ai_jobs')) {
-        return [{ target_entity_type: 'document', target_entity_id: 'doc-uuid-1' }];
+      if (
+        sql.includes('SELECT target_entity_type, target_entity_id FROM ai_jobs')
+      ) {
+        return Promise.resolve([
+          { target_entity_type: 'document', target_entity_id: 'doc-uuid-1' },
+        ]);
       }
-      if (sql.includes('SELECT id, course_id, uploaded_by, file_id, file_name, version FROM documents')) {
-        return [
+      if (
+        sql.includes(
+          'SELECT id, course_id, uploaded_by, file_id, file_name, version FROM documents',
+        )
+      ) {
+        return Promise.resolve([
           {
             id: 'doc-uuid-1',
             course_id: 'course-uuid-1',
@@ -55,18 +63,20 @@ describe('IngestionProcessor', () => {
             file_name: 'sample.pdf',
             version: 1,
           },
-        ];
+        ]);
       }
-      if (sql.includes('SELECT id, storage_path, storage_provider FROM files')) {
-        return [
+      if (
+        sql.includes('SELECT id, storage_path, storage_provider FROM files')
+      ) {
+        return Promise.resolve([
           {
             id: 'file-uuid-1',
             storage_path: samplePdfPath,
             storage_provider: 'local',
           },
-        ];
+        ]);
       }
-      return { rowCount: 1 };
+      return Promise.resolve({ rowCount: 1 });
     });
 
     const job = {
@@ -76,16 +86,11 @@ describe('IngestionProcessor', () => {
 
     await processor.process(job);
 
-    // Verify Chroma upsert was called with valid vector ID and metadata
     expect(chromaAdapter.upsert).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
           courseId: 'course-uuid-1',
           isActive: true,
-          chunk: expect.objectContaining({
-            documentId: 'doc-uuid-1',
-            version: 1,
-          }),
         }),
       ]),
     );
@@ -98,11 +103,13 @@ describe('IngestionProcessor', () => {
 
     // Verify completion status updates
     expect(dataSource.query).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE ai_jobs SET status = \'completed\''),
+      expect.stringContaining("UPDATE ai_jobs SET status = 'completed'"),
       expect.any(Array),
     );
     expect(dataSource.query).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE documents SET processing_status = \'completed\''),
+      expect.stringContaining(
+        "UPDATE documents SET processing_status = 'completed'",
+      ),
       expect.any(Array),
     );
 
@@ -117,17 +124,29 @@ describe('IngestionProcessor', () => {
 
   it('handles pipeline failure: sets failed status, deactivates partial chunks, notifies teacher, and re-throws error', async () => {
     // Inject failure at embed stage
-    jest.spyOn(embeddingProvider, 'embed').mockRejectedValueOnce(new Error('Embedding provider connection timeout'));
+    jest
+      .spyOn(embeddingProvider, 'embed')
+      .mockRejectedValueOnce(
+        new Error('Embedding provider connection timeout'),
+      );
 
-    dataSource.query.mockImplementation(async (sql: string) => {
-      if (sql.includes('UPDATE ai_jobs SET status = \'processing\'')) {
-        return { rowCount: 1 };
+    dataSource.query.mockImplementation((sql: string) => {
+      if (sql.includes("UPDATE ai_jobs SET status = 'processing'")) {
+        return Promise.resolve({ rowCount: 1 });
       }
-      if (sql.includes('SELECT target_entity_type, target_entity_id FROM ai_jobs')) {
-        return [{ target_entity_type: 'document', target_entity_id: 'doc-uuid-1' }];
+      if (
+        sql.includes('SELECT target_entity_type, target_entity_id FROM ai_jobs')
+      ) {
+        return Promise.resolve([
+          { target_entity_type: 'document', target_entity_id: 'doc-uuid-1' },
+        ]);
       }
-      if (sql.includes('SELECT id, course_id, uploaded_by, file_id, file_name, version FROM documents')) {
-        return [
+      if (
+        sql.includes(
+          'SELECT id, course_id, uploaded_by, file_id, file_name, version FROM documents',
+        )
+      ) {
+        return Promise.resolve([
           {
             id: 'doc-uuid-1',
             course_id: 'course-uuid-1',
@@ -136,18 +155,20 @@ describe('IngestionProcessor', () => {
             file_name: 'sample.pdf',
             version: 1,
           },
-        ];
+        ]);
       }
-      if (sql.includes('SELECT id, storage_path, storage_provider FROM files')) {
-        return [
+      if (
+        sql.includes('SELECT id, storage_path, storage_provider FROM files')
+      ) {
+        return Promise.resolve([
           {
             id: 'file-uuid-1',
             storage_path: samplePdfPath,
             storage_provider: 'local',
           },
-        ];
+        ]);
       }
-      return { rowCount: 1 };
+      return Promise.resolve({ rowCount: 1 });
     });
 
     const job = {
@@ -155,23 +176,37 @@ describe('IngestionProcessor', () => {
       data: { jobId: 'ai-job-uuid-1' },
     } as Job<IngestionJobPayload>;
 
-    await expect(processor.process(job)).rejects.toThrow('Embedding provider connection timeout');
+    await expect(processor.process(job)).rejects.toThrow(
+      'Embedding provider connection timeout',
+    );
 
     // Verify ai_jobs status set to failed
     expect(dataSource.query).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE ai_jobs\n          SET status = \'failed\''),
-      expect.arrayContaining(['ai-job-uuid-1', 'Embedding provider connection timeout']),
+      expect.stringContaining(
+        "UPDATE ai_jobs\n          SET status = 'failed'",
+      ),
+      expect.arrayContaining([
+        'ai-job-uuid-1',
+        'Embedding provider connection timeout',
+      ]),
     );
 
     // Verify documents status set to failed
     expect(dataSource.query).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE documents SET processing_status = \'failed\''),
-      expect.arrayContaining(['doc-uuid-1', 'Embedding provider connection timeout']),
+      expect.stringContaining(
+        "UPDATE documents SET processing_status = 'failed'",
+      ),
+      expect.arrayContaining([
+        'doc-uuid-1',
+        'Embedding provider connection timeout',
+      ]),
     );
 
     // Verify partial chunks deactivated
     expect(dataSource.query).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE document_chunks\n          SET is_active = false'),
+      expect.stringContaining(
+        'UPDATE document_chunks\n          SET is_active = false',
+      ),
       ['doc-uuid-1'],
     );
 

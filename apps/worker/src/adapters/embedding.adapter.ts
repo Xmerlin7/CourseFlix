@@ -16,8 +16,10 @@ export interface EmbeddingProvider {
 export class MockEmbeddingProvider implements EmbeddingProvider {
   private static readonly VECTOR_DIMENSION = 1536;
 
-  async embed(texts: string[]): Promise<number[][]> {
-    return texts.map((text) => this.generateDeterministicVector(text));
+  embed(texts: string[]): Promise<number[][]> {
+    return Promise.resolve(
+      texts.map((text) => this.generateDeterministicVector(text)),
+    );
   }
 
   private generateDeterministicVector(text: string): number[] {
@@ -26,11 +28,11 @@ export class MockEmbeddingProvider implements EmbeddingProvider {
       seed = (seed * 33) ^ text.charCodeAt(i);
     }
 
-    const vector: number[] = new Array(MockEmbeddingProvider.VECTOR_DIMENSION);
+    const vector: number[] = [];
     for (let i = 0; i < MockEmbeddingProvider.VECTOR_DIMENSION; i++) {
       // Generate deterministic floats between -1.0 and 1.0
       const val = Math.sin(seed + i * 0.1);
-      vector[i] = Math.round(val * 100000) / 100000;
+      vector.push(Math.round(val * 100000) / 100000);
     }
     return vector;
   }
@@ -76,8 +78,12 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
 
     if (!response.ok) {
       const errorText = await response.text();
-      this.logger.error(`OpenAI embedding failed (${response.status}): ${errorText}`);
-      throw new Error(`OpenAI embedding failed with status ${response.status}: ${errorText}`);
+      this.logger.error(
+        `OpenAI embedding failed (${response.status}): ${errorText}`,
+      );
+      throw new Error(
+        `OpenAI embedding failed with status ${response.status}: ${errorText}`,
+      );
     }
 
     const data = (await response.json()) as {

@@ -34,7 +34,7 @@ describe('JobsService', () => {
       execute: jest.fn(),
     };
     aiJobsRepository = {
-      create: jest.fn((data) => data),
+      create: jest.fn((data: Record<string, unknown>) => data),
       save: jest.fn(),
       update: jest.fn(),
       increment: jest.fn(),

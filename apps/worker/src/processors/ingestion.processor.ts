@@ -33,6 +33,11 @@ interface FileRecord {
   storage_provider: string;
 }
 
+interface JobRecord {
+  target_entity_type: string;
+  target_entity_id: string;
+}
+
 /**
  * BullMQ worker processor executing full PDF ingestion pipeline:
  * Extract → Chunk → Embed → Chroma Upsert → Persist document_chunks → Complete & Notify.
@@ -103,10 +108,14 @@ export class IngestionProcessor extends WorkerHost {
         relatedEntityId: documentId,
       });
 
-      this.logger.log(`[${job.id}] ai_jobs row ${jobId} (doc ${documentId}) → completed`);
+      this.logger.log(
+        `[${job.id}] ai_jobs row ${jobId} (doc ${documentId}) → completed`,
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`[${job.id}] ai_jobs row ${jobId} → failed: ${message}`);
+      this.logger.error(
+        `[${job.id}] ai_jobs row ${jobId} → failed: ${message}`,
+      );
 
       await this.markFailed(jobId, message);
 
@@ -168,7 +177,9 @@ export class IngestionProcessor extends WorkerHost {
     const vectors = await this.embeddingProvider.embed(texts);
 
     if (vectors.length !== chunks.length) {
-      throw new Error(`Embedding count mismatch: expected ${chunks.length}, got ${vectors.length}`);
+      throw new Error(
+        `Embedding count mismatch: expected ${chunks.length}, got ${vectors.length}`,
+      );
     }
 
     // Stage 4: Chroma Upsert
@@ -199,7 +210,7 @@ export class IngestionProcessor extends WorkerHost {
       throw new Error(`Storage file not found at path: ${resolvedPath}`);
     }
 
-    return fs.readFileSync(resolvedPath);
+    return fs.promises.readFile(resolvedPath);
   }
 
   private async persistDocumentChunks(
@@ -253,37 +264,39 @@ export class IngestionProcessor extends WorkerHost {
   // ---------------------------------------------------------------------------
 
   private async claim(jobId: string): Promise<boolean> {
-    const result = await this.dataSource.query(
+    const result = (await this.dataSource.query(
       `UPDATE ai_jobs
           SET status = 'processing', started_at = NOW()
         WHERE id = $1
           AND status != 'completed'`,
       [jobId],
-    );
+    )) as unknown as { rowCount?: number };
     return (result?.rowCount ?? 0) > 0;
   }
 
-  private async getJobRecord(jobId: string): Promise<{ target_entity_type: string; target_entity_id: string } | null> {
-    const rows = await this.dataSource.query(
+  private async getJobRecord(jobId: string): Promise<JobRecord | null> {
+    const rows = (await this.dataSource.query(
       `SELECT target_entity_type, target_entity_id FROM ai_jobs WHERE id = $1`,
       [jobId],
-    );
+    )) as unknown as JobRecord[];
     return rows[0] || null;
   }
 
-  private async getDocumentRecord(documentId: string): Promise<DocumentRecord | null> {
-    const rows = await this.dataSource.query(
+  private async getDocumentRecord(
+    documentId: string,
+  ): Promise<DocumentRecord | null> {
+    const rows = (await this.dataSource.query(
       `SELECT id, course_id, uploaded_by, file_id, file_name, version FROM documents WHERE id = $1`,
       [documentId],
-    );
+    )) as unknown as DocumentRecord[];
     return rows[0] || null;
   }
 
   private async getFileRecord(fileId: string): Promise<FileRecord | null> {
-    const rows = await this.dataSource.query(
+    const rows = (await this.dataSource.query(
       `SELECT id, storage_path, storage_provider FROM files WHERE id = $1`,
       [fileId],
-    );
+    )) as unknown as FileRecord[];
     return rows[0] || null;
   }
 
@@ -320,7 +333,10 @@ export class IngestionProcessor extends WorkerHost {
     );
   }
 
-  private async markDocumentFailed(documentId: string, errorMessage: string): Promise<void> {
+  private async markDocumentFailed(
+    documentId: string,
+    errorMessage: string,
+  ): Promise<void> {
     await this.dataSource.query(
       `UPDATE documents SET processing_status = 'failed', error_message = $2 WHERE id = $1`,
       [documentId, errorMessage],
