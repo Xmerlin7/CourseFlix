@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CoursesService } from '../courses/courses.service';
 import type { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
@@ -108,8 +113,6 @@ export class StudentService {
         activeCoursesCount: enrollments.filter((e) => e.status === 'active')
           .length,
       },
-      // Sprint 1 boundary: progress tracking / continue-learning stay null
-      // until Sprint 2, per sprint1-plan.md acceptance criteria.
       overallProgressPercent: null,
       continueLearning: null,
       recentCourses,
@@ -142,6 +145,65 @@ export class StudentService {
       .map(({ enrollment, course }) =>
         this.toEnrollmentResponse(enrollment, course),
       );
+  }
+
+  async enroll(
+    studentId: string,
+    courseId: string,
+  ): Promise<StudentEnrollmentResponse> {
+    const course = await this.coursesService.findCourseById(courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+    if (course.teacherId === studentId) {
+      throw new ForbiddenException('You cannot enroll in your own course.');
+    }
+    if (course.status === 'draft') {
+      throw new ForbiddenException('This course is not yet published.');
+    }
+    if (course.status === 'archived') {
+      throw new ForbiddenException('This course is no longer available.');
+    }
+
+    const enrollment = await this.enrollmentsService.createEnrollment(
+      studentId,
+      courseId,
+    );
+    return this.toEnrollmentResponse(enrollment, course);
+  }
+
+  async getEnrollment(
+    enrollmentId: string,
+    studentId: string,
+  ): Promise<StudentEnrollmentResponse> {
+    const enrollment = await this.enrollmentsService.findEnrollmentById(
+      enrollmentId,
+      studentId,
+    );
+    const course = await this.coursesService.findCourseById(
+      enrollment.courseId,
+    );
+    return this.toEnrollmentResponse(enrollment, course ?? undefined);
+  }
+
+  async updateEnrollment(
+    enrollmentId: string,
+    studentId: string,
+    status: EnrollmentStatus,
+  ): Promise<StudentEnrollmentResponse> {
+    const enrollment = await this.enrollmentsService.updateEnrollment(
+      enrollmentId,
+      studentId,
+      status,
+    );
+    const course = await this.coursesService.findCourseById(
+      enrollment.courseId,
+    );
+    return this.toEnrollmentResponse(enrollment, course ?? undefined);
+  }
+
+  async unenroll(enrollmentId: string, studentId: string): Promise<void> {
+    await this.enrollmentsService.deleteEnrollment(enrollmentId, studentId);
   }
 
   private indexCoursesById(courses: CourseEntity[]): Map<string, CourseEntity> {
