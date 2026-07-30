@@ -15,6 +15,7 @@ import { StudentModule } from './modules/student/student.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
 import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
+import { RetrievalModule } from './modules/retrieval/retrieval.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { JobsModule } from './modules/jobs/jobs.module';
     DocumentsModule,
     NotificationsModule,
     JobsModule,
+    RetrievalModule,
   ],
   controllers: [AppController],
   providers: [AppService],
