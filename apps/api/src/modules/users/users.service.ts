@@ -8,7 +8,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
-  ) { }
+  ) {}
 
   // Includes passwordHash — only ever call this on the login path.
   // Never return the result of this method directly from an API response.
