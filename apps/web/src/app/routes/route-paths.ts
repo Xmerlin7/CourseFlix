@@ -5,6 +5,7 @@
 export const ROUTE_PATHS = {
   ROOT: '/',
   LOGIN: '/login',
+  REGISTER: '/register',
   FORBIDDEN: '/403',
   NOT_FOUND: '/404',
 

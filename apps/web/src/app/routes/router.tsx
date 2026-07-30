@@ -12,6 +12,9 @@ import { ErrorState } from '../../shared/components/ErrorState'
 const LoginPage = lazy(() =>
   import('../../features/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage }))
 )
+const RegisterPage = lazy(() =>
+  import('../../features/auth/pages/RegisterPage').then((m) => ({ default: m.RegisterPage }))
+)
 const StudentDashboardPage = lazy(() =>
   import('../../features/student/pages/StudentDashboardPage').then((m) => ({ default: m.StudentDashboardPage }))
 )
@@ -75,6 +78,14 @@ export const router = createBrowserRouter([
         element: (
           <SuspenseWrapper>
             <LoginPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: ROUTE_PATHS.REGISTER,
+        element: (
+          <SuspenseWrapper>
+            <RegisterPage />
           </SuspenseWrapper>
         ),
       },
