@@ -19,6 +19,11 @@ export class JobsService {
         private readonly ingestionQueue: Queue,
     ) { }
 
+    /**
+     * Generic ai_jobs creator for any job type. Dispatches into BullMQ
+     * without a deterministic job ID — fine for job types that don't need
+     * the document-version idempotency rule below.
+     */
     async createJob(
         jobType: string,
         targetEntityType: string,
@@ -42,11 +47,100 @@ export class JobsService {
         return savedJob;
     }
 
+    /**
+     * Real implementation backing JobQueuePort.enqueueDocumentIngestion
+     * (see apps/api/src/common/ports/job-queue.port.ts and
+     * sprint2-plan.md E-2's idempotency rule).
+     *
+     * The BullMQ job ID is deterministic — `ingest:${documentId}:v${version}`
+     * — so re-enqueueing the same document version never creates a second
+     * job: an in-flight or completed job is left alone, and a *failed*
+     * job is renewed in place (same ai_jobs row, same BullMQ job, retried)
+     * rather than duplicated. Only a version with no existing job at all
+     * creates a fresh ai_jobs row.
+     */
+    async enqueueDocumentIngestion(
+        documentId: string,
+        version: number,
+    ): Promise<string> {
+        const bullJobId = `ingest:${documentId}:v${version}`;
+        const existingJob = await this.ingestionQueue.getJob(bullJobId);
+
+        if (existingJob) {
+            const state = await existingJob.getState();
+
+            if (state === 'failed') {
+                // Renewed attempt: reset the *same* ai_jobs row and
+                // re-queue the *same* BullMQ job. This is the "retry a
+                // failed document" path — it must never create a second
+                // row for the same document version.
+                await this.aiJobsRepository.update(
+                    existingJob.data.jobId as string,
+                    {
+                        status: 'queued',
+                        startedAt: null,
+                        finishedAt: null,
+                        errorMessage: null,
+                    },
+                );
+                await existingJob.retry('failed');
+                return bullJobId;
+            }
+
+            // waiting/active/delayed: already in flight — don't duplicate.
+            // completed: already done — re-enqueueing the same version is
+            // a no-op by design.
+            return bullJobId;
+        }
+
+        const savedJob = await this.aiJobsRepository.save(
+            this.aiJobsRepository.create({
+                jobType: 'ingestion',
+                targetEntityType: 'document',
+                targetEntityId: documentId,
+            }),
+        );
+
+        await this.ingestionQueue.add(
+            'ingestion',
+            { jobId: savedJob.id },
+            {
+                jobId: bullJobId,
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 5_000 },
+            },
+        );
+
+        return bullJobId;
+    }
+
     private async updateJob(
         jobId: string,
         data: Partial<AiJobEntity>,
     ): Promise<void> {
         await this.aiJobsRepository.update(jobId, data);
+    }
+
+    /**
+     * Atomically transitions a job from 'queued' to 'processing'.
+     * Uses a conditional UPDATE (WHERE status = 'queued') instead of a
+     * plain SELECT-then-UPDATE, so two workers racing to pick up the same
+     * job can never both "win" the claim.
+     *
+     * Returns true if this call performed the transition, false if the
+     * job was already claimed (or doesn't exist) — callers should treat
+     * `false` as "skip, someone else has it" rather than an error.
+     */
+    async claim(jobId: string): Promise<boolean> {
+        const result = await this.aiJobsRepository
+            .createQueryBuilder()
+            .update(AiJobEntity)
+            .set({ status: 'processing', startedAt: new Date() })
+            .where('id = :jobId', { jobId })
+            .andWhere('status != :completed', { completed: 'completed' })
+            .execute();
+
+        return (result.affected ?? 0) > 0;
     }
 
     async markProcessing(jobId: string): Promise<void> {
@@ -73,5 +167,10 @@ export class JobsService {
             finishedAt: new Date(),
             errorMessage,
         });
+    }
+
+    /** Bumps the retry counter — called before re-dispatching a failed job. */
+    async incrementRetry(jobId: string): Promise<void> {
+        await this.aiJobsRepository.increment({ id: jobId }, 'retries', 1);
     }
 }

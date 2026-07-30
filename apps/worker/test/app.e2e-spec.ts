@@ -1,29 +1,48 @@
+/**
+ * Worker e2e smoke test.
+ *
+ * The worker is a NestJS standalone application context (no HTTP server).
+ * This test verifies that the module graph compiles and that the
+ * IngestionProcessor is registered — without needing a live Redis or Postgres
+ * connection (both are mocked).
+ *
+ * A full integration test (real Redis + Postgres, real PDF fixture) belongs in
+ * a separate file once E-3/E-4 are implemented (sprint2-plan.md §3 E-5 note).
+ */
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from '../src/worker.module';
+import { getDataSourceToken } from '@nestjs/typeorm';
+import { getQueueToken } from '@nestjs/bullmq';
+import { ConfigModule } from '@nestjs/config';
+import { IngestionProcessor } from '../src/processors/ingestion.processor';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('WorkerModule (smoke)', () => {
+  let moduleRef: TestingModule;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+  beforeAll(async () => {
+    moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot({ isGlobal: true })],
+      providers: [
+        IngestionProcessor,
+        // Stub TypeORM DataSource — processor only uses it for raw SQL.
+        {
+          provide: getDataSourceToken(),
+          useValue: { query: jest.fn().mockResolvedValue({ rowCount: 1 }) },
+        },
+        // Stub BullMQ queue — not needed for unit-level smoke.
+        {
+          provide: getQueueToken('ingestion'),
+          useValue: { add: jest.fn() },
+        },
+      ],
     }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    await moduleRef.close();
   });
 
-  afterEach(async () => {
-    await app.close();
+  it('IngestionProcessor is resolvable', () => {
+    const processor = moduleRef.get(IngestionProcessor);
+    expect(processor).toBeDefined();
   });
 });
