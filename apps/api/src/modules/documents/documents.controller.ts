@@ -25,7 +25,7 @@ export class DocumentsController {
   uploadDocument(
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthenticatedUser,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFile() file?: { originalname: string; mimetype: string; buffer: Buffer; size: number },
   ) {
     if (!file) {
       throw new BadRequestException('لم يتم إرفاق أي ملف.');
