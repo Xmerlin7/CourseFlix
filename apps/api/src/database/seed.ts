@@ -4,13 +4,15 @@ import { seedCourse } from './seeds/course.seed';
 import { seedEnrollment, seedEnrollments } from './seeds/enrollment.seed';
 import { seedDocuments } from './seeds/document.seed';
 import { seedNotifications } from './seeds/notification.seed';
+import { seedVideo } from './seeds/video.seed';
 
 /**
  * Central seed runner (`npm run seed` in apps/api). Resets to the same
  * demo fixture every time it's run: two teachers, ten students, seven
  * courses (covering every status and both school stages) with sections and
- * lessons, enrollments fanned across them, document rows in every
- * processing status, and a notification feed per user.
+ * lessons, enrollments fanned across them, one playable video per lesson,
+ * document rows in every processing status, and a notification feed per
+ * user.
  *
  * Every step upserts, so running it twice in a row produces the same state
  * (sprint2-plan.md §12). Run migrations first (`npm run migration:run`).
@@ -44,6 +46,8 @@ async function run(): Promise<void> {
       courseIds: enrollableCourseIds,
     });
 
+    const videoCount = await seedVideo(AppDataSource);
+
     const documentCount = await seedDocuments(AppDataSource, {
       courseId: course.id,
       teacherId: teacher.id,
@@ -65,6 +69,7 @@ async function run(): Promise<void> {
     );
     console.log(`  courses:        ${courses.length}`);
     console.log(`  lessons:        ${lessonTotal}`);
+    console.log(`  videos:         ${videoCount} new`);
     console.log(
       `  enrollments:    ${enrollmentCount} new (baseline: ${enrollment.status})`,
     );

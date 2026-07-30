@@ -60,7 +60,8 @@ describe('Auth (e2e)', () => {
       .expect(200);
 
     expect(loginResponse.headers['set-cookie']).toBeDefined();
-    expect(loginResponse.body.user).toMatchObject({
+    const body = loginResponse.body as { user: Record<string, unknown> };
+    expect(body.user).toMatchObject({
       email: testUser.email,
       role: testUser.role,
     });

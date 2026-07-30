@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -13,9 +15,12 @@ import { SessionsModule } from './modules/sessions/sessions.module';
 import { StudentModule } from './modules/student/student.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
 import { UsersModule } from './modules/users/users.module';
+import { JobsModule } from './modules/jobs/jobs.module';
+import { RetrievalModule } from './modules/retrieval/retrieval.module';
 
 @Module({
   imports: [
+<<<<<<< HEAD
     // TypeOrmModule.forRoot({
     //   type: 'postgres',
     //   url: process.env.DATABASE_URL,
@@ -24,6 +29,21 @@ import { UsersModule } from './modules/users/users.module';
     //   // only supported way to change the schema (see CONTRIBUTING.md).
     //   synchronize: false,
     // }),
+=======
+    ConfigModule.forRoot({ isGlobal: true }),
+
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+        },
+      }),
+    }),
+
+>>>>>>> dev
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
@@ -47,7 +67,12 @@ import { UsersModule } from './modules/users/users.module';
     TeacherModule,
     DocumentsModule,
     NotificationsModule,
+<<<<<<< HEAD
     QuizzesModule,
+=======
+    JobsModule,
+    RetrievalModule,
+>>>>>>> dev
   ],
   controllers: [AppController],
   providers: [AppService],

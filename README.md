@@ -173,3 +173,44 @@ The Scrum/Jira plan is the current source of truth for scope, acceptance criteri
 A story is complete only when its acceptance criteria pass through the real integrated path, owner-local tests and required cross-feature tests pass, authorization and privacy checks pass, Arabic RTL states are responsive and accessible, documentation is updated, and no Severity 1 or Severity 2 defect remains open.
 
 Mock-only frontend pages or isolated backend endpoints do not count as completed stories.
+
+## Local Development
+
+### Prerequisites
+
+- Node.js and npm
+- Docker Desktop (for PostgreSQL, Redis, and ChromaDB)
+
+### 1. Start infrastructure services
+
+```bash
+docker-compose up -d
+```
+
+This starts three services:
+
+| Service | Purpose | Port |
+|---|---|---|
+| `postgres` | Relational database | 5432 |
+| `redis` | Job queue backing store for the ingestion worker | 6379 |
+| `chroma` | Vector store for document embeddings | 8000 |
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+This installs dependencies for `apps/web`, `apps/api`, and `apps/worker` in one step via npm workspaces.
+
+### 3. Run the apps
+
+Each app runs in its own terminal:
+
+```bash
+npm run dev:web      # React app on http://localhost:5173
+npm run dev:api      # NestJS API on http://localhost:3000
+npm run dev:worker   # Ingestion worker (background process, no HTTP port)
+```
+
+The worker connects to Redis on startup and logs `Waiting for jobs...` once ready. It has no user interface; its job is to process document ingestion tasks enqueued by the API.
