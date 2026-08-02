@@ -18,6 +18,7 @@ import { TeacherModule } from './modules/teacher/teacher.module';
 import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
+import { TutorModule } from './modules/tutor/tutor.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { RetrievalModule } from './modules/retrieval/retrieval.module';
     JobsModule,
     RetrievalModule,
     LessonsModule,
+    TutorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
