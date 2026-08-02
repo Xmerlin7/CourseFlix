@@ -11,6 +11,7 @@ import type { EmbeddingProvider } from '../../../../worker/src/adapters/embeddin
 import { EMBEDDING_PROVIDER } from '../../../../worker/src/adapters/embedding.adapter';
 
 interface DocumentChunkRow {
+  id: string;
   vector_id: string;
   document_id: string;
   page_number: number;
@@ -97,9 +98,10 @@ export class RetrievalService implements RetrievalPort {
       return [];
     }
 
-    // Join with Postgres document_chunks table to retrieve page_number and document_id
+    // Join with Postgres document_chunks table to retrieve the relational
+    // chunk ID used by Tutor citation persistence.
     const chunkRows = (await this.dataSource.query(
-      `SELECT vector_id, document_id, page_number, text_preview
+      `SELECT id, vector_id, document_id, page_number, text_preview
          FROM document_chunks
         WHERE vector_id = ANY($1)
           AND is_active = true`,
@@ -125,7 +127,8 @@ export class RetrievalService implements RetrievalPort {
       }
 
       results.push({
-        chunkId: vectorId,
+        chunkId: chunkRow.id,
+        vectorId,
         documentId: chunkRow.document_id,
         page: chunkRow.page_number,
         excerpt: chromaDoc || chunkRow.text_preview,
