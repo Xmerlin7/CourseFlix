@@ -22,6 +22,7 @@
     "lint:api": "npm run lint -w apps/api",
     "lint:web": "npm run lint -w apps/web",
     "test:api": "npm run test -w apps/api",
+    "test:web": "npm run test -w apps/web",
     "test:worker": "npm run test -w apps/worker",
     "migration:run": "npm run migration:run -w apps/api",
     "seed": "npm run seed -w apps/api",
