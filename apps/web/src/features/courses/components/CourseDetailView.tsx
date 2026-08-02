@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
 import type { CourseDetail } from '../types/course.types'
@@ -51,19 +52,31 @@ export function CourseDetailView({ course }: CourseDetailViewProps) {
               <p className="subtitle">لا يوجد دروس في هذا القسم بعد</p>
             ) : (
               <div className="list">
-                {section.lessons.map((lesson) => (
-                  // Deliberately not a link: the lesson player route is
-                  // Albraa's slice and isn't in router.tsx yet, so this
-                  // stays a plain row rather than a dead link to /404.
-                  <div key={lesson.id} className="list-item">
-                    <span className="lead">
-                      <span className="ms">play_circle</span>
-                    </span>
-                    <span className="body">
-                      <span className="t">{lesson.title}</span>
-                    </span>
-                  </div>
-                ))}
+                {section.lessons.map((lesson) =>
+                  // The teacher's own view of their course has no lesson
+                  // player route to send them to — only the student path
+                  // is routed (router.tsx) — so this stays a plain row
+                  // there, same as before the player existed.
+                  course.canEdit ? (
+                    <div key={lesson.id} className="list-item">
+                      <span className="lead">
+                        <span className="ms">play_circle</span>
+                      </span>
+                      <span className="body">
+                        <span className="t">{lesson.title}</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <Link key={lesson.id} to={`/student/lessons/${lesson.id}`} className="list-item">
+                      <span className="lead">
+                        <span className="ms">play_circle</span>
+                      </span>
+                      <span className="body">
+                        <span className="t">{lesson.title}</span>
+                      </span>
+                    </Link>
+                  ),
+                )}
               </div>
             )}
           </section>

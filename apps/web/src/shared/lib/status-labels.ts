@@ -1,6 +1,7 @@
 import type { CourseStatus } from '../../features/courses/types/course.types'
 import type { EnrollmentStatus } from '../../features/student/types/student.types'
 import type { DocumentProcessingStatus } from '../../features/documents/types/document.types'
+import type { LessonProgressStatus } from '../../features/lessons/types/lesson.types'
 
 /**
  * Arabic labels + M3 chip variants for every status the UI renders.
@@ -22,6 +23,15 @@ export const ENROLLMENT_STATUS: Record<EnrollmentStatus, { label: string; chip: 
   active: { label: 'نشط', chip: 'green' },
   suspended: { label: 'موقوف', chip: 'red' },
   completed: { label: 'مكتمل', chip: '' },
+}
+
+export const LESSON_PROGRESS_STATUS: Record<
+  LessonProgressStatus,
+  { label: string; chip: ChipVariant }
+> = {
+  not_started: { label: 'لم تبدأ بعد', chip: 'outline' },
+  in_progress: { label: 'قيد المشاهدة', chip: 'pink' },
+  completed: { label: 'مكتمل', chip: 'green' },
 }
 
 export const DOCUMENT_STATUS: Record<
