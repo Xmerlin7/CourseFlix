@@ -32,11 +32,7 @@ export class DocumentsController {
   uploadDocument(
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthenticatedUser,
-<<<<<<< HEAD
     @UploadedFile() file?: UploadedDocumentFile,
-=======
-    @UploadedFile() file?: { originalname: string; mimetype: string; buffer: Buffer; size: number },
->>>>>>> dev
   ) {
     if (!file) {
       throw new BadRequestException('لم يتم إرفاق أي ملف.');
