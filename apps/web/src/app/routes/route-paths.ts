@@ -14,6 +14,7 @@ export const ROUTE_PATHS = {
     DASHBOARD: '/student/dashboard',
     COURSES: '/student/courses',
     COURSE_DETAIL: '/student/courses/:courseId',
+    ASSISTANT: '/student/courses/:courseId/assistant',
     LESSON_DETAIL: '/student/lessons/:lessonId',
     NOTIFICATIONS: '/student/notifications',
   },
