@@ -19,7 +19,7 @@ This plan was written on **Monday, July 27** — day 1 is already spent. See "Ca
 
 The delivery plan budgeted Sprint 2 as 120h over 5 working days. **We are starting on day 2.** Four working days remain (Mon 27 → Thu 30), which is 4 × 6h × 5 people = **120h gross**. Planning 120h of tasks into 120h of capacity leaves zero room for standups, review, integration, or a single bug — it would be a plan that fails on paper.
 
-So Sprint 2 is planned at **102h (85% utilization), 18h buffer**, and four items are explicitly deferred:
+So Sprint 2 is planned at **98h (81.7% utilization), 22h buffer**, and five items are explicitly deferred:
 
 | Deferred to Sprint 3 | Why |
 |---|---|
@@ -27,6 +27,7 @@ So Sprint 2 is planned at **102h (85% utilization), 18h buffer**, and four items
 | Full prompt-injection matrix (CF-TASK-051) | Reduced to 3 canonical injection cases inside Seif's S-3 tests. |
 | Notification page filters and mark-all-read UI | Sprint 2 ships list + unread badge + mark-one-read. That is enough for the demo. |
 | Tutor conversation-history endpoint | Sprint 2 persists history; reading it back is Sprint 3. |
+| Seif-owned analytics/GTM/dataLayer work (S-4 / CF-TASK-061/062) | Deferred to the last sprint by team decision. Sprint 2 ships the Tutor product slice without analytics hooks. |
 
 This is the scale-down decision stated openly. If the team would rather extend Sprint 2 into Sunday Aug 2, say so at Monday standup — but that is a call for the whole team, and it costs Sprint 3 a day.
 
@@ -37,8 +38,8 @@ Registration is classified **POST-MVP** in [courseflix-scrum-jira-plan.md:92](do
 There was no spare capacity, so it is paid for openly rather than absorbed:
 
 - **Nabile takes it** (6h). It is a small, self-contained vertical slice with zero dependencies on anyone — the cleanest possible thing to bolt onto an existing sprint.
-- Team goes 96h → 102h, buffer 24h → 18h, utilization 80% → 85%. Nobody exceeds their 24h gross.
-- **The 18h buffer is now the entire margin for integration and bugs across four days. Any further addition means something comes out.**
+- Team goes 96h → 98h after deferring S-4 analytics/GTM/dataLayer, buffer 24h → 22h, utilization 80% → 81.7%. Nobody exceeds their 24h gross.
+- **The 22h buffer is now the entire margin for integration and bugs across four days. Any further addition means something comes out.**
 
 ### Rebalance so everyone works in both layers
 
@@ -59,10 +60,10 @@ Net effect: Nabile frees 5h and absorbs the 6h registration slice; Seif swaps 3h
 | **Habsa** | Documents/upload API, notifications API, security tests | Teacher Files tab, notifications page | 12h | 7h | **19h** |
 | **Albraa** | Lessons/heartbeat/attendance API, tests, **smoke test** | Lesson player page | 17h | 5h | **22h** |
 | **Nabile** | Quiz API + grading, **registration API**, tests | Quiz page, **registration page** | 14h | 6h | **20h** |
-| **Seif** | Tutor API, prompt safety, chat persistence, test harness | **Tutor chat page**, dataLayer | 16h | 5h | **21h** |
-| **Team** | | | 79h | 23h | **102h** |
+| **Seif** | Tutor API, prompt safety, chat persistence, test harness | **Tutor chat page** | 12h | 5h | **17h** |
+| **Team** | | | 75h | 23h | **98h** |
 
-Everyone except Elgendy owns at least one endpoint **and** at least one React page. Spread is 19h–22h — tight enough to be fair, and no one is over their 24h gross.
+Everyone except Elgendy owns at least one endpoint **and** at least one React page. Spread is 17h–22h after the analytics deferral, and no one is over their 24h gross.
 
 ---
 
@@ -77,7 +78,7 @@ Everyone is in the call; **Seif drives the keyboard** and pushes the single comm
 | File | Declares | Producer | Implementer |
 |---|---|---|---|
 | `job-queue.port.ts` | `JobQueuePort { enqueueDocumentIngestion(documentId: string, version: number): Promise<string> }` + `JOB_QUEUE_PORT` injection token | Habsa calls it | Elgendy implements it |
-| `retrieval.port.ts` | `RetrievalPort { search(q: { courseId, query, topK }): Promise<RetrievedChunk[]> }`, `RetrievedChunk { chunkId, documentId, page, excerpt, score }` + `RETRIEVAL_PORT` token | Seif calls it | Elgendy implements it |
+| `retrieval.port.ts` | `RetrievalPort { search(q: { courseId, query, topK }): Promise<RetrievedChunk[]> }`, `RetrievedChunk { chunkId, vectorId, documentId, page, excerpt, score }` + `RETRIEVAL_PORT` token. `chunkId` is the Postgres `document_chunks.id`; `vectorId` is the Chroma bridge ID. | Seif calls it | Elgendy implements it |
 | `notification-producer.port.ts` | `NotificationProducerPort { notify(input: { userId, type, title, message, relatedEntityType?, relatedEntityId? }): Promise<void> }` + `NOTIFICATION_PRODUCER_PORT` token | Elgendy calls it | Habsa implements it |
 
 Each port file also exports an in-memory fake right next to it (`InMemoryJobQueue`, `FixtureRetrieval`, `NoopNotificationProducer`) so callers are runnable from minute one. **Rule: a fake is bound in your feature module only until the real adapter merges; swapping it is a one-line change in the `providers` array.**
@@ -86,7 +87,7 @@ Each port file also exports an in-memory fake right next to it (`InMemoryJobQueu
 
 | File | Change |
 |---|---|
-| [apps/web/src/app/routes/route-paths.ts](apps/web/src/app/routes/route-paths.ts) | Add `REGISTER: '/register'`, `STUDENT.LESSON_DETAIL: '/student/lessons/:lessonId'`, `STUDENT.QUIZ_DETAIL: '/student/quizzes/:quizId'`, `STUDENT.ASSISTANT: '/student/assistant'`, `STUDENT.NOTIFICATIONS: '/student/notifications'`, `TEACHER.NOTIFICATIONS: '/teacher/notifications'` |
+| [apps/web/src/app/routes/route-paths.ts](apps/web/src/app/routes/route-paths.ts) | Add `REGISTER: '/register'`, `STUDENT.LESSON_DETAIL: '/student/lessons/:lessonId'`, `STUDENT.QUIZ_DETAIL: '/student/quizzes/:quizId'`, `STUDENT.ASSISTANT: '/student/courses/:courseId/assistant'`, `STUDENT.NOTIFICATIONS: '/student/notifications'`, `TEACHER.NOTIFICATIONS: '/teacher/notifications'` |
 | [apps/web/src/app/routes/router.tsx](apps/web/src/app/routes/router.tsx) | Add the six route entries, each lazily importing a page that already exists as a one-line placeholder component. **`/register` goes inside the existing `AuthLayout` children array (line 69), as a sibling of `/login`** — it must stay outside `RequireRole` so a logged-out visitor can reach it |
 | [apps/web/src/shared/components/Sidebar.tsx](apps/web/src/shared/components/Sidebar.tsx) | **Fixes CF-BUG-001.** Replace every `<a href>` (lines 54, 68) with `NavLink` from `react-router`; point nav items at `ROUTE_PATHS` constants instead of hand-typed strings; delete the dead `/student/progress`, `/teacher/students`, `/settings` entries and correct `/teacher/course` → `/teacher/courses` |
 
@@ -150,7 +151,7 @@ Anything else in that file is off-limits.
 
 **This is the whole team's day-1 unblocker. Ship it first, before your own feature work.**
 
-| File | Action |
+| File | Deferred action |
 |---|---|
 | [docker-compose.yml](docker-compose.yml) | **Edit.** Add `redis` (`redis:7-alpine`, port `${REDIS_PORT:-6379}`, healthcheck `redis-cli ping`) and `chroma` (`chromadb/chroma`, port `${CHROMA_PORT:-8000}`, named volume `courseflix_chroma_data`) alongside the existing `postgres` service |
 | [.env.example](.env.example) | **Edit.** Add `REDIS_HOST`, `REDIS_PORT`, `CHROMA_URL`, `CHROMA_COLLECTION`, `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_API_KEY=replace-me`, `INGESTION_CHUNK_TOKENS=800`, `INGESTION_CHUNK_OVERLAP=120`, `MAX_UPLOAD_BYTES=20971520`, `STORAGE_ROOT=./storage` — **placeholders only, never a real key** |
@@ -403,7 +404,7 @@ The `/register` route and its `ROUTE_PATHS.REGISTER` constant are already in pla
 
 ---
 
-## 7. Seif — The Tutor End to End, Prompt Safety, Quality Harness, and Analytics *(21h — 16h backend, 5h frontend)*
+## 7. Seif — The Tutor End to End, Prompt Safety, and Quality Harness *(17h — 12h backend, 5h frontend)*
 
 Quality & Integration Lead. You carry the Sprint 1 items that never shipped, plus the Tutor **whole** — the grounding, the refusal policy, the citations, *and* the chat page that renders them. The Tutor being a single-owner vertical slice is the point: the citation contract never crosses a person boundary, so a no-answer can never be rendered with citations by someone who didn't write the policy.
 
@@ -448,9 +449,9 @@ Write one proof test (`LoginForm` renders and submits) so the harness is demonst
 3. Traces log `traceId`, latency, token counts, status, model — and **never** question text, answer text, or chunk content.
 4. Provider timeout / rate-limit / error ⇒ a safe retryable response, never a stack trace to the client.
 
-### S-4 — dataLayer and learning events *(4h)*
+### S-4 — dataLayer and learning events *(4h — deferred to last sprint)*
 
-**Carry-over: CF-TASK-061.** [apps/web/src/shared/analytics/dataLayer.ts](apps/web/src/shared/analytics/dataLayer.ts) is still a TODO stub.
+**Carry-over: CF-TASK-061/062. Deferred by team decision.** [apps/web/src/shared/analytics/dataLayer.ts](apps/web/src/shared/analytics/dataLayer.ts) remains a TODO stub until the last sprint.
 
 | File | Action |
 |---|---|
@@ -459,7 +460,7 @@ Write one proof test (`LoginForm` renders and submits) so the harness is demonst
 | `apps/web/src/shared/analytics/pii-denylist.ts` | **New.** Runtime guard that **throws in dev / drops in prod** on any key or value resembling email, password, full name, raw document text, or answer text |
 | `apps/web/src/shared/analytics/dataLayer.spec.ts` | **New.** The denylist tests Sprint 1 promised. Assert that an event carrying an email is rejected |
 
-Then add the hook calls — **one line each**, in the owner's page, coordinated with them: Albraa's player, Nabile's quiz page, your own Tutor response path. Ask before editing their file.
+Do not add these files or hook calls in Sprint 2. The last sprint owns analytics/GTM/dataLayer implementation and event verification.
 
 ### S-5 — Tutor chat page *(5h — moved from Nabile, see §1)*
 
@@ -588,7 +589,7 @@ A slice is done when **all** of these are true. Backend-only or frontend-only is
 - [ ] **The two-course isolation test is green.** No chunk from course B is ever returned for course A.
 - [ ] A supported Arabic question returns an answer with a citation whose page maps to a real stored chunk.
 - [ ] An unsupported question returns the no-answer state with **zero** citations.
-- [ ] `dataLayer` denylist tests are green (Sprint 1 carry-over closed).
+- [ ] Analytics/GTM/dataLayer is explicitly deferred to the last sprint; no Sprint 2 slice depends on those hooks.
 - [ ] The smoke test runs from a reset seed to assertion (Sprint 1 carry-over closed).
 - [ ] `apps/web` has a test command that runs and passes (Sprint 1 carry-over closed).
 
