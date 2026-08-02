@@ -21,6 +21,7 @@ describe('RetrievalService (Isolation Proof)', () => {
 
   const docAId = 'doc-A-uuid';
   const docBId = 'doc-B-uuid';
+  const chunkAId = 'chunk-A-db-id';
 
   beforeEach(() => {
     dataSource = {
@@ -100,6 +101,7 @@ describe('RetrievalService (Isolation Proof)', () => {
     // 2. Mock Postgres document_chunks DB query response
     dataSource.query.mockResolvedValue([
       {
+        id: chunkAId,
         vector_id: `${docAId}:1:0`,
         document_id: docAId,
         page_number: 1,
@@ -118,7 +120,8 @@ describe('RetrievalService (Isolation Proof)', () => {
     expect(results).toHaveLength(1);
     expect(results[0].documentId).toBe(docAId);
     expect(results[0].page).toBe(1);
-    expect(results[0].chunkId).toBe(`${docAId}:1:0`);
+    expect(results[0].chunkId).toBe(chunkAId);
+    expect(results[0].vectorId).toBe(`${docAId}:1:0`);
     expect(results[0].excerpt).toContain('قانون نيوتن الثالث');
 
     // Assert ZERO chunks from Course B were queried or returned
@@ -160,6 +163,7 @@ describe('RetrievalService (Isolation Proof)', () => {
 
     dataSource.query.mockResolvedValue([
       {
+        id: 'chunk-A-v2-db-id',
         vector_id: `${docAId}:2:0`,
         document_id: docAId,
         page_number: 1,
@@ -174,10 +178,11 @@ describe('RetrievalService (Isolation Proof)', () => {
     });
 
     expect(results).toHaveLength(1);
-    expect(results[0].chunkId).toBe(`${docAId}:2:0`);
+    expect(results[0].chunkId).toBe('chunk-A-v2-db-id');
+    expect(results[0].vectorId).toBe(`${docAId}:2:0`);
 
     // Verify superseded version 1 (`${docAId}:1:0`) was NOT returned
-    expect(results.some((r) => r.chunkId === `${docAId}:1:0`)).toBe(false);
+    expect(results.some((r) => r.vectorId === `${docAId}:1:0`)).toBe(false);
   });
 
   it('returns empty array if courseId has no matching chunks', async () => {
