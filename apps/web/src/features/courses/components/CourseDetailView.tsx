@@ -31,7 +31,15 @@ export function CourseDetailView({ course }: CourseDetailViewProps) {
               .join(' · ')}
           </p>
         </div>
-        <span className={`chip ${status.chip}`}>{status.label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {!course.canEdit && (
+            <Link to={`/student/courses/${course.id}/assistant`} className="btn tonal">
+              <span className="ms">smart_toy</span>
+              اسأل المساعد
+            </Link>
+          )}
+          <span className={`chip ${status.chip}`}>{status.label}</span>
+        </div>
       </div>
 
       {course.description && <p className="subtitle">{course.description}</p>}
