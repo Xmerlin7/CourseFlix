@@ -7,7 +7,14 @@ export interface SearchQueryInput {
 }
 
 export interface RetrievedChunk {
+  /**
+   * Postgres `document_chunks.id`. Use this for relational persistence.
+   */
   chunkId: string;
+  /**
+   * Vector-store ID used to bridge ChromaDB and Postgres.
+   */
+  vectorId: string;
   documentId: string;
   page: number;
   excerpt: string;
