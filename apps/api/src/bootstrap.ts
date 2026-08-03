@@ -1,10 +1,15 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { correlationMiddleware } from './common/correlation/correlation.middleware';
 
 // Shared between main.ts and e2e tests so both run with the exact same
 // middleware/pipes — e2e tests build their app from AppModule directly
 // and never execute main.ts's bootstrap() function.
 export function configureApp(app: INestApplication): void {
+  // First, so every subsequent middleware/guard/handler can read the
+  // request's correlation ID (see common/correlation/correlation.context.ts).
+  app.use(correlationMiddleware);
+
   app.use(cookieParser(process.env.SESSION_SECRET));
 
   app.enableCors({
