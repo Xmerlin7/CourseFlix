@@ -27,7 +27,9 @@ interface CourseBlueprint {
   sections: Array<{ title: string; lessons: string[] }>;
 }
 
-const COURSE_BLUEPRINTS: CourseBlueprint[] = [
+// Exported so `reset-check.ts` can locate the exact same anchor rows
+// (primary course, primary section) without duplicating fixture data.
+export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
   {
     slug: 'classical-mechanics',
     title: 'الميكانيكا الكلاسيكية',
