@@ -93,8 +93,7 @@ export class HealthService {
   private async checkRedis(): Promise<DependencyStatus> {
     try {
       const client = await this.ingestionQueue.client;
-      await client.ping();
-      return 'ok';
+      await client.info(); return 'ok';
     } catch {
       return 'error';
     }
