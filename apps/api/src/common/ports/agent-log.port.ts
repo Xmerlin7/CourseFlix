@@ -20,10 +20,7 @@ import { Injectable, Logger } from '@nestjs/common';
 export const AGENT_LOG_PORT = Symbol('AGENT_LOG_PORT');
 
 export type AgentType =
-  | 'content_scout'
-  | 'proactive_proctor'
-  | 'tutor_llm'
-  | 'analytics_agent';
+  'content_scout' | 'proactive_proctor' | 'tutor_llm' | 'analytics_agent';
 
 export type AgentLogStatus = 'success' | 'failed' | 'retrying' | 'skipped';
 

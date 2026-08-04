@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { RetrievalService } from './retrieval.service';
-import { MockEmbeddingProvider } from './adapters/embedding.adapter';
+import { MockEmbeddingProvider } from './embedding.adapter';
 
 interface MockQueryOptions {
   where: {

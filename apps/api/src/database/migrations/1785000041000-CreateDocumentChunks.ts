@@ -8,10 +8,10 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * database with the vector store.
  */
 export class CreateDocumentChunks1785000041000 implements MigrationInterface {
-    name = 'CreateDocumentChunks1785000041000';
+  name = 'CreateDocumentChunks1785000041000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
       CREATE TABLE "document_chunks" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "document_id" UUID NOT NULL REFERENCES "documents"("id") ON DELETE CASCADE,
@@ -25,20 +25,20 @@ export class CreateDocumentChunks1785000041000 implements MigrationInterface {
       );
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE INDEX "idx_document_chunks_document_id"
       ON "document_chunks" ("document_id");
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE INDEX "idx_document_chunks_vector_id"
       ON "document_chunks" ("vector_id");
     `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
       DROP TABLE IF EXISTS "document_chunks";
     `);
-    }
+  }
 }

@@ -7,9 +7,7 @@ import {
 } from 'typeorm';
 
 export type InterventionRuleKey =
-  | 'low_quiz_score'
-  | 'explicit_confusion_phrase'
-  | 'repeated_concept_question';
+  'low_quiz_score' | 'explicit_confusion_phrase' | 'repeated_concept_question';
 
 export type InterventionStatus = 'active' | 'resolved';
 

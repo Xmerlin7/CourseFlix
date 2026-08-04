@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DocumentsModule } from './modules/documents/documents.module';
@@ -75,6 +76,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     TutorModule,
     AgentLogsModule,
     InterventionsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

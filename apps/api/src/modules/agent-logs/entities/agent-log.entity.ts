@@ -1,9 +1,4 @@
-import {
-  Column,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import type {
   AgentLogStatus,
   AgentType,
@@ -27,7 +22,12 @@ export class AgentLogEntity {
   @Column({
     name: 'agent_type',
     type: 'enum',
-    enum: ['content_scout', 'proactive_proctor', 'tutor_llm', 'analytics_agent'],
+    enum: [
+      'content_scout',
+      'proactive_proctor',
+      'tutor_llm',
+      'analytics_agent',
+    ],
     enumName: 'agent_type',
   })
   agentType!: AgentType;

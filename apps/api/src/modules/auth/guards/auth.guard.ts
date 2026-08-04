@@ -20,11 +20,10 @@ export class AuthGuard implements CanActivate {
       .getRequest<Request & { user?: AuthenticatedUser }>();
 
     let token = request.signedCookies?.[SESSION_COOKIE_NAME] as
-      | string
-      | undefined;
+      string | undefined;
 
     if (!token) {
-      const authHeader = request.headers?.authorization as string | undefined;
+      const authHeader = request.headers?.authorization;
       if (authHeader?.startsWith('Bearer ')) {
         token = authHeader.slice(7);
       }

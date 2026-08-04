@@ -25,7 +25,7 @@ type UploadedDocumentFile = {
 @Controller('api/v1')
 @UseGuards(AuthGuard, TeacherRoleGuard)
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) { }
+  constructor(private readonly documentsService: DocumentsService) {}
 
   @Post('teacher/courses/:courseId/documents')
   @UseInterceptors(FileInterceptor('file'))

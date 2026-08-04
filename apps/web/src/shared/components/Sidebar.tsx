@@ -32,6 +32,8 @@ const teacherNavItems: NavItem[] = [
   { path: ROUTE_PATHS.TEACHER.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
   { path: ROUTE_PATHS.TEACHER.AGENT_LOGS, label: 'سجل الوكيل', icon: 'smart_toy' },
   { path: ROUTE_PATHS.TEACHER.INTERVENTIONS, label: 'تقارير المتابعة', icon: 'monitoring' },
+  { path: ROUTE_PATHS.TEACHER.SALES, label: 'المبيعات', icon: 'payments' },
+  { path: ROUTE_PATHS.TEACHER.ANALYTICS, label: 'مساعد التحليلات', icon: 'insights' },
 ]
 
 export function Sidebar({

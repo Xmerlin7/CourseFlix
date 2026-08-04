@@ -14,9 +14,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * `1785000062000-CreateInterventions.ts`), so report/notification/log
  * all reconcile to one intervention.
  */
-export class CreateProgressReports1785000061000
-  implements MigrationInterface
-{
+export class CreateProgressReports1785000061000 implements MigrationInterface {
   name = 'CreateProgressReports1785000061000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
