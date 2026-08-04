@@ -13,16 +13,83 @@ const TYPE_META: Record<NotificationType, { label: string; icon: string; lead: s
   system: { label: 'إشعار عام', icon: 'info', lead: '' },
 }
 
+const STATUS_OPTIONS: Array<{ label: string; value: 'all' | 'unread' | 'read' }> = [
+  { label: 'الكل', value: 'all' },
+  { label: 'غير مقروء', value: 'unread' },
+  { label: 'مقروء', value: 'read' },
+]
+
+const TYPE_OPTIONS: Array<{ label: string; value: 'all' | NotificationType }> = [
+  { label: 'كل الأنواع', value: 'all' },
+  ...(Object.entries(TYPE_META) as Array<[NotificationType, (typeof TYPE_META)[NotificationType]]>).map(
+    ([type, meta]) => ({ label: meta.label, value: type }),
+  ),
+]
+
 export function NotificationsPage() {
-  const { data, isLoading, error, markRead, refetch } = useNotifications()
+  const {
+    data,
+    isLoading,
+    error,
+    statusFilter,
+    setStatusFilter,
+    typeFilter,
+    setTypeFilter,
+    markRead,
+    markAllRead,
+    refetch,
+  } = useNotifications()
   const unreadCount = data.filter((notification) => !notification.isRead).length
 
   return (
     <>
-      <h1 className="page-title">الإشعارات</h1>
-      <p className="subtitle">
-        {unreadCount > 0 ? `عندك ${unreadCount} إشعار غير مقروء` : 'كل الإشعارات مقروءة'}
-      </p>
+      <div className="section-head">
+        <div>
+          <h1 className="page-title" style={{ margin: 0 }}>
+            الإشعارات
+          </h1>
+          <p className="subtitle">
+            {unreadCount > 0 ? `عندك ${unreadCount} إشعار غير مقروء` : 'كل الإشعارات مقروءة'}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn text"
+          disabled={unreadCount === 0}
+          onClick={() => void markAllRead()}
+        >
+          <span className="ms">done_all</span>
+          تحديد الكل كمقروء
+        </button>
+      </div>
+
+      <div className="actions section">
+        {STATUS_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setStatusFilter(option.value)}
+            className={`chip clickable outline${statusFilter === option.value ? ' selected' : ''}`}
+            aria-pressed={statusFilter === option.value}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="actions section">
+        {TYPE_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setTypeFilter(option.value)}
+            className={`chip clickable outline${typeFilter === option.value ? ' selected' : ''}`}
+            aria-pressed={typeFilter === option.value}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
       {isLoading && <LoadingState variant="list" />}
 

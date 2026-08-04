@@ -1,10 +1,11 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
 import type {
   NotificationProducerPort,
   NotifyInput,
@@ -30,6 +31,66 @@ export interface UnreadCountResponse {
 export interface MarkReadResponse {
   id: string;
   isRead: boolean;
+}
+
+export interface MarkAllReadResponse {
+  updated: number;
+}
+
+export type NotificationStatusFilter = 'unread' | 'read';
+
+export interface NotificationListFilters {
+  status?: string;
+  type?: string;
+}
+
+interface ParsedNotificationListFilters {
+  status?: NotificationStatusFilter;
+  type?: NotificationType;
+}
+
+const VALID_STATUS_FILTERS: readonly NotificationStatusFilter[] = [
+  'unread',
+  'read',
+];
+
+const VALID_TYPE_FILTERS: readonly NotificationType[] = [
+  'hw_assigned',
+  'quiz_ready',
+  'progress_report',
+  'announcement',
+  'course_update',
+  'system',
+];
+
+function parseStatusFilter(
+  value?: string,
+): NotificationStatusFilter | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!VALID_STATUS_FILTERS.includes(value as NotificationStatusFilter)) {
+    throw new BadRequestException(
+      `Invalid status filter: "${value}". Must be one of ${VALID_STATUS_FILTERS.join(', ')}.`,
+    );
+  }
+
+  return value as NotificationStatusFilter;
+}
+
+function parseTypeFilter(value?: string): NotificationType | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!VALID_TYPE_FILTERS.includes(value as NotificationType)) {
+    throw new BadRequestException(
+      `Invalid type filter: "${value}". Must be one of ${VALID_TYPE_FILTERS.join(', ')}.`,
+    );
+  }
+
+  return value as NotificationType;
 }
 
 @Injectable()
@@ -58,9 +119,27 @@ export class NotificationsService implements NotificationProducerPort {
 
   // Scoped by the session-derived userId only — never a query param, so
   // one user can never list another's notifications.
-  async listForUser(userId: string): Promise<NotificationResponse[]> {
+  async listForUser(
+    userId: string,
+    filters: NotificationListFilters = {},
+  ): Promise<NotificationResponse[]> {
+    const parsed = this.parseFilters(filters);
+
+    const where: FindOptionsWhere<NotificationEntity> = {
+      userId,
+      deletedAt: IsNull(),
+    };
+    if (parsed.status === 'unread') {
+      where.isRead = false;
+    } else if (parsed.status === 'read') {
+      where.isRead = true;
+    }
+    if (parsed.type) {
+      where.type = parsed.type;
+    }
+
     const notifications = await this.notificationsRepository.find({
-      where: { userId, deletedAt: IsNull() },
+      where,
       order: { createdAt: 'DESC' },
     });
 
@@ -95,6 +174,30 @@ export class NotificationsService implements NotificationProducerPort {
     }
 
     return { id: notification.id, isRead: notification.isRead };
+  }
+
+  // Scoped by the session-derived userId only, same as markRead — one
+  // user's read-all can never touch another user's rows.
+  async markAllRead(userId: string): Promise<MarkAllReadResponse> {
+    const result = await this.notificationsRepository
+      .createQueryBuilder()
+      .update(NotificationEntity)
+      .set({ isRead: true, readAt: new Date() })
+      .where('user_id = :userId', { userId })
+      .andWhere('is_read = false')
+      .andWhere('deleted_at IS NULL')
+      .execute();
+
+    return { updated: result.affected ?? 0 };
+  }
+
+  private parseFilters(
+    filters: NotificationListFilters,
+  ): ParsedNotificationListFilters {
+    return {
+      status: parseStatusFilter(filters.status),
+      type: parseTypeFilter(filters.type),
+    };
   }
 
   private toResponse(notification: NotificationEntity): NotificationResponse {

@@ -6,6 +6,8 @@ export type NotificationType =
   | 'course_update'
   | 'system'
 
+export type NotificationStatusFilter = 'unread' | 'read'
+
 export interface NotificationItem {
   id: string
   type: NotificationType
@@ -15,6 +17,11 @@ export interface NotificationItem {
   createdAt: string
 }
 
+export interface NotificationFilters {
+  status?: NotificationStatusFilter
+  type?: NotificationType
+}
+
 export interface UnreadCountResponse {
   count: number
 }
@@ -22,4 +29,8 @@ export interface UnreadCountResponse {
 export interface MarkReadResponse {
   id: string
   isRead: boolean
+}
+
+export interface MarkAllReadResponse {
+  updated: number
 }
