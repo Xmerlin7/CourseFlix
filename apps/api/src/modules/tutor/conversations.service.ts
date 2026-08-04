@@ -127,7 +127,9 @@ export class ConversationsService {
 
     return this.messagesRepository.find({
       where: {
-        conversationId: In(conversations.map((conversation) => conversation.id)),
+        conversationId: In(
+          conversations.map((conversation) => conversation.id),
+        ),
         deletedAt: IsNull(),
       },
       order: { createdAt: 'ASC' },
