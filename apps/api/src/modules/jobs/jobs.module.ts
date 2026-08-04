@@ -9,10 +9,7 @@ import { BullMqJobQueue } from './adapters/bullmq-job-queue.adapter';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      AiJobEntity,
-      DocumentChunkEntity,
-    ]),
+    TypeOrmModule.forFeature([AiJobEntity, DocumentChunkEntity]),
     BullModule.registerQueue({
       name: 'ingestion',
     }),

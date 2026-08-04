@@ -1,15 +1,11 @@
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type AiJobStatus =
-    | 'queued'
-    | 'processing'
-    | 'completed'
-    | 'failed';
+export type AiJobStatus = 'queued' | 'processing' | 'completed' | 'failed';
 
 /**
  * Mirrors the `ai_jobs` table in `schemaV2.sql`.
@@ -20,63 +16,63 @@ export type AiJobStatus =
  */
 @Entity({ name: 'ai_jobs' })
 export class AiJobEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @Column({ name: 'job_type', type: 'text' })
-    jobType!: string;
+  @Column({ name: 'job_type', type: 'text' })
+  jobType!: string;
 
-    @Column({
-        type: 'enum',
-        enum: ['queued', 'processing', 'completed', 'failed'],
-        enumName: 'ai_job_status',
-        default: 'queued',
-    })
-    status!: AiJobStatus;
+  @Column({
+    type: 'enum',
+    enum: ['queued', 'processing', 'completed', 'failed'],
+    enumName: 'ai_job_status',
+    default: 'queued',
+  })
+  status!: AiJobStatus;
 
-    @Column({ type: 'integer', default: 0 })
-    priority!: number;
+  @Column({ type: 'integer', default: 0 })
+  priority!: number;
 
-    @Column({ type: 'integer', default: 0 })
-    retries!: number;
+  @Column({ type: 'integer', default: 0 })
+  retries!: number;
 
-    @Column({
-        name: 'target_entity_type',
-        type: 'text',
-        nullable: true,
-    })
-    targetEntityType!: string | null;
+  @Column({
+    name: 'target_entity_type',
+    type: 'text',
+    nullable: true,
+  })
+  targetEntityType!: string | null;
 
-    @Column({
-        name: 'target_entity_id',
-        type: 'uuid',
-    })
-    targetEntityId!: string;
+  @Column({
+    name: 'target_entity_id',
+    type: 'uuid',
+  })
+  targetEntityId!: string;
 
-    @Column({
-        name: 'started_at',
-        type: 'timestamptz',
-        nullable: true,
-    })
-    startedAt!: Date | null;
+  @Column({
+    name: 'started_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  startedAt!: Date | null;
 
-    @Column({
-        name: 'finished_at',
-        type: 'timestamptz',
-        nullable: true,
-    })
-    finishedAt!: Date | null;
+  @Column({
+    name: 'finished_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  finishedAt!: Date | null;
 
-    @Column({
-        name: 'error_message',
-        type: 'text',
-        nullable: true,
-    })
-    errorMessage!: string | null;
+  @Column({
+    name: 'error_message',
+    type: 'text',
+    nullable: true,
+  })
+  errorMessage!: string | null;
 
-    @CreateDateColumn({
-        name: 'created_at',
-        type: 'timestamptz',
-    })
-    createdAt!: Date;
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamptz',
+  })
+  createdAt!: Date;
 }

@@ -3,6 +3,7 @@ import { seedUsers } from './seeds/user.seed';
 import { seedCourse } from './seeds/course.seed';
 import { seedEnrollment, seedEnrollments } from './seeds/enrollment.seed';
 import { seedDocuments } from './seeds/document.seed';
+import { seedIntervention } from './seeds/intervention.seed';
 import { seedNotifications } from './seeds/notification.seed';
 import { seedVideo } from './seeds/video.seed';
 
@@ -19,6 +20,7 @@ export interface SeedSummary {
   documentsCreated: number;
   documentsReset: number;
   notificationsCreated: number;
+  interventionMiniQuizId: string | null;
   primaryCourseTitle: string;
   primaryCourseId: string;
   primarySectionTitle: string;
@@ -76,6 +78,8 @@ export async function runSeed(dataSource: DataSource): Promise<SeedSummary> {
     studentIds: students.map((s) => s.id),
   });
 
+  const intervention = await seedIntervention(dataSource);
+
   const lessonTotal = await countRows(dataSource, 'lessons');
 
   return {
@@ -91,6 +95,7 @@ export async function runSeed(dataSource: DataSource): Promise<SeedSummary> {
     documentsCreated,
     documentsReset,
     notificationsCreated,
+    interventionMiniQuizId: intervention.miniQuizId,
     primaryCourseTitle: course.title,
     primaryCourseId: course.id,
     primarySectionTitle: section.title,
@@ -117,6 +122,9 @@ export function printSeedSummary(summary: SeedSummary, heading: string): void {
     `  documents:      ${summary.documentsCreated} new, ${summary.documentsReset} reset to blueprint`,
   );
   console.log(`  notifications:  ${summary.notificationsCreated} new`);
+  console.log(
+    `  interventions:  demo intervention + mini quiz ready (${summary.interventionMiniQuizId ?? 'none'})`,
+  );
   console.log(
     `  primary course: ${summary.primaryCourseTitle} (${summary.primaryCourseId})`,
   );
