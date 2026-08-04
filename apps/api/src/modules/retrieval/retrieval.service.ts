@@ -7,8 +7,8 @@ import {
   SearchQueryInput,
   RetrievedChunk,
 } from '../../common/ports/retrieval.port';
-import type { EmbeddingProvider } from '../../../../worker/src/adapters/embedding.adapter';
-import { EMBEDDING_PROVIDER } from '../../../../worker/src/adapters/embedding.adapter';
+import type { EmbeddingProvider } from './embedding.adapter';
+import { EMBEDDING_PROVIDER } from './embedding.adapter';
 
 interface DocumentChunkRow {
   id: string;

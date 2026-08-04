@@ -1,47 +1,69 @@
-# Analytics Function Registry — Sprint 3 (CF-TASK-070, CF-US-018)
+# Analytics Question Endpoint — Sprint 3 (CF-TASK-069/070/071, CF-US-018)
 
-The Analytics Agent's only allowed backend surface. Albraa exposes a **permission-scoped function registry**; Nabile's parser (`CF-TASK-069`) and Elgendy's UI (`CF-TASK-071`) consume it. There is **no HTTP route in this branch** — `POST /api/v1/teacher/analytics/questions` is Nabile's (parser + validation), and Seif's `CF-TASK-072` security suite enforces "no raw SQL execution path".
+The Analytics Agent's only allowed backend surface. A deterministic Arabic/English
+parser (Nabile, CF-TASK-069) resolves the teacher's question to one of three
+allowlisted intents, then the permission-scoped function registry (Albraa,
+CF-TASK-070) executes it through `SalesService`. There is **no raw SQL and no
+arbitrary-expression path** (enforced by Seif's CF-TASK-072 suite).
+
+## Endpoint
+
+`POST /api/v1/teacher/analytics/questions` (auth: `AuthGuard` + `TeacherRoleGuard`)
+
+```json
+{ "question": "كم إيراداتي هذا الشهر؟" }
+```
+
+Unsupported questions return `status: "unsupported"` with `supportedIntents` and
+`examples` — **no aggregate query runs**. Supported questions return
+`status: "success"` with the intent result below.
 
 ## Allowlist
 
 Exactly three intents (sprint3-plan.md E-4 / CF-TASK-070):
 
-| Intent | Result |
+| Intent | Result shape |
 |---|---|
-| `revenue` | `{ intent, currency: 'EGP', timezone, revenueMinor }` |
-| `sales_count` | `{ intent, currency, timezone, ordersCount }` |
-| `best_sellers` | `{ intent, currency, timezone, bestSellers[] }` |
+| `revenue` | `{ intent, totalRevenue, currency, orderCount, dateRange }` |
+| `order_count` | `{ intent, successfulOrderCount, dateRange }` |
+| `best_sellers` | `{ intent, bestSellers[], dateRange }` |
 
-Anything else → `BadRequestException` (`400`) thrown **before** any aggregate query runs ("unsupported Analytics Agent question performs no aggregate query"). `AnalyticsFunctionsService.isSupported()` / `supportedIntents` let Nabile's parser short-circuit invalid questions.
+- Money is integer EGP minor units (1/100 EGP) — the UI renders (`minor / 100`),
+  never recomputes.
+- `bestSellers[]` items: `{ courseId, courseTitle, orderCount, totalRevenue }`.
+- `dateRange` is `{ from, to }` (ISO or `null` when unbounded).
 
-## Contract for Nabile
+Anything else → `BadRequestException` (`400`) thrown **before** any aggregate
+query runs. `AnalyticsFunctionsService.isSupported()` / `supportedIntents`
+short-circuit invalid questions.
 
-```ts
-// import { AnalyticsFunctionsService } from '../analytics/analytics-functions.service';
-const answer = await analyticsFunctions.execute('revenue', {
-  teacherId,           // authenticated teacher id — always required
-  from?: string,       // optional ISO date
-  to?: string,         // optional ISO date
-});
-```
+## Security
 
-- Every call is scoped to the teacher's owned courses via `SalesService` — another teacher's revenue/counts can never appear.
-- Money is integer EGP minor units (`revenueMinor`, 1/100 EGP) — same shape as the sales summary; the UI/Agent renders, never recomputes.
+- Every intent is scoped to the teacher's owned courses via `SalesService` —
+  another teacher's revenue/counts can never appear.
+- Only `paid` orders from the `orders`/`order_items` ledger count.
 - Range validation (`from >= to` → 400) lives in `SalesService`.
 
 ## Files
 
 ```
 apps/api/src/modules/analytics/
-  analytics.module.ts                       # exports AnalyticsFunctionsService
+  analytics.module.ts                       # wires parser + registry + controller
+  analytics.controller.ts                   # POST api/v1/teacher/analytics/questions
+  analytics-parser.service.ts               # deterministic Arabic/English parser
+  analytics-intent.ts                       # intent names, SUPPORTED_INTENTS, examples
+  analytics-log.service.ts                  # agent-log records (analytics_agent)
   analytics-functions.service.ts            # registry: name → handler
-  analytics-functions.service.spec.ts       # fixture + ownership tests (CF-TASK-070 validation)
+  analytics-functions.service.spec.ts       # fixture + ownership tests (CF-TASK-070)
   intent/analytics-intent-handler.interface.ts
   intent/revenue.handler.ts
-  intent/sales-count.handler.ts
+  intent/order-count.handler.ts
   intent/best-sellers.handler.ts
 ```
 
 ## Known gaps
 
-- Endpoint-level e2e belongs to Nabile's `/questions` branch + Seif's no-SQL suite; here the registry is verified by `analytics-functions.service.spec.ts` (mocked `SalesService`). A live-Postgres ledger e2e for the underlying aggregates lives in `sales.e2e-spec.ts` (Branch 2).
+- No explicit per-intent UI test for the endpoint shape beyond
+  `analytics-functions.service.spec.ts` (mocked `SalesService`) and the web
+  `TeacherAnalyticsPage` spec. A live-Postgres ledger e2e for the underlying
+  aggregates lives in `sales.e2e-spec.ts`.

@@ -9,7 +9,7 @@ import type { SalesRange } from '../../sales/sales.service';
  */
 export const ANALYTICS_INTENTS = [
   'revenue',
-  'sales_count',
+  'order_count',
   'best_sellers',
 ] as const;
 
@@ -20,7 +20,45 @@ export interface AnalyticsIntentContext extends SalesRange {
   teacherId: string;
 }
 
+/**
+ * Base shape returned by every intent handler and surfaced by the
+ * `POST /api/v1/teacher/analytics/questions` endpoint. Money is integer
+ * EGP minor units (1/100 EGP); `rowCount` feeds the agent-log record.
+ */
+export interface AnalyticsResultBase {
+  intent: AnalyticsIntentName;
+  dateRange: { from: string | null; to: string | null };
+  rowCount: number;
+}
+
+export interface RevenueIntentResult extends AnalyticsResultBase {
+  intent: 'revenue';
+  totalRevenue: number;
+  currency: string;
+  orderCount: number;
+}
+
+export interface OrderCountIntentResult extends AnalyticsResultBase {
+  intent: 'order_count';
+  successfulOrderCount: number;
+}
+
+export interface BestSellersIntentResult extends AnalyticsResultBase {
+  intent: 'best_sellers';
+  bestSellers: Array<{
+    courseId: string;
+    courseTitle: string;
+    orderCount: number;
+    totalRevenue: number;
+  }>;
+}
+
+export type AnalyticsIntentResult =
+  | RevenueIntentResult
+  | OrderCountIntentResult
+  | BestSellersIntentResult;
+
 export interface AnalyticsIntentHandler {
   readonly name: AnalyticsIntentName;
-  handle(context: AnalyticsIntentContext): Promise<unknown>;
+  handle(context: AnalyticsIntentContext): Promise<AnalyticsIntentResult>;
 }

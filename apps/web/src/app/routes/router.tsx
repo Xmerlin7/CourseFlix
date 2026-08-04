@@ -55,6 +55,21 @@ const TeacherInterventionsPage = lazy(() =>
     default: m.TeacherInterventionsPage,
   }))
 )
+const StudentMiniQuizPage = lazy(() =>
+  import('../../features/interventions/pages/StudentMiniQuizPage').then((m) => ({
+    default: m.StudentMiniQuizPage,
+  }))
+)
+const TeacherSalesPage = lazy(() =>
+  import('../../features/sales/pages/TeacherSalesPage').then((m) => ({
+    default: m.TeacherSalesPage,
+  }))
+)
+const TeacherAnalyticsPage = lazy(() =>
+  import('../../features/analytics/pages/TeacherAnalyticsPage').then((m) => ({
+    default: m.TeacherAnalyticsPage,
+  }))
+)
 
 // Lazy-loaded status pages
 const ForbiddenStatePage = lazy(() =>
@@ -177,6 +192,14 @@ export const router = createBrowserRouter([
               </SuspenseWrapper>
             ),
           },
+          {
+            path: ROUTE_PATHS.STUDENT.MINI_QUIZ,
+            element: (
+              <SuspenseWrapper>
+                <StudentMiniQuizPage />
+              </SuspenseWrapper>
+            ),
+          },
         ],
       },
     ],
@@ -236,6 +259,22 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <TeacherInterventionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.SALES,
+            element: (
+              <SuspenseWrapper>
+                <TeacherSalesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.ANALYTICS,
+            element: (
+              <SuspenseWrapper>
+                <TeacherAnalyticsPage />
               </SuspenseWrapper>
             ),
           },

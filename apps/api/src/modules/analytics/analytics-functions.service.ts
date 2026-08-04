@@ -3,11 +3,12 @@ import type {
   AnalyticsIntentContext,
   AnalyticsIntentHandler,
   AnalyticsIntentName,
+  AnalyticsIntentResult,
 } from './intent/analytics-intent-handler.interface';
 import { ANALYTICS_INTENTS } from './intent/analytics-intent-handler.interface';
 import { BestSellersIntentHandler } from './intent/best-sellers.handler';
+import { OrderCountIntentHandler } from './intent/order-count.handler';
 import { RevenueIntentHandler } from './intent/revenue.handler';
-import { SalesCountIntentHandler } from './intent/sales-count.handler';
 
 /**
  * Permission-scoped analytics function registry (CF-TASK-070, CF-US-018).
@@ -29,10 +30,10 @@ export class AnalyticsFunctionsService {
 
   constructor(
     revenue: RevenueIntentHandler,
-    salesCount: SalesCountIntentHandler,
+    orderCount: OrderCountIntentHandler,
     bestSellers: BestSellersIntentHandler,
   ) {
-    for (const handler of [revenue, salesCount, bestSellers]) {
+    for (const handler of [revenue, orderCount, bestSellers]) {
       this.registry.set(handler.name, handler);
     }
   }
@@ -48,7 +49,7 @@ export class AnalyticsFunctionsService {
   async execute(
     name: string,
     context: AnalyticsIntentContext,
-  ): Promise<unknown> {
+  ): Promise<AnalyticsIntentResult> {
     const handler = this.registry.get(name as AnalyticsIntentName);
     if (!handler) {
       throw new BadRequestException(

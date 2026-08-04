@@ -23,10 +23,10 @@ describe('detectExplicitConfusionPhrase', () => {
     expect(detectExplicitConfusionPhrase('انا مش فاهم القانون ده')).toBe(true);
   });
 
-  it("detects the English demo phrase, case-insensitively", () => {
-    expect(detectExplicitConfusionPhrase("I Don't Understand this at all")).toBe(
-      true,
-    );
+  it('detects the English demo phrase, case-insensitively', () => {
+    expect(
+      detectExplicitConfusionPhrase("I Don't Understand this at all"),
+    ).toBe(true);
   });
 
   it('does not trigger on unrelated text', () => {

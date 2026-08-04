@@ -10,8 +10,8 @@ import { chunkDocument, DocumentChunk } from '../stages/chunk.stage';
 import type { EmbeddingProvider } from '../adapters/embedding.adapter';
 import { EMBEDDING_PROVIDER } from '../adapters/embedding.adapter';
 import { ChromaAdapter } from '../adapters/chroma.adapter';
-import type { NotificationProducerPort } from '../../../api/src/common/ports/notification-producer.port';
-import { NOTIFICATION_PRODUCER_PORT } from '../../../api/src/common/ports/notification-producer.port';
+import type { NotificationProducerPort } from '../common/ports/notification-producer.port';
+import { NOTIFICATION_PRODUCER_PORT } from '../common/ports/notification-producer.port';
 
 export interface IngestionJobPayload {
   /** UUID of the `ai_jobs` row created in the API. */

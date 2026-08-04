@@ -1,8 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import { AnalyticsFunctionsService } from './analytics-functions.service';
 import { BestSellersIntentHandler } from './intent/best-sellers.handler';
+import { OrderCountIntentHandler } from './intent/order-count.handler';
 import { RevenueIntentHandler } from './intent/revenue.handler';
-import { SalesCountIntentHandler } from './intent/sales-count.handler';
 import type { SalesService } from '../sales/sales.service';
 
 const TEACHER_ID = 'teacher-1';
@@ -25,7 +25,7 @@ function createService() {
   const revenue = new RevenueIntentHandler(
     salesService as unknown as SalesService,
   );
-  const salesCount = new SalesCountIntentHandler(
+  const orderCount = new OrderCountIntentHandler(
     salesService as unknown as SalesService,
   );
   const bestSellers = new BestSellersIntentHandler(
@@ -33,7 +33,7 @@ function createService() {
   );
   const service = new AnalyticsFunctionsService(
     revenue,
-    salesCount,
+    orderCount,
     bestSellers,
   );
 
@@ -45,7 +45,7 @@ describe('AnalyticsFunctionsService', () => {
     const { service } = createService();
     expect(service.supportedIntents).toEqual([
       'revenue',
-      'sales_count',
+      'order_count',
       'best_sellers',
     ]);
     expect(service.isSupported('revenue')).toBe(true);
@@ -57,6 +57,8 @@ describe('AnalyticsFunctionsService', () => {
   it('resolves the revenue intent from SalesService scoped to the caller', async () => {
     const { service, salesService } = createService();
     salesService.getSummary.mockResolvedValue({
+      from: RANGE.from,
+      to: RANGE.to,
       currency: 'EGP',
       timezone: 'Africa/Cairo',
       revenueMinor: 12345,
@@ -72,15 +74,19 @@ describe('AnalyticsFunctionsService', () => {
     expect(salesService.getSummary).toHaveBeenCalledWith(TEACHER_ID, RANGE);
     expect(result).toEqual({
       intent: 'revenue',
+      totalRevenue: 12345,
       currency: 'EGP',
-      timezone: 'Africa/Cairo',
-      revenueMinor: 12345,
+      orderCount: 2,
+      dateRange: { from: RANGE.from, to: RANGE.to },
+      rowCount: 1,
     });
   });
 
-  it('resolves the sales_count intent from SalesService scoped to the caller', async () => {
+  it('resolves the order_count intent from SalesService scoped to the caller', async () => {
     const { service, salesService } = createService();
     salesService.getSummary.mockResolvedValue({
+      from: RANGE.from,
+      to: RANGE.to,
       currency: 'EGP',
       timezone: 'Africa/Cairo',
       revenueMinor: 0,
@@ -88,17 +94,17 @@ describe('AnalyticsFunctionsService', () => {
       bestSeller: null,
     });
 
-    const result = await service.execute('sales_count', {
+    const result = await service.execute('order_count', {
       teacherId: TEACHER_ID,
       ...RANGE,
     });
 
     expect(salesService.getSummary).toHaveBeenCalledWith(TEACHER_ID, RANGE);
     expect(result).toEqual({
-      intent: 'sales_count',
-      currency: 'EGP',
-      timezone: 'Africa/Cairo',
-      ordersCount: 4,
+      intent: 'order_count',
+      successfulOrderCount: 4,
+      dateRange: { from: RANGE.from, to: RANGE.to },
+      rowCount: 1,
     });
   });
 
@@ -121,16 +127,16 @@ describe('AnalyticsFunctionsService', () => {
     expect(salesService.getBestSellers).toHaveBeenCalledWith(TEACHER_ID, RANGE);
     expect(result).toEqual({
       intent: 'best_sellers',
-      currency: 'EGP',
-      timezone: 'Africa/Cairo',
       bestSellers: [
         {
           courseId: 'course-1',
-          title: 'الميكانيكا الكلاسيكية',
-          ordersCount: 2,
-          revenueMinor: 100000,
+          courseTitle: 'الميكانيكا الكلاسيكية',
+          orderCount: 2,
+          totalRevenue: 100000,
         },
       ],
+      dateRange: { from: RANGE.from, to: RANGE.to },
+      rowCount: 1,
     });
   });
 

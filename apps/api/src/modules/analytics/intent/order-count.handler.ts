@@ -3,6 +3,7 @@ import { SalesService } from '../../sales/sales.service';
 import type {
   AnalyticsIntentContext,
   AnalyticsIntentHandler,
+  AnalyticsIntentResult,
 } from './analytics-intent-handler.interface';
 
 /**
@@ -11,21 +12,23 @@ import type {
  * excluded and results are scoped to the teacher's own courses.
  */
 @Injectable()
-export class SalesCountIntentHandler implements AnalyticsIntentHandler {
-  readonly name = 'sales_count';
+export class OrderCountIntentHandler implements AnalyticsIntentHandler {
+  readonly name = 'order_count';
 
   constructor(private readonly salesService: SalesService) {}
 
-  async handle(context: AnalyticsIntentContext) {
+  async handle(
+    context: AnalyticsIntentContext,
+  ): Promise<AnalyticsIntentResult> {
     const summary = await this.salesService.getSummary(context.teacherId, {
       from: context.from,
       to: context.to,
     });
     return {
       intent: this.name,
-      currency: summary.currency,
-      timezone: summary.timezone,
-      ordersCount: summary.ordersCount,
+      successfulOrderCount: summary.ordersCount,
+      dateRange: { from: summary.from, to: summary.to },
+      rowCount: 1,
     };
   }
 }

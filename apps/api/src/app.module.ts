@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { CoursesModule } from './modules/courses/courses.module';
@@ -22,7 +23,6 @@ import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
 import { SalesModule } from './modules/sales/sales.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { TutorModule } from './modules/tutor/tutor.module';
 
 @Module({

@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
@@ -51,7 +52,12 @@ export function StudentInterventionsPage() {
 
               <span className="end">
                 {intervention.miniQuizId ? (
-                  <span className="chip outline green">اختبار قصير جاهز</span>
+                  <Link
+                    to={`/student/mini-quizzes/${intervention.miniQuizId}`}
+                    className="chip outline green"
+                  >
+                    ابدأ الاختبار القصير
+                  </Link>
                 ) : (
                   <span className="chip outline">جاري تجهيز اختبار قصير</span>
                 )}

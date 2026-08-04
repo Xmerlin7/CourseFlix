@@ -37,7 +37,7 @@ export class HealthService {
     @InjectDataSource() private readonly dataSource: DataSource,
     @InjectQueue('ingestion') private readonly ingestionQueue: Queue,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   async getHealth(): Promise<HealthResponse> {
     return {
@@ -93,7 +93,8 @@ export class HealthService {
   private async checkRedis(): Promise<DependencyStatus> {
     try {
       const client = await this.ingestionQueue.client;
-      await client.info(); return 'ok';
+      await client.info();
+      return 'ok';
     } catch {
       return 'error';
     }
@@ -102,8 +103,7 @@ export class HealthService {
   private async checkChroma(): Promise<DependencyStatus> {
     try {
       const chromaUrl =
-        this.configService.get<string>('CHROMA_URL') ||
-        'http://localhost:8000';
+        this.configService.get<string>('CHROMA_URL') || 'http://localhost:8000';
       const client = new ChromaClient({ path: chromaUrl });
       await client.heartbeat();
       return 'ok';

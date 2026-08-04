@@ -12,7 +12,7 @@ import { ChromaAdapter } from './adapters/chroma.adapter';
 import {
   NOTIFICATION_PRODUCER_PORT,
   NoopNotificationProducer,
-} from '../../api/src/common/ports/notification-producer.port';
+} from './common/ports/notification-producer.port';
 
 /**
  * Root module for the standalone BullMQ worker application.
