@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/require-await */
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { Repository } from 'typeorm';
@@ -8,28 +9,38 @@ import { ConversationsService } from './conversations.service';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
-  let conversationsRepository: jest.Mocked<Partial<Repository<ChatConversationEntity>>>;
+  let conversationsRepository: jest.Mocked<
+    Partial<Repository<ChatConversationEntity>>
+  >;
   let messagesRepository: jest.Mocked<Partial<Repository<ChatMessageEntity>>>;
-  let sourceChunksRepository: jest.Mocked<Partial<Repository<ChatMessageSourceChunkEntity>>>;
+  let sourceChunksRepository: jest.Mocked<
+    Partial<Repository<ChatMessageSourceChunkEntity>>
+  >;
 
   beforeEach(async () => {
     conversationsRepository = {
       findOne: jest.fn(),
       find: jest.fn(),
       create: jest.fn((input) => input as ChatConversationEntity),
-      save: jest.fn(async (input) => ({
-        id: 'conversation-1',
-        ...input,
-      }) as ChatConversationEntity),
+      save: jest.fn(
+        async (input) =>
+          ({
+            id: 'conversation-1',
+            ...input,
+          }) as ChatConversationEntity,
+      ),
       update: jest.fn(),
     };
     messagesRepository = {
       find: jest.fn(),
       create: jest.fn((input) => input as ChatMessageEntity),
-      save: jest.fn(async (input) => ({
-        id: 'message-1',
-        ...input,
-      }) as ChatMessageEntity),
+      save: jest.fn(
+        async (input) =>
+          ({
+            id: 'message-1',
+            ...input,
+          }) as ChatMessageEntity,
+      ),
     };
     sourceChunksRepository = {
       create: jest.fn((input) => input as ChatMessageSourceChunkEntity),
