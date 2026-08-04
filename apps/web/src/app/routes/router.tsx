@@ -70,6 +70,11 @@ const TeacherAnalyticsPage = lazy(() =>
     default: m.TeacherAnalyticsPage,
   }))
 )
+const CheckoutPage = lazy(() =>
+  import('../../features/checkout/pages/CheckoutPage').then((m) => ({
+    default: m.CheckoutPage,
+  }))
+)
 
 // Lazy-loaded status pages
 const ForbiddenStatePage = lazy(() =>
@@ -197,6 +202,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <StudentMiniQuizPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.CHECKOUT,
+            element: (
+              <SuspenseWrapper>
+                <CheckoutPage />
               </SuspenseWrapper>
             ),
           },
