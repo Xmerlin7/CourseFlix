@@ -11,6 +11,7 @@ import { InterventionEvidenceEntity } from './entities/intervention-evidence.ent
 import { InterventionEntity } from './entities/intervention.entity';
 import { ProgressReportEntity } from './entities/progress-report.entity';
 import { UserEntity } from '../users/entities/user.entity';
+import { MiniQuizService } from './mini-quiz.service';
 
 describe('InterventionsService', () => {
   let service: InterventionsService;
@@ -19,6 +20,7 @@ describe('InterventionsService', () => {
   let coursesService: { findCourseById: jest.Mock };
   let notificationPort: { notify: jest.Mock };
   let agentLogPort: jest.Mocked<AgentLogPort>;
+  let miniQuizService: { generateForIntervention: jest.Mock };
   let queryRunner: {
     connect: jest.Mock;
     startTransaction: jest.Mock;
@@ -51,6 +53,9 @@ describe('InterventionsService', () => {
     coursesService = { findCourseById: jest.fn().mockResolvedValue(course) };
     notificationPort = { notify: jest.fn().mockResolvedValue(undefined) };
     agentLogPort = { record: jest.fn().mockResolvedValue(undefined) };
+    miniQuizService = {
+      generateForIntervention: jest.fn().mockResolvedValue(undefined),
+    };
 
     queryRunner = {
       connect: jest.fn().mockResolvedValue(undefined),
@@ -78,6 +83,7 @@ describe('InterventionsService', () => {
         { provide: CoursesService, useValue: coursesService },
         { provide: NOTIFICATION_PRODUCER_PORT, useValue: notificationPort },
         { provide: AGENT_LOG_PORT, useValue: agentLogPort },
+        { provide: MiniQuizService, useValue: miniQuizService },
       ],
     }).compile();
 

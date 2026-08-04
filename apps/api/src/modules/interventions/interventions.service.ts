@@ -21,6 +21,7 @@ import {
   InterventionRuleKey,
 } from './entities/intervention.entity';
 import { ProgressReportEntity } from './entities/progress-report.entity';
+import { MiniQuizService } from './mini-quiz.service';
 import {
   evaluateChatMessage,
   evaluateLowQuizScore,
@@ -61,6 +62,7 @@ export class InterventionsService implements InterventionEvaluatorPort {
     private readonly notificationPort: NotificationProducerPort,
     @Inject(AGENT_LOG_PORT)
     private readonly agentLogPort: AgentLogPort,
+    private readonly miniQuizService: MiniQuizService,
   ) {}
 
   // InterventionEvaluatorPort implementation — called by the quiz
@@ -162,6 +164,10 @@ export class InterventionsService implements InterventionEvaluatorPort {
     }
 
     await this.notifyAndLog(intervention, course.teacherId, weakConcept);
+
+    // Nabile N-1: attach the deterministic mini-quiz. MiniQuizService
+    // never throws (a quiz failure must not break the intervention).
+    await this.miniQuizService.generateForIntervention(intervention);
   }
 
   async listForStudent(
