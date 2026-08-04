@@ -86,9 +86,13 @@ export class CreateChatTables1785000050000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE IF EXISTS "chat_message_source_chunks";`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS "chat_message_source_chunks";`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "chat_messages";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "uq_chat_conversations_active_student_course";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "uq_chat_conversations_active_student_course";`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "chat_conversations";`);
     await queryRunner.query(`DROP TYPE IF EXISTS "moderation_status_type";`);
     await queryRunner.query(`DROP TYPE IF EXISTS "chat_role";`);

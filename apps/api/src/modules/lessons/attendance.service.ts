@@ -39,9 +39,7 @@ export class AttendanceService {
    * and the rest hit the unique violation caught below and no-op. See
    * attendance.service.spec.ts.
    */
-  async evaluateAndAward(
-    input: EvaluateAttendanceInput,
-  ): Promise<boolean> {
+  async evaluateAndAward(input: EvaluateAttendanceInput): Promise<boolean> {
     if (input.watchedPercentage < this.thresholdPercent) {
       return false;
     }

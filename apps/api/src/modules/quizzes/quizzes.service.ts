@@ -212,7 +212,8 @@ export class QuizzesService {
       // Fire the struggle-signal evaluator after the submission is
       // durably committed — a secondary side effect that must never
       // fail or delay the primary quiz-submission response.
-      const scorePercent = questions.length > 0 ? (score / questions.length) * 100 : 0;
+      const scorePercent =
+        questions.length > 0 ? (score / questions.length) * 100 : 0;
       this.interventionEvaluator
         .evaluateSignal({
           kind: 'quiz_score',
