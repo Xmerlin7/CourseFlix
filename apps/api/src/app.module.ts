@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CommerceModule } from './modules/commerce/commerce.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
@@ -67,6 +68,7 @@ import { TutorModule } from './modules/tutor/tutor.module';
     TutorModule,
     AgentLogsModule,
     InterventionsModule,
+    CommerceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
