@@ -129,6 +129,9 @@ export const handlers = [
   http.patch(apiUrl("/notifications/:notificationId/read"), ({ params }) =>
     HttpResponse.json({ id: params.notificationId, isRead: true }),
   ),
+  http.patch(apiUrl("/notifications/read-all"), () =>
+    HttpResponse.json({ updated: 0 }),
+  ),
 
   http.get(apiUrl("/courses/:courseId/tutor/messages"), () =>
     HttpResponse.json([]),
