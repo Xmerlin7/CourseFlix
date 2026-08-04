@@ -1,15 +1,12 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { CourseEntity } from '../courses/entities/course.entity';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { TeacherRoleGuard } from '../auth/guards/teacher-role.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { AnalyticsFunctionsService } from './analytics-functions.service';
 import { AnalyticsLogService } from './analytics-log.service';
 import { INTENT_EXAMPLES, SUPPORTED_INTENTS } from './analytics-intent';
 import { AnalyticsParserService } from './analytics-parser.service';
-import { AnalyticsQueryService } from './analytics-query.service';
 import { AskAnalyticsDto } from './dto/ask-analytics.dto';
 
 @Controller('api/v1/teacher/analytics')
@@ -17,10 +14,8 @@ import { AskAnalyticsDto } from './dto/ask-analytics.dto';
 export class AnalyticsController {
   constructor(
     private readonly parserService: AnalyticsParserService,
-    private readonly queryService: AnalyticsQueryService,
+    private readonly functionsService: AnalyticsFunctionsService,
     private readonly logService: AnalyticsLogService,
-    @InjectRepository(CourseEntity)
-    private readonly courseRepo: Repository<CourseEntity>,
   ) {}
 
   @Post('questions')
@@ -47,30 +42,24 @@ export class AnalyticsController {
       };
     }
 
-    const ownedCourses = await this.courseRepo.find({
-      where: { teacherId: user.id, deletedAt: IsNull() },
+    const result = await this.functionsService.execute(parsed.intent, {
+      teacherId: user.id,
+      from: parsed.dateFrom,
+      to: parsed.dateTo,
     });
-    const courseIds = ownedCourses.map((c) => c.id);
-
-    const outcome = await this.queryService.run(
-      parsed.intent,
-      courseIds,
-      parsed.dateFrom,
-      parsed.dateTo,
-    );
 
     await this.logService.record({
       action: `analytics_query.${parsed.intent}`,
       status: 'success',
       metadata: { dateFrom: parsed.dateFrom, dateTo: parsed.dateTo },
-      rowCount: outcome.rowCount,
+      rowCount: result.rowCount,
       durationMs: Date.now() - started,
     });
 
     return {
       status: 'success',
       intent: parsed.intent,
-      result: outcome.result,
+      result,
     };
   }
 }

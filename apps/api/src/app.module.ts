@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CommerceModule } from './modules/commerce/commerce.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
@@ -21,6 +22,7 @@ import { TeacherModule } from './modules/teacher/teacher.module';
 import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
+import { SalesModule } from './modules/sales/sales.module';
 import { TutorModule } from './modules/tutor/tutor.module';
 
 // Local docker-compose Postgres has no SSL listener; only the deployed
@@ -76,6 +78,8 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     TutorModule,
     AgentLogsModule,
     InterventionsModule,
+    CommerceModule,
+    SalesModule,
     AnalyticsModule,
   ],
   controllers: [AppController],
