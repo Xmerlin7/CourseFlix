@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
+import { InterventionsModule } from '../interventions/interventions.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { QuestionEntity } from './entities/question.entity';
 import { QuizEntity } from './entities/quiz.entity';
@@ -21,6 +22,7 @@ import { GradingService } from './grading.service';
       QuizSubmissionAnswerEntity,
     ]),
     EnrollmentsModule,
+    InterventionsModule,
     SessionsModule,
   ],
   controllers: [QuizzesController],

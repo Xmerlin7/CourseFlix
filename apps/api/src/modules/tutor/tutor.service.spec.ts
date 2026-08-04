@@ -8,6 +8,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import {
+  INTERVENTION_EVALUATOR_PORT,
+  InterventionEvaluatorPort,
+} from '../../common/ports/intervention-evaluator.port';
+import {
   RETRIEVAL_PORT,
   RetrievedChunk,
   RetrievalPort,
@@ -38,6 +42,7 @@ describe('TutorService', () => {
   let documentsRepository: jest.Mocked<
     Pick<Repository<DocumentEntity>, 'find'>
   >;
+  let interventionEvaluator: jest.Mocked<InterventionEvaluatorPort>;
 
   const relevantChunk: RetrievedChunk = {
     chunkId: 'chunk-db-1',
@@ -84,6 +89,9 @@ describe('TutorService', () => {
           { id: 'doc-1', fileName: 'physics.pdf' } as DocumentEntity,
         ]),
     };
+    interventionEvaluator = {
+      evaluateSignal: jest.fn().mockResolvedValue(undefined),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -114,6 +122,10 @@ describe('TutorService', () => {
         {
           provide: getRepositoryToken(DocumentEntity),
           useValue: documentsRepository,
+        },
+        {
+          provide: INTERVENTION_EVALUATOR_PORT,
+          useValue: interventionEvaluator,
         },
       ],
     }).compile();

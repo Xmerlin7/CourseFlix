@@ -10,6 +10,7 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { HealthModule } from './modules/health/health.module';
+import { InterventionsModule } from './modules/interventions/interventions.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { QuizzesModule } from './modules/quizzes/quiz.module';
@@ -65,6 +66,7 @@ import { TutorModule } from './modules/tutor/tutor.module';
     LessonsModule,
     TutorModule,
     AgentLogsModule,
+    InterventionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

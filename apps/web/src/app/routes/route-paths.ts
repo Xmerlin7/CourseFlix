@@ -17,6 +17,7 @@ export const ROUTE_PATHS = {
     ASSISTANT: '/student/courses/:courseId/assistant',
     LESSON_DETAIL: '/student/lessons/:lessonId',
     NOTIFICATIONS: '/student/notifications',
+    INTERVENTIONS: '/student/interventions',
   },
 
   TEACHER: {
@@ -26,6 +27,7 @@ export const ROUTE_PATHS = {
     COURSE_DETAIL: '/teacher/courses/:courseId',
     NOTIFICATIONS: '/teacher/notifications',
     AGENT_LOGS: '/teacher/agent-logs',
+    INTERVENTIONS: '/teacher/interventions',
   },
 } as const
 
