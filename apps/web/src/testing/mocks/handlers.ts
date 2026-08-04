@@ -132,6 +132,9 @@ export const handlers = [
 
   http.get(apiUrl("/teacher/agent-logs"), () => HttpResponse.json([])),
 
+  http.get(apiUrl("/student/interventions"), () => HttpResponse.json([])),
+  http.get(apiUrl("/teacher/interventions"), () => HttpResponse.json([])),
+
   http.get(apiUrl("/courses/:courseId/tutor/messages"), () =>
     HttpResponse.json([]),
   ),
