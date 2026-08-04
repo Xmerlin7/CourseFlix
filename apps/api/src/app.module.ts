@@ -22,6 +22,7 @@ import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { TutorModule } from './modules/tutor/tutor.module';
 
 @Module({
@@ -71,6 +72,7 @@ import { TutorModule } from './modules/tutor/tutor.module';
     InterventionsModule,
     CommerceModule,
     SalesModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

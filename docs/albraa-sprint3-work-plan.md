@@ -221,6 +221,19 @@ apps/api/src/app.module.ts                     # import AnalyticsModule
 
 **Merge:** PR `feature/cf-s3-analytics-functions` → `dev`.
 
+> **Branch 3 amendment (2026-08-04):** the merged `docs/sprint3-plan.md` §5 +
+> `docs/courseflix-scrum-jira-plan.md` make the live contract clear:
+> `POST /api/v1/teacher/analytics/questions` is **Nabile's** route (CF-TASK-069
+> parser, CF-TASK-072 security suite). Albraa's CF-TASK-070 is the
+> **permission-scoped function registry only** — no HTTP route in this branch.
+> The allowlist is exactly `revenue | sales_count | best_sellers` (NOT the
+> draft `recent_orders` below). Nabile's parser calls
+> `AnalyticsFunctionsService.execute()` (exported by `AnalyticsModule`); the
+> registry rejects unknown intents before any aggregate query. "Fixture and
+> ownership tests" = `analytics-functions.service.spec.ts` (mocked SalesService,
+> ownership-scoping pass-through asserted); the endpoint-level e2e lands with
+> Nabile's parser branch + Seif's no-SQL suite.
+
 > **Day-1 contract PR note:** the plan's shared `feature/cf-s3-contracts` branch covers routes/interfaces/migration boundaries. In practice the repo shows each member folded the contract into their own branch — so keep the contract **commit first** on Branch 1 (route constants + response types for the parts Elgendy/Nabile need), and merge it early so the UI teams can parallelize.
 
 ---
