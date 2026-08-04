@@ -1,0 +1,153 @@
+
+import { Route, Routes } from 'react-router'
+import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it } from 'vitest'
+import { http, HttpResponse } from 'msw'
+import { env } from '../../../shared/lib/env'
+import { server } from '../../../testing/mocks/server'
+import { renderWithProviders } from '../../../testing/renderWithProviders'
+import { CheckoutPage } from './CheckoutPage'
+
+function renderPage(courseId = 'course-1') {
+  return renderWithProviders(
+    <Routes>
+      <Route path="/student/checkout/:courseId" element={<CheckoutPage />} />
+    </Routes>,
+    { initialEntries: [`/student/checkout/${courseId}`] },
+  )
+}
+
+function pendingOrder(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    orderReference: 'order-1',
+    status: 'pending',
+    paymentStatus: 'pending',
+    currency: 'EGP',
+    amountMinor: 50000,
+    timezone: 'Africa/Cairo',
+    items: [{ courseId: 'course-1', title: 'الميكانيكا الكلاسيكية', priceMinor: 50000 }],
+    createdAt: '2026-08-04T10:00:00.000Z',
+    paidAt: null,
+    ...overrides,
+  }
+}
+
+describe('CheckoutPage', () => {
+  it('creates a draft order and completes a successful payment', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json(pendingOrder(), { status: 201 }),
+      ),
+      http.post(`${env.apiBaseUrl}/checkout/orders/order-1/confirm`, () =>
+        HttpResponse.json(
+          pendingOrder({
+            status: 'paid',
+            paymentStatus: 'paid',
+            paidAt: '2026-08-05T10:00:00.000Z',
+          }),
+        ),
+      ),
+    )
+
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByText('الميكانيكا الكلاسيكية')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'ادفع الآن' }))
+
+    expect(await screen.findByText('تم الدفع بنجاح')).toBeInTheDocument()
+    expect(screen.getByText('order-1')).toBeInTheDocument()
+    expect(screen.getByText(/EGP/)).toBeInTheDocument()
+  })
+
+  it('shows a retryable decline and succeeds when the student retries the same order', async () => {
+    let confirmCalls = 0
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json(pendingOrder(), { status: 201 }),
+      ),
+      http.post(`${env.apiBaseUrl}/checkout/orders/order-1/confirm`, () => {
+        confirmCalls += 1
+        if (confirmCalls === 1) {
+          return HttpResponse.json(pendingOrder({ status: 'pending', paymentStatus: 'failed' }))
+        }
+        return HttpResponse.json(
+          pendingOrder({ status: 'paid', paymentStatus: 'paid', paidAt: '2026-08-05T10:00:00.000Z' }),
+        )
+      }),
+    )
+
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'محاكاة رفض الدفع (تجريبي)' }))
+
+    expect(await screen.findByText('تم رفض عملية الدفع')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'إعادة المحاولة' }))
+
+    expect(await screen.findByText('تم الدفع بنجاح')).toBeInTheDocument()
+    expect(confirmCalls).toBe(2)
+  })
+
+  it('shows a distinct already-owned message and links to the course instead of a broken checkout', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json(
+          { statusCode: 409, message: 'You already own this course.', error: 'Conflict' },
+          { status: 409 },
+        ),
+      ),
+    )
+
+    renderPage('course-2')
+
+    expect(await screen.findByText('أنت مسجل بالفعل في هذه الدورة')).toBeInTheDocument()
+    const link = screen.getByRole('link', { name: 'الذهاب إلى الدورة' })
+    expect(link).toHaveAttribute('href', '/student/courses/course-2')
+  })
+
+  it('shows a distinct message for an archived or draft course', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json(
+          { statusCode: 409, message: 'This course is not available for purchase.', error: 'Conflict' },
+          { status: 409 },
+        ),
+      ),
+    )
+
+    renderPage('course-3')
+
+    expect(await screen.findByText('هذه الدورة غير متاحة للشراء حالياً')).toBeInTheDocument()
+  })
+
+  it('shows a distinct message for an unknown course', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json({ statusCode: 404, message: 'Course not found.', error: 'Not Found' }, { status: 404 }),
+      ),
+    )
+
+    renderPage('course-missing')
+
+    expect(await screen.findByText('الدورة غير موجودة')).toBeInTheDocument()
+  })
+
+  it('shows a generic fallback for an unexpected error without leaking raw details', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json({ statusCode: 500, message: 'boom', error: 'Internal Server Error' }, { status: 500 }),
+      ),
+    )
+
+    renderPage('course-4')
+
+    await waitFor(() => {
+      expect(screen.getByText('تعذر بدء عملية الشراء')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('boom')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /إعادة المحاولة/ })).toBeInTheDocument()
+  })
+})
