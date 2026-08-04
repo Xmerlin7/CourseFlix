@@ -21,6 +21,7 @@ import { TeacherModule } from './modules/teacher/teacher.module';
 import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
+import { SalesModule } from './modules/sales/sales.module';
 import { TutorModule } from './modules/tutor/tutor.module';
 
 @Module({
@@ -69,6 +70,7 @@ import { TutorModule } from './modules/tutor/tutor.module';
     AgentLogsModule,
     InterventionsModule,
     CommerceModule,
+    SalesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
