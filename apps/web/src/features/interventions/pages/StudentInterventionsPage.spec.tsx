@@ -30,7 +30,7 @@ describe('StudentInterventionsPage', () => {
     expect(screen.getByText('جاري تجهيز اختبار قصير')).toBeInTheDocument()
   })
 
-  it('shows a ready mini quiz chip when miniQuizId is set', async () => {
+  it('shows a ready mini quiz link when miniQuizId is set', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/student/interventions`, () =>
         HttpResponse.json([
@@ -49,7 +49,7 @@ describe('StudentInterventionsPage', () => {
 
     renderWithProviders(<StudentInterventionsPage />)
 
-    expect(await screen.findByText('اختبار قصير جاهز')).toBeInTheDocument()
+    expect(await screen.findByText('ابدأ الاختبار القصير')).toBeInTheDocument()
   })
 
   it('shows an empty state when there are no interventions', async () => {
