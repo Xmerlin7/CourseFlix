@@ -19,6 +19,7 @@ export const ROUTE_PATHS = {
     NOTIFICATIONS: '/student/notifications',
     INTERVENTIONS: '/student/interventions',
     MINI_QUIZ: '/student/mini-quizzes/:miniQuizId',
+    CHECKOUT: '/student/checkout/:courseId',
   },
 
   TEACHER: {
