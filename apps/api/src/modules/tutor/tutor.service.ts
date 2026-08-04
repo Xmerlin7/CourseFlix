@@ -8,6 +8,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import {
+  INTERVENTION_EVALUATOR_PORT,
+  InterventionEvaluatorPort,
+} from '../../common/ports/intervention-evaluator.port';
+import {
   RETRIEVAL_PORT,
   RetrievedChunk,
   RetrievalPort,
@@ -63,6 +67,8 @@ export class TutorService {
     private readonly llmProvider: LlmProvider,
     @InjectRepository(DocumentEntity)
     private readonly documentsRepository: Repository<DocumentEntity>,
+    @Inject(INTERVENTION_EVALUATOR_PORT)
+    private readonly interventionEvaluator: InterventionEvaluatorPort,
   ) {}
 
   async sendMessage(input: {
@@ -86,12 +92,40 @@ export class TutorService {
         input.courseId,
       );
 
-    await this.conversationsService.saveMessage({
+    // Gathered before saving the current message, so a repeated-question
+    // check never matches the message against itself.
+    const priorMessageTexts = (
+      await this.conversationsService.listCourseMessages(
+        input.studentId,
+        input.courseId,
+      )
+    )
+      .filter((message) => message.senderType === 'student')
+      .map((message) => message.messageText);
+
+    const studentMessage = await this.conversationsService.saveMessage({
       conversationId: conversation.id,
       senderType: 'student',
       role: 'user',
       messageText: question,
     });
+
+    // Struggle-signal evaluation is a secondary side effect — it must
+    // never fail or delay the primary Tutor response.
+    this.interventionEvaluator
+      .evaluateSignal({
+        kind: 'chat_message',
+        studentId: input.studentId,
+        courseId: input.courseId,
+        messageText: question,
+        priorMessageTexts,
+        evidenceRefId: studentMessage.id,
+      })
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Intervention evaluation failed for message=${studentMessage.id}: ${String(error)}`,
+        );
+      });
 
     const retrievedChunks = await this.retrievalPort.search({
       courseId: input.courseId,

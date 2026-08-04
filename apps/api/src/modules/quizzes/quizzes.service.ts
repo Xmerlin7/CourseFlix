@@ -1,11 +1,17 @@
 import {
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
+import {
+  INTERVENTION_EVALUATOR_PORT,
+  InterventionEvaluatorPort,
+} from '../../common/ports/intervention-evaluator.port';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { QuestionEntity, QuestionType } from './entities/question.entity';
 import { QuizEntity } from './entities/quiz.entity';
@@ -55,6 +61,8 @@ export interface TeacherQuizResponse {
 
 @Injectable()
 export class QuizzesService {
+  private readonly logger = new Logger(QuizzesService.name);
+
   constructor(
     @InjectRepository(QuizEntity) private quizRepo: Repository<QuizEntity>,
     @InjectRepository(QuestionEntity)
@@ -68,6 +76,8 @@ export class QuizzesService {
     @InjectDataSource() private dataSource: DataSource,
     private gradingService: GradingService,
     private enrollmentsService: EnrollmentsService,
+    @Inject(INTERVENTION_EVALUATOR_PORT)
+    private interventionEvaluator: InterventionEvaluatorPort,
   ) {}
 
   private async assertTeacherOwnsCourse(
@@ -198,6 +208,25 @@ export class QuizzesService {
         })),
       );
       await queryRunner.commitTransaction();
+
+      // Fire the struggle-signal evaluator after the submission is
+      // durably committed — a secondary side effect that must never
+      // fail or delay the primary quiz-submission response.
+      const scorePercent = questions.length > 0 ? (score / questions.length) * 100 : 0;
+      this.interventionEvaluator
+        .evaluateSignal({
+          kind: 'quiz_score',
+          studentId,
+          courseId: quiz.courseId,
+          weakConcept: quiz.title,
+          scorePercent,
+          evidenceRefId: submission.id,
+        })
+        .catch((error: unknown) => {
+          this.logger.warn(
+            `Intervention evaluation failed for submission=${submission.id}: ${String(error)}`,
+          );
+        });
 
       return {
         submissionId: submission.id,

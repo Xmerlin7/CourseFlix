@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentEntity } from '../documents/entities/document.entity';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
+import { InterventionsModule } from '../interventions/interventions.module';
 import { RetrievalModule } from '../retrieval/retrieval.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { LLM_PROVIDER, MockLlmProvider } from './adapters/llm.adapter';
@@ -25,6 +26,7 @@ import { TutorService } from './tutor.service';
       DocumentEntity,
     ]),
     EnrollmentsModule,
+    InterventionsModule,
     RetrievalModule,
     SessionsModule,
     ThrottlerModule.forRoot([
