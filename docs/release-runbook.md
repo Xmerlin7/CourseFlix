@@ -89,3 +89,52 @@ Running `reset` twice in a row against the same database produces the same
 row counts both times and the same `reset:check` result — no duplicate
 rows are ever created, because every seed step upserts on a natural key
 (email, slug, title, etc.) rather than inserting unconditionally.
+
+## Sprint 3 non-GTM/non-analytics rehearsal
+
+This is Seif's release path with GTM and Analytics Agent work intentionally
+removed for this pass. It covers the Tutor carryover and the currently
+implemented resettable learning flow. Commerce/order checks remain blocked
+until the checkout/order module and tables land.
+
+### Preconditions
+
+- Run the reset gate:
+
+```bash
+npm run reset -w apps/api && npm run reset:check -w apps/api
+```
+
+- Start the API and web app:
+
+```bash
+npm run start:dev -w apps/api
+npm run dev -w apps/web
+```
+
+- Use the seeded student account from `.env`.
+
+### Canonical path
+
+1. Sign in as the seeded student.
+2. Open the seeded course.
+3. Open a lesson and send at least one progress heartbeat.
+4. Open the course Tutor.
+5. Confirm existing course-scoped Tutor history loads from
+   `GET /api/v1/courses/:courseId/tutor/messages`.
+6. Ask a grounded question and verify the assistant answers with citations.
+7. Ask an unsupported or injection-style question and verify the assistant
+   returns the no-answer message with zero citations.
+8. Sign out and confirm `/api/v1/me` rejects the revoked session.
+
+### Release checks
+
+```bash
+npm run test -w apps/api -- tutor
+npm run test -w apps/web -- StudentAssistantPage
+```
+
+Record both command results plus the manual rehearsal date/time. A pass means
+the Tutor history endpoint is enrolled-student scoped, unsupported questions
+do not invent citations, and the student UI can resume a prior conversation
+before sending a new message.
