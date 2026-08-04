@@ -7,7 +7,7 @@ import {
   EMBEDDING_PROVIDER,
   MockEmbeddingProvider,
   OpenAIEmbeddingProvider,
-} from '../../../../worker/src/adapters/embedding.adapter';
+} from './adapters/embedding.adapter';
 
 @Module({
   imports: [ConfigModule, TypeOrmModule.forFeature([])],

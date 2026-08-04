@@ -22,6 +22,12 @@ import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
 import { TutorModule } from './modules/tutor/tutor.module';
 
+// Local docker-compose Postgres has no SSL listener; only the deployed
+// Neon database needs `ssl: true` (its own hostname is never localhost).
+const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
+  process.env.DATABASE_URL ?? '',
+);
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -43,12 +49,14 @@ import { TutorModule } from './modules/tutor/tutor.module';
       autoLoadEntities: true,
       synchronize: true,
       port: 5432,
-      ssl: true,
-      extra: {
-        ssl: {
-          rejectUnauthorized: false, // Allows connection to Neon over safe TLS
-        },
-      },
+      ssl: isLocalDatabaseUrl ? false : true,
+      extra: isLocalDatabaseUrl
+        ? {}
+        : {
+            ssl: {
+              rejectUnauthorized: false, // Allows connection to Neon over safe TLS
+            },
+          },
     }),
     HealthModule,
     AuthModule,
