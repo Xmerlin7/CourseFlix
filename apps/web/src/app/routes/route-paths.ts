@@ -25,6 +25,7 @@ export const ROUTE_PATHS = {
     COURSES: '/teacher/courses',
     COURSE_DETAIL: '/teacher/courses/:courseId',
     NOTIFICATIONS: '/teacher/notifications',
+    AGENT_LOGS: '/teacher/agent-logs',
   },
 } as const
 

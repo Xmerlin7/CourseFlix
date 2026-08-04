@@ -130,6 +130,8 @@ export const handlers = [
     HttpResponse.json({ id: params.notificationId, isRead: true }),
   ),
 
+  http.get(apiUrl("/teacher/agent-logs"), () => HttpResponse.json([])),
+
   http.get(apiUrl("/courses/:courseId/tutor/messages"), () =>
     HttpResponse.json([]),
   ),
