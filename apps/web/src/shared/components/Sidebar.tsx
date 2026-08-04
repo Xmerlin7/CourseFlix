@@ -29,6 +29,7 @@ const teacherNavItems: NavItem[] = [
   { path: ROUTE_PATHS.TEACHER.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.TEACHER.COURSES, label: 'دوراتي', icon: 'menu_book' },
   { path: ROUTE_PATHS.TEACHER.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
+  { path: ROUTE_PATHS.TEACHER.AGENT_LOGS, label: 'سجل الوكيل', icon: 'smart_toy' },
 ]
 
 export function Sidebar({

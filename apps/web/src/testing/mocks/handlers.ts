@@ -133,6 +133,8 @@ export const handlers = [
     HttpResponse.json({ updated: 0 }),
   ),
 
+  http.get(apiUrl("/teacher/agent-logs"), () => HttpResponse.json([])),
+
   http.get(apiUrl("/courses/:courseId/tutor/messages"), () =>
     HttpResponse.json([]),
   ),

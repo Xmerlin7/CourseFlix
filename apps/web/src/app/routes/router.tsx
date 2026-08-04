@@ -42,6 +42,9 @@ const TeacherCourseDetailPage = lazy(() =>
 const NotificationsPage = lazy(() =>
   import('../../features/notifications/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage }))
 )
+const AgentLogsPage = lazy(() =>
+  import('../../features/agent-logs/pages/AgentLogsPage').then((m) => ({ default: m.AgentLogsPage }))
+)
 
 // Lazy-loaded status pages
 const ForbiddenStatePage = lazy(() =>
@@ -199,6 +202,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <NotificationsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.AGENT_LOGS,
+            element: (
+              <SuspenseWrapper>
+                <AgentLogsPage />
               </SuspenseWrapper>
             ),
           },

@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DocumentsModule } from './modules/documents/documents.module';
@@ -63,6 +64,7 @@ import { TutorModule } from './modules/tutor/tutor.module';
     RetrievalModule,
     LessonsModule,
     TutorModule,
+    AgentLogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
