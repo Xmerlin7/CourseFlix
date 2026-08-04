@@ -34,7 +34,7 @@ export function StudentAssistantPage() {
           </p>
         </div>
         <Link to={`/student/courses/${courseId}`} className="btn text">
-          <span className="ms">arrow_back</span>
+          <span className="ms">arrow_forward</span>
           الرجوع للدورة
         </Link>
       </div>

@@ -69,13 +69,13 @@ export function TeacherSalesPage() {
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-lg border p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">إجمالي الإيرادات</p>
-          <p className="mt-1 text-2xl font-bold">
+          <p className="mt-1 text-2xl font-bold break-words">
             {formatMoney(data.totalRevenue, data.currency)}
           </p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">الطلبات الناجحة</p>
-          <p className="mt-1 text-2xl font-bold">{data.successfulOrderCount}</p>
+          <p className="mt-1 text-2xl font-bold break-words">{data.successfulOrderCount}</p>
         </div>
       </section>
 
@@ -83,8 +83,8 @@ export function TeacherSalesPage() {
         <section>
           <h2 className="mb-2 text-lg font-semibold">الأكثر مبيعاً</h2>
           <div className="rounded-lg border p-4">
-            <p className="font-semibold">{data.bestSellingCourse.courseTitle}</p>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className="font-semibold break-words">{data.bestSellingCourse.courseTitle}</p>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 break-words">
               {data.bestSellingCourse.orderCount} طلب —{' '}
               {formatMoney(data.bestSellingCourse.totalRevenue, data.currency)}
             </p>
