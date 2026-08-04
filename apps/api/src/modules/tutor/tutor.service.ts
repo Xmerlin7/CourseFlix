@@ -40,6 +40,13 @@ export interface TutorMessageResponse {
   citations: TutorCitation[];
 }
 
+export interface TutorHistoryMessage {
+  id: string;
+  role: 'student' | 'assistant';
+  text: string;
+  createdAt: string;
+}
+
 const NO_ANSWER_MESSAGE = 'المواد المرفوعة لا تغطي هذا السؤال بعد.';
 
 @Injectable()
@@ -188,8 +195,32 @@ export class TutorService {
       messageId: assistantMessage.id,
       status: 'answered',
       answer: llmResult.answer,
-      citations: citations.map(({ chunkId: _chunkId, ...citation }) => citation),
+      citations: citations.map(
+        ({ chunkId: _chunkId, ...citation }) => citation,
+      ),
     };
+  }
+
+  async getCourseMessages(input: {
+    courseId: string;
+    studentId: string;
+  }): Promise<TutorHistoryMessage[]> {
+    await this.enrollmentsService.assertStudentEnrolled(
+      input.studentId,
+      input.courseId,
+    );
+
+    const messages = await this.conversationsService.listCourseMessages(
+      input.studentId,
+      input.courseId,
+    );
+
+    return messages.map((message) => ({
+      id: message.id,
+      role: message.senderType === 'student' ? 'student' : 'assistant',
+      text: message.messageText,
+      createdAt: message.createdAt.toISOString(),
+    }));
   }
 
   private async persistNoAnswer(

@@ -1,4 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -11,6 +20,17 @@ import { TutorService } from './tutor.service';
 @UseGuards(AuthGuard, StudentRoleGuard, ThrottlerGuard)
 export class TutorController {
   constructor(private readonly tutorService: TutorService) {}
+
+  @Get('courses/:courseId/tutor/messages')
+  getMessages(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.tutorService.getCourseMessages({
+      courseId,
+      studentId: user.id,
+    });
+  }
 
   @Post('courses/:courseId/tutor/messages')
   @HttpCode(HttpStatus.OK)

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { ChatConversationEntity } from './entities/chat-conversation.entity';
 import {
   ChatMessageEntity,
@@ -26,6 +26,14 @@ export interface SaveSourceChunkInput {
   relevanceScore: number;
   excerpt: string;
   vectorId: string;
+}
+
+export interface CourseConversationMessage {
+  id: string;
+  senderType: ChatSenderType;
+  role: ChatRole;
+  messageText: string;
+  createdAt: Date;
 }
 
 @Injectable()
@@ -97,5 +105,41 @@ export class ConversationsService {
         }),
       ),
     );
+  }
+
+  async listCourseMessages(
+    studentId: string,
+    courseId: string,
+  ): Promise<CourseConversationMessage[]> {
+    const conversations = await this.conversationsRepository.find({
+      where: {
+        studentId,
+        courseId,
+        status: 'active',
+        deletedAt: IsNull(),
+      },
+      select: { id: true },
+    });
+
+    if (conversations.length === 0) {
+      return [];
+    }
+
+    return this.messagesRepository.find({
+      where: {
+        conversationId: In(
+          conversations.map((conversation) => conversation.id),
+        ),
+        deletedAt: IsNull(),
+      },
+      order: { createdAt: 'ASC' },
+      select: {
+        id: true,
+        senderType: true,
+        role: true,
+        messageText: true,
+        createdAt: true,
+      },
+    });
   }
 }
