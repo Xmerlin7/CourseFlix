@@ -15,6 +15,7 @@ describe('ConversationsService', () => {
   beforeEach(async () => {
     conversationsRepository = {
       findOne: jest.fn(),
+      find: jest.fn(),
       create: jest.fn((input) => input as ChatConversationEntity),
       save: jest.fn(async (input) => ({
         id: 'conversation-1',
@@ -23,6 +24,7 @@ describe('ConversationsService', () => {
       update: jest.fn(),
     };
     messagesRepository = {
+      find: jest.fn(),
       create: jest.fn((input) => input as ChatMessageEntity),
       save: jest.fn(async (input) => ({
         id: 'message-1',
@@ -113,5 +115,66 @@ describe('ConversationsService', () => {
       'conversation-1',
       expect.objectContaining({ lastMessageAt: expect.any(Date) }),
     );
+  });
+
+  it('lists non-deleted messages for active conversations in chronological order', async () => {
+    conversationsRepository.find?.mockResolvedValue([
+      { id: 'conversation-1' } as ChatConversationEntity,
+    ]);
+    messagesRepository.find?.mockResolvedValue([
+      {
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        senderType: 'student',
+        role: 'user',
+        messageText: 'question',
+        createdAt: new Date('2026-08-04T09:00:00.000Z'),
+      } as ChatMessageEntity,
+      {
+        id: 'message-2',
+        conversationId: 'conversation-1',
+        senderType: 'ai_tutor',
+        role: 'assistant',
+        messageText: 'answer',
+        createdAt: new Date('2026-08-04T09:00:01.000Z'),
+      } as ChatMessageEntity,
+    ]);
+
+    const result = await service.listCourseMessages('student-1', 'course-1');
+
+    expect(conversationsRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          studentId: 'student-1',
+          courseId: 'course-1',
+          status: 'active',
+        }),
+        select: { id: true },
+      }),
+    );
+    expect(messagesRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { createdAt: 'ASC' },
+        select: expect.objectContaining({
+          messageText: true,
+          createdAt: true,
+        }),
+      }),
+    );
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({
+      id: 'message-1',
+      senderType: 'student',
+      messageText: 'question',
+    });
+  });
+
+  it('returns an empty history without reading messages when no active conversation exists', async () => {
+    conversationsRepository.find?.mockResolvedValue([]);
+
+    await expect(
+      service.listCourseMessages('student-1', 'course-1'),
+    ).resolves.toEqual([]);
+    expect(messagesRepository.find).not.toHaveBeenCalled();
   });
 });
