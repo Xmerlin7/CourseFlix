@@ -4,6 +4,56 @@ CourseFlix is an Arabic-first, RTL learning platform for teachers and students. 
 
 > Status: planning and repository setup. Sprint 1 starts on Sunday, July 19, 2026. Application scaffolding is the first committed implementation work.
 
+## Running it locally
+
+One command brings up everything — Postgres, Redis and Chroma in Docker, then migrations, demo data, the API and the web app:
+
+```bash
+./dev.sh
+```
+
+It prints the URLs and sign-in credentials when it finishes. Open <http://localhost:5173>.
+
+| Command | What it does |
+|---|---|
+| `./dev.sh` | Start the whole stack (installs dependencies on first run) |
+| `./dev.sh stop` | Stop the app processes and the Docker services (keeps your data) |
+| `./dev.sh reset` | Wipe the database volume and rebuild from scratch |
+| `./dev.sh status` | Show what is currently running |
+| `./dev.sh logs` | Follow the API and web logs |
+
+Flags: `--no-seed` (migrate but don't seed), `--no-infra` (assume Docker services are already up).
+
+### Prerequisites
+
+- Node 20+ and npm
+- Docker with the `docker compose` plugin (`sudo pacman -S docker-compose` on Arch)
+
+If Docker reports a permission error, you need to be in the `docker` group:
+
+```bash
+sudo usermod -aG docker $USER   # then log out and back in
+```
+
+`dev.sh` detects the case where the group is granted but your current shell hasn't picked it up yet, and works around it for the session.
+
+### Seeded demo accounts
+
+`./dev.sh` seeds a full fixture: 2 teachers, 10 students, 7 courses (covering every course status and both school stages) with 14 sections and 44 lessons, ~30 enrollments, document rows in every processing status, and a notification feed per user. Re-running the seed is safe — every step upserts, so it never duplicates.
+
+| Role | Email | Password |
+|---|---|---|
+| Teacher | `teacher@courseflix.local` | `Teacher123!` |
+| Teacher | `sara.teacher@courseflix.local` | `Teacher123!` |
+| Student | `student@courseflix.local` | `Student123!` |
+| Students | `student2@…` through `student10@courseflix.local` | `Student123!` |
+
+Passwords for the two primary accounts come from `.env` (`SEED_*` vars), so change them there rather than in the seed code.
+
+### Known gap in the demo
+
+An uploaded PDF stays at **"في الانتظار"** forever. The upload, storage, checksum and versioning are real, but the ingestion worker that would process the file (`apps/worker`) hasn't been built yet, so nothing picks the job up. Everything else on screen is live data from Postgres.
+
 ## MVP
 
 ### Student experience
@@ -123,3 +173,44 @@ The Scrum/Jira plan is the current source of truth for scope, acceptance criteri
 A story is complete only when its acceptance criteria pass through the real integrated path, owner-local tests and required cross-feature tests pass, authorization and privacy checks pass, Arabic RTL states are responsive and accessible, documentation is updated, and no Severity 1 or Severity 2 defect remains open.
 
 Mock-only frontend pages or isolated backend endpoints do not count as completed stories.
+
+## Local Development
+
+### Prerequisites
+
+- Node.js and npm
+- Docker Desktop (for PostgreSQL, Redis, and ChromaDB)
+
+### 1. Start infrastructure services
+
+```bash
+docker-compose up -d
+```
+
+This starts three services:
+
+| Service | Purpose | Port |
+|---|---|---|
+| `postgres` | Relational database | 5432 |
+| `redis` | Job queue backing store for the ingestion worker | 6379 |
+| `chroma` | Vector store for document embeddings | 8000 |
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+This installs dependencies for `apps/web`, `apps/api`, and `apps/worker` in one step via npm workspaces.
+
+### 3. Run the apps
+
+Each app runs in its own terminal:
+
+```bash
+npm run dev:web      # React app on http://localhost:5173
+npm run dev:api      # NestJS API on http://localhost:3000
+npm run dev:worker   # Ingestion worker (background process, no HTTP port)
+```
+
+The worker connects to Redis on startup and logs `Waiting for jobs...` once ready. It has no user interface; its job is to process document ingestion tasks enqueued by the API.

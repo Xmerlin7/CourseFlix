@@ -6,8 +6,27 @@
   "directories": {
     "doc": "docs"
   },
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "apps/worker"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install:all": "npm install",
+    "dev:api": "npm run start:dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:worker": "npm run start:dev -w apps/worker",
+    "build:api": "npm run build -w apps/api",
+    "build:web": "npm run build -w apps/web",
+    "build:worker": "npm run build -w apps/worker",
+    "lint:api": "npm run lint -w apps/api",
+    "lint:web": "npm run lint -w apps/web",
+    "test:api": "npm run test -w apps/api",
+    "test:web": "npm run test -w apps/web",
+    "test:worker": "npm run test -w apps/worker",
+    "migration:run": "npm run migration:run -w apps/api",
+    "seed": "npm run seed -w apps/api",
+    "test": "npm run test:api"
   },
   "repository": {
     "type": "git",
@@ -20,5 +39,18 @@
   "bugs": {
     "url": "https://github.com/Xmerlin7/CourseFlix/issues"
   },
-  "homepage": "https://github.com/Xmerlin7/CourseFlix#readme"
+  "homepage": "https://github.com/Xmerlin7/CourseFlix#readme",
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1"
+  },
+  "overrides": {
+    "typeorm": "^0.3.20"
+  },
+  "allowScripts": {
+    "argon2": true,
+    "msgpackr-extract": true,
+    "unrs-resolver": true,
+    "msw@2.15.0": true
+  }
 }

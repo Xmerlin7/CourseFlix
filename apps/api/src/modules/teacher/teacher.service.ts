@@ -1,35 +1,374 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, IsNull, Repository } from 'typeorm';
+import { OrderItemEntity } from '../commerce/entities/order-item.entity';
+import { OrderEntity } from '../commerce/entities/order.entity';
 import { CoursesService } from '../courses/courses.service';
+import { CourseEntity, CourseStatus } from '../courses/entities/course.entity';
+import type { SectionEntity } from '../courses/entities/section.entity';
+import type { LessonEntity } from '../courses/entities/lesson.entity';
+import { UserEntity } from '../users/entities/user.entity';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
+import {
+  EnrollmentEntity,
+  EnrollmentStatus,
+} from '../enrollments/entities/enrollment.entity';
+import { LessonsService, type LessonDetailResponse } from '../lessons/lessons.service';
 import { UpdateCourseDto } from './dto/update-course.dto';
+import { CreateCourseDto } from '../courses/dto/create-course.dto';
+import { CreateSectionDto } from '../courses/dto/create-section.dto';
+import { UpdateSectionDto } from '../courses/dto/update-section.dto';
+import { CreateLessonDto } from '../courses/dto/create-lesson.dto';
+import { UpdateLessonDto } from '../courses/dto/update-lesson.dto';
+import { ReorderDto } from '../courses/dto/reorder.dto';
+
+export interface TeacherCourseListItem {
+  id: string;
+  title: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  gradeLevel: string | null;
+  status: CourseStatus;
+}
+
+export interface TeacherDashboardResponse {
+  teacher: { id: string };
+  stats: {
+    ownedCourseCount: number;
+    publishedCourseCount: number;
+    enrolledStudentCount: number;
+  };
+  recentCourses: Array<{ id: string; title: string; status: CourseStatus }>;
+}
+
+export interface TeacherStudentCourseSubscription {
+  id: string;
+  title: string;
+  status: CourseStatus;
+  enrollmentStatus: EnrollmentStatus;
+  enrolledAt: string;
+  revenueMinor: number;
+}
+
+export interface TeacherStudentListItem {
+  id: string;
+  fullName: string;
+  email: string;
+  status: UserEntity['status'];
+  joinedAt: string;
+  lastLoginAt: string | null;
+  isSubscribedToAnyCourse: boolean;
+  totalRevenueMinor: number;
+  courses: TeacherStudentCourseSubscription[];
+}
+
+export interface TeacherStudentsResponse {
+  currency: string;
+  totals: {
+    studentCount: number;
+    subscribedStudentCount: number;
+    unsubscribedStudentCount: number;
+    revenueMinor: number;
+  };
+  students: TeacherStudentListItem[];
+}
+
+interface TeacherStudentRevenueRow {
+  studentId: string;
+  courseId: string;
+  revenueMinor: string;
+}
+
+const VALID_COURSE_STATUSES: readonly CourseStatus[] = [
+  'draft',
+  'published',
+  'archived',
+];
+
+function parseCourseStatus(value?: string): CourseStatus | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!VALID_COURSE_STATUSES.includes(value as CourseStatus)) {
+    throw new BadRequestException(
+      `Invalid status filter: "${value}". Must be one of ${VALID_COURSE_STATUSES.join(', ')}.`,
+    );
+  }
+
+  return value as CourseStatus;
+}
 
 @Injectable()
 export class TeacherService {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(
+    private readonly coursesService: CoursesService,
+    private readonly enrollmentsService: EnrollmentsService,
+    private readonly lessonsService: LessonsService,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(EnrollmentEntity)
+    private readonly teacherEnrollmentsRepository: Repository<EnrollmentEntity>,
+    @InjectRepository(OrderEntity)
+    private readonly teacherOrdersRepository: Repository<OrderEntity>,
+  ) {}
 
-  getDashboard() {
+  async getDashboard(teacherId: string): Promise<TeacherDashboardResponse> {
+    const courses = await this.coursesService.findOwnedCourses(teacherId);
+    const enrolledStudentCount =
+      await this.enrollmentsService.countActiveStudentsByCourseIds(
+        courses.map((course) => course.id),
+      );
+
     return {
-      TODO: 'Build real owned-course statistics for the authenticated teacher.',
+      teacher: { id: teacherId },
+      stats: {
+        ownedCourseCount: courses.length,
+        publishedCourseCount: courses.filter(
+          (course) => course.status === 'published',
+        ).length,
+        enrolledStudentCount,
+      },
+      recentCourses: courses.slice(0, 5).map((course) => ({
+        id: course.id,
+        title: course.title,
+        status: course.status,
+      })),
     };
   }
 
-  getCourses() {
+  async getCourses(
+    teacherId: string,
+    status?: string,
+  ): Promise<TeacherCourseListItem[]> {
+    const courses = await this.coursesService.findOwnedCourses(
+      teacherId,
+      parseCourseStatus(status),
+    );
+    return courses.map((course) => this.toListItem(course));
+  }
+
+  async getStudents(teacherId: string): Promise<TeacherStudentsResponse> {
+    const [courses, students] = await Promise.all([
+      this.coursesService.findOwnedCourses(teacherId),
+      this.usersRepository.find({
+        where: { role: 'student', deletedAt: IsNull() },
+        order: { fullName: 'ASC', createdAt: 'ASC' },
+      }),
+    ]);
+
+    const courseIds = courses.map((course) => course.id);
+    const courseById = new Map(courses.map((course) => [course.id, course]));
+
+    const [enrollments, revenueRows] =
+      courseIds.length === 0
+        ? [[], []]
+        : await Promise.all([
+            this.teacherEnrollmentsRepository.find({
+              where: { courseId: In(courseIds), deletedAt: IsNull() },
+              order: { enrolledAt: 'DESC' },
+            }),
+            this.getStudentRevenueRows(courseIds),
+          ]);
+
+    const enrollmentsByStudent = new Map<string, EnrollmentEntity[]>();
+    for (const enrollment of enrollments) {
+      enrollmentsByStudent.set(enrollment.studentId, [
+        ...(enrollmentsByStudent.get(enrollment.studentId) ?? []),
+        enrollment,
+      ]);
+    }
+
+    const revenueByStudentCourse = new Map<string, number>();
+    const revenueByStudent = new Map<string, number>();
+    for (const row of revenueRows) {
+      const revenueMinor = Number(row.revenueMinor);
+      revenueByStudentCourse.set(
+        `${row.studentId}:${row.courseId}`,
+        revenueMinor,
+      );
+      revenueByStudent.set(
+        row.studentId,
+        (revenueByStudent.get(row.studentId) ?? 0) + revenueMinor,
+      );
+    }
+
+    const items = students.map<TeacherStudentListItem>((student) => {
+      const subscriptions = (enrollmentsByStudent.get(student.id) ?? [])
+        .map<TeacherStudentCourseSubscription | null>((enrollment) => {
+          const course = courseById.get(enrollment.courseId);
+          if (!course) return null;
+
+          return {
+            id: course.id,
+            title: course.title,
+            status: course.status,
+            enrollmentStatus: enrollment.status,
+            enrolledAt: enrollment.enrolledAt.toISOString(),
+            revenueMinor:
+              revenueByStudentCourse.get(`${student.id}:${course.id}`) ?? 0,
+          };
+        })
+        .filter(
+          (subscription): subscription is TeacherStudentCourseSubscription =>
+            subscription !== null,
+        );
+
+      return {
+        id: student.id,
+        fullName: student.fullName,
+        email: student.email,
+        status: student.status,
+        joinedAt: student.createdAt.toISOString(),
+        lastLoginAt: student.lastLoginAt?.toISOString() ?? null,
+        isSubscribedToAnyCourse: subscriptions.length > 0,
+        totalRevenueMinor: revenueByStudent.get(student.id) ?? 0,
+        courses: subscriptions,
+      };
+    });
+
+    const subscribedStudentCount = items.filter(
+      (student) => student.isSubscribedToAnyCourse,
+    ).length;
+
     return {
-      TODO: 'Use authenticated teacher id and return owned course list only.',
-      serviceLayer: this.coursesService.findOwnedCourses(
-        'TODO-authenticated-teacher-id',
-      ),
+      currency: 'EGP',
+      totals: {
+        studentCount: items.length,
+        subscribedStudentCount,
+        unsubscribedStudentCount: items.length - subscribedStudentCount,
+        revenueMinor: items.reduce(
+          (sum, student) => sum + student.totalRevenueMinor,
+          0,
+        ),
+      },
+      students: items,
     };
   }
 
-  updateCourse(courseId: string, updateCourseDto: UpdateCourseDto) {
-    return {
-      TODO: 'Validate allowed fields and persist metadata after owner check.',
+  async updateCourse(
+    courseId: string,
+    teacherId: string,
+    updateCourseDto: UpdateCourseDto,
+  ): Promise<TeacherCourseListItem> {
+    const course = await this.coursesService.updateCourseMetadata(
       courseId,
+      teacherId,
       updateCourseDto,
-      serviceLayer: this.coursesService.updateCourseMetadata(
-        courseId,
-        'TODO-authenticated-teacher-id',
-      ),
+    );
+    return this.toListItem(course);
+  }
+
+  async createCourse(
+    teacherId: string,
+    dto: CreateCourseDto,
+  ): Promise<TeacherCourseListItem> {
+    const course = await this.coursesService.createCourse(teacherId, dto);
+    return this.toListItem(course);
+  }
+
+  async deleteCourse(courseId: string, teacherId: string): Promise<void> {
+    await this.coursesService.deleteCourse(courseId, teacherId);
+  }
+
+  async createSection(
+    courseId: string,
+    teacherId: string,
+    dto: CreateSectionDto,
+  ): Promise<SectionEntity> {
+    return this.coursesService.createSection(courseId, teacherId, dto.title);
+  }
+
+  async getSection(
+    sectionId: string,
+    teacherId: string,
+  ): Promise<SectionEntity> {
+    return this.coursesService.getSection(sectionId, teacherId);
+  }
+
+  async updateSection(
+    sectionId: string,
+    teacherId: string,
+    dto: UpdateSectionDto,
+  ): Promise<SectionEntity> {
+    return this.coursesService.updateSection(sectionId, teacherId, dto);
+  }
+
+  async deleteSection(sectionId: string, teacherId: string): Promise<void> {
+    await this.coursesService.deleteSection(sectionId, teacherId);
+  }
+
+  async reorderSections(
+    courseId: string,
+    teacherId: string,
+    dto: ReorderDto,
+  ): Promise<void> {
+    await this.coursesService.reorderSections(courseId, teacherId, dto.items);
+  }
+
+  async createLesson(
+    sectionId: string,
+    teacherId: string,
+    dto: CreateLessonDto,
+  ): Promise<LessonEntity> {
+    return this.coursesService.createLesson(sectionId, teacherId, dto);
+  }
+
+  async getLesson(lessonId: string, teacherId: string): Promise<LessonEntity> {
+    return this.coursesService.getLesson(lessonId, teacherId);
+  }
+
+  async getLessonPlayer(
+    lessonId: string,
+    teacherId: string,
+  ): Promise<LessonDetailResponse> {
+    return this.lessonsService.getTeacherLessonDetail(lessonId, teacherId);
+  }
+
+  async updateLesson(
+    lessonId: string,
+    teacherId: string,
+    dto: UpdateLessonDto,
+  ): Promise<LessonEntity> {
+    return this.coursesService.updateLesson(lessonId, teacherId, dto);
+  }
+
+  async deleteLesson(lessonId: string, teacherId: string): Promise<void> {
+    await this.coursesService.deleteLesson(lessonId, teacherId);
+  }
+
+  async reorderLessons(
+    sectionId: string,
+    teacherId: string,
+    dto: ReorderDto,
+  ): Promise<void> {
+    await this.coursesService.reorderLessons(sectionId, teacherId, dto.items);
+  }
+
+  private toListItem(course: CourseEntity): TeacherCourseListItem {
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      coverImageUrl: course.coverImageUrl,
+      gradeLevel: course.gradeLevel,
+      status: course.status,
     };
+  }
+
+  private async getStudentRevenueRows(
+    courseIds: string[],
+  ): Promise<TeacherStudentRevenueRow[]> {
+    return this.teacherOrdersRepository
+      .createQueryBuilder('order')
+      .innerJoin(OrderItemEntity, 'item', 'item.order_id = order.id')
+      .where('order.status = :status', { status: 'paid' })
+      .andWhere('item.course_id IN (:...courseIds)', { courseIds })
+      .select('order.student_id', 'studentId')
+      .addSelect('item.course_id', 'courseId')
+      .addSelect('SUM(item.price_minor)', 'revenueMinor')
+      .groupBy('order.student_id')
+      .addGroupBy('item.course_id')
+      .getRawMany<TeacherStudentRevenueRow>();
   }
 }

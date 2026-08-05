@@ -1,6 +1,9 @@
-import { LoginPage } from '../../features/auth/pages/LoginPage'
+import { RouterProvider } from 'react-router'
+import { router } from './router'
 
+/**
+ * AppRouter component providing the React Router Data Router to the application.
+ */
 export function AppRouter() {
-  // TODO: replace with react-router route objects after routing dependency is added.
-  return <LoginPage />
+  return <RouterProvider router={router} />
 }

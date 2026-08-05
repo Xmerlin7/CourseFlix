@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 coverage/
+*.tsbuildinfo
 
 # Logs
 logs/
@@ -18,6 +19,14 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+nabile-s2-plan.md
+plan.md
+commit.sh
+AGENTS.md
+nabile-s3-plan.md
+pr.md
+# Local document storage runtime data (STORAGE_ROOT default = ./storage, cwd = apps/api)
+/apps/api/storage/
 
 # Editors and OS
 .DS_Store
@@ -27,3 +36,6 @@ lerna-debug.log*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
+
+# Local dev launcher logs (./dev.sh)
+/.dev-logs/

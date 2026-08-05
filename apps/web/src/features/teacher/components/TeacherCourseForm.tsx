@@ -1,11 +1,164 @@
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router'
+import { ROUTE_PATHS } from '../../../app/routes/route-paths'
+import { ApiError } from '../../../shared/api/api-error'
+import { deleteTeacherCourse, updateTeacherCourse } from '../api/teacher.api'
 import type { TeacherCourse } from '../types/teacher.types'
 
 interface TeacherCourseFormProps {
   course: TeacherCourse
+  onSaved?: (course: TeacherCourse) => void
 }
 
-export function TeacherCourseForm({ course }: TeacherCourseFormProps) {
-  void course
-  // TODO: edit only Sprint 1 metadata fields and show save/validation/server states.
-  return null
+export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
+  const navigate = useNavigate()
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [title, setTitle] = useState(course.title)
+  const [description, setDescription] = useState(course.description ?? '')
+  const [coverImageUrl, setCoverImageUrl] = useState(course.coverImageUrl ?? '')
+  const [gradeLevel, setGradeLevel] = useState(course.gradeLevel ?? '')
+  const [status, setStatus] = useState<'draft' | 'published'>(
+    course.status === 'archived' ? 'draft' : course.status,
+  )
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [savedAt, setSavedAt] = useState<number | null>(null)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      const updated = await updateTeacherCourse(course.id, {
+        title,
+        description: description || null,
+        coverImageUrl: coverImageUrl || null,
+        gradeLevel: gradeLevel || null,
+        status,
+      })
+      setSavedAt(Date.now())
+      onSaved?.(updated)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        setError('البيانات المدخلة غير صحيحة، راجع الحقول وحاول مرة أخرى')
+      } else {
+        setError('تعذر حفظ التعديلات، حاول مرة أخرى')
+      }
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm('حذف الدورة نهائيًا مع كل الأقسام والدروس. متأكد؟')) return
+
+    setIsDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteTeacherCourse(course.id)
+      navigate(ROUTE_PATHS.TEACHER.COURSES, { replace: true })
+    } catch {
+      setDeleteError('تعذر حذف الدورة، حاول مرة أخرى')
+      setIsDeleting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={(event) => void handleSubmit(event)} className="card">
+      <h3>تعديل بيانات الدورة</h3>
+
+      <div className="tf">
+        <label htmlFor="course-title">العنوان</label>
+        <input
+          id="course-title"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          minLength={3}
+          maxLength={150}
+          required
+        />
+      </div>
+
+      <div className="tf">
+        <label htmlFor="course-description">الوصف</label>
+        <textarea
+          id="course-description"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          maxLength={5000}
+          rows={4}
+        />
+      </div>
+
+      <div className="tf">
+        <label htmlFor="course-cover">رابط صورة الغلاف</label>
+        <input
+          id="course-cover"
+          value={coverImageUrl}
+          onChange={(event) => setCoverImageUrl(event.target.value)}
+          type="url"
+          placeholder="https://..."
+        />
+      </div>
+
+      <div className="tf">
+        <label htmlFor="course-grade">الصف الدراسي</label>
+        <input
+          id="course-grade"
+          value={gradeLevel}
+          onChange={(event) => setGradeLevel(event.target.value)}
+          maxLength={100}
+        />
+      </div>
+
+      <div className="tf">
+        <label htmlFor="course-status">الحالة</label>
+        <select
+          id="course-status"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as 'draft' | 'published')}
+        >
+          <option value="draft">مسودة</option>
+          <option value="published">منشورة</option>
+        </select>
+      </div>
+
+      {error && (
+        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
+          {error}
+        </p>
+      )}
+
+      {savedAt && !error && (
+        <p role="status" style={{ color: 'var(--on-success-container)', fontSize: 13.5, fontWeight: 600 }}>
+          تم حفظ التعديلات بنجاح
+        </p>
+      )}
+
+      {deleteError && (
+        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
+          {deleteError}
+        </p>
+      )}
+
+      <div className="actions">
+        <button type="submit" disabled={isSaving} className="btn">
+          {isSaving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
+        </button>
+        <button
+          type="button"
+          disabled={isDeleting}
+          onClick={() => void handleDelete()}
+          className="btn text"
+          style={{ color: 'var(--error)' }}
+        >
+          <span className="ms sm">delete</span>
+          {isDeleting ? 'جارٍ الحذف...' : 'حذف الدورة'}
+        </button>
+      </div>
+    </form>
+  )
 }
