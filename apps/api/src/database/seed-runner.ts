@@ -6,6 +6,7 @@ import { seedDocuments } from './seeds/document.seed';
 import { seedIntervention } from './seeds/intervention.seed';
 import { seedNotifications } from './seeds/notification.seed';
 import { seedVideo } from './seeds/video.seed';
+import { clearTransactionalDemoState } from './seeds/transactional-reset.seed';
 
 export interface SeedSummary {
   teacherCount: number;
@@ -21,6 +22,9 @@ export interface SeedSummary {
   documentsReset: number;
   notificationsCreated: number;
   interventionMiniQuizId: string | null;
+  enrollmentsClearedFromCheckout: number;
+  ordersCleared: number;
+  agentLogsCleared: number;
   primaryCourseTitle: string;
   primaryCourseId: string;
   primarySectionTitle: string;
@@ -41,6 +45,12 @@ export interface SeedSummary {
  * read-only checker without ever writing anything itself.
  */
 export async function runSeed(dataSource: DataSource): Promise<SeedSummary> {
+  // Clear rehearsal-accumulated transactional state first — checkout
+  // orders/payments and agent logs have no natural key to upsert against,
+  // so a stale run must be wiped before the fixture steps below re-seed
+  // (sprint3-plan.md E-2, release-runbook.md "Database reset" § scope).
+  const transactionalReset = await clearTransactionalDemoState(dataSource);
+
   const { teacher, student, teachers, students } = await seedUsers(dataSource);
 
   const { course, section, lessons, courses } = await seedCourse(
@@ -100,6 +110,10 @@ export async function runSeed(dataSource: DataSource): Promise<SeedSummary> {
     primaryCourseId: course.id,
     primarySectionTitle: section.title,
     primarySectionLessonCount: lessons.length,
+    enrollmentsClearedFromCheckout:
+      transactionalReset.enrollmentsClearedFromCheckout,
+    ordersCleared: transactionalReset.ordersCleared,
+    agentLogsCleared: transactionalReset.agentLogsCleared,
   };
 }
 
@@ -125,6 +139,10 @@ export function printSeedSummary(summary: SeedSummary, heading: string): void {
   console.log(
     `  interventions:  demo intervention + mini quiz ready (${summary.interventionMiniQuizId ?? 'none'})`,
   );
+  console.log(
+    `  checkout state: ${summary.ordersCleared} order(s) cleared, ${summary.enrollmentsClearedFromCheckout} checkout-enrollment(s) reverted`,
+  );
+  console.log(`  agent logs:     ${summary.agentLogsCleared} row(s) cleared`);
   console.log(
     `  primary course: ${summary.primaryCourseTitle} (${summary.primaryCourseId})`,
   );

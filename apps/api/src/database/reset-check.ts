@@ -18,6 +18,10 @@ import { DOCUMENT_BLUEPRINTS } from './seeds/document.seed';
  * check — those seed functions upsert-if-missing but never correct
  * drifted values, so an exact-count check there would fail for reasons
  * unrelated to the actual documented risk.
+ *
+ * `orders` and `agent_logs` get the opposite check: `reset` clears them
+ * outright rather than upserting (see `transactional-reset.seed.ts`), so a
+ * non-zero count here means rehearsal drift, not a missing fixture.
  */
 async function run(): Promise<void> {
   AppDataSource.setOptions({ logging: [] });
@@ -51,6 +55,14 @@ async function run(): Promise<void> {
       ...(await checkNonZero(
         `SELECT count(*)::text AS count FROM notifications WHERE deleted_at IS NULL`,
         'notification',
+      )),
+      ...(await checkZero(
+        `SELECT count(*)::text AS count FROM orders`,
+        'order',
+      )),
+      ...(await checkZero(
+        `SELECT count(*)::text AS count FROM agent_logs`,
+        'agent log',
       )),
     ];
   } finally {
@@ -173,6 +185,17 @@ async function checkNonZero(sql: string, label: string): Promise<string[]> {
   return count > 0
     ? []
     : [`expected at least one seeded ${label} row, found 0`];
+}
+
+// Transactional rows (checkout orders, agent logs) have no natural key to
+// upsert against — `reset` clears them outright (transactional-reset.seed.ts),
+// so any row surviving a reset is rehearsal drift, not a missing fixture.
+async function checkZero(sql: string, label: string): Promise<string[]> {
+  const rows = await AppDataSource.query<Array<{ count: string }>>(sql);
+  const count = Number(rows[0]?.count ?? 0);
+  return count === 0
+    ? []
+    : [`expected zero ${label} rows after reset, found ${count}`];
 }
 
 function requireEnv(name: string): string {

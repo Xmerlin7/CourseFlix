@@ -64,22 +64,33 @@ only proceed to E2E if `reset:check` exits 0.
 npm run reset -w apps/api && npm run reset:check -w apps/api
 ```
 
-### Scope — what reset does *not* cover yet
+### Scope — orders, interventions, and agent logs
 
 E-2's spec asks for reset/check over "seed, orders, interventions, agent
-logs, and demo documents". Only the **seed and demo-documents** halves are
-implemented here. `orders`, `order_items`, `payments` (Albraa's migration
-block `1785000070000`+) and `interventions`, `intervention_evidence`,
-`agent_logs` (Habsa's block `1785000060000`+) do not exist as tables yet,
-so there is nothing for `reset` to truncate or `reset:check` to verify —
-a step referencing them today would just fail on a missing relation.
+logs, and demo documents". All of those tables now exist and reset covers
+them, by two different mechanisms:
 
-Once those migrations land, `reset` needs a step that clears the
-transactional rows they own (unlike the fixture tables, orders and
-interventions accumulate during a rehearsal rather than drift in place, so
-they want deletion, not upsert-correction), and `reset:check` needs a
-matching assertion that they are empty. Whoever adds those tables should
-extend `apps/api/src/database/seed-runner.ts` and
+- **Orders/payments (`orders`, `order_items`, `payments`)** and
+  **agent logs (`agent_logs`)** have no natural key to upsert against —
+  they only ever accumulate during a rehearsal. `reset` clears them
+  outright via `apps/api/src/database/seeds/transactional-reset.seed.ts`,
+  which also soft-deletes any enrollment created purely by a checkout
+  purchase (safe by construction: `CommerceService.createDraftOrder`
+  refuses to create an order for a course the student already owns, so an
+  enrollment with a matching order row was never a base-fixture
+  enrollment). Without this, the second of the two required rehearsal
+  runs would fail at the checkout step with "already owned". `reset:check`
+  asserts both tables are empty after a reset.
+- **Interventions (`interventions`, `intervention_evidence`,
+  `intervention_mini_quizzes`, ...)** are left alone by `reset` on
+  purpose: the demo intervention is upserted by `dedup_key`
+  (`intervention.seed.ts`), and `InterventionsService` itself refuses to
+  create a duplicate active intervention for the same
+  student/course/rule/concept, so re-triggering the same signal across
+  rehearsals is already a safe no-op without any clearing step.
+
+Any future table that accumulates the same way orders/agent-logs do
+should extend `apps/api/src/database/seed-runner.ts` and
 `apps/api/src/database/reset-check.ts` rather than writing a parallel
 script.
 
@@ -94,8 +105,9 @@ rows are ever created, because every seed step upserts on a natural key
 
 This is Seif's release path with GTM and Analytics Agent work intentionally
 removed for this pass. It covers the Tutor carryover and the currently
-implemented resettable learning flow. Commerce/order checks remain blocked
-until the checkout/order module and tables land.
+implemented resettable learning flow. Commerce/order and agent-log checks
+are covered by the reset gate above (§ "Scope — orders, interventions, and
+agent logs"); this pass just doesn't exercise the checkout UI itself.
 
 ### Preconditions
 

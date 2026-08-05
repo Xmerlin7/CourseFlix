@@ -27,11 +27,17 @@ export class CreateInterventionMiniQuizzes1785000063000 implements MigrationInte
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "mini_quiz_status" AS ENUM ('active', 'completed');
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'mini_quiz_status') THEN
+          CREATE TYPE "mini_quiz_status" AS ENUM ('active', 'completed');
+        END IF;
+      END
+      $$;
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "intervention_mini_quizzes" (
+      CREATE TABLE IF NOT EXISTS "intervention_mini_quizzes" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "intervention_id" UUID NOT NULL REFERENCES "interventions"("id") ON DELETE CASCADE,
         "course_id" UUID NOT NULL REFERENCES "courses"("id") ON DELETE CASCADE,
@@ -44,11 +50,11 @@ export class CreateInterventionMiniQuizzes1785000063000 implements MigrationInte
       );
     `);
     await queryRunner.query(`
-      CREATE INDEX "idx_mini_quiz_intervention" ON "intervention_mini_quizzes" ("intervention_id");
+      CREATE INDEX IF NOT EXISTS "idx_mini_quiz_intervention" ON "intervention_mini_quizzes" ("intervention_id");
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "intervention_mini_quiz_questions" (
+      CREATE TABLE IF NOT EXISTS "intervention_mini_quiz_questions" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "mini_quiz_id" UUID NOT NULL REFERENCES "intervention_mini_quizzes"("id") ON DELETE CASCADE,
         "text" TEXT NOT NULL,
@@ -60,7 +66,7 @@ export class CreateInterventionMiniQuizzes1785000063000 implements MigrationInte
       );
     `);
     await queryRunner.query(`
-      CREATE INDEX "idx_mini_quiz_questions_quiz" ON "intervention_mini_quiz_questions" ("mini_quiz_id");
+      CREATE INDEX IF NOT EXISTS "idx_mini_quiz_questions_quiz" ON "intervention_mini_quiz_questions" ("mini_quiz_id");
     `);
   }
 
