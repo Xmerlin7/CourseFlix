@@ -5,6 +5,7 @@ import { useCourseDetail } from '../../courses/hooks/useCourseDetail'
 import { DocumentStatusList } from '../../documents/components/DocumentStatusList'
 import { DocumentUploader } from '../../documents/components/DocumentUploader'
 import { useCourseDocuments } from '../../documents/hooks/useCourseDocuments'
+import { TeacherQuizManager } from '../../quizzes/components/TeacherQuizManager'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { LoadingState } from '../../../shared/components/LoadingState'
@@ -12,7 +13,7 @@ import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { TeacherContentManager } from '../components/TeacherContentManager'
 import { TeacherCourseForm } from '../components/TeacherCourseForm'
 
-type CourseDetailTab = 'content' | 'files'
+type CourseDetailTab = 'content' | 'quizzes' | 'files'
 
 export function TeacherCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -53,6 +54,15 @@ export function TeacherCourseDetailPage() {
         <button
           type="button"
           role="tab"
+          aria-selected={activeTab === 'quizzes'}
+          onClick={() => setActiveTab('quizzes')}
+          className={`tab${activeTab === 'quizzes' ? ' active' : ''}`}
+        >
+          الاختبارات
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={activeTab === 'files'}
           onClick={() => setActiveTab('files')}
           className={`tab${activeTab === 'files' ? ' active' : ''}`}
@@ -82,6 +92,8 @@ export function TeacherCourseDetailPage() {
           )}
         </>
       )}
+
+      {activeTab === 'quizzes' && <TeacherQuizManager course={data} />}
 
       {activeTab === 'files' && (
         <section className="section">
