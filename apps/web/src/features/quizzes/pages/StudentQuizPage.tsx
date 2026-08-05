@@ -18,30 +18,35 @@ export function StudentQuizPage() {
   if (!quiz) return <LoadingState />;
 
   if (result) {
+    const passed = result.score >= Math.ceil(result.total / 2);
     return (
-      <div className="flex flex-col gap-4 p-6">
-        <h1 className="text-2xl font-bold">{quiz.title}</h1>
-        <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-900/20">
-          <p className="text-3xl font-bold text-green-700 dark:text-green-400">
+      <>
+        <h1 className="page-title">{quiz.title}</h1>
+
+        <div className={`result-banner ${passed ? 'pass' : 'fail'}`} role="status">
+          <p className="score">
             {result.score} / {result.total}
           </p>
-          <p className="text-gray-600 dark:text-gray-400">Your Result</p>
+          <p>{passed ? 'أحسنت! نتيجتك ممتازة.' : 'حاول مراجعة الدرس والإعادة مرة أخرى.'}</p>
         </div>
-        <div className="flex flex-col gap-3">
-          {quiz.questions.map((q) => {
-            const res = result.answers.find(a => a.questionId === q.id);
-            const userAnswer = answers[q.id] || 'No answer';
+
+        <div className="section">
+          {quiz.questions.map((q, index) => {
+            const res = result.answers.find((a) => a.questionId === q.id);
+            const userAnswer = answers[q.id] || 'بدون إجابة';
             return (
-              <div key={q.id} className={`rounded-lg border p-4 ${res?.isCorrect ? 'border-green-300 bg-green-50 dark:bg-green-900/10' : 'border-red-300 bg-red-50 dark:bg-red-900/10'}`}>
-                <p className="font-medium">{q.text}</p>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Your answer: {userAnswer} {res?.isCorrect ? '✓' : '✗'}
-                </p>
+              <div key={q.id} className="qcard">
+                <p className="qnum">سؤال {index + 1}</p>
+                <p className="qtext">{q.text}</p>
+                <div className={`opt ${res?.isCorrect ? 'correct' : 'incorrect'}`}>
+                  <span className="ms sm">{res?.isCorrect ? 'check_circle' : 'cancel'}</span>
+                  إجابتك: {userAnswer}
+                </div>
               </div>
             );
           })}
         </div>
-      </div>
+      </>
     );
   }
 
@@ -52,27 +57,32 @@ export function StudentQuizPage() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
-      <h1 className="text-2xl font-bold">{quiz.title}</h1>
-      {quiz.questions.map((q) => (
-        <div key={q.id} className="rounded-lg border p-4">
-          <p className="mb-3 font-medium">{q.text}</p>
-          <div className="flex flex-col gap-2">
-            {q.options.map((opt) => (
-              <label key={opt} className="flex cursor-pointer items-center gap-2 rounded-md border p-3 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20">
-                <input type="radio" name={q.id} value={opt}
-                  onChange={() => setAnswers(a => ({ ...a, [q.id]: opt }))}
-                  checked={answers[q.id] === opt}
-                  className="accent-blue-600" />
-                {opt}
-              </label>
-            ))}
-          </div>
+    <form onSubmit={handleSubmit}>
+      <h1 className="page-title">{quiz.title}</h1>
+      <p className="subtitle">أجب عن كل الأسئلة ثم أرسل الاختبار</p>
+
+      {quiz.questions.map((q, index) => (
+        <div key={q.id} className="qcard">
+          <p className="qnum">سؤال {index + 1}</p>
+          <p className="qtext">{q.text}</p>
+          {q.options.map((opt) => (
+            <label key={opt} className={`opt${answers[q.id] === opt ? ' selected' : ''}`}>
+              <input
+                type="radio"
+                name={q.id}
+                value={opt}
+                onChange={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                checked={answers[q.id] === opt}
+              />
+              {opt}
+            </label>
+          ))}
         </div>
       ))}
-      <button type="submit" disabled={isSubmitting}
-        className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 disabled:opacity-50">
-        {isSubmitting ? 'Grading...' : 'Submit Answers'}
+
+      <button type="submit" className="btn big" disabled={isSubmitting} style={{ width: '100%' }}>
+        <span className="ms">quiz</span>
+        {isSubmitting ? 'جاري التصحيح...' : 'إرسال الإجابات'}
       </button>
     </form>
   );

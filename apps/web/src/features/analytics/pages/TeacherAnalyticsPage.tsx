@@ -23,34 +23,39 @@ export function TeacherAnalyticsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <>
       <h1 className="page-title">مساعد التحليلات</h1>
-      <p className="page-subtitle">اسأل أسئلة مبيعات مدعومة فقط</p>
+      <p className="subtitle">اسأل أسئلة مبيعات مدعومة فقط</p>
 
-      <form onSubmit={submit} className="flex gap-3">
+      <form onSubmit={submit} className="section" style={{ display: 'flex', gap: 10 }}>
         <input
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="اكتب سؤالك هنا..."
-          className="flex-1 rounded-lg border px-3 py-2"
           maxLength={500}
+          style={{
+            flex: 1,
+            background: 'var(--surface-container-high)',
+            border: '1.5px solid transparent',
+            borderRadius: 14,
+            padding: '13px 16px',
+            fontSize: '14.5px',
+            color: 'var(--on-surface)',
+          }}
         />
-        <button
-          type="submit"
-          className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          disabled={!question.trim() || isLoading}
-        >
+        <button type="submit" className="btn" disabled={!question.trim() || isLoading}>
+          <span className="ms">send</span>
           {isLoading ? 'جاري المعالجة...' : 'إرسال'}
         </button>
       </form>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="actions section">
         {EXAMPLES.map((ex) => (
           <button
             key={ex}
             type="button"
-            className="rounded-full border px-4 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="chip clickable outline"
             onClick={() => {
               setQuestion(ex)
               void ask(ex)
@@ -63,39 +68,59 @@ export function TeacherAnalyticsPage() {
 
       {error && <ErrorState onRetry={() => question && void ask(question)} />}
 
-      {isLoading && <p className="text-gray-500 dark:text-gray-400">جاري المعالجة...</p>}
+      {isLoading && <p className="subtitle">جاري المعالجة...</p>}
 
       {data?.status === 'success' && (
-        <div className="flex flex-col gap-4 rounded-lg border p-5">
+        <div className="section">
           {'totalRevenue' in data.result && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="rounded-lg border p-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400">إجمالي الإيرادات</p>
-                <p className="mt-1 text-2xl font-bold">{formatMoney(data.result.totalRevenue)}</p>
+            <div className="tiles">
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">payments</span>
+                </span>
+                <span className="lbl">إجمالي الإيرادات</span>
+                <span className="num">{formatMoney(data.result.totalRevenue)}</span>
               </div>
-              <div className="rounded-lg border p-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400">عدد الطلبات</p>
-                <p className="mt-1 text-2xl font-bold">{data.result.orderCount}</p>
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">receipt_long</span>
+                </span>
+                <span className="lbl">عدد الطلبات</span>
+                <span className="num">{data.result.orderCount}</span>
               </div>
             </div>
           )}
+
           {'successfulOrderCount' in data.result && (
-            <div className="rounded-lg border p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">الطلبات الناجحة</p>
-              <p className="mt-1 text-2xl font-bold">{data.result.successfulOrderCount}</p>
+            <div className="tiles">
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">task_alt</span>
+                </span>
+                <span className="lbl">الطلبات الناجحة</span>
+                <span className="num">{data.result.successfulOrderCount}</span>
+              </div>
             </div>
           )}
+
           {'bestSellers' in data.result && (
-            <div className="flex flex-col gap-2">
+            <div className="list">
               {data.result.bestSellers.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400">لا توجد دورات مباعة في الفترة المحددة</p>
+                <p className="subtitle" style={{ marginBottom: 0 }}>
+                  لا توجد دورات مباعة في الفترة المحددة
+                </p>
               ) : (
                 data.result.bestSellers.map((c) => (
-                  <div key={c.courseId} className="rounded-lg border p-3">
-                    <p className="font-semibold">{c.courseTitle}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {c.orderCount} طلب — {formatMoney(c.totalRevenue)}
-                    </p>
+                  <div key={c.courseId} className="list-item">
+                    <span className="lead">
+                      <span className="ms">menu_book</span>
+                    </span>
+                    <span className="body">
+                      <span className="t">{c.courseTitle}</span>
+                      <span className="s">
+                        {c.orderCount} طلب — {formatMoney(c.totalRevenue)}
+                      </span>
+                    </span>
                   </div>
                 ))
               )}
@@ -105,15 +130,15 @@ export function TeacherAnalyticsPage() {
       )}
 
       {data?.status === 'unsupported' && (
-        <div className="rounded-lg border border-red-300 p-5">
-          <h3 className="mb-2 font-semibold text-red-600 dark:text-red-400">{data.message}</h3>
-          <ul className="list-disc space-y-1 pr-5">
+        <div className="card section" style={{ borderInlineStart: '4px solid var(--error)' }}>
+          <h3 style={{ color: 'var(--on-error-container)', marginBottom: 10 }}>{data.message}</h3>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingInlineStart: 20, listStyle: 'disc' }}>
             {data.examples.map((ex) => (
               <li key={ex}>{ex}</li>
             ))}
           </ul>
         </div>
       )}
-    </div>
+    </>
   )
 }

@@ -19,6 +19,33 @@ function getServerMessage(error: ApiError): string | null {
   return null
 }
 
+type NoticeCardProps = {
+  icon: string
+  title: string
+  message: string
+  actionLabel: string
+  actionTo: string
+}
+
+function NoticeCard({ icon, title, message, actionLabel, actionTo }: NoticeCardProps) {
+  return (
+    <div className="card" style={{ alignItems: 'center', textAlign: 'center', gap: 18, padding: '48px 32px' }}>
+      <span className="lead" style={{ width: 64, height: 64 }}>
+        <span className="ms" style={{ fontSize: 32 }}>
+          {icon}
+        </span>
+      </span>
+      <div>
+        <h3 style={{ marginBottom: 6 }}>{title}</h3>
+        <p className="meta">{message}</p>
+      </div>
+      <Link className="btn" to={actionTo}>
+        {actionLabel}
+      </Link>
+    </div>
+  )
+}
+
 export function CheckoutPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const { order, isCreating, isConfirming, createError, confirmError, pay, retryCreate } =
@@ -43,38 +70,24 @@ export function CheckoutPage() {
 
       if (alreadyOwned) {
         return (
-          <div className="flex flex-col items-center gap-4 py-12 px-6 text-center" role="status">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-              أنت مسجل بالفعل في هذه الدورة
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              لا حاجة للشراء مرة أخرى — يمكنك متابعة الدورة الآن.
-            </p>
-            <Link
-              to={`/student/courses/${courseId}`}
-              className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
-            >
-              الذهاب إلى الدورة
-            </Link>
-          </div>
+          <NoticeCard
+            icon="check_circle"
+            title="أنت مسجل بالفعل في هذه الدورة"
+            message="لا حاجة للشراء مرة أخرى — يمكنك متابعة الدورة الآن."
+            actionLabel="الذهاب إلى الدورة"
+            actionTo={`/student/courses/${courseId}`}
+          />
         )
       }
 
       return (
-        <div className="flex flex-col items-center gap-4 py-12 px-6 text-center" role="status">
-          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            هذه الدورة غير متاحة للشراء حالياً
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            الدورة غير منشورة حالياً، حاول لاحقاً أو تواصل مع المعلم.
-          </p>
-          <Link
-            to={ROUTE_PATHS.STUDENT.COURSES}
-            className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
-          >
-            الرجوع إلى دوراتي
-          </Link>
-        </div>
+        <NoticeCard
+          icon="lock_clock"
+          title="هذه الدورة غير متاحة للشراء حالياً"
+          message="الدورة غير منشورة حالياً، حاول لاحقاً أو تواصل مع المعلم."
+          actionLabel="الرجوع إلى دوراتي"
+          actionTo={ROUTE_PATHS.STUDENT.COURSES}
+        />
       )
     }
 
@@ -93,23 +106,29 @@ export function CheckoutPage() {
 
   if (order.status === 'paid') {
     return (
-      <div className="flex flex-col gap-4 p-6">
+      <div className="section" style={{ display: 'flex', justifyContent: 'center' }}>
         <div
-          className="flex flex-col items-center gap-3 rounded-lg border border-green-300 p-8 text-center dark:border-green-700"
+          className="card"
           role="status"
+          style={{ alignItems: 'center', textAlign: 'center', gap: 14, maxWidth: 440, padding: '48px 36px' }}
         >
-          <h1 className="page-title">تم الدفع بنجاح</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="lead green" style={{ width: 64, height: 64 }}>
+            <span className="ms fill" style={{ fontSize: 34 }}>
+              check_circle
+            </span>
+          </span>
+          <h1 className="page-title" style={{ margin: 0 }}>
+            تم الدفع بنجاح
+          </h1>
+          <p className="meta">
             رقم الطلب: <span dir="ltr">{order.orderReference}</span>
           </p>
-          <p className="text-2xl font-bold">{formatMoney(order.amountMinor, order.currency)}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            تم تسجيلك في {order.items[0]?.title ?? 'الدورة'} بنجاح.
+          <p style={{ fontSize: 28, fontWeight: 700 }}>
+            {formatMoney(order.amountMinor, order.currency)}
           </p>
-          <Link
-            to={`/student/courses/${order.items[0]?.courseId ?? courseId}`}
-            className="mt-2 rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
-          >
+          <p className="meta">تم تسجيلك في {order.items[0]?.title ?? 'الدورة'} بنجاح.</p>
+          <Link className="btn big" to={`/student/courses/${order.items[0]?.courseId ?? courseId}`}>
+            <span className="ms">play_arrow</span>
             بدء التعلم
           </Link>
         </div>
@@ -120,39 +139,33 @@ export function CheckoutPage() {
   const declined = order.paymentStatus === 'failed'
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <>
       <h1 className="page-title">إتمام الشراء</h1>
+      <p className="subtitle">راجع تفاصيل الطلب وأكمل الدفع</p>
 
-      <section className="rounded-lg border p-4">
-        <p className="font-semibold">{order.items[0]?.title ?? 'الدورة'}</p>
-        <p className="mt-1 text-2xl font-bold">{formatMoney(order.amountMinor, order.currency)}</p>
-      </section>
+      <div className="card section" style={{ gap: 8 }}>
+        <span className="meta">{order.items[0]?.title ?? 'الدورة'}</span>
+        <span style={{ fontSize: 26, fontWeight: 700 }}>
+          {formatMoney(order.amountMinor, order.currency)}
+        </span>
+      </div>
 
       {declined && (
-        <div
-          className="rounded-lg border border-red-300 p-4 text-red-600 dark:border-red-700 dark:text-red-400"
-          role="alert"
-        >
-          <p className="font-semibold">تم رفض عملية الدفع</p>
-          <p className="mt-1 text-sm">لم تتم عملية الدفع بنجاح. يمكنك إعادة المحاولة.</p>
+        <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
+          <p style={{ fontWeight: 700, color: 'var(--on-error-container)' }}>تم رفض عملية الدفع</p>
+          <p className="meta">لم تتم عملية الدفع بنجاح. يمكنك إعادة المحاولة.</p>
         </div>
       )}
 
       {confirmError && (
-        <div
-          className="rounded-lg border border-red-300 p-4 text-red-600 dark:border-red-700 dark:text-red-400"
-          role="alert"
-        >
-          تعذر إتمام عملية الدفع. يرجى المحاولة مرة أخرى.
+        <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
+          <p style={{ color: 'var(--on-error-container)' }}>تعذر إتمام عملية الدفع. يرجى المحاولة مرة أخرى.</p>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={() => void pay('success')}
-          disabled={isConfirming}
-          className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-        >
+      <div className="actions">
+        <button className="btn big" onClick={() => void pay('success')} disabled={isConfirming}>
+          <span className="ms">payments</span>
           {isConfirming ? 'جاري الدفع...' : declined ? 'إعادة المحاولة' : 'ادفع الآن'}
         </button>
 
@@ -160,14 +173,10 @@ export function CheckoutPage() {
             (docs/api/sprint3-commerce.md) — there is no real card entry in
             this sprint's checkout, so this is how the retryable-failure
             state gets exercised. */}
-        <button
-          onClick={() => void pay('decline')}
-          disabled={isConfirming}
-          className="rounded-lg border px-6 py-2 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-800"
-        >
+        <button className="btn text" onClick={() => void pay('decline')} disabled={isConfirming}>
           محاكاة رفض الدفع (تجريبي)
         </button>
       </div>
-    </div>
+    </>
   )
 }

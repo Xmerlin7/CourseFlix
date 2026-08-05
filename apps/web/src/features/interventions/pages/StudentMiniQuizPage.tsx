@@ -22,47 +22,32 @@ export function StudentMiniQuizPage() {
   if (result) {
     const passed = result.score >= Math.ceil(result.total / 2)
     return (
-      <div className="flex flex-col gap-4 p-6">
+      <>
         <h1 className="page-title">اختبار مراجعة</h1>
-        <div
-          className={`rounded-lg p-4 text-center ${
-            passed
-              ? 'bg-green-50 dark:bg-green-900/20'
-              : 'bg-red-50 dark:bg-red-900/20'
-          }`}
-        >
-          <p
-            className={`text-3xl font-bold ${
-              passed ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
-            }`}
-          >
+
+        <div className={`result-banner ${passed ? 'pass' : 'fail'}`} role="status">
+          <p className="score">
             {result.score} من {result.total}
           </p>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">
-            {passed ? 'أحسنت! راجعت المفاهيم بنجاح.' : 'حاول مراجعة الدرس مرة أخرى.'}
-          </p>
+          <p>{passed ? 'أحسنت! راجعت المفاهيم بنجاح.' : 'حاول مراجعة الدرس مرة أخرى.'}</p>
         </div>
-        <div className="flex flex-col gap-3">
-          {quiz.questions.map((q) => {
+
+        <div className="section">
+          {quiz.questions.map((q, index) => {
             const res = result.answers.find((a) => a.questionId === q.id)
             return (
-              <div
-                key={q.id}
-                className={`rounded-lg border p-4 ${
-                  res?.isCorrect
-                    ? 'border-green-300 bg-green-50 dark:bg-green-900/10'
-                    : 'border-red-300 bg-red-50 dark:bg-red-900/10'
-                }`}
-              >
-                <p className="font-medium">{q.text}</p>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  {res?.isCorrect ? 'إجابة صحيحة ✓' : 'إجابة خاطئة ✗'}
-                </p>
+              <div key={q.id} className="qcard">
+                <p className="qnum">سؤال {index + 1}</p>
+                <p className="qtext">{q.text}</p>
+                <div className={`opt ${res?.isCorrect ? 'correct' : 'incorrect'}`}>
+                  <span className="ms sm">{res?.isCorrect ? 'check_circle' : 'cancel'}</span>
+                  {res?.isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة'}
+                </div>
               </div>
             )
           })}
         </div>
-      </div>
+      </>
     )
   }
 
@@ -76,39 +61,36 @@ export function StudentMiniQuizPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
+    <form onSubmit={handleSubmit}>
       <h1 className="page-title">اختبار مراجعة</h1>
-      <p className="page-subtitle">{quiz.weakConcept}</p>
+      <p className="subtitle">{quiz.weakConcept}</p>
+
       {quiz.questions.map((q, index) => (
-        <div key={q.id} className="rounded-lg border p-4">
-          <p className="mb-3 font-medium">
-            {index + 1}. {q.text}
-          </p>
-          <div className="flex flex-col gap-2">
-            {(q.options ?? []).map((opt) => (
-              <label
-                key={opt}
-                className="flex cursor-pointer items-center gap-2 rounded-md border p-3 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20"
-              >
-                <input
-                  type="radio"
-                  name={q.id}
-                  value={opt}
-                  onChange={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
-                  checked={answers[q.id] === opt}
-                  className="accent-blue-600"
-                />
-                {opt}
-              </label>
-            ))}
-          </div>
+        <div key={q.id} className="qcard">
+          <p className="qnum">سؤال {index + 1}</p>
+          <p className="qtext">{q.text}</p>
+          {(q.options ?? []).map((opt) => (
+            <label key={opt} className={`opt${answers[q.id] === opt ? ' selected' : ''}`}>
+              <input
+                type="radio"
+                name={q.id}
+                value={opt}
+                onChange={() => setAnswers((a) => ({ ...a, [q.id]: opt }))}
+                checked={answers[q.id] === opt}
+              />
+              {opt}
+            </label>
+          ))}
         </div>
       ))}
+
       <button
         type="submit"
+        className="btn big"
         disabled={isSubmitting || Object.keys(answers).length !== quiz.questions.length}
-        className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 disabled:opacity-50"
+        style={{ width: '100%' }}
       >
+        <span className="ms">quiz</span>
         {isSubmitting ? 'جاري التصحيح...' : 'إرسال الإجابات'}
       </button>
     </form>

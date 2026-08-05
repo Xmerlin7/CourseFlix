@@ -736,6 +736,92 @@ code {
   color: var(--error);
 }
 
+/* ---------- Quiz (ported from ui5/) ---------- */
+.qcard {
+  background: var(--surface-container-low);
+  border-radius: 22px;
+  padding: 26px;
+  margin-bottom: 18px;
+}
+
+.qcard .qnum {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.qcard .qtext {
+  font-weight: 700;
+  font-size: 16.5px;
+  margin-bottom: 18px;
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--outline-variant);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 14.5px;
+}
+
+.opt:hover {
+  background: var(--hover);
+}
+
+.opt input {
+  accent-color: var(--primary);
+  width: 19px;
+  height: 19px;
+  flex: none;
+}
+
+.opt.selected {
+  border-color: var(--primary);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  font-weight: 600;
+}
+
+.opt.correct {
+  border-color: var(--success-container);
+  background: var(--success-container);
+  color: var(--on-success-container);
+}
+
+.opt.incorrect {
+  border-color: var(--error);
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+
+.result-banner {
+  border-radius: 22px;
+  padding: 30px;
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.result-banner.pass {
+  background: var(--success-container);
+  color: var(--on-success-container);
+}
+
+.result-banner.fail {
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+
+.result-banner .score {
+  font-size: 34px;
+  font-weight: 700;
+}
+
 /* ---------- Login ---------- */
 .login-screen {
   min-height: 100vh;
