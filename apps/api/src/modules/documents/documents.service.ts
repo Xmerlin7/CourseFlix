@@ -24,6 +24,7 @@ import type { StorageAdapter } from './storage/local-storage.adapter';
 
 const PDF_MAGIC_BYTES = Buffer.from('%PDF');
 const DEFAULT_MAX_UPLOAD_BYTES = 20_971_520; // 20 MiB, matches .env.example
+const ARABIC_TEXT_PATTERN = /[\u0600-\u06ff]/;
 
 export interface CourseDocumentResponse {
   id: string;
@@ -83,10 +84,11 @@ export class DocumentsService {
     await this.assertTeacherOwnsCourse(courseId, teacherId);
 
     const checksum = createHash('sha256').update(upload.buffer).digest('hex');
+    const originalName = this.normalizeOriginalName(upload.originalName);
     const stored = await this.storageAdapter.save(upload.buffer);
     const file = await this.filesRepository.save(
       this.filesRepository.create({
-        fileName: upload.originalName,
+        fileName: originalName,
         mimeType: upload.mimeType,
         sizeBytes: String(upload.sizeBytes),
         storageProvider: stored.storageProvider,
@@ -113,7 +115,7 @@ export class DocumentsService {
             courseId,
             uploadedBy: teacherId,
             fileId: file.id,
-            fileName: upload.originalName,
+            fileName: originalName,
             fileType: 'pdf',
             processingStatus: 'pending',
             checksum,
@@ -224,5 +226,18 @@ export class DocumentsService {
     if (sizeBytes <= 0) {
       throw new BadRequestException('لا يمكن رفع ملف فارغ.');
     }
+  }
+
+  private normalizeOriginalName(originalName: string): string {
+    const decodedName = Buffer.from(originalName, 'latin1').toString('utf8');
+    if (
+      decodedName !== originalName &&
+      ARABIC_TEXT_PATTERN.test(decodedName) &&
+      !decodedName.includes('\uFFFD')
+    ) {
+      return decodedName;
+    }
+
+    return originalName;
   }
 }

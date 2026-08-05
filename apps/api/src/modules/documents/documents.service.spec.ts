@@ -189,6 +189,29 @@ describe('DocumentsService', () => {
       expect(result.version).toBe(1);
     });
 
+    it('normalizes Arabic filenames decoded as latin1 by upload middleware', async () => {
+      coursesRepository.findOne.mockResolvedValue(course);
+      documentsRepository.findOne.mockResolvedValue(null);
+
+      await documentsService.uploadDocument(courseId, teacherId, {
+        originalName: 'Ø§Ù\x84Ù\x83Ù\x87Ø±Ù\x88Ù\x85ØºÙ\x86Ø§Ø·Ù\x8AØ³Ù\x8AØ©.pdf',
+        mimeType: 'application/pdf',
+        buffer: PDF_BUFFER,
+        sizeBytes: PDF_BUFFER.length,
+      });
+
+      expect(filesRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fileName: 'الكهرومغناطيسية.pdf',
+        }),
+      );
+      expect(documentsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fileName: 'الكهرومغناطيسية.pdf',
+        }),
+      );
+    });
+
     it('bumps the version instead of duplicating on a matching checksum', async () => {
       coursesRepository.findOne.mockResolvedValue(course);
       documentsRepository.findOne.mockResolvedValue({
