@@ -31,6 +31,10 @@ export interface SeedSummary {
   primarySectionLessonCount: number;
 }
 
+export interface RunSeedOptions {
+  resetTransactionalState?: boolean;
+}
+
 /**
  * The one source of truth for "populate/restore the deterministic demo
  * fixture" — called by both `seed.ts` (first run, or routine reseed) and
@@ -44,12 +48,20 @@ export interface SeedSummary {
  * the connection lifecycle so this function can also be reused by a
  * read-only checker without ever writing anything itself.
  */
-export async function runSeed(dataSource: DataSource): Promise<SeedSummary> {
-  // Clear rehearsal-accumulated transactional state first — checkout
-  // orders/payments and agent logs have no natural key to upsert against,
-  // so a stale run must be wiped before the fixture steps below re-seed
-  // (sprint3-plan.md E-2, release-runbook.md "Database reset" § scope).
-  const transactionalReset = await clearTransactionalDemoState(dataSource);
+export async function runSeed(
+  dataSource: DataSource,
+  options: RunSeedOptions = {},
+): Promise<SeedSummary> {
+  // Routine `seed` runs should preserve local rehearsal purchases so a
+  // student does not lose "My courses" on every `./dev.sh` restart. The
+  // explicit `reset` command still clears checkout/order drift.
+  const transactionalReset = options.resetTransactionalState
+    ? await clearTransactionalDemoState(dataSource)
+    : {
+        enrollmentsClearedFromCheckout: 0,
+        ordersCleared: 0,
+        agentLogsCleared: 0,
+      };
 
   const { teacher, student, teachers, students } = await seedUsers(dataSource);
 
