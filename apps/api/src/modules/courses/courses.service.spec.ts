@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
@@ -7,6 +11,7 @@ import { CoursesService } from './courses.service';
 import { CourseEntity } from './entities/course.entity';
 import { SectionEntity } from './entities/section.entity';
 import { LessonEntity } from './entities/lesson.entity';
+import { VideoEntity } from '../lessons/entities/video.entity';
 
 function viewer(
   overrides: Pick<AuthenticatedUser, 'id' | 'email' | 'role'>,
@@ -40,10 +45,17 @@ describe('CoursesService', () => {
   };
   let lessonsRepository: {
     createQueryBuilder: jest.Mock;
+    create: jest.Mock;
     findOne: jest.Mock;
     save: jest.Mock;
     softRemove: jest.Mock;
     update: jest.Mock;
+  };
+  let videosRepository: {
+    create: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+    softRemove: jest.Mock;
   };
 
   const teacher = { id: 'teacher-1', fullName: 'محمد عبدالرحمن' };
@@ -100,10 +112,17 @@ describe('CoursesService', () => {
         orderBy: jest.fn().mockReturnThis(),
         getMany: jest.fn(),
       }),
+      create: jest.fn((entity) => entity),
       findOne: jest.fn(),
-      save: jest.fn(),
+      save: jest.fn((entity) => Promise.resolve({ id: 'lesson-1', ...entity })),
       softRemove: jest.fn(),
       update: jest.fn(),
+    };
+    videosRepository = {
+      create: jest.fn((entity) => entity),
+      findOne: jest.fn(),
+      save: jest.fn((entity) => Promise.resolve({ id: 'video-1', ...entity })),
+      softRemove: jest.fn(),
     };
     enrollmentsService = { assertStudentEnrolled: jest.fn() };
 
@@ -121,6 +140,10 @@ describe('CoursesService', () => {
         {
           provide: getRepositoryToken(LessonEntity),
           useValue: lessonsRepository,
+        },
+        {
+          provide: getRepositoryToken(VideoEntity),
+          useValue: videosRepository,
         },
         { provide: EnrollmentsService, useValue: enrollmentsService },
       ],
@@ -254,6 +277,134 @@ describe('CoursesService', () => {
           title: 'New Title',
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('lesson video sync', () => {
+    const section = {
+      id: 'section-1',
+      courseId: course.id,
+      status: 'published',
+      course,
+    } as unknown as SectionEntity;
+
+    it('creates an authoritative video row when a teacher adds a lesson with a YouTube URL', async () => {
+      sectionsRepository.findOne.mockResolvedValue(section);
+      videosRepository.findOne.mockResolvedValue(null);
+
+      const result = await coursesService.createLesson(section.id, teacher.id, {
+        title: 'قانون نيوتن الأول',
+        videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
+      });
+
+      expect(result.videoUrl).toBe('https://youtu.be/dQw4w9WgXcQ');
+      expect(videosRepository.create).toHaveBeenCalledWith({
+        courseId: course.id,
+        sectionId: section.id,
+        lessonId: 'lesson-1',
+        title: 'قانون نيوتن الأول',
+        videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
+        type: 'recorded',
+        status: 'recorded',
+        durationSeconds: null,
+      });
+      expect(videosRepository.save).toHaveBeenCalled();
+    });
+
+    it('normalizes a Bunny Stream iframe embed when a teacher adds a lesson', async () => {
+      sectionsRepository.findOne.mockResolvedValue(section);
+      videosRepository.findOne.mockResolvedValue(null);
+      const embedCode =
+        '<div style="position:relative;padding-top:56.25%;"><iframe src="https://player.mediadelivery.net/embed/663132/b40c3ee1-00ee-4fd8-ab8e-2e0993b11030?autoplay=true&amp;loop=false&amp;muted=true&amp;preload=true&amp;responsive=true" loading="lazy"></iframe></div>';
+      const expectedUrl =
+        'https://player.mediadelivery.net/embed/663132/b40c3ee1-00ee-4fd8-ab8e-2e0993b11030?autoplay=true&loop=false&muted=true&preload=true&responsive=true';
+
+      const result = await coursesService.createLesson(section.id, teacher.id, {
+        title: 'Bunny lesson',
+        videoUrl: embedCode,
+      });
+
+      expect(result.videoUrl).toBe(expectedUrl);
+      expect(videosRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lessonId: 'lesson-1',
+          videoUrl: expectedUrl,
+        }),
+      );
+    });
+
+    it('rejects iframe embeds that are not from Bunny Stream', async () => {
+      sectionsRepository.findOne.mockResolvedValue(section);
+
+      await expect(
+        coursesService.createLesson(section.id, teacher.id, {
+          title: 'Unsafe embed',
+          videoUrl: '<iframe src="https://example.com/embed/video"></iframe>',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(lessonsRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('updates the video row when a teacher edits the lesson video URL', async () => {
+      const lesson = {
+        id: 'lesson-1',
+        sectionId: section.id,
+        courseId: course.id,
+        title: 'قانون نيوتن الأول',
+        videoUrl: 'https://youtu.be/old-video',
+        section,
+      } as unknown as LessonEntity;
+      const video = {
+        id: 'video-1',
+        lessonId: lesson.id,
+        videoUrl: lesson.videoUrl,
+      };
+      lessonsRepository.findOne.mockResolvedValue(lesson);
+      lessonsRepository.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+      videosRepository.findOne.mockResolvedValue(video);
+
+      await coursesService.updateLesson(lesson.id, teacher.id, {
+        videoUrl: 'https://www.youtube.com/watch?v=newVideo123',
+      });
+
+      expect(videosRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'video-1',
+          lessonId: lesson.id,
+          courseId: course.id,
+          sectionId: section.id,
+          title: lesson.title,
+          videoUrl: 'https://www.youtube.com/watch?v=newVideo123',
+          type: 'recorded',
+          status: 'recorded',
+        }),
+      );
+    });
+
+    it('removes the video row when a teacher clears the lesson video URL', async () => {
+      const lesson = {
+        id: 'lesson-1',
+        sectionId: section.id,
+        courseId: course.id,
+        title: 'قانون نيوتن الأول',
+        videoUrl: 'https://youtu.be/old-video',
+        section,
+      } as unknown as LessonEntity;
+      const video = { id: 'video-1', lessonId: lesson.id };
+      lessonsRepository.findOne.mockResolvedValue(lesson);
+      lessonsRepository.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+      videosRepository.findOne.mockResolvedValue(video);
+
+      await coursesService.updateLesson(lesson.id, teacher.id, {
+        videoUrl: null,
+      });
+
+      expect(videosRepository.softRemove).toHaveBeenCalledWith(video);
     });
   });
 });

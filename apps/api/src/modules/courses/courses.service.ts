@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -16,6 +17,7 @@ import { CourseDetailResponseDto } from './dto/course-detail-response.dto';
 import { CourseEntity, CourseStatus } from './entities/course.entity';
 import { SectionEntity, SectionStatus } from './entities/section.entity';
 import { LessonEntity, LessonStatus } from './entities/lesson.entity';
+import { VideoEntity } from '../lessons/entities/video.entity';
 
 export interface UpdateCourseFields {
   title?: string;
@@ -35,6 +37,49 @@ function slugify(title: string): string {
     .substring(0, 200);
 }
 
+function extractIframeSrc(input: string): string | null {
+  const match = input.match(/<iframe\b[^>]*\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i);
+  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
+}
+
+function isBunnyStreamPlayerHost(hostname: string): boolean {
+  return ['iframe.mediadelivery.net', 'player.mediadelivery.net'].includes(
+    hostname.replace(/^www\./, '').toLowerCase(),
+  );
+}
+
+function normalizeLessonVideoUrl(input: string | null | undefined): string | null {
+  const raw = input?.trim();
+  if (!raw) {
+    return null;
+  }
+
+  const candidate = raw.includes('<iframe') ? extractIframeSrc(raw) : raw;
+  if (!candidate) {
+    throw new BadRequestException('Video embed code must contain an iframe src.');
+  }
+
+  const normalizedCandidate = candidate.replaceAll('&amp;', '&').trim();
+  let parsed: URL;
+  try {
+    parsed = new URL(normalizedCandidate);
+  } catch {
+    throw new BadRequestException('Video URL or embed code is invalid.');
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new BadRequestException('Video URL must use http or https.');
+  }
+
+  if (raw.includes('<iframe')) {
+    if (!isBunnyStreamPlayerHost(parsed.hostname)) {
+      throw new BadRequestException('Only Bunny Stream player embeds are supported.');
+    }
+  }
+
+  return parsed.toString();
+}
+
 @Injectable()
 export class CoursesService {
   constructor(
@@ -44,6 +89,8 @@ export class CoursesService {
     private readonly sectionsRepository: Repository<SectionEntity>,
     @InjectRepository(LessonEntity)
     private readonly lessonsRepository: Repository<LessonEntity>,
+    @InjectRepository(VideoEntity)
+    private readonly videosRepository: Repository<VideoEntity>,
     private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
@@ -76,7 +123,7 @@ export class CoursesService {
   async listCatalog(viewer: AuthenticatedUser): Promise<CourseCatalogItemDto[]> {
     const courses = await this.coursesRepository.find({
       where: { status: 'published' },
-      relations: ['teacher'],
+      relations: { teacher: true },
       order: { createdAt: 'DESC' },
     });
 
@@ -279,6 +326,7 @@ export class CoursesService {
     fields: { title: string; videoUrl?: string | null },
   ): Promise<LessonEntity> {
     const section = await this.getSection(sectionId, teacherId);
+    const videoUrl = normalizeLessonVideoUrl(fields.videoUrl);
 
     const row = await this.lessonsRepository
       .createQueryBuilder('lesson')
@@ -288,15 +336,20 @@ export class CoursesService {
       .getRawOne();
     const nextOrder = (Number(row?.max ?? 0) || 0) + 1;
 
-    const lesson = this.lessonsRepository.create({
-      sectionId,
-      courseId: section.courseId,
-      title: fields.title,
-      videoUrl: fields.videoUrl ?? null,
-      sortOrder: nextOrder,
-      status: section.status === 'draft' ? 'draft' : 'published',
-    });
-    return this.lessonsRepository.save(lesson);
+    const lesson = await this.lessonsRepository.save(
+      this.lessonsRepository.create({
+        sectionId,
+        courseId: section.courseId,
+        title: fields.title,
+        videoUrl,
+        sortOrder: nextOrder,
+        status: section.status === 'draft' ? 'draft' : 'published',
+      }),
+    );
+
+    await this.syncLessonVideo(lesson, videoUrl);
+
+    return lesson;
   }
 
   async getLesson(lessonId: string, teacherId: string): Promise<LessonEntity> {
@@ -319,13 +372,37 @@ export class CoursesService {
     fields: { title?: string; videoUrl?: string | null; status?: LessonStatus },
   ): Promise<LessonEntity> {
     const lesson = await this.getLesson(lessonId, teacherId);
-    Object.assign(lesson, fields);
-    return this.lessonsRepository.save(lesson);
+    const shouldSyncVideoUrl = Object.prototype.hasOwnProperty.call(
+      fields,
+      'videoUrl',
+    );
+    const updates = { ...fields };
+    if (shouldSyncVideoUrl) {
+      updates.videoUrl = normalizeLessonVideoUrl(fields.videoUrl);
+    }
+
+    Object.assign(lesson, updates);
+    const savedLesson = await this.lessonsRepository.save(lesson);
+
+    if (shouldSyncVideoUrl) {
+      await this.syncLessonVideo(savedLesson, updates.videoUrl ?? null);
+    } else if (fields.title !== undefined) {
+      await this.syncLessonVideoMetadata(savedLesson);
+    }
+
+    return savedLesson;
   }
 
   async deleteLesson(lessonId: string, teacherId: string): Promise<void> {
     const lesson = await this.getLesson(lessonId, teacherId);
+    const video = await this.videosRepository.findOne({
+      where: { lessonId: lesson.id, deletedAt: IsNull() },
+    });
+
     await this.lessonsRepository.softRemove(lesson);
+    if (video) {
+      await this.videosRepository.softRemove(video);
+    }
   }
 
   async reorderLessons(
@@ -344,6 +421,61 @@ export class CoursesService {
   }
 
   // ── Private ──
+
+  private async syncLessonVideo(
+    lesson: LessonEntity,
+    videoUrl: string | null,
+  ): Promise<void> {
+    const existingVideo = await this.videosRepository.findOne({
+      where: { lessonId: lesson.id, deletedAt: IsNull() },
+    });
+
+    if (!videoUrl) {
+      if (existingVideo) {
+        await this.videosRepository.softRemove(existingVideo);
+      }
+      return;
+    }
+
+    const video = existingVideo
+      ? Object.assign(existingVideo, {
+          courseId: lesson.courseId,
+          sectionId: lesson.sectionId,
+          title: lesson.title,
+          videoUrl,
+          type: 'recorded' as const,
+          status: 'recorded' as const,
+        })
+      : this.videosRepository.create({
+          courseId: lesson.courseId,
+          sectionId: lesson.sectionId,
+          lessonId: lesson.id,
+          title: lesson.title,
+          videoUrl,
+          type: 'recorded',
+          status: 'recorded',
+          durationSeconds: null,
+        });
+
+    await this.videosRepository.save(video);
+  }
+
+  private async syncLessonVideoMetadata(lesson: LessonEntity): Promise<void> {
+    const existingVideo = await this.videosRepository.findOne({
+      where: { lessonId: lesson.id, deletedAt: IsNull() },
+    });
+
+    if (!existingVideo) {
+      return;
+    }
+
+    Object.assign(existingVideo, {
+      courseId: lesson.courseId,
+      sectionId: lesson.sectionId,
+      title: lesson.title,
+    });
+    await this.videosRepository.save(existingVideo);
+  }
 
   private async assertTeacherOwnsCourse(
     courseId: string,
