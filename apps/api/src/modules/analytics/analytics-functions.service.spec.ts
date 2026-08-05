@@ -1,6 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { AnalyticsFunctionsService } from './analytics-functions.service';
 import { BestSellersIntentHandler } from './intent/best-sellers.handler';
+import type {
+  AnalyticsIntentHandler,
+  AnalyticsIntentName,
+  AnalyticsIntentResult,
+} from './intent/analytics-intent-handler.interface';
 import { OrderCountIntentHandler } from './intent/order-count.handler';
 import { RevenueIntentHandler } from './intent/revenue.handler';
 import type { SalesService } from '../sales/sales.service';
@@ -15,6 +20,16 @@ type SalesServiceMock = {
   getSummary: jest.Mock;
   getBestSellers: jest.Mock;
 };
+
+function makeHandler(
+  name: AnalyticsIntentName,
+  result: AnalyticsIntentResult,
+): AnalyticsIntentHandler {
+  return {
+    name,
+    handle: jest.fn().mockResolvedValue(result),
+  };
+}
 
 function createService() {
   const salesService: SalesServiceMock = {
@@ -35,6 +50,29 @@ function createService() {
     revenue,
     orderCount,
     bestSellers,
+    makeHandler('student_count', {
+      intent: 'student_count',
+      activeStudentCount: 5,
+      enrollmentCount: 5,
+      dateRange: { from: null, to: null },
+      rowCount: 1,
+    }) as never,
+    makeHandler('course_count', {
+      intent: 'course_count',
+      totalCourses: 3,
+      publishedCourses: 2,
+      draftCourses: 1,
+      archivedCourses: 0,
+      dateRange: { from: null, to: null },
+      rowCount: 3,
+    }) as never,
+    makeHandler('active_interventions', {
+      intent: 'active_interventions',
+      activeInterventionCount: 4,
+      affectedStudentCount: 2,
+      dateRange: { from: null, to: null },
+      rowCount: 1,
+    }) as never,
   );
 
   return { service, salesService };
@@ -47,6 +85,9 @@ describe('AnalyticsFunctionsService', () => {
       'revenue',
       'order_count',
       'best_sellers',
+      'student_count',
+      'course_count',
+      'active_interventions',
     ]);
     expect(service.isSupported('revenue')).toBe(true);
     expect(service.isSupported('best_sellers')).toBe(true);
@@ -138,6 +179,19 @@ describe('AnalyticsFunctionsService', () => {
       dateRange: { from: RANGE.from, to: RANGE.to },
       rowCount: 1,
     });
+  });
+
+  it('resolves operational teacher intents from the allowlisted registry', async () => {
+    const { service } = createService();
+
+    await expect(
+      service.execute('student_count', { teacherId: TEACHER_ID }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        intent: 'student_count',
+        activeStudentCount: 5,
+      }),
+    );
   });
 
   it('rejects an unsupported intent without running any aggregate query', async () => {
