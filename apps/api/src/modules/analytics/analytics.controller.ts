@@ -9,6 +9,9 @@ import { INTENT_EXAMPLES, SUPPORTED_INTENTS } from './analytics-intent';
 import { AnalyticsParserService } from './analytics-parser.service';
 import { AskAnalyticsDto } from './dto/ask-analytics.dto';
 
+const ANALYTICS_ASSISTANT_INTRO =
+  'أهلاً، أنا مساعد التحليلات الذكي للمدرس. أقدر أساعدك تعرف عدد الطلاب، عدد الدورات وحالتها، حالات الطلاب المحتاجة متابعة، الإيرادات، عدد الطلبات، والدورات الأكثر مبيعاً. اسألني مثلاً: عندي كام طالب؟ أو كام طالب محتاج متابعة؟';
+
 @Controller('api/v1/teacher/analytics')
 @UseGuards(AuthGuard, TeacherRoleGuard)
 export class AnalyticsController {
@@ -25,6 +28,20 @@ export class AnalyticsController {
   ) {
     const started = Date.now();
     const parsed = this.parserService.parse(dto.question);
+
+    if (parsed.intent === 'assistant_intro') {
+      await this.logService.record({
+        action: 'analytics_query.assistant_intro',
+        status: 'skipped',
+        metadata: { reason: 'assistant_intro' },
+        durationMs: Date.now() - started,
+      });
+      return {
+        status: 'direct',
+        message: ANALYTICS_ASSISTANT_INTRO,
+        examples: INTENT_EXAMPLES,
+      };
+    }
 
     if (parsed.intent === 'unsupported') {
       // No aggregate query is executed for unsupported input.
