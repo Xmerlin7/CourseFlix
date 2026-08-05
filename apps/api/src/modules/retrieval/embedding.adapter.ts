@@ -49,14 +49,16 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
   constructor(private readonly configService: ConfigService) {}
 
   async embed(texts: string[]): Promise<number[][]> {
-    const apiKey = this.configService.get<string>('EMBEDDING_API_KEY');
+    const apiKey =
+      this.configService.get<string>('EMBEDDING_API_KEY') ||
+      this.configService.get<string>('OPENAI_API_KEY');
     const model =
       this.configService.get<string>('EMBEDDING_MODEL') ||
       'text-embedding-3-small';
 
     if (!apiKey || apiKey === 'replace-me') {
       throw new Error(
-        'EMBEDDING_API_KEY is not configured. Set a valid API key or use MockEmbeddingProvider.',
+        'EMBEDDING_API_KEY or OPENAI_API_KEY is not configured. Set a valid API key or use MockEmbeddingProvider.',
       );
     }
 
