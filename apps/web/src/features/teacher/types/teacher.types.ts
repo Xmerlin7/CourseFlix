@@ -19,6 +19,38 @@ export interface TeacherCourse {
   status: CourseStatus
 }
 
+export interface TeacherStudentCourseSubscription {
+  id: string
+  title: string
+  status: CourseStatus
+  enrollmentStatus: 'active' | 'suspended' | 'completed'
+  enrolledAt: string
+  revenueMinor: number
+}
+
+export interface TeacherStudentListItem {
+  id: string
+  fullName: string
+  email: string
+  status: 'active' | 'suspended' | 'inactive'
+  joinedAt: string
+  lastLoginAt: string | null
+  isSubscribedToAnyCourse: boolean
+  totalRevenueMinor: number
+  courses: TeacherStudentCourseSubscription[]
+}
+
+export interface TeacherStudentsResponse {
+  currency: string
+  totals: {
+    studentCount: number
+    subscribedStudentCount: number
+    unsubscribedStudentCount: number
+    revenueMinor: number
+  }
+  students: TeacherStudentListItem[]
+}
+
 export interface CreateTeacherCoursePayload {
   title: string
   description?: string | null
