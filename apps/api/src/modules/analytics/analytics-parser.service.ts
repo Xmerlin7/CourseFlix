@@ -10,6 +10,20 @@ import type { AnalyticsIntent, ParsedIntent } from './analytics-intent';
 export class AnalyticsParserService {
   private readonly logger = new Logger(AnalyticsParserService.name);
 
+  private readonly introKeywords = [
+    'اهلا',
+    'أهلا',
+    'أهلاً',
+    'مرحبا',
+    'السلام عليكم',
+    'هاي',
+    'hello',
+    'hi',
+    'hey',
+    'مين انت',
+    'من انت',
+    'تقدر تساعدني',
+  ];
   private readonly revenueKeywords = [
     'إيراد',
     'إيرادات',
@@ -36,6 +50,39 @@ export class AnalyticsParserService {
     'top selling',
     'most popular',
   ];
+  private readonly studentCountKeywords = [
+    'كام طالب',
+    'كم طالب',
+    'عدد الطلاب',
+    'عدد الطلبة',
+    'طلابي',
+    'students count',
+    'student count',
+    'how many students',
+  ];
+  private readonly courseCountKeywords = [
+    'كام كورس',
+    'كم كورس',
+    'كام دورة',
+    'كم دورة',
+    'عدد الكورسات',
+    'عدد الدورات',
+    'دوراتي كام',
+    'courses count',
+    'course count',
+    'how many courses',
+  ];
+  private readonly activeInterventionKeywords = [
+    'محتاج متابعة',
+    'محتاجين متابعة',
+    'محتاج يراجع',
+    'نقاط ضعف',
+    'تدخلات',
+    'interventions',
+    'at risk',
+    'need follow up',
+    'needs follow up',
+  ];
   private readonly thisMonth = /(?:هذا الشهر|الشهر الحالي|this month)/i;
   private readonly thisQuarter = /(?:هذا الربع|الربع الحالي|this quarter)/i;
   private readonly thisYear = /(?:هذا العام|العام الحالي|this year)/i;
@@ -44,12 +91,20 @@ export class AnalyticsParserService {
     const normalized = question.trim().toLowerCase();
 
     let intent: AnalyticsIntent = 'unsupported';
-    if (this.revenueKeywords.some((k) => normalized.includes(k)))
+    if (this.introKeywords.some((k) => normalized.includes(k.toLowerCase())))
+      intent = 'assistant_intro';
+    else if (this.activeInterventionKeywords.some((k) => normalized.includes(k)))
+      intent = 'active_interventions';
+    else if (this.revenueKeywords.some((k) => normalized.includes(k)))
       intent = 'revenue';
     else if (this.orderCountKeywords.some((k) => normalized.includes(k)))
       intent = 'order_count';
     else if (this.bestSellerKeywords.some((k) => normalized.includes(k)))
       intent = 'best_sellers';
+    else if (this.studentCountKeywords.some((k) => normalized.includes(k)))
+      intent = 'student_count';
+    else if (this.courseCountKeywords.some((k) => normalized.includes(k)))
+      intent = 'course_count';
 
     if (intent === 'unsupported') return { intent };
 
