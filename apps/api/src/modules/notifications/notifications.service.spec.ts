@@ -119,6 +119,30 @@ describe('NotificationsService', () => {
       expect(callArgs.where.type).toBe('quiz_ready');
     });
 
+    it('returns related entity metadata for actionable notifications', async () => {
+      notificationsRepository.find.mockResolvedValue([
+        {
+          id: 'notification-1',
+          type: 'quiz_ready',
+          title: 'اختبار جاهز',
+          message: 'ابدأ المراجعة',
+          relatedEntityType: 'mini_quiz',
+          relatedEntityId: 'quiz-1',
+          isRead: false,
+          createdAt: new Date('2026-08-05T10:00:00.000Z'),
+        },
+      ]);
+
+      const result = await notificationsService.listForUser(userA);
+
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          relatedEntityType: 'mini_quiz',
+          relatedEntityId: 'quiz-1',
+        }),
+      );
+    });
+
     it('rejects an invalid status filter', async () => {
       await expect(
         notificationsService.listForUser(userA, { status: 'bogus' }),

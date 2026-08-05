@@ -20,6 +20,8 @@ export interface NotificationResponse {
   type: NotificationType;
   title: string;
   message: string;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
   isRead: boolean;
   createdAt: string;
 }
@@ -206,6 +208,8 @@ export class NotificationsService implements NotificationProducerPort {
       type: notification.type,
       title: notification.title,
       message: notification.message,
+      relatedEntityType: notification.relatedEntityType,
+      relatedEntityId: notification.relatedEntityId,
       isRead: notification.isRead,
       createdAt: notification.createdAt.toISOString(),
     };

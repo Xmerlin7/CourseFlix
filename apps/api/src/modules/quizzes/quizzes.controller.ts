@@ -67,6 +67,15 @@ export class QuizzesController {
     return this.quizzesService.getSectionQuizzes(sectionId, user.id);
   }
 
+  @Get('courses/:courseId/quizzes')
+  @UseGuards(AuthGuard, StudentRoleGuard)
+  async getCourseQuizzes(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<QuizSummary[]> {
+    return this.quizzesService.getCourseQuizzes(courseId, user.id);
+  }
+
   @Post('teacher/quizzes')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard, TeacherRoleGuard)

@@ -7,11 +7,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, In, IsNull, Repository } from 'typeorm';
 import {
   INTERVENTION_EVALUATOR_PORT,
   InterventionEvaluatorPort,
 } from '../../common/ports/intervention-evaluator.port';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { QuestionEntity, QuestionType } from './entities/question.entity';
 import { QuizEntity } from './entities/quiz.entity';
@@ -42,6 +43,9 @@ export interface StudentQuizResponse {
 export interface QuizSummary {
   id: string;
   title: string;
+  courseId: string;
+  sectionId: string | null;
+  lessonId: string | null;
   questionCount: number;
   submission: { score: number; total: number } | null;
 }
@@ -122,7 +126,7 @@ export class QuizzesService {
       relations: { quiz: false },
     });
     const questionIds = quizQuestions.map((qq) => qq.questionId);
-    const questions = await this.questionRepo.findByIds(questionIds);
+    const questions = await this.loadQuestionsByIds(questionIds);
     const questionMap = new Map(questions.map((q) => [q.id, q]));
 
     const submission = await this.submissionRepo.findOne({
@@ -182,7 +186,7 @@ export class QuizzesService {
       order: { orderIndex: 'ASC' },
     });
     const questionIds = quizQuestions.map((qq) => qq.questionId);
-    const questions = await this.questionRepo.findByIds(questionIds);
+    const questions = await this.loadQuestionsByIds(questionIds);
 
     const { score, results } = this.gradingService.grade(
       dto.answers,
@@ -239,7 +243,9 @@ export class QuizzesService {
         })),
       };
     } catch (e) {
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       throw e;
     } finally {
       await queryRunner.release();
@@ -259,7 +265,9 @@ export class QuizzesService {
       lesson.courseId,
     );
 
-    const quizzes = await this.quizRepo.find({ where: { lessonId } });
+    const quizzes = await this.quizRepo.find({
+      where: { lessonId, deletedAt: IsNull() },
+    });
     return this.buildSummaries(quizzes, studentId);
   }
 
@@ -276,7 +284,26 @@ export class QuizzesService {
       section.courseId,
     );
 
-    const quizzes = await this.quizRepo.find({ where: { sectionId } });
+    const quizzes = await this.quizRepo.find({
+      where: { sectionId, deletedAt: IsNull() },
+    });
+    return this.buildSummaries(quizzes, studentId);
+  }
+
+  async getCourseQuizzes(
+    courseId: string,
+    studentId: string,
+  ): Promise<QuizSummary[]> {
+    const course = await this.dataSource
+      .getRepository(CourseEntity)
+      .findOne({ where: { id: courseId, deletedAt: IsNull() } });
+    if (!course) throw new NotFoundException('Course not found');
+    await this.enrollmentsService.assertStudentEnrolled(studentId, courseId);
+
+    const quizzes = await this.quizRepo.find({
+      where: { courseId, deletedAt: IsNull() },
+      order: { createdAt: 'DESC' },
+    });
     return this.buildSummaries(quizzes, studentId);
   }
 
@@ -295,6 +322,9 @@ export class QuizzesService {
       results.push({
         id: quiz.id,
         title: quiz.title,
+        courseId: quiz.courseId,
+        sectionId: quiz.sectionId,
+        lessonId: quiz.lessonId,
         questionCount: count,
         submission: submission
           ? { score: Number(submission.score), total: count }
@@ -316,7 +346,7 @@ export class QuizzesService {
       where: { quizId },
       order: { orderIndex: 'ASC' },
     });
-    const questions = await this.questionRepo.findByIds(
+    const questions = await this.loadQuestionsByIds(
       qq.map((l) => l.questionId),
     );
 
@@ -350,7 +380,7 @@ export class QuizzesService {
         where: { quizId: quiz.id },
         order: { orderIndex: 'ASC' },
       });
-      const questions = await this.questionRepo.findByIds(
+      const questions = await this.loadQuestionsByIds(
         qq.map((l) => l.questionId),
       );
       results.push({
@@ -422,7 +452,9 @@ export class QuizzesService {
         })),
       };
     } catch (e) {
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       throw e;
     } finally {
       await queryRunner.release();
@@ -509,7 +541,7 @@ export class QuizzesService {
         where: { quizId },
         order: { orderIndex: 'ASC' },
       });
-      const questions = await this.questionRepo.findByIds(
+      const questions = await this.loadQuestionsByIds(
         qq.map((l) => l.questionId),
       );
       return {
@@ -525,10 +557,31 @@ export class QuizzesService {
         })),
       };
     } catch (e) {
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       throw e;
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private async loadQuestionsByIds(
+    questionIds: string[],
+  ): Promise<QuestionEntity[]> {
+    if (questionIds.length === 0) {
+      return [];
+    }
+
+    const questions = await this.questionRepo.find({
+      where: { id: In(questionIds) },
+    });
+    const questionMap = new Map(
+      questions.map((question) => [question.id, question]),
+    );
+
+    return questionIds
+      .map((questionId) => questionMap.get(questionId))
+      .filter((question): question is QuestionEntity => Boolean(question));
   }
 }
