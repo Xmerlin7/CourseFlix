@@ -116,7 +116,9 @@ export class HealthService {
   // embedding/LLM API on every readiness poll would be wasteful. Confirms
   // the key is present and isn't still the .env.example placeholder.
   private checkAiProviderConfigured(): DependencyStatus {
-    const key = this.configService.get<string>('EMBEDDING_API_KEY');
+    const key =
+      this.configService.get<string>('OPENAI_API_KEY') ||
+      this.configService.get<string>('EMBEDDING_API_KEY');
     return key && key !== 'replace-me' ? 'ok' : 'error';
   }
 }
