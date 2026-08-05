@@ -3,6 +3,9 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { useAnalyticsQuestion } from '../hooks/useAnalyticsQuestion'
 
 const EXAMPLES = [
+  'عندي كام طالب؟',
+  'عندي كام كورس؟',
+  'كام طالب محتاج متابعة؟',
   'كم إيراداتي من 1 يناير إلى 31 مارس؟',
   'عدد الطلبات الناجحة هذا الشهر',
   'ما هي الدورات الأكثر مبيعاً؟',
@@ -25,7 +28,7 @@ export function TeacherAnalyticsPage() {
   return (
     <>
       <h1 className="page-title">مساعد التحليلات</h1>
-      <p className="subtitle">اسأل أسئلة مبيعات مدعومة فقط</p>
+      <p className="subtitle">اسأل عن طلابك ودوراتك والمبيعات والمتابعات</p>
 
       <form onSubmit={submit} className="section" style={{ display: 'flex', gap: 10 }}>
         <input
@@ -62,6 +65,17 @@ export function TeacherAnalyticsPage() {
       {error && <ErrorState onRetry={() => question && void ask(question)} />}
 
       {isLoading && <p className="subtitle">جاري المعالجة...</p>}
+
+      {data?.status === 'direct' && (
+        <div className="card section">
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <span className="lead">
+              <span className="ms">smart_toy</span>
+            </span>
+            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{data.message}</p>
+          </div>
+        </div>
+      )}
 
       {data?.status === 'success' && (
         <div className="section">
@@ -117,6 +131,70 @@ export function TeacherAnalyticsPage() {
                   </div>
                 ))
               )}
+            </div>
+          )}
+
+          {'activeStudentCount' in data.result && (
+            <div className="tiles">
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">groups</span>
+                </span>
+                <span className="lbl">الطلاب النشطون</span>
+                <span className="num">{data.result.activeStudentCount}</span>
+              </div>
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">how_to_reg</span>
+                </span>
+                <span className="lbl">التسجيلات النشطة</span>
+                <span className="num">{data.result.enrollmentCount}</span>
+              </div>
+            </div>
+          )}
+
+          {'totalCourses' in data.result && (
+            <div className="tiles">
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">menu_book</span>
+                </span>
+                <span className="lbl">كل الدورات</span>
+                <span className="num">{data.result.totalCourses}</span>
+              </div>
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">public</span>
+                </span>
+                <span className="lbl">منشورة</span>
+                <span className="num">{data.result.publishedCourses}</span>
+              </div>
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">edit_note</span>
+                </span>
+                <span className="lbl">مسودات</span>
+                <span className="num">{data.result.draftCourses}</span>
+              </div>
+            </div>
+          )}
+
+          {'activeInterventionCount' in data.result && (
+            <div className="tiles">
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">support_agent</span>
+                </span>
+                <span className="lbl">حالات متابعة نشطة</span>
+                <span className="num">{data.result.activeInterventionCount}</span>
+              </div>
+              <div className="tile">
+                <span className="lead-ic">
+                  <span className="ms">person_alert</span>
+                </span>
+                <span className="lbl">طلاب محتاجين متابعة</span>
+                <span className="num">{data.result.affectedStudentCount}</span>
+              </div>
             </div>
           )}
         </div>

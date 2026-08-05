@@ -7,7 +7,7 @@ interface UseAnalyticsQuestionResult {
   data: AnalyticsQuestionResponse | null
   isLoading: boolean
   error: ApiError | null
-  ask: (question: string) => Promise<void>
+  ask: (question: string) => Promise<AnalyticsQuestionResponse | null>
 }
 
 export function useAnalyticsQuestion(): UseAnalyticsQuestionResult {
@@ -19,9 +19,12 @@ export function useAnalyticsQuestion(): UseAnalyticsQuestionResult {
     setIsLoading(true)
     setError(null)
     try {
-      setData(await askAnalyticsQuestion(question))
+      const response = await askAnalyticsQuestion(question)
+      setData(response)
+      return response
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError('Unknown error', 0))
+      return null
     } finally {
       setIsLoading(false)
     }

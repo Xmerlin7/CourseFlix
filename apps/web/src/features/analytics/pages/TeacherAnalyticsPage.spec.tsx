@@ -37,6 +37,51 @@ describe('TeacherAnalyticsPage', () => {
     expect(screen.getByText(/EGP/)).toBeInTheDocument()
   })
 
+  it('answers a teacher student-count question', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/teacher/analytics/questions`, () =>
+        HttpResponse.json({
+          status: 'success',
+          intent: 'student_count',
+          result: {
+            activeStudentCount: 12,
+            enrollmentCount: 14,
+            dateRange: { from: null, to: null },
+          },
+        }),
+      ),
+    )
+
+    const user = userEvent.setup()
+    renderWithProviders(<TeacherAnalyticsPage />)
+
+    await user.type(await screen.findByPlaceholderText('اكتب سؤالك هنا...'), 'عندي كام طالب؟')
+    await user.click(screen.getByRole('button', { name: /إرسال/ }))
+
+    expect(await screen.findByText('الطلاب النشطون')).toBeInTheDocument()
+    expect(screen.getByText('12')).toBeInTheDocument()
+  })
+
+  it('introduces the analytics assistant on greetings', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/teacher/analytics/questions`, () =>
+        HttpResponse.json({
+          status: 'direct',
+          message: 'أهلاً، أنا مساعد التحليلات الذكي للمدرس.',
+          examples: ['عندي كام طالب؟'],
+        }),
+      ),
+    )
+
+    const user = userEvent.setup()
+    renderWithProviders(<TeacherAnalyticsPage />)
+
+    await user.type(await screen.findByPlaceholderText('اكتب سؤالك هنا...'), 'أهلا')
+    await user.click(screen.getByRole('button', { name: /إرسال/ }))
+
+    expect(await screen.findByText(/أنا مساعد التحليلات/)).toBeInTheDocument()
+  })
+
   it('shows supported examples for an unsupported question', async () => {
     server.use(
       http.post(`${env.apiBaseUrl}/teacher/analytics/questions`, () =>
