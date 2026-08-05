@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { useUnreadNotificationsCount } from '../../features/notifications/hooks/useUnreadNotificationsCount'
 import { Sidebar } from '../../shared/components/Sidebar'
+import { FloatingAssistant } from '../../shared/components/FloatingAssistant'
 import { Topbar } from '../../shared/components/Topbar'
 import { ROUTE_PATHS } from '../routes/route-paths'
 
@@ -42,6 +43,8 @@ export function StudentLayout({ children }: PropsWithChildren) {
           <div className="page">{children ?? <Outlet />}</div>
         </div>
       </div>
+
+      <FloatingAssistant role="student" />
     </div>
   )
 }
