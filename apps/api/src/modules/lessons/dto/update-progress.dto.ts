@@ -1,4 +1,4 @@
-import { IsInt, Min } from 'class-validator';
+import { IsInt, IsOptional, Min } from 'class-validator';
 
 /**
  * Monotonicity and percentage derivation are enforced in
@@ -13,4 +13,9 @@ export class UpdateProgressDto {
   @IsInt()
   @Min(0)
   watchedSeconds!: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  durationSeconds?: number;
 }
