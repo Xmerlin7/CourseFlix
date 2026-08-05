@@ -5,10 +5,12 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
+import { useCourseQuizzes } from '../../quizzes/hooks/useCourseQuizzes'
 
 export function StudentCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const { data, isLoading, error, refetch } = useCourseDetail(courseId ?? '')
+  const quizzes = useCourseQuizzes(courseId ?? '')
 
   if (isLoading) {
     return <LoadingState variant="text" />
@@ -28,5 +30,12 @@ export function StudentCourseDetailPage() {
     return <NotFoundState />
   }
 
-  return <CourseDetailView course={data} />
+  return (
+    <CourseDetailView
+      course={data}
+      courseQuizzes={quizzes.data}
+      areQuizzesLoading={quizzes.isLoading}
+      quizzesError={Boolean(quizzes.error)}
+    />
+  )
 }

@@ -39,6 +39,7 @@ export interface StudentEnrollment {
   // enrichment is a bulk course lookup, so a soft-deleted course yields
   // an enrollment row with no title.
   courseTitle?: string
+  coverImageUrl: string | null
   gradeLevel?: string
   status: EnrollmentStatus
 }
