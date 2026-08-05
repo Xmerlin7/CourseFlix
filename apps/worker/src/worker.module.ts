@@ -59,7 +59,9 @@ import {
     {
       provide: EMBEDDING_PROVIDER,
       useFactory: (configService: ConfigService) => {
-        const apiKey = configService.get<string>('EMBEDDING_API_KEY');
+        const apiKey =
+          configService.get<string>('EMBEDDING_API_KEY') ||
+          configService.get<string>('OPENAI_API_KEY');
         const env = configService.get<string>('NODE_ENV');
 
         // Use MockEmbeddingProvider for test/development when no valid API key is set
