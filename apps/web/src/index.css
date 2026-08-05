@@ -441,16 +441,15 @@ input, textarea, select {
   font-family: inherit;
 }
 
-/* No border-radius override here on purpose: this used to force every
-   focused element down to an 8px corner radius, which clobbered actual
-   pill-shaped controls (999px chips/buttons, 50% avatars) — the first
-   filter chip in a row is usually the one that ends up focused first
-   (click or tab), so its rounded corner would visibly deform into a
-   near-square notch. Modern browsers already shape the focus outline to
-   roughly follow the element's own border-radius. */
+/* box-shadow, not outline: `outline` is drawn as its own approximated
+   shape and several engines don't round it cleanly around a large
+   border-radius (999px chips/buttons, 50% avatars) — it renders with a
+   flat/notched corner instead of following the pill. box-shadow is
+   derived straight from the element's own border geometry, so it always
+   traces the exact same curve as the element, corners included. */
 :focus-visible {
-  outline: 3px solid var(--primary);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary);
 }
 
 ::selection {
