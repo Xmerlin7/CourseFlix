@@ -157,6 +157,48 @@ describe('TutorService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
+  it('introduces Saif without searching course material for identity questions', async () => {
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'انت تقدر تساعدني ازاي؟',
+    });
+
+    expect(result.status).toBe('answered');
+    expect(result.answer).toContain('أنا سيف');
+    expect(result.answer).toContain('مواد الدورة');
+    expect(result.citations).toEqual([]);
+    expect(retrievalPort.search).not.toHaveBeenCalled();
+    expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+  });
+
+  it('introduces Saif on Arabic greetings', async () => {
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'أهلاً',
+    });
+
+    expect(result.status).toBe('answered');
+    expect(result.answer).toContain('أنا سيف');
+    expect(retrievalPort.search).not.toHaveBeenCalled();
+  });
+
+  it('politely rejects clearly out-of-scope questions before retrieval', async () => {
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'احكي لي نكتة',
+    });
+
+    expect(result.status).toBe('no_answer');
+    expect(result.answer).toContain('أنا سيف');
+    expect(result.answer).toContain('خارج المواد المرفوعة');
+    expect(result.citations).toEqual([]);
+    expect(retrievalPort.search).not.toHaveBeenCalled();
+    expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+  });
+
   it('returns no_answer without calling the provider when relevance is too low', async () => {
     retrievalPort.search.mockResolvedValueOnce([
       { ...relevantChunk, score: 0.9 },
@@ -202,6 +244,24 @@ describe('TutorService', () => {
         vectorId: 'doc-1:1:0',
       },
     ]);
+  });
+
+  it('reports explicit confusion chat messages to the intervention evaluator', async () => {
+    await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'مش فاهم قانون نيوتن',
+    });
+
+    expect(interventionEvaluator.evaluateSignal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'chat_message',
+        studentId: 'student-1',
+        courseId: 'course-1',
+        messageText: 'مش فاهم قانون نيوتن',
+        evidenceRefId: 'user-message',
+      }),
+    );
   });
 
   it('downgrades invented citations to no_answer', async () => {

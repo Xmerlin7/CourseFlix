@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentEntity } from '../documents/entities/document.entity';
@@ -7,7 +7,11 @@ import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { InterventionsModule } from '../interventions/interventions.module';
 import { RetrievalModule } from '../retrieval/retrieval.module';
 import { SessionsModule } from '../sessions/sessions.module';
-import { LLM_PROVIDER, MockLlmProvider } from './adapters/llm.adapter';
+import {
+  LLM_PROVIDER,
+  MockLlmProvider,
+  OpenAILlmProvider,
+} from './adapters/llm.adapter';
 import { ConversationsService } from './conversations.service';
 import { ChatConversationEntity } from './entities/chat-conversation.entity';
 import { ChatMessageEntity } from './entities/chat-message.entity';
@@ -41,7 +45,23 @@ import { TutorService } from './tutor.service';
     ConversationsService,
     AnswerPolicyService,
     TutorService,
-    { provide: LLM_PROVIDER, useClass: MockLlmProvider },
+    {
+      provide: LLM_PROVIDER,
+      useFactory: (configService: ConfigService) => {
+        const apiKey =
+          configService.get<string>('OPENAI_API_KEY') ||
+          configService.get<string>('LLM_API_KEY') ||
+          configService.get<string>('EMBEDDING_API_KEY');
+        const env = configService.get<string>('NODE_ENV');
+
+        if (!apiKey || apiKey === 'replace-me' || env === 'test') {
+          return new MockLlmProvider();
+        }
+
+        return new OpenAILlmProvider(configService);
+      },
+      inject: [ConfigService],
+    },
   ],
 })
 export class TutorModule {}

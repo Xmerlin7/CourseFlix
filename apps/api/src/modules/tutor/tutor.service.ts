@@ -52,6 +52,42 @@ export interface TutorHistoryMessage {
 }
 
 const NO_ANSWER_MESSAGE = 'المواد المرفوعة لا تغطي هذا السؤال بعد.';
+const ASSISTANT_IDENTITY_MESSAGE =
+  'أنا سيف، مساعدك الذكي في CourseFlix. أقدر أساعدك في شرح وتلخيص مواد الدورة المرفوعة، توضيح النقاط الصعبة، الإجابة عن أسئلة الدروس، وتجهيز مراجعة سريعة من محتوى الكورس. اسألني عن أي جزء في ملفات الدورة وسأجاوبك بالمصادر المتاحة.';
+const OUT_OF_SCOPE_MESSAGE =
+  'أنا سيف، مساعدك الذكي لمحتوى هذه الدورة فقط. لا أستطيع الإجابة عن أسئلة خارج المواد المرفوعة هنا، لكن اسألني عن درس أو ملف في الكورس وسأساعدك بالمصادر.';
+
+const IDENTITY_PATTERNS = [
+  /\b(hi|hello|hey)\b/i,
+  /السلام عليكم|مرحبا|أهلا|أهلاً|اهلا|هاي/i,
+  /مين\s+انت|من\s+انت|اسمك|تعرف\s+نفسك/i,
+  /تقدر\s+تساعد|تساعدني\s+ازاي|تساعدني\s+إزاي|تعمل\s+ايه|تعمل\s+إيه|what can you do|who are you/i,
+];
+
+const EXPLICIT_OUT_OF_SCOPE_PATTERNS = [
+  /نكتة|هزار|ضحكني|joke/i,
+  /الطقس|weather/i,
+  /الأخبار|الاخبار|news/i,
+  /رئيس|انتخابات|سياسة|politics|president/i,
+  /طبخة|وصفة|recipe/i,
+  /اكتب\s+(كود|code)|برمج|programming/i,
+  /تشخيص|علاج|دواء|medical|diagnose/i,
+  /محامي|قانوني|legal/i,
+];
+
+type TutorDirectIntent = 'identity' | 'out_of_scope' | null;
+
+function getDirectTutorIntent(question: string): TutorDirectIntent {
+  if (IDENTITY_PATTERNS.some((pattern) => pattern.test(question))) {
+    return 'identity';
+  }
+
+  if (EXPLICIT_OUT_OF_SCOPE_PATTERNS.some((pattern) => pattern.test(question))) {
+    return 'out_of_scope';
+  }
+
+  return null;
+}
 
 @Injectable()
 export class TutorService {
@@ -127,6 +163,33 @@ export class TutorService {
         );
       });
 
+    const directIntent = getDirectTutorIntent(question);
+    if (directIntent === 'identity') {
+      const assistantMessage = await this.persistDirectAnswer(
+        conversation.id,
+        ASSISTANT_IDENTITY_MESSAGE,
+      );
+      return {
+        messageId: assistantMessage.id,
+        status: 'answered',
+        answer: ASSISTANT_IDENTITY_MESSAGE,
+        citations: [],
+      };
+    }
+
+    if (directIntent === 'out_of_scope') {
+      const assistantMessage = await this.persistNoAnswer(
+        conversation.id,
+        OUT_OF_SCOPE_MESSAGE,
+      );
+      return {
+        messageId: assistantMessage.id,
+        status: 'no_answer',
+        answer: OUT_OF_SCOPE_MESSAGE,
+        citations: [],
+      };
+    }
+
     const retrievedChunks = await this.retrievalPort.search({
       courseId: input.courseId,
       query: question,
@@ -181,6 +244,7 @@ export class TutorService {
     if (citations.length === 0) {
       const assistantMessage = await this.persistNoAnswer(
         conversation.id,
+        NO_ANSWER_MESSAGE,
         llmResult,
       );
       this.logger.log(
@@ -259,17 +323,31 @@ export class TutorService {
 
   private async persistNoAnswer(
     conversationId: string,
+    messageText = NO_ANSWER_MESSAGE,
     llmResult?: LlmGenerateResult,
   ) {
     return this.conversationsService.saveMessage({
       conversationId,
       senderType: 'ai_tutor',
       role: 'assistant',
-      messageText: NO_ANSWER_MESSAGE,
+      messageText,
       modelName: llmResult?.modelName ?? null,
       provider: llmResult?.provider ?? null,
       promptVersion: GROUNDED_TUTOR_PROMPT_VERSION,
       tokensUsed: llmResult?.tokensUsed ?? null,
+    });
+  }
+
+  private async persistDirectAnswer(conversationId: string, messageText: string) {
+    return this.conversationsService.saveMessage({
+      conversationId,
+      senderType: 'ai_tutor',
+      role: 'assistant',
+      messageText,
+      modelName: null,
+      provider: null,
+      promptVersion: GROUNDED_TUTOR_PROMPT_VERSION,
+      tokensUsed: null,
     });
   }
 
