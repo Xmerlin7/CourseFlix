@@ -1,6 +1,7 @@
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
+import { Link } from 'react-router'
 import { useNotifications } from '../hooks/useNotifications'
 import type { NotificationType } from '../types/notification.types'
 
@@ -107,6 +108,10 @@ export function NotificationsPage() {
         <div className="list">
           {data.map((notification) => {
             const meta = TYPE_META[notification.type]
+            const miniQuizPath =
+              notification.relatedEntityType === 'mini_quiz' && notification.relatedEntityId
+                ? `/student/mini-quizzes/${notification.relatedEntityId}`
+                : null
 
             return (
               <div key={notification.id} className="list-item">
@@ -121,6 +126,13 @@ export function NotificationsPage() {
 
                 <span className="end">
                   <span className="chip outline">{meta.label}</span>
+
+                  {miniQuizPath && (
+                    <Link to={miniQuizPath} className="btn tonal">
+                      <span className="ms">quiz</span>
+                      ابدأ الكويز
+                    </Link>
+                  )}
 
                   {!notification.isRead && (
                     <>

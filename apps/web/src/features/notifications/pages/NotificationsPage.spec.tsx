@@ -13,6 +13,8 @@ const NOTIFICATIONS = [
     type: 'quiz_ready' as const,
     title: 'اختبار قصير جاهز لك',
     message: 'رسالة 1',
+    relatedEntityType: 'mini_quiz',
+    relatedEntityId: 'quiz-1',
     isRead: false,
     createdAt: '2026-08-04T10:00:00.000Z',
   },
@@ -21,6 +23,8 @@ const NOTIFICATIONS = [
     type: 'announcement' as const,
     title: 'إعلان من المعلم',
     message: 'رسالة 2',
+    relatedEntityType: null,
+    relatedEntityId: null,
     isRead: true,
     createdAt: '2026-08-03T10:00:00.000Z',
   },
@@ -36,6 +40,10 @@ describe('NotificationsPage', () => {
 
     expect(await screen.findByText('اختبار قصير جاهز لك')).toBeInTheDocument()
     expect(screen.getByText('عندك 1 إشعار غير مقروء')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /ابدأ الكويز/ })).toHaveAttribute(
+      'href',
+      '/student/mini-quizzes/quiz-1',
+    )
   })
 
   it('re-requests the list with the selected status filter', async () => {
