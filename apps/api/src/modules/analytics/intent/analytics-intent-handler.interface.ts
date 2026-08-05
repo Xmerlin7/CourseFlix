@@ -11,6 +11,9 @@ export const ANALYTICS_INTENTS = [
   'revenue',
   'order_count',
   'best_sellers',
+  'student_count',
+  'course_count',
+  'active_interventions',
 ] as const;
 
 export type AnalyticsIntentName = (typeof ANALYTICS_INTENTS)[number];
@@ -53,10 +56,33 @@ export interface BestSellersIntentResult extends AnalyticsResultBase {
   }>;
 }
 
+export interface StudentCountIntentResult extends AnalyticsResultBase {
+  intent: 'student_count';
+  activeStudentCount: number;
+  enrollmentCount: number;
+}
+
+export interface CourseCountIntentResult extends AnalyticsResultBase {
+  intent: 'course_count';
+  totalCourses: number;
+  publishedCourses: number;
+  draftCourses: number;
+  archivedCourses: number;
+}
+
+export interface ActiveInterventionsIntentResult extends AnalyticsResultBase {
+  intent: 'active_interventions';
+  activeInterventionCount: number;
+  affectedStudentCount: number;
+}
+
 export type AnalyticsIntentResult =
   | RevenueIntentResult
   | OrderCountIntentResult
-  | BestSellersIntentResult;
+  | BestSellersIntentResult
+  | StudentCountIntentResult
+  | CourseCountIntentResult
+  | ActiveInterventionsIntentResult;
 
 export interface AnalyticsIntentHandler {
   readonly name: AnalyticsIntentName;
