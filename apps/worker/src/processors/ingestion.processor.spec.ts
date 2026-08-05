@@ -37,10 +37,13 @@ describe('IngestionProcessor', () => {
   });
 
   it('processes ingestion job through extract -> chunk -> embed -> Chroma upsert -> DB persist -> complete', async () => {
-    // Mock claim UPDATE affected 1 row and SQL queries
+    // Mock claim UPDATE returning one row and SQL queries
     dataSource.query.mockImplementation((sql: string) => {
-      if (sql.includes("UPDATE ai_jobs SET status = 'processing'")) {
-        return Promise.resolve({ rowCount: 1 });
+      if (
+        sql.includes('UPDATE ai_jobs') &&
+        sql.includes("SET status = 'processing'")
+      ) {
+        return Promise.resolve([{ id: 'ai-job-uuid-1' }]);
       }
       if (
         sql.includes('SELECT target_entity_type, target_entity_id FROM ai_jobs')
@@ -131,8 +134,11 @@ describe('IngestionProcessor', () => {
       );
 
     dataSource.query.mockImplementation((sql: string) => {
-      if (sql.includes("UPDATE ai_jobs SET status = 'processing'")) {
-        return Promise.resolve({ rowCount: 1 });
+      if (
+        sql.includes('UPDATE ai_jobs') &&
+        sql.includes("SET status = 'processing'")
+      ) {
+        return Promise.resolve([{ id: 'ai-job-uuid-1' }]);
       }
       if (
         sql.includes('SELECT target_entity_type, target_entity_id FROM ai_jobs')
@@ -230,8 +236,11 @@ describe('IngestionProcessor', () => {
       ]);
 
     dataSource.query.mockImplementation((sql: string) => {
-      if (sql.includes("UPDATE ai_jobs SET status = 'processing'")) {
-        return Promise.resolve({ rowCount: 1 });
+      if (
+        sql.includes('UPDATE ai_jobs') &&
+        sql.includes("SET status = 'processing'")
+      ) {
+        return Promise.resolve([{ id: 'ai-job-uuid-1' }]);
       }
       if (
         sql.includes('SELECT target_entity_type, target_entity_id FROM ai_jobs')

@@ -264,14 +264,15 @@ export class IngestionProcessor extends WorkerHost {
   // ---------------------------------------------------------------------------
 
   private async claim(jobId: string): Promise<boolean> {
-    const result = (await this.dataSource.query(
+    const rows = (await this.dataSource.query(
       `UPDATE ai_jobs
           SET status = 'processing', started_at = NOW()
         WHERE id = $1
-          AND status != 'completed'`,
+          AND status IN ('queued', 'failed')
+        RETURNING id`,
       [jobId],
-    )) as unknown as { rowCount?: number };
-    return (result?.rowCount ?? 0) > 0;
+    )) as unknown as Array<{ id: string }>;
+    return rows.length > 0;
   }
 
   private async getJobRecord(jobId: string): Promise<JobRecord | null> {
