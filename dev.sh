@@ -20,10 +20,14 @@ cd "$ROOT"
 LOG_DIR="$ROOT/.dev-logs"
 API_LOG="$LOG_DIR/api.log"
 WEB_LOG="$LOG_DIR/web.log"
+WORKER_LOG="$LOG_DIR/worker.log"
+WORKER_PID_FILE="$LOG_DIR/worker.pid"
 
-API_PORT="${PORT:-3000}"
-WEB_PORT="${VITE_WEB_PORT:-5173}"
-POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+API_PORT="${PORT:-}"
+WEB_PORT="${VITE_WEB_PORT:-}"
+POSTGRES_PORT="${POSTGRES_PORT:-}"
+REDIS_PORT="${REDIS_PORT:-}"
+CHROMA_PORT="${CHROMA_PORT:-}"
 
 # ─── output helpers ──────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -72,6 +76,30 @@ dk() {
 
 compose() { dk compose "$@"; }
 
+env_value() {
+  [ -f "$ROOT/.env" ] || return 0
+  sed -n "s/^$1=//p" "$ROOT/.env" | tail -n 1
+}
+
+load_local_env_settings() {
+  local value
+
+  value="$(env_value PORT)"
+  API_PORT="${API_PORT:-${value:-3000}}"
+
+  value="$(env_value VITE_WEB_PORT)"
+  WEB_PORT="${WEB_PORT:-${value:-5173}}"
+
+  value="$(env_value POSTGRES_PORT)"
+  POSTGRES_PORT="${POSTGRES_PORT:-${value:-5432}}"
+
+  value="$(env_value REDIS_PORT)"
+  REDIS_PORT="${REDIS_PORT:-${value:-6379}}"
+
+  value="$(env_value CHROMA_PORT)"
+  CHROMA_PORT="${CHROMA_PORT:-${value:-8000}}"
+}
+
 # ─── prerequisites ───────────────────────────────────────────────────────
 check_prereqs() {
   step "Checking prerequisites"
@@ -94,12 +122,13 @@ check_prereqs() {
     warn ".env was missing — created it from .env.example"
     cp "$ROOT/.env.example" "$ROOT/.env"
   fi
+  load_local_env_settings
   ok ".env present"
 }
 
 install_deps() {
   step "Installing dependencies"
-  for app in api web; do
+  for app in api web worker; do
     if [ -d "$ROOT/apps/$app/node_modules" ]; then
       ok "apps/$app (already installed)"
     else
@@ -116,6 +145,12 @@ start_infra() {
   compose up -d >/dev/null 2>&1
   ok "containers up"
 
+  wait_for_postgres_container
+  ensure_postgres_port_published
+  ok "Postgres healthy on port $POSTGRES_PORT"
+}
+
+wait_for_postgres_container() {
   printf '  waiting for Postgres to accept connections'
   local waited=0
   until [ "$(dk inspect --format '{{.State.Health.Status}}' courseflix-postgres 2>/dev/null)" = "healthy" ]; do
@@ -125,12 +160,77 @@ start_infra() {
     waited=$((waited + 1))
   done
   printf '\n'
-  ok "Postgres healthy on port $POSTGRES_PORT"
+}
+
+postgres_published_port() {
+  dk port courseflix-postgres 5432/tcp 2>/dev/null | awk -F: 'NR == 1 { print $NF }'
+}
+
+ensure_postgres_port_published() {
+  local published
+  published="$(postgres_published_port)"
+
+  if [ "$published" = "$POSTGRES_PORT" ]; then
+    return
+  fi
+
+  warn "Postgres is not published on host port $POSTGRES_PORT — recreating its container."
+  compose up -d --force-recreate postgres > "$LOG_DIR/postgres-recreate.log" 2>&1 \
+    || { tail -20 "$LOG_DIR/postgres-recreate.log"; die "could not publish Postgres on port $POSTGRES_PORT. If another local Postgres is using it, change POSTGRES_PORT and DATABASE_URL in .env."; }
+
+  wait_for_postgres_container
+  published="$(postgres_published_port)"
+  [ "$published" = "$POSTGRES_PORT" ] \
+    || die "Postgres container is healthy, but host port $POSTGRES_PORT is not mapped. Check $LOG_DIR/postgres-recreate.log."
 }
 
 # ─── database ────────────────────────────────────────────────────────────
+check_database_connection() {
+  (cd "$ROOT/apps/api" && node <<'NODE'
+const { resolve } = require('path');
+const { config } = require('dotenv');
+const { Client } = require('pg');
+
+config({ path: resolve(process.cwd(), '../../.env') });
+
+const client = new Client({ connectionString: process.env.DATABASE_URL });
+
+async function main() {
+  await client.connect();
+  const result = await client.query('select current_user as "user", current_database() as "database"');
+  const row = result.rows[0];
+
+  if (process.env.POSTGRES_USER && row.user !== process.env.POSTGRES_USER) {
+    throw new Error(`DATABASE_URL connected as ${row.user}, expected ${process.env.POSTGRES_USER}`);
+  }
+
+  if (process.env.POSTGRES_DB && row.database !== process.env.POSTGRES_DB) {
+    throw new Error(`DATABASE_URL connected to ${row.database}, expected ${process.env.POSTGRES_DB}`);
+  }
+
+  console.log(`${row.user}@${row.database}`);
+}
+
+main()
+  .catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await client.end().catch(() => undefined);
+  });
+NODE
+  )
+}
+
 setup_database() {
   step "Preparing the database"
+
+  printf '  checking database connection ...\n'
+  local db_check
+  db_check="$(check_database_connection 2>&1)" \
+    || { printf '%s\n' "$db_check" | sed 's/^/    /'; die "database connection failed — verify DATABASE_URL in .env points at the Docker Postgres port."; }
+  ok "database reachable ($db_check)"
 
   printf '  running migrations ...\n'
   npm run migration:run --prefix apps/api --silent > "$LOG_DIR/migrations.log" 2>&1 \
@@ -152,13 +252,40 @@ setup_database() {
 # ─── app processes ───────────────────────────────────────────────────────
 port_pid() { lsof -ti:"$1" -sTCP:LISTEN 2>/dev/null || true; }
 
+stop_process_for_port() {
+  local pid="$1" pgid current_pgid
+  pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
+  current_pgid="$(ps -o pgid= -p "$$" 2>/dev/null | tr -d ' ' || true)"
+
+  if [ -n "$pgid" ] && [ "$pgid" != "$current_pgid" ]; then
+    kill -TERM -- "-$pgid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+  else
+    kill "$pid" 2>/dev/null || true
+  fi
+}
+
+stop_pid_group() {
+  local pid="$1" pgid current_pgid
+  [ -n "$pid" ] || return
+  pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
+  current_pgid="$(ps -o pgid= -p "$$" 2>/dev/null | tr -d ' ' || true)"
+
+  if [ -n "$pgid" ] && [ "$pgid" != "$current_pgid" ]; then
+    kill -TERM -- "-$pgid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+  else
+    kill "$pid" 2>/dev/null || true
+  fi
+}
+
 free_port() {
-  local pid
-  pid="$(port_pid "$1")"
-  if [ -n "$pid" ]; then
-    warn "port $1 was busy — stopping pid $pid"
-    kill $pid 2>/dev/null || true
-    sleep 1
+  local pids pid
+  pids="$(port_pid "$1")"
+  if [ -n "$pids" ]; then
+    warn "port $1 was busy — stopping pid(s) $(echo "$pids" | tr '\n' ' ')"
+    for pid in $pids; do
+      stop_process_for_port "$pid"
+    done
+    sleep 2
   fi
 }
 
@@ -167,6 +294,18 @@ wait_for_http() {
   printf '  waiting for %s' "$name"
   until curl -sf "$url" >/dev/null 2>&1; do
     [ "$waited" -ge 90 ] && { printf '\n'; die "$name did not start within 90s. Check the log."; }
+    printf '.'
+    sleep 1
+    waited=$((waited + 1))
+  done
+  printf '\n'
+}
+
+wait_for_log() {
+  local file="$1" pattern="$2" name="$3" waited=0
+  printf '  waiting for %s' "$name"
+  until [ -f "$file" ] && grep -q "$pattern" "$file"; do
+    [ "$waited" -ge 45 ] && { printf '\n'; die "$name did not start within 45s. Check the log."; }
     printf '.'
     sleep 1
     waited=$((waited + 1))
@@ -189,6 +328,21 @@ start_apps() {
   setsid npm run dev --prefix apps/web > "$WEB_LOG" 2>&1 < /dev/null &
   wait_for_http "http://localhost:$WEB_PORT" "web app"
   ok "web app listening on http://localhost:$WEB_PORT"
+
+  if [ -f "$WORKER_PID_FILE" ]; then
+    local old_worker_pid
+    old_worker_pid="$(cat "$WORKER_PID_FILE" 2>/dev/null || true)"
+    if [ -n "$old_worker_pid" ] && ps -p "$old_worker_pid" >/dev/null 2>&1; then
+      warn "worker was already running — stopping pid $old_worker_pid"
+      stop_pid_group "$old_worker_pid"
+      sleep 2
+    fi
+  fi
+
+  setsid npm run start:dev --prefix apps/worker > "$WORKER_LOG" 2>&1 < /dev/null &
+  echo "$!" > "$WORKER_PID_FILE"
+  wait_for_log "$WORKER_LOG" "Worker started" "worker"
+  ok "worker running (PDF ingestion)"
 }
 
 # ─── summary ─────────────────────────────────────────────────────────────
@@ -222,16 +376,14 @@ ${GREEN}${BOLD}CourseFlix is running.${RESET}
     Postgres       localhost:$POSTGRES_PORT
     Redis          localhost:${REDIS_PORT:-6379}
     Chroma         http://localhost:${CHROMA_PORT:-8000}
+    worker         PDF ingestion jobs
 
   ${BOLD}Logs${RESET}
-    ./dev.sh logs  ${DIM}(or tail $API_LOG / $WEB_LOG)${RESET}
+    ./dev.sh logs  ${DIM}(or tail $API_LOG / $WEB_LOG / $WORKER_LOG)${RESET}
 
   ${BOLD}Stop${RESET}
     ./dev.sh stop
 
-${DIM}Note: uploaded PDFs stay at "في الانتظار" — the ingestion worker that
-would process them (apps/worker) isn't built yet, so nothing picks the job
-up. Everything else in the demo is live data from Postgres.${RESET}
 EOF
 }
 
@@ -248,11 +400,26 @@ cmd_up() {
 
 cmd_stop() {
   step "Stopping the API and web app"
+  if [ -f "$WORKER_PID_FILE" ]; then
+    local worker_pid
+    worker_pid="$(cat "$WORKER_PID_FILE" 2>/dev/null || true)"
+    if [ -n "$worker_pid" ] && ps -p "$worker_pid" >/dev/null 2>&1; then
+      stop_pid_group "$worker_pid"
+      ok "stopped worker"
+    else
+      ok "worker was not running"
+    fi
+  else
+    ok "worker was not running"
+  fi
+
   for port in "$API_PORT" "$WEB_PORT"; do
-    local pid
+    local pid single_pid
     pid="$(port_pid "$port")"
     if [ -n "$pid" ]; then
-      kill $pid 2>/dev/null || true
+      for single_pid in $pid; do
+        stop_process_for_port "$single_pid"
+      done
       ok "stopped whatever was on port $port"
     else
       ok "nothing running on port $port"
@@ -294,12 +461,19 @@ cmd_status() {
     pid="$(port_pid "$port")"
     if [ -n "$pid" ]; then ok "$name listening on $port (pid $pid)"; else warn "$name not running on $port"; fi
   done
+  if [ -f "$WORKER_PID_FILE" ]; then
+    local worker_pid
+    worker_pid="$(cat "$WORKER_PID_FILE" 2>/dev/null || true)"
+    if [ -n "$worker_pid" ] && ps -p "$worker_pid" >/dev/null 2>&1; then ok "worker running (pid $worker_pid)"; else warn "worker not running"; fi
+  else
+    warn "worker not running"
+  fi
 }
 
 cmd_logs() {
   [ -f "$API_LOG" ] || die "no logs yet — run ./dev.sh first."
   step "Following API and web logs (Ctrl+C to stop)"
-  tail -f "$API_LOG" "$WEB_LOG"
+  tail -f "$API_LOG" "$WEB_LOG" "$WORKER_LOG"
 }
 
 # ─── entrypoint ──────────────────────────────────────────────────────────
@@ -318,6 +492,8 @@ for arg in "$@"; do
     *) die "unknown argument: $arg  (try --help)" ;;
   esac
 done
+
+[ -f "$ROOT/.env" ] && load_local_env_settings
 
 case "$COMMAND" in
   up)     cmd_up ;;
