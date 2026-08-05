@@ -352,10 +352,16 @@ input, textarea, select {
   font-family: inherit;
 }
 
+/* No border-radius override here on purpose: this used to force every
+   focused element down to an 8px corner radius, which clobbered actual
+   pill-shaped controls (999px chips/buttons, 50% avatars) — the first
+   filter chip in a row is usually the one that ends up focused first
+   (click or tab), so its rounded corner would visibly deform into a
+   near-square notch. Modern browsers already shape the focus outline to
+   roughly follow the element's own border-radius. */
 :focus-visible {
   outline: 3px solid var(--primary);
   outline-offset: 2px;
-  border-radius: 8px;
 }
 
 ::selection {
@@ -682,6 +688,24 @@ code {
   text-align: center;
   color: var(--on-surface-variant);
   font-size: 12.5px;
+}
+
+.auth-switch {
+  text-align: center;
+  color: var(--on-surface-variant);
+  font-size: 14px;
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.auth-switch a {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
 }
 /* ===================================================================
    M3 content components — ported from ui5/ (the design reference).

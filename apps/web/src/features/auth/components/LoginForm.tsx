@@ -60,12 +60,10 @@ export function LoginForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
-        {error ? (
+        {error && (
           <span className="error-text" role="alert">
             {error}
           </span>
-        ) : (
-          <span className="hint">يتم توجيهك تلقائيًا حسب نوع الحساب (طالب أو معلم)</span>
         )}
       </div>
 
