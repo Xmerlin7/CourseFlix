@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
@@ -7,6 +7,7 @@ import { ENROLLMENT_STATUS } from '../../../shared/lib/status-labels'
 import { useStudentDashboard } from '../hooks/useStudentDashboard'
 
 export function StudentDashboardPage() {
+  const navigate = useNavigate()
   const { data, isLoading, error } = useStudentDashboard()
 
   if (isLoading) return <LoadingState variant="cards" />
@@ -76,6 +77,8 @@ export function StudentDashboardPage() {
             variant="courses"
             title="لسه مفيش دورات"
             message="لما تنضم لدورة هتظهر هنا"
+            actionLabel="استكشف الدورات"
+            onAction={() => navigate('/student/browse')}
           />
         ) : (
           <div className="list">

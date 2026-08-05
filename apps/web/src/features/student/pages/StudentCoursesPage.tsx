@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
@@ -15,6 +16,7 @@ const STATUS_OPTIONS: Array<{ label: string; value: EnrollmentStatus | '' }> = [
 ]
 
 export function StudentCoursesPage() {
+  const navigate = useNavigate()
   const [status, setStatus] = useState<EnrollmentStatus | ''>('')
   const { data, isLoading, error, refetch } = useStudentEnrollments({
     status: status || undefined,
@@ -55,6 +57,8 @@ export function StudentCoursesPage() {
           variant="courses"
           title="لسه مفيش دورات هنا"
           message="لما تنضم لدورة هتظهر هنا"
+          actionLabel="استكشف الدورات"
+          onAction={() => navigate('/student/browse')}
         />
       )}
 
