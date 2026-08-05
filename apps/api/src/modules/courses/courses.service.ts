@@ -367,11 +367,13 @@ export class CoursesService {
         id: section.id,
         title: section.title,
         sortOrder: section.sortOrder,
+        status: section.status,
         lessons: (section.lessons ?? []).map((lesson) => ({
           id: lesson.id,
           title: lesson.title,
           videoUrl: lesson.videoUrl,
           sortOrder: lesson.sortOrder,
+          status: lesson.status,
         })),
       })),
     };

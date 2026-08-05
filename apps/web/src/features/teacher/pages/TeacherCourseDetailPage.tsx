@@ -9,6 +9,7 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
+import { TeacherContentManager } from '../components/TeacherContentManager'
 import { TeacherCourseForm } from '../components/TeacherCourseForm'
 
 type CourseDetailTab = 'content' | 'files'
@@ -63,6 +64,8 @@ export function TeacherCourseDetailPage() {
       {activeTab === 'content' && (
         <>
           <CourseDetailView course={data} />
+
+          {data.canEdit && <TeacherContentManager course={data} onChange={refetch} />}
 
           {data.canEdit && (
             <TeacherCourseForm

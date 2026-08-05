@@ -1,16 +1,20 @@
 import type { CourseStatus } from '../entities/course.entity';
+import type { LessonStatus } from '../entities/lesson.entity';
+import type { SectionStatus } from '../entities/section.entity';
 
 export interface CourseLessonResponseDto {
   id: string;
   title: string;
   videoUrl: string | null;
   sortOrder: number;
+  status: LessonStatus;
 }
 
 export interface CourseSectionResponseDto {
   id: string;
   title: string;
   sortOrder: number;
+  status: SectionStatus;
   lessons: CourseLessonResponseDto[];
 }
 

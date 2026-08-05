@@ -702,7 +702,8 @@ code {
 
 .tf input,
 .tf textarea,
-.tf select {
+.tf select,
+.field {
   background: var(--surface-container-high);
   border: 1.5px solid transparent;
   border-radius: 14px;
@@ -719,7 +720,8 @@ code {
 
 .tf input:focus,
 .tf textarea:focus,
-.tf select:focus {
+.tf select:focus,
+.field:focus {
   outline: none;
   border-color: var(--primary);
   background: var(--surface);

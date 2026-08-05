@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { LoadingState } from '../../../shared/components/LoadingState'
+import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
+import { CourseThumb } from '../../courses/components/CourseThumb'
 import { useTeacherCourses } from '../hooks/useTeacherCourses'
 import type { CourseStatus } from '../../courses/types/course.types'
 
@@ -16,6 +18,7 @@ const STATUS_OPTIONS: Array<{ label: string; value: CourseStatus | '' }> = [
 ]
 
 export function TeacherCoursesPage() {
+  const navigate = useNavigate()
   const [status, setStatus] = useState<CourseStatus | ''>('')
   const { data, isLoading, error, refetch } = useTeacherCourses({
     status: status || undefined,
@@ -23,8 +26,20 @@ export function TeacherCoursesPage() {
 
   return (
     <>
-      <h1 className="page-title">دوراتي</h1>
-      <p className="subtitle">الدورات اللي بتديرها</p>
+      <div className="section-head">
+        <div>
+          <h1 className="page-title" style={{ margin: 0 }}>
+            دوراتي
+          </h1>
+          <p className="subtitle" style={{ marginBottom: 0 }}>
+            الدورات اللي بتديرها
+          </p>
+        </div>
+        <Link to={ROUTE_PATHS.TEACHER.COURSE_CREATE} className="btn">
+          <span className="ms">add</span>
+          دورة جديدة
+        </Link>
+      </div>
 
       <div className="actions section">
         {STATUS_OPTIONS.map((option) => (
@@ -51,6 +66,8 @@ export function TeacherCoursesPage() {
           variant="courses"
           title="لسه معندكش دورات"
           message="الدورات اللي بتديرها هتظهر هنا"
+          actionLabel="إنشاء أول دورة"
+          onAction={() => navigate(ROUTE_PATHS.TEACHER.COURSE_CREATE)}
         />
       )}
 
@@ -66,11 +83,7 @@ export function TeacherCoursesPage() {
                 className="card lift course-card"
               >
                 <div className="row">
-                  <div className="thumb" aria-hidden="true">
-                    <i className="t1" />
-                    <i className="t2" />
-                    <i className="t3" />
-                  </div>
+                  <CourseThumb coverImageUrl={course.coverImageUrl} alt={course.title} />
 
                   <div className="info">
                     <h3>{course.title}</h3>

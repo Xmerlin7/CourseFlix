@@ -36,6 +36,9 @@ const TeacherDashboardPage = lazy(() =>
 const TeacherCoursesPage = lazy(() =>
   import('../../features/teacher/pages/TeacherCoursesPage').then((m) => ({ default: m.TeacherCoursesPage }))
 )
+const TeacherCourseCreatePage = lazy(() =>
+  import('../../features/teacher/pages/TeacherCourseCreatePage').then((m) => ({ default: m.TeacherCourseCreatePage }))
+)
 const TeacherCourseDetailPage = lazy(() =>
   import('../../features/teacher/pages/TeacherCourseDetailPage').then((m) => ({ default: m.TeacherCourseDetailPage }))
 )
@@ -244,6 +247,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <TeacherCoursesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.COURSE_CREATE,
+            element: (
+              <SuspenseWrapper>
+                <TeacherCourseCreatePage />
               </SuspenseWrapper>
             ),
           },

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router'
+import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { ApiError } from '../../../shared/api/api-error'
-import { updateTeacherCourse } from '../api/teacher.api'
+import { deleteTeacherCourse, updateTeacherCourse } from '../api/teacher.api'
 import type { TeacherCourse } from '../types/teacher.types'
 
 interface TeacherCourseFormProps {
@@ -10,6 +12,9 @@ interface TeacherCourseFormProps {
 }
 
 export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
+  const navigate = useNavigate()
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [title, setTitle] = useState(course.title)
   const [description, setDescription] = useState(course.description ?? '')
   const [coverImageUrl, setCoverImageUrl] = useState(course.coverImageUrl ?? '')
@@ -44,6 +49,20 @@ export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
       }
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm('حذف الدورة نهائيًا مع كل الأقسام والدروس. متأكد؟')) return
+
+    setIsDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteTeacherCourse(course.id)
+      navigate(ROUTE_PATHS.TEACHER.COURSES, { replace: true })
+    } catch {
+      setDeleteError('تعذر حذف الدورة، حاول مرة أخرى')
+      setIsDeleting(false)
     }
   }
 
@@ -119,9 +138,27 @@ export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
         </p>
       )}
 
-      <button type="submit" disabled={isSaving} className="btn" style={{ alignSelf: 'flex-start' }}>
-        {isSaving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
-      </button>
+      {deleteError && (
+        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
+          {deleteError}
+        </p>
+      )}
+
+      <div className="actions">
+        <button type="submit" disabled={isSaving} className="btn">
+          {isSaving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
+        </button>
+        <button
+          type="button"
+          disabled={isDeleting}
+          onClick={() => void handleDelete()}
+          className="btn text"
+          style={{ color: 'var(--error)' }}
+        >
+          <span className="ms sm">delete</span>
+          {isDeleting ? 'جارٍ الحذف...' : 'حذف الدورة'}
+        </button>
+      </div>
     </form>
   )
 }

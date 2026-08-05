@@ -26,6 +26,7 @@ export const ROUTE_PATHS = {
     ROOT: '/teacher',
     DASHBOARD: '/teacher/dashboard',
     COURSES: '/teacher/courses',
+    COURSE_CREATE: '/teacher/courses/new',
     COURSE_DETAIL: '/teacher/courses/:courseId',
     NOTIFICATIONS: '/teacher/notifications',
     AGENT_LOGS: '/teacher/agent-logs',
