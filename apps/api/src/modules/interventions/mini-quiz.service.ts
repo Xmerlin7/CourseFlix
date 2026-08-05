@@ -65,7 +65,7 @@ export class MiniQuizService {
    */
   async generateForIntervention(
     intervention: InterventionEntity,
-  ): Promise<void> {
+  ): Promise<string | null> {
     try {
       const miniQuiz = await this.miniQuizRepo.save(
         this.miniQuizRepo.create({
@@ -110,10 +110,12 @@ export class MiniQuizService {
       this.logger.log(
         `Mini quiz ${miniQuiz.id} generated for intervention ${intervention.id}`,
       );
+      return miniQuiz.id;
     } catch (error) {
       this.logger.warn(
         `Mini-quiz generation failed for intervention=${intervention.id}: ${String(error)}`,
       );
+      return null;
     }
   }
 
