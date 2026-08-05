@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChromaClient, Collection } from 'chromadb';
+import type { EmbeddingFunction as ChromaEmbeddingFunction } from 'chromadb';
 import type { DocumentChunk } from '../stages/chunk.stage';
 
 export const CHROMA_ADAPTER = Symbol('CHROMA_ADAPTER');
@@ -20,6 +21,24 @@ export interface ChromaUpsertInput {
   courseId: string;
   vector: number[];
   isActive?: boolean;
+}
+
+const explicitEmbeddingsOnly: ChromaEmbeddingFunction = {
+  name: 'courseflix-explicit-embeddings',
+  async generate(): Promise<number[][]> {
+    throw new Error('CourseFlix passes embeddings explicitly to ChromaDB');
+  },
+};
+
+function isChromaNotFoundError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return (
+    error.name === 'ChromaNotFoundError' ||
+    error.message.toLowerCase().includes('resource could not be found')
+  );
 }
 
 /**
@@ -54,6 +73,7 @@ export class ChromaAdapter {
     this.client = new ChromaClient({ path: chromaUrl });
     this.collection = await this.client.getOrCreateCollection({
       name: collectionName,
+      embeddingFunction: explicitEmbeddingsOnly,
     });
 
     return this.collection;
@@ -103,15 +123,36 @@ export class ChromaAdapter {
       });
     }
 
-    const collection = await this.getCollection();
-    await collection.upsert({
+    const payload = {
       ids,
       embeddings,
       metadatas,
       documents,
-    });
+    };
+
+    await this.upsertWithRetry(payload);
 
     this.logger.log(`Successfully upserted ${ids.length} vector chunks into ChromaDB`);
+  }
+
+  private async upsertWithRetry(
+    payload: Parameters<Collection['upsert']>[0],
+  ): Promise<void> {
+    const collection = await this.getCollection();
+
+    try {
+      await collection.upsert(payload);
+      return;
+    } catch (error) {
+      if (!isChromaNotFoundError(error)) {
+        throw error;
+      }
+
+      this.logger.warn('Chroma collection handle was stale; reconnecting');
+      this.collection = null;
+      const refreshedCollection = await this.getCollection();
+      await refreshedCollection.upsert(payload);
+    }
   }
 
   /**
