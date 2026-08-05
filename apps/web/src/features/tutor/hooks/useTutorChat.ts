@@ -24,9 +24,18 @@ export function useTutorChat(courseId: string): UseTutorChatResult {
   const [error, setError] = useState<ApiError | null>(null);
 
   useEffect(() => {
-    if (!courseId) return;
+    if (!courseId) {
+      setMessages([]);
+      setIsLoadingHistory(false);
+      return;
+    }
 
     let isMounted = true;
+
+    setMessages([]);
+    setError(null);
+    setLastFailedMessage(null);
+    setIsLoadingHistory(true);
 
     getTutorMessages(courseId)
       .then((history) => {
@@ -36,9 +45,7 @@ export function useTutorChat(courseId: string): UseTutorChatResult {
           role: message.role,
           text: message.text,
         }));
-        setMessages((current) =>
-          current.length > 0 ? current : historyMessages,
-        );
+        setMessages(historyMessages);
       })
       .catch((caughtError) => {
         if (!isMounted) return;
