@@ -3,10 +3,16 @@ import { postLessonProgress } from '../api/lessons.api'
 import type { UpdateProgressResponse } from '../types/lesson.types'
 
 const HEARTBEAT_INTERVAL_MS = 15_000
+const HEARTBEAT_INTERVAL_SECONDS = HEARTBEAT_INTERVAL_MS / 1000
 
 interface UseProgressHeartbeatOptions {
   lessonId: string
   videoRef: React.RefObject<HTMLVideoElement | null>
+  enabled?: boolean
+  externalTracking?: boolean
+  fallbackDurationSeconds?: number | null
+  initialPositionSeconds?: number
+  initialWatchedPercentage?: number
   onProgress?: (result: UpdateProgressResponse) => void
 }
 
@@ -32,37 +38,137 @@ interface UseProgressHeartbeatOptions {
 export function useProgressHeartbeat({
   lessonId,
   videoRef,
+  enabled = true,
+  externalTracking = false,
+  fallbackDurationSeconds = null,
+  initialPositionSeconds = 0,
+  initialWatchedPercentage = 0,
   onProgress,
 }: UseProgressHeartbeatOptions): void {
   const maxReachedSecondsRef = useRef(0)
+  const externalPositionSecondsRef = useRef(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const sendHeartbeat = useCallback(() => {
-    const video = videoRef.current
-    if (!video) {
+  useEffect(() => {
+    const estimatedWatchedSeconds =
+      fallbackDurationSeconds && initialWatchedPercentage > 0
+        ? Math.floor((fallbackDurationSeconds * initialWatchedPercentage) / 100)
+        : 0
+
+    maxReachedSecondsRef.current = Math.max(initialPositionSeconds, estimatedWatchedSeconds)
+    externalPositionSecondsRef.current = initialPositionSeconds
+  }, [fallbackDurationSeconds, initialPositionSeconds, initialWatchedPercentage, lessonId])
+
+  const sendHeartbeat = useCallback(
+    (override?: {
+      positionSeconds: number
+      watchedSeconds: number
+      durationSeconds?: number
+    }) => {
+      if (!enabled) {
+        return
+      }
+
+      if (override) {
+        postLessonProgress(lessonId, override)
+          .then((result) => onProgress?.(result))
+          .catch(() => {
+            // A missed heartbeat is retried on the next interval tick or
+            // lifecycle event — nothing to surface mid-playback.
+          })
+        return
+      }
+
+      const video = videoRef.current
+      if (!video) {
+        return
+      }
+
+      const positionSeconds = Math.floor(video.currentTime)
+      maxReachedSecondsRef.current = Math.max(
+        maxReachedSecondsRef.current,
+        positionSeconds,
+      )
+
+      const videoDurationSeconds =
+        Number.isFinite(video.duration) && video.duration > 0
+          ? Math.floor(video.duration)
+          : (fallbackDurationSeconds ?? undefined)
+
+      postLessonProgress(lessonId, {
+        positionSeconds,
+        watchedSeconds: maxReachedSecondsRef.current,
+        ...(videoDurationSeconds ? { durationSeconds: videoDurationSeconds } : {}),
+      })
+        .then((result) => onProgress?.(result))
+        .catch(() => {
+          // A missed heartbeat is retried on the next interval tick or the
+          // next pause/ended event — nothing to surface mid-playback.
+        })
+    },
+    [enabled, fallbackDurationSeconds, lessonId, onProgress, videoRef],
+  )
+
+  useEffect(() => {
+    if (!enabled || !externalTracking || !fallbackDurationSeconds) {
       return
     }
+    const externalDurationSeconds = fallbackDurationSeconds
 
-    const positionSeconds = Math.floor(video.currentTime)
-    maxReachedSecondsRef.current = Math.max(
-      maxReachedSecondsRef.current,
-      positionSeconds,
-    )
+    function stopInterval() {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
 
-    postLessonProgress(lessonId, {
-      positionSeconds,
-      watchedSeconds: maxReachedSecondsRef.current,
-    })
-      .then((result) => onProgress?.(result))
-      .catch(() => {
-        // A missed heartbeat is retried on the next interval tick or the
-        // next pause/ended event — nothing to surface mid-playback.
+    function sendExternalHeartbeat() {
+      const positionSeconds = externalPositionSecondsRef.current
+      maxReachedSecondsRef.current = Math.max(maxReachedSecondsRef.current, positionSeconds)
+      sendHeartbeat({
+        positionSeconds,
+        watchedSeconds: maxReachedSecondsRef.current,
+        durationSeconds: externalDurationSeconds,
       })
-  }, [lessonId, videoRef, onProgress])
+    }
+
+    function tick() {
+      if (document.visibilityState === 'hidden') {
+        return
+      }
+
+      externalPositionSecondsRef.current += HEARTBEAT_INTERVAL_SECONDS
+      sendExternalHeartbeat()
+    }
+
+    function startInterval() {
+      stopInterval()
+      intervalRef.current = setInterval(tick, HEARTBEAT_INTERVAL_MS)
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'hidden') {
+        sendExternalHeartbeat()
+        stopInterval()
+      } else {
+        startInterval()
+      }
+    }
+
+    startInterval()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', sendExternalHeartbeat)
+
+    return () => {
+      stopInterval()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', sendExternalHeartbeat)
+    }
+  }, [enabled, externalTracking, fallbackDurationSeconds, sendHeartbeat])
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video) {
+    if (!enabled || externalTracking || !video) {
       return
     }
 
@@ -83,17 +189,21 @@ export function useProgressHeartbeat({
       sendHeartbeat()
     }
 
+    function handleBeforeUnload() {
+      sendHeartbeat()
+    }
+
     video.addEventListener('play', handlePlay)
     video.addEventListener('pause', handlePauseOrEnded)
     video.addEventListener('ended', handlePauseOrEnded)
-    window.addEventListener('beforeunload', sendHeartbeat)
+    window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
       stopInterval()
       video.removeEventListener('play', handlePlay)
       video.removeEventListener('pause', handlePauseOrEnded)
       video.removeEventListener('ended', handlePauseOrEnded)
-      window.removeEventListener('beforeunload', sendHeartbeat)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [videoRef, sendHeartbeat])
+  }, [enabled, externalTracking, videoRef, sendHeartbeat])
 }

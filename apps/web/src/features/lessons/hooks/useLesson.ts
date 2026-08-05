@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
+import type { UserRole } from '../../auth/types/auth.types'
 import { getLesson } from '../api/lessons.api'
 import type { LessonDetail } from '../types/lesson.types'
 
@@ -12,7 +13,10 @@ interface UseLessonResult {
 
 // Plain useEffect/useState, matching useCourseDetail.ts — no
 // data-fetching library is installed in apps/web yet.
-export function useLesson(lessonId: string): UseLessonResult {
+export function useLesson(
+  lessonId: string,
+  viewerRole: UserRole = 'student',
+): UseLessonResult {
   const [data, setData] = useState<LessonDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
@@ -26,7 +30,7 @@ export function useLesson(lessonId: string): UseLessonResult {
       setError(null)
 
       try {
-        const lesson = await getLesson(lessonId)
+        const lesson = await getLesson(lessonId, viewerRole)
         if (!controller.signal.aborted) {
           setData(lesson)
         }
@@ -44,7 +48,7 @@ export function useLesson(lessonId: string): UseLessonResult {
     void load()
 
     return () => controller.abort()
-  }, [lessonId, refetchToken])
+  }, [lessonId, refetchToken, viewerRole])
 
   return {
     data,
