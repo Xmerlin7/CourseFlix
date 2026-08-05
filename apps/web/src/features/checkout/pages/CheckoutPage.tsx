@@ -165,7 +165,7 @@ export function CheckoutPage() {
 
       <div className="actions">
         <button className="btn big" onClick={() => void pay('success')} disabled={isConfirming}>
-          <span className="ms">payments</span>
+          <span className="ms" aria-hidden="true">payments</span>
           {isConfirming ? 'جاري الدفع...' : declined ? 'إعادة المحاولة' : 'ادفع الآن'}
         </button>
 
