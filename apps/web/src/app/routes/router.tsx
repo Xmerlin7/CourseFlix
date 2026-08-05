@@ -30,6 +30,9 @@ const StudentCourseDetailPage = lazy(() =>
 const StudentLessonPage = lazy(() =>
   import('../../features/lessons/pages/StudentLessonPage').then((m) => ({ default: m.StudentLessonPage }))
 )
+const StudentQuizPage = lazy(() =>
+  import('../../features/quizzes/pages/StudentQuizPage').then((m) => ({ default: m.StudentQuizPage }))
+)
 const StudentAssistantPage = lazy(() =>
   import('../../features/tutor/pages/StudentAssistantPage').then((m) => ({ default: m.StudentAssistantPage }))
 )
@@ -38,6 +41,9 @@ const TeacherDashboardPage = lazy(() =>
 )
 const TeacherCoursesPage = lazy(() =>
   import('../../features/teacher/pages/TeacherCoursesPage').then((m) => ({ default: m.TeacherCoursesPage }))
+)
+const TeacherStudentsPage = lazy(() =>
+  import('../../features/teacher/pages/TeacherStudentsPage').then((m) => ({ default: m.TeacherStudentsPage }))
 )
 const TeacherCourseCreatePage = lazy(() =>
   import('../../features/teacher/pages/TeacherCourseCreatePage').then((m) => ({ default: m.TeacherCourseCreatePage }))
@@ -192,6 +198,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTE_PATHS.STUDENT.QUIZ_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <StudentQuizPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
             path: ROUTE_PATHS.STUDENT.ASSISTANT,
             element: (
               <SuspenseWrapper>
@@ -262,6 +276,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTE_PATHS.TEACHER.STUDENTS,
+            element: (
+              <SuspenseWrapper>
+                <TeacherStudentsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
             path: ROUTE_PATHS.TEACHER.COURSE_CREATE,
             element: (
               <SuspenseWrapper>
@@ -274,6 +296,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <TeacherCourseDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.LESSON_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <StudentLessonPage />
               </SuspenseWrapper>
             ),
           },
