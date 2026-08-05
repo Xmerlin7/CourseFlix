@@ -34,7 +34,7 @@ export function TeacherLayout({ children }: PropsWithChildren) {
         <div className="sheet">
           <Topbar
             notificationCount={unreadCount}
-            onNotificationsClick={() => navigate(ROUTE_PATHS.TEACHER.NOTIFICATIONS)}
+            notificationsPath={ROUTE_PATHS.TEACHER.NOTIFICATIONS}
             onSettingsClick={() => {}}
             onLogoClick={() => navigate(ROUTE_PATHS.TEACHER.DASHBOARD)}
           />

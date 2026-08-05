@@ -1,15 +1,16 @@
+import { NotificationsBell } from './NotificationsBell'
 import { ThemeToggle } from './ThemeToggle'
 
 export type TopbarProps = {
   notificationCount: number
-  onNotificationsClick: () => void
+  notificationsPath: string
   onSettingsClick: () => void
   onLogoClick?: () => void
 }
 
 export function Topbar({
   notificationCount,
-  onNotificationsClick,
+  notificationsPath,
   onSettingsClick,
   onLogoClick,
 }: TopbarProps) {
@@ -30,14 +31,7 @@ export function Topbar({
 
       <ThemeToggle />
 
-      <button className="icon-btn" onClick={onNotificationsClick} aria-label="الإشعارات">
-        <span className="ms">notifications</span>
-        {notificationCount > 0 && (
-          <span className="badge">
-            {notificationCount > 99 ? '99+' : notificationCount}
-          </span>
-        )}
-      </button>
+      <NotificationsBell notificationCount={notificationCount} viewAllPath={notificationsPath} />
 
       <button className="icon-btn" onClick={onSettingsClick} aria-label="الإعدادات">
         <span className="ms">settings</span>
