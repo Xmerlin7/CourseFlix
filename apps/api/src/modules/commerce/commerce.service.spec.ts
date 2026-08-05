@@ -1,7 +1,6 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
-import { DataSource } from 'typeorm';
 import { CoursesService } from '../courses/courses.service';
 import { EnrollmentEntity } from '../enrollments/entities/enrollment.entity';
 import { CommerceService } from './commerce.service';
@@ -118,10 +117,9 @@ describe('CommerceService', () => {
         },
         { provide: CoursesService, useValue: coursesService },
         { provide: PAYMENT_ADAPTER, useValue: paymentAdapter },
-        // @InjectDataSource() resolves against the DataSource class token;
-        // each confirm test overrides the service's dataSource directly
+        // Each confirm test overrides the service's dataSource directly
         // with a manager-backed transaction mock.
-        { provide: DataSource, useValue: { transaction: jest.fn() } },
+        { provide: getDataSourceToken(), useValue: { transaction: jest.fn() } },
       ],
     }).compile();
 
