@@ -7,7 +7,7 @@ import {
   updateLesson,
   updateSection,
 } from '../api/teacher.api'
-import type { CourseDetail, CourseSection } from '../../courses/types/course.types'
+import type { CourseDetail, CourseLesson, CourseSection } from '../../courses/types/course.types'
 
 interface TeacherContentManagerProps {
   course: CourseDetail
@@ -36,6 +36,8 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
   const [lessonDrafts, setLessonDrafts] = useState<Record<string, LessonDraft>>({})
   const [busyLessonSectionId, setBusyLessonSectionId] = useState<string | null>(null)
   const [lessonErrorSectionId, setLessonErrorSectionId] = useState<string | null>(null)
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
+  const [lessonEditDraft, setLessonEditDraft] = useState<LessonDraft>(EMPTY_LESSON_DRAFT)
 
   const [busyEntityId, setBusyEntityId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -106,6 +108,41 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
       onChange()
     } catch {
       setActionError('تعذر حذف القسم')
+    } finally {
+      setBusyEntityId(null)
+    }
+  }
+
+  function startEditingLesson(lesson: CourseLesson) {
+    setEditingLessonId(lesson.id)
+    setLessonEditDraft({
+      title: lesson.title,
+      videoUrl: lesson.videoUrl ?? '',
+    })
+    setActionError(null)
+  }
+
+  function cancelEditingLesson() {
+    setEditingLessonId(null)
+    setLessonEditDraft(EMPTY_LESSON_DRAFT)
+  }
+
+  async function handleUpdateLesson(event: FormEvent<HTMLFormElement>, lessonId: string) {
+    event.preventDefault()
+    const title = lessonEditDraft.title.trim()
+    if (!title) return
+
+    setBusyEntityId(lessonId)
+    setActionError(null)
+    try {
+      await updateLesson(lessonId, {
+        title,
+        videoUrl: lessonEditDraft.videoUrl.trim() || null,
+      })
+      cancelEditingLesson()
+      onChange()
+    } catch {
+      setActionError('تعذر حفظ تعديلات الدرس')
     } finally {
       setBusyEntityId(null)
     }
@@ -213,40 +250,106 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
               </p>
             ) : (
               <div className="list">
-                {section.lessons.map((lesson) => (
-                  <div key={lesson.id} className="list-item">
-                    <span className="lead">
-                      <span className="ms">play_circle</span>
-                    </span>
-                    <span className="body">
-                      <span className="t">{lesson.title}</span>
-                      <span className="s">{lesson.videoUrl ?? 'بدون رابط فيديو'}</span>
-                    </span>
-                    <span className="end">
-                      <span className={`chip${lesson.status === 'published' ? ' green' : ' outline'}`}>
-                        {lesson.status === 'published' ? 'منشور' : 'مسودة'}
+                {section.lessons.map((lesson) => {
+                  const isEditing = editingLessonId === lesson.id
+
+                  return (
+                    <div key={lesson.id} className="list-item">
+                      <span className="lead">
+                        <span className="ms">play_circle</span>
                       </span>
-                      <button
-                        type="button"
-                        className="btn text"
-                        disabled={busyEntityId === lesson.id}
-                        onClick={() => void toggleLessonStatus(lesson)}
-                      >
-                        {lesson.status === 'published' ? 'إخفاء' : 'نشر'}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn text"
-                        disabled={busyEntityId === lesson.id}
-                        onClick={() => void handleDeleteLesson(lesson.id)}
-                        style={{ color: 'var(--error)' }}
-                        aria-label={`حذف درس ${lesson.title}`}
-                      >
-                        <span className="ms sm">delete</span>
-                      </button>
-                    </span>
-                  </div>
-                ))}
+                      {isEditing ? (
+                        <form
+                          onSubmit={(event) => void handleUpdateLesson(event, lesson.id)}
+                          className="body"
+                          style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                        >
+                          <input
+                            className="field"
+                            value={lessonEditDraft.title}
+                            onChange={(event) =>
+                              setLessonEditDraft((current) => ({
+                                ...current,
+                                title: event.target.value,
+                              }))
+                            }
+                            placeholder="اسم الدرس"
+                            maxLength={200}
+                          />
+                          <textarea
+                            className="field"
+                            rows={3}
+                            value={lessonEditDraft.videoUrl}
+                            onChange={(event) =>
+                              setLessonEditDraft((current) => ({
+                                ...current,
+                                videoUrl: event.target.value,
+                              }))
+                            }
+                            placeholder="رابط الفيديو أو كود embed من Bunny.net (اختياري)"
+                          />
+                          <span className="actions" style={{ gap: 6 }}>
+                            <button
+                              type="submit"
+                              className="btn tonal"
+                              disabled={!lessonEditDraft.title.trim() || busyEntityId === lesson.id}
+                            >
+                              <span className="ms sm">save</span>
+                              حفظ
+                            </button>
+                            <button
+                              type="button"
+                              className="btn text"
+                              disabled={busyEntityId === lesson.id}
+                              onClick={cancelEditingLesson}
+                            >
+                              إلغاء
+                            </button>
+                          </span>
+                        </form>
+                      ) : (
+                        <>
+                          <span className="body">
+                            <span className="t">{lesson.title}</span>
+                            <span className="s">{lesson.videoUrl ?? 'بدون رابط فيديو'}</span>
+                          </span>
+                          <span className="end">
+                            <span className={`chip${lesson.status === 'published' ? ' green' : ' outline'}`}>
+                              {lesson.status === 'published' ? 'منشور' : 'مسودة'}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn text"
+                              disabled={busyEntityId === lesson.id}
+                              onClick={() => startEditingLesson(lesson)}
+                            >
+                              <span className="ms sm">edit</span>
+                              تعديل
+                            </button>
+                            <button
+                              type="button"
+                              className="btn text"
+                              disabled={busyEntityId === lesson.id}
+                              onClick={() => void toggleLessonStatus(lesson)}
+                            >
+                              {lesson.status === 'published' ? 'إخفاء' : 'نشر'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn text"
+                              disabled={busyEntityId === lesson.id}
+                              onClick={() => void handleDeleteLesson(lesson.id)}
+                              style={{ color: 'var(--error)' }}
+                              aria-label={`حذف درس ${lesson.title}`}
+                            >
+                              <span className="ms sm">delete</span>
+                            </button>
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -268,10 +371,10 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
                 placeholder="اسم الدرس"
                 maxLength={200}
               />
-              <input
+              <textarea
                 className="field"
                 style={{ flex: 3, minWidth: 200 }}
-                type="url"
+                rows={3}
                 value={draft.videoUrl}
                 onChange={(event) =>
                   setLessonDrafts((current) => ({
@@ -279,7 +382,7 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
                     [section.id]: { ...draftFor(section.id), videoUrl: event.target.value },
                   }))
                 }
-                placeholder="رابط الفيديو (اختياري)"
+                placeholder="رابط الفيديو أو كود embed من Bunny.net (اختياري)"
               />
               <button
                 type="submit"

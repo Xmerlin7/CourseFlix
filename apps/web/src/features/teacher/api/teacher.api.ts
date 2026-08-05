@@ -7,6 +7,7 @@ import type {
   TeacherDashboard,
   TeacherLesson,
   TeacherSection,
+  TeacherStudentsResponse,
   UpdateLessonPayload,
   UpdateSectionPayload,
   UpdateTeacherCoursePayload,
@@ -18,6 +19,10 @@ export async function getTeacherDashboard(): Promise<TeacherDashboard> {
 
 export async function getTeacherCourses(filters: { status?: string } = {}): Promise<TeacherCourse[]> {
   return httpClient.get<TeacherCourse[]>('/teacher/courses', { searchParams: filters })
+}
+
+export async function getTeacherStudents(): Promise<TeacherStudentsResponse> {
+  return httpClient.get<TeacherStudentsResponse>('/teacher/students')
 }
 
 export async function createTeacherCourse(
