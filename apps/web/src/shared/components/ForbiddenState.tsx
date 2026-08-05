@@ -14,18 +14,18 @@ export function ForbiddenState({
 }: ForbiddenStateProps) {
   return (
     <div
-      className="flex flex-col items-center justify-center gap-2 py-16 px-6 text-center min-h-[60vh]"
+      className="flex min-h-[70vh] w-full flex-col items-center justify-center gap-3 px-6 py-16 text-center"
       role="alert"
     >
       {/* Illustration */}
-      <ForbiddenIllustration className="w-80 max-w-full h-auto" />
+      <ForbiddenIllustration className="w-96 max-w-full h-auto" />
 
       {/* Text content */}
-      <div className="space-y-2 max-w-md">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="space-y-2.5 max-w-md">
+        <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           {title}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+        <p className="text-base text-gray-500 dark:text-gray-400 leading-relaxed">
           {message}
         </p>
       </div>

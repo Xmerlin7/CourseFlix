@@ -88,7 +88,11 @@ const NotFoundStatePage = lazy(() =>
 export function RouteErrorBoundary() {
   const error = useRouteError()
   console.error('Route error caught by ErrorBoundary:', error)
-  return <ErrorState />
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center">
+      <ErrorState />
+    </div>
+  )
 }
 
 // Suspense helper for lazy-loaded route elements
@@ -296,22 +300,30 @@ export const router = createBrowserRouter([
     ],
   },
 
-  /* Status Pages */
+  /* Status Pages — full-viewport wrapper: these render with no
+     sidebar/topbar shell, so the state component (which only centers
+     itself within its own box, for when it's reused inline on a normal
+     page) needs an outer box the size of the actual screen to center
+     within. */
   {
     path: ROUTE_PATHS.FORBIDDEN,
     element: (
-      <SuspenseWrapper>
-        <ForbiddenStatePage />
-      </SuspenseWrapper>
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <SuspenseWrapper>
+          <ForbiddenStatePage />
+        </SuspenseWrapper>
+      </div>
     ),
     errorElement: <RouteErrorBoundary />,
   },
   {
     path: ROUTE_PATHS.NOT_FOUND,
     element: (
-      <SuspenseWrapper>
-        <NotFoundStatePage />
-      </SuspenseWrapper>
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <SuspenseWrapper>
+          <NotFoundStatePage />
+        </SuspenseWrapper>
+      </div>
     ),
     errorElement: <RouteErrorBoundary />,
   },
