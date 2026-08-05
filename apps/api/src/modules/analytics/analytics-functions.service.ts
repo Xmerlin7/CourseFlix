@@ -6,9 +6,12 @@ import type {
   AnalyticsIntentResult,
 } from './intent/analytics-intent-handler.interface';
 import { ANALYTICS_INTENTS } from './intent/analytics-intent-handler.interface';
+import { ActiveInterventionsIntentHandler } from './intent/active-interventions.handler';
 import { BestSellersIntentHandler } from './intent/best-sellers.handler';
+import { CourseCountIntentHandler } from './intent/course-count.handler';
 import { OrderCountIntentHandler } from './intent/order-count.handler';
 import { RevenueIntentHandler } from './intent/revenue.handler';
+import { StudentCountIntentHandler } from './intent/student-count.handler';
 
 /**
  * Permission-scoped analytics function registry (CF-TASK-070, CF-US-018).
@@ -32,8 +35,18 @@ export class AnalyticsFunctionsService {
     revenue: RevenueIntentHandler,
     orderCount: OrderCountIntentHandler,
     bestSellers: BestSellersIntentHandler,
+    studentCount: StudentCountIntentHandler,
+    courseCount: CourseCountIntentHandler,
+    activeInterventions: ActiveInterventionsIntentHandler,
   ) {
-    for (const handler of [revenue, orderCount, bestSellers]) {
+    for (const handler of [
+      revenue,
+      orderCount,
+      bestSellers,
+      studentCount,
+      courseCount,
+      activeInterventions,
+    ]) {
       this.registry.set(handler.name, handler);
     }
   }
