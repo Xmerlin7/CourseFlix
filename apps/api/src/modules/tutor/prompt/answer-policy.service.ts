@@ -8,7 +8,7 @@ export class AnswerPolicyService {
 
   getRelevantChunks(chunks: RetrievedChunk[]): RetrievedChunk[] {
     const maxDistance = Number(
-      this.configService.get<string>('TUTOR_MAX_DISTANCE') ?? 0.35,
+      this.configService.get<string>('TUTOR_MAX_DISTANCE') ?? 1.35,
     );
 
     return chunks.filter((chunk) => Number(chunk.score) <= maxDistance);
