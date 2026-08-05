@@ -21,7 +21,9 @@ async function run(): Promise<void> {
   await AppDataSource.initialize();
 
   try {
-    const summary = await runSeed(AppDataSource);
+    const summary = await runSeed(AppDataSource, {
+      resetTransactionalState: true,
+    });
     printSeedSummary(summary, 'Reset complete:');
   } finally {
     await AppDataSource.destroy();
