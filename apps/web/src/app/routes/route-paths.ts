@@ -12,6 +12,7 @@ export const ROUTE_PATHS = {
   STUDENT: {
     ROOT: '/student',
     DASHBOARD: '/student/dashboard',
+    BROWSE: '/student/browse',
     COURSES: '/student/courses',
     COURSE_DETAIL: '/student/courses/:courseId',
     ASSISTANT: '/student/courses/:courseId/assistant',

@@ -18,6 +18,9 @@ const RegisterPage = lazy(() =>
 const StudentDashboardPage = lazy(() =>
   import('../../features/student/pages/StudentDashboardPage').then((m) => ({ default: m.StudentDashboardPage }))
 )
+const StudentBrowseCoursesPage = lazy(() =>
+  import('../../features/student/pages/StudentBrowseCoursesPage').then((m) => ({ default: m.StudentBrowseCoursesPage }))
+)
 const StudentCoursesPage = lazy(() =>
   import('../../features/student/pages/StudentCoursesPage').then((m) => ({ default: m.StudentCoursesPage }))
 )
@@ -153,6 +156,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <StudentDashboardPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.BROWSE,
+            element: (
+              <SuspenseWrapper>
+                <StudentBrowseCoursesPage />
               </SuspenseWrapper>
             ),
           },

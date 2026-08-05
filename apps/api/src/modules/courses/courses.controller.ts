@@ -9,6 +9,11 @@ import { CoursesService } from './courses.service';
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
+  @Get()
+  listCatalog(@CurrentUser() user: AuthenticatedUser) {
+    return this.coursesService.listCatalog(user);
+  }
+
   @Get(':courseId')
   getCourseDetail(
     @Param('courseId') courseId: string,

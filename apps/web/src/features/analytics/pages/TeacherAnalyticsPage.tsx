@@ -34,15 +34,8 @@ export function TeacherAnalyticsPage() {
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="اكتب سؤالك هنا..."
           maxLength={500}
-          style={{
-            flex: 1,
-            background: 'var(--surface-container-high)',
-            border: '1.5px solid transparent',
-            borderRadius: 14,
-            padding: '13px 16px',
-            fontSize: '14.5px',
-            color: 'var(--on-surface)',
-          }}
+          className="field"
+          style={{ flex: 1 }}
         />
         <button type="submit" className="btn" disabled={!question.trim() || isLoading}>
           <span className="ms">send</span>

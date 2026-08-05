@@ -21,6 +21,7 @@ type NavItem = { path: string; label: string; icon: string }
 // slice ships, not before.
 const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.DASHBOARD, label: 'الرئيسية', icon: 'home' },
+  { path: ROUTE_PATHS.STUDENT.BROWSE, label: 'استكشف الدورات', icon: 'explore' },
   { path: ROUTE_PATHS.STUDENT.COURSES, label: 'دوراتي', icon: 'menu_book' },
   { path: ROUTE_PATHS.STUDENT.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
   { path: ROUTE_PATHS.STUDENT.INTERVENTIONS, label: 'نقاط تحتاج مراجعة', icon: 'monitoring' },

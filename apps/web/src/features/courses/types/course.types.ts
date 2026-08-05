@@ -18,6 +18,18 @@ export interface CourseSection {
 
 export type CourseStatus = 'draft' | 'published' | 'archived'
 
+export interface CourseCatalogItem {
+  id: string
+  title: string
+  description: string | null
+  coverImageUrl: string | null
+  gradeLevel: string | null
+  teacherName: string
+  priceMinor: number
+  currency: string
+  isEnrolled: boolean
+}
+
 export interface CourseDetail {
   id: string
   title: string

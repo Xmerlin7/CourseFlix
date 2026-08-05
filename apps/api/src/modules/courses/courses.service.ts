@@ -7,6 +7,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import {
+  COURSE_PRICE_MINOR,
+  DEFAULT_CURRENCY,
+} from '../commerce/commerce.constants';
+import { CourseCatalogItemDto } from './dto/course-catalog-item.dto';
 import { CourseDetailResponseDto } from './dto/course-detail-response.dto';
 import { CourseEntity, CourseStatus } from './entities/course.entity';
 import { SectionEntity, SectionStatus } from './entities/section.entity';
@@ -62,6 +67,39 @@ export class CoursesService {
     }
 
     return this.toDetailDto(course, canEdit);
+  }
+
+  // Deliberately not enrollment-gated, unlike getCourseDetail — this is
+  // the only way a student can discover a course to buy in the first
+  // place, so it stays lightweight (no sections/lessons/videoUrl) and
+  // published-only rather than reusing toDetailDto.
+  async listCatalog(viewer: AuthenticatedUser): Promise<CourseCatalogItemDto[]> {
+    const courses = await this.coursesRepository.find({
+      where: { status: 'published' },
+      relations: ['teacher'],
+      order: { createdAt: 'DESC' },
+    });
+
+    let enrolledCourseIds = new Set<string>();
+    if (viewer.role === 'student') {
+      const enrollments = await this.enrollmentsService.findStudentEnrollments(
+        viewer.id,
+        { status: 'active' },
+      );
+      enrolledCourseIds = new Set(enrollments.map((e) => e.courseId));
+    }
+
+    return courses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      coverImageUrl: course.coverImageUrl,
+      gradeLevel: course.gradeLevel,
+      teacherName: course.teacher!.fullName,
+      priceMinor: COURSE_PRICE_MINOR,
+      currency: DEFAULT_CURRENCY,
+      isEnrolled: enrolledCourseIds.has(course.id),
+    }));
   }
 
   async findOwnedCourses(
