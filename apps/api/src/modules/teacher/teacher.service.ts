@@ -1,9 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, IsNull, Repository } from 'typeorm';
+import { OrderItemEntity } from '../commerce/entities/order-item.entity';
+import { OrderEntity } from '../commerce/entities/order.entity';
 import { CoursesService } from '../courses/courses.service';
 import { CourseEntity, CourseStatus } from '../courses/entities/course.entity';
 import type { SectionEntity } from '../courses/entities/section.entity';
 import type { LessonEntity } from '../courses/entities/lesson.entity';
+import { UserEntity } from '../users/entities/user.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import {
+  EnrollmentEntity,
+  EnrollmentStatus,
+} from '../enrollments/entities/enrollment.entity';
+import { LessonsService, type LessonDetailResponse } from '../lessons/lessons.service';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CreateCourseDto } from '../courses/dto/create-course.dto';
 import { CreateSectionDto } from '../courses/dto/create-section.dto';
@@ -31,6 +41,44 @@ export interface TeacherDashboardResponse {
   recentCourses: Array<{ id: string; title: string; status: CourseStatus }>;
 }
 
+export interface TeacherStudentCourseSubscription {
+  id: string;
+  title: string;
+  status: CourseStatus;
+  enrollmentStatus: EnrollmentStatus;
+  enrolledAt: string;
+  revenueMinor: number;
+}
+
+export interface TeacherStudentListItem {
+  id: string;
+  fullName: string;
+  email: string;
+  status: UserEntity['status'];
+  joinedAt: string;
+  lastLoginAt: string | null;
+  isSubscribedToAnyCourse: boolean;
+  totalRevenueMinor: number;
+  courses: TeacherStudentCourseSubscription[];
+}
+
+export interface TeacherStudentsResponse {
+  currency: string;
+  totals: {
+    studentCount: number;
+    subscribedStudentCount: number;
+    unsubscribedStudentCount: number;
+    revenueMinor: number;
+  };
+  students: TeacherStudentListItem[];
+}
+
+interface TeacherStudentRevenueRow {
+  studentId: string;
+  courseId: string;
+  revenueMinor: string;
+}
+
 const VALID_COURSE_STATUSES: readonly CourseStatus[] = [
   'draft',
   'published',
@@ -56,6 +104,13 @@ export class TeacherService {
   constructor(
     private readonly coursesService: CoursesService,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly lessonsService: LessonsService,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(EnrollmentEntity)
+    private readonly teacherEnrollmentsRepository: Repository<EnrollmentEntity>,
+    @InjectRepository(OrderEntity)
+    private readonly teacherOrdersRepository: Repository<OrderEntity>,
   ) {}
 
   async getDashboard(teacherId: string): Promise<TeacherDashboardResponse> {
@@ -91,6 +146,104 @@ export class TeacherService {
       parseCourseStatus(status),
     );
     return courses.map((course) => this.toListItem(course));
+  }
+
+  async getStudents(teacherId: string): Promise<TeacherStudentsResponse> {
+    const [courses, students] = await Promise.all([
+      this.coursesService.findOwnedCourses(teacherId),
+      this.usersRepository.find({
+        where: { role: 'student', deletedAt: IsNull() },
+        order: { fullName: 'ASC', createdAt: 'ASC' },
+      }),
+    ]);
+
+    const courseIds = courses.map((course) => course.id);
+    const courseById = new Map(courses.map((course) => [course.id, course]));
+
+    const [enrollments, revenueRows] =
+      courseIds.length === 0
+        ? [[], []]
+        : await Promise.all([
+            this.teacherEnrollmentsRepository.find({
+              where: { courseId: In(courseIds), deletedAt: IsNull() },
+              order: { enrolledAt: 'DESC' },
+            }),
+            this.getStudentRevenueRows(courseIds),
+          ]);
+
+    const enrollmentsByStudent = new Map<string, EnrollmentEntity[]>();
+    for (const enrollment of enrollments) {
+      enrollmentsByStudent.set(enrollment.studentId, [
+        ...(enrollmentsByStudent.get(enrollment.studentId) ?? []),
+        enrollment,
+      ]);
+    }
+
+    const revenueByStudentCourse = new Map<string, number>();
+    const revenueByStudent = new Map<string, number>();
+    for (const row of revenueRows) {
+      const revenueMinor = Number(row.revenueMinor);
+      revenueByStudentCourse.set(
+        `${row.studentId}:${row.courseId}`,
+        revenueMinor,
+      );
+      revenueByStudent.set(
+        row.studentId,
+        (revenueByStudent.get(row.studentId) ?? 0) + revenueMinor,
+      );
+    }
+
+    const items = students.map<TeacherStudentListItem>((student) => {
+      const subscriptions = (enrollmentsByStudent.get(student.id) ?? [])
+        .map<TeacherStudentCourseSubscription | null>((enrollment) => {
+          const course = courseById.get(enrollment.courseId);
+          if (!course) return null;
+
+          return {
+            id: course.id,
+            title: course.title,
+            status: course.status,
+            enrollmentStatus: enrollment.status,
+            enrolledAt: enrollment.enrolledAt.toISOString(),
+            revenueMinor:
+              revenueByStudentCourse.get(`${student.id}:${course.id}`) ?? 0,
+          };
+        })
+        .filter(
+          (subscription): subscription is TeacherStudentCourseSubscription =>
+            subscription !== null,
+        );
+
+      return {
+        id: student.id,
+        fullName: student.fullName,
+        email: student.email,
+        status: student.status,
+        joinedAt: student.createdAt.toISOString(),
+        lastLoginAt: student.lastLoginAt?.toISOString() ?? null,
+        isSubscribedToAnyCourse: subscriptions.length > 0,
+        totalRevenueMinor: revenueByStudent.get(student.id) ?? 0,
+        courses: subscriptions,
+      };
+    });
+
+    const subscribedStudentCount = items.filter(
+      (student) => student.isSubscribedToAnyCourse,
+    ).length;
+
+    return {
+      currency: 'EGP',
+      totals: {
+        studentCount: items.length,
+        subscribedStudentCount,
+        unsubscribedStudentCount: items.length - subscribedStudentCount,
+        revenueMinor: items.reduce(
+          (sum, student) => sum + student.totalRevenueMinor,
+          0,
+        ),
+      },
+      students: items,
+    };
   }
 
   async updateCourse(
@@ -165,6 +318,13 @@ export class TeacherService {
     return this.coursesService.getLesson(lessonId, teacherId);
   }
 
+  async getLessonPlayer(
+    lessonId: string,
+    teacherId: string,
+  ): Promise<LessonDetailResponse> {
+    return this.lessonsService.getTeacherLessonDetail(lessonId, teacherId);
+  }
+
   async updateLesson(
     lessonId: string,
     teacherId: string,
@@ -194,5 +354,21 @@ export class TeacherService {
       gradeLevel: course.gradeLevel,
       status: course.status,
     };
+  }
+
+  private async getStudentRevenueRows(
+    courseIds: string[],
+  ): Promise<TeacherStudentRevenueRow[]> {
+    return this.teacherOrdersRepository
+      .createQueryBuilder('order')
+      .innerJoin(OrderItemEntity, 'item', 'item.order_id = order.id')
+      .where('order.status = :status', { status: 'paid' })
+      .andWhere('item.course_id IN (:...courseIds)', { courseIds })
+      .select('order.student_id', 'studentId')
+      .addSelect('item.course_id', 'courseId')
+      .addSelect('SUM(item.price_minor)', 'revenueMinor')
+      .groupBy('order.student_id')
+      .addGroupBy('item.course_id')
+      .getRawMany<TeacherStudentRevenueRow>();
   }
 }

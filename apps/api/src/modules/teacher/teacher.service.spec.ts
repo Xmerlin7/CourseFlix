@@ -1,7 +1,12 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { OrderEntity } from '../commerce/entities/order.entity';
 import { CoursesService } from '../courses/courses.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { EnrollmentEntity } from '../enrollments/entities/enrollment.entity';
+import { LessonsService } from '../lessons/lessons.service';
+import { UserEntity } from '../users/entities/user.entity';
 import { TeacherService } from './teacher.service';
 
 describe('TeacherService', () => {
@@ -11,6 +16,10 @@ describe('TeacherService', () => {
     updateCourseMetadata: jest.Mock;
   };
   let enrollmentsService: { countActiveStudentsByCourseIds: jest.Mock };
+  let lessonsService: { getTeacherLessonDetail: jest.Mock };
+  let usersRepository: { find: jest.Mock };
+  let teacherEnrollmentsRepository: { find: jest.Mock };
+  let teacherOrdersRepository: { createQueryBuilder: jest.Mock };
 
   const teacherId = 'teacher-1';
 
@@ -39,12 +48,26 @@ describe('TeacherService', () => {
       updateCourseMetadata: jest.fn(),
     };
     enrollmentsService = { countActiveStudentsByCourseIds: jest.fn() };
+    lessonsService = { getTeacherLessonDetail: jest.fn() };
+    usersRepository = { find: jest.fn() };
+    teacherEnrollmentsRepository = { find: jest.fn() };
+    teacherOrdersRepository = { createQueryBuilder: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         TeacherService,
         { provide: CoursesService, useValue: coursesService },
         { provide: EnrollmentsService, useValue: enrollmentsService },
+        { provide: LessonsService, useValue: lessonsService },
+        { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
+        {
+          provide: getRepositoryToken(EnrollmentEntity),
+          useValue: teacherEnrollmentsRepository,
+        },
+        {
+          provide: getRepositoryToken(OrderEntity),
+          useValue: teacherOrdersRepository,
+        },
       ],
     }).compile();
 
@@ -99,6 +122,93 @@ describe('TeacherService', () => {
         teacherId,
         'published',
       );
+    });
+  });
+
+  describe('getStudents', () => {
+    it('lists all platform students with their teacher-course subscriptions and revenue', async () => {
+      coursesService.findOwnedCourses.mockResolvedValue(courses);
+      usersRepository.find.mockResolvedValue([
+        {
+          id: 'student-1',
+          fullName: 'طالب مشترك',
+          email: 'subscribed@example.com',
+          status: 'active',
+          createdAt: new Date('2026-08-01T10:00:00.000Z'),
+          lastLoginAt: null,
+        },
+        {
+          id: 'student-2',
+          fullName: 'طالب غير مشترك',
+          email: 'unsubscribed@example.com',
+          status: 'active',
+          createdAt: new Date('2026-08-01T11:00:00.000Z'),
+          lastLoginAt: new Date('2026-08-03T11:00:00.000Z'),
+        },
+      ]);
+      teacherEnrollmentsRepository.find.mockResolvedValue([
+        {
+          studentId: 'student-1',
+          courseId: 'course-1',
+          status: 'active',
+          enrolledAt: new Date('2026-08-02T10:00:00.000Z'),
+        },
+      ]);
+
+      const queryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        addGroupBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([
+          {
+            studentId: 'student-1',
+            courseId: 'course-1',
+            revenueMinor: '50000',
+          },
+        ]),
+      };
+      teacherOrdersRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      const result = await teacherService.getStudents(teacherId);
+
+      expect(usersRepository.find).toHaveBeenCalledWith({
+        where: { role: 'student', deletedAt: expect.anything() },
+        order: { fullName: 'ASC', createdAt: 'ASC' },
+      });
+      expect(teacherEnrollmentsRepository.find).toHaveBeenCalled();
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'item.course_id IN (:...courseIds)',
+        { courseIds: ['course-1', 'course-2'] },
+      );
+      expect(result.totals).toEqual({
+        studentCount: 2,
+        subscribedStudentCount: 1,
+        unsubscribedStudentCount: 1,
+        revenueMinor: 50000,
+      });
+      expect(result.students[0]).toMatchObject({
+        id: 'student-1',
+        isSubscribedToAnyCourse: true,
+        totalRevenueMinor: 50000,
+        courses: [
+          {
+            id: 'course-1',
+            title: 'الميكانيكا الكلاسيكية',
+            enrollmentStatus: 'active',
+            revenueMinor: 50000,
+          },
+        ],
+      });
+      expect(result.students[1]).toMatchObject({
+        id: 'student-2',
+        isSubscribedToAnyCourse: false,
+        totalRevenueMinor: 0,
+        courses: [],
+      });
     });
   });
 

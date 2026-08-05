@@ -42,6 +42,11 @@ export class TeacherController {
     return this.teacherService.getCourses(user.id, status);
   }
 
+  @Get('students')
+  getStudents(@CurrentUser() user: AuthenticatedUser) {
+    return this.teacherService.getStudents(user.id);
+  }
+
   @Post('courses')
   @HttpCode(HttpStatus.CREATED)
   async createCourse(
@@ -134,6 +139,14 @@ export class TeacherController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.teacherService.getLesson(lessonId, user.id);
+  }
+
+  @Get('lessons/:lessonId/player')
+  async getLessonPlayer(
+    @Param('lessonId') lessonId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.teacherService.getLessonPlayer(lessonId, user.id);
   }
 
   @Patch('lessons/:lessonId')
