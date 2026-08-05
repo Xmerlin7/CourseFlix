@@ -2,15 +2,18 @@ import AppDataSource from './data-source';
 import { runSeed, printSeedSummary } from './seed-runner';
 
 /**
- * Central seed runner (`npm run seed` in apps/api). Resets to the same
+ * Central seed runner (`npm run seed` in apps/api). Restores/updates the
  * demo fixture every time it's run: two teachers, ten students, seven
  * courses (covering every status and both school stages) with sections and
  * lessons, enrollments fanned across them, one playable video per lesson,
  * document rows in every processing status, and a notification feed per
  * user.
  *
- * Every step upserts, so running it twice in a row produces the same state
- * (sprint2-plan.md §12). Run migrations first (`npm run migration:run`).
+ * Every fixture step upserts, so running it twice in a row is safe
+ * (sprint2-plan.md §12). Unlike `reset`, routine seeding preserves
+ * checkout orders and purchase-created enrollments so local "My courses"
+ * state survives `./dev.sh` restarts. Run migrations first
+ * (`npm run migration:run`).
  *
  * The actual seeding logic lives in `seed-runner.ts` so `reset.ts` (and
  * `reset-check.ts`) share the exact same fixture instead of a second copy
