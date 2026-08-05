@@ -54,7 +54,7 @@ describe('InterventionsService', () => {
     notificationPort = { notify: jest.fn().mockResolvedValue(undefined) };
     agentLogPort = { record: jest.fn().mockResolvedValue(undefined) };
     miniQuizService = {
-      generateForIntervention: jest.fn().mockResolvedValue(undefined),
+      generateForIntervention: jest.fn().mockResolvedValue('mini-quiz-1'),
     };
 
     queryRunner = {
@@ -174,7 +174,7 @@ describe('InterventionsService', () => {
       expect(agentLogPort.record).not.toHaveBeenCalled();
     });
 
-    it('reconciles the student notification, teacher notification, and agent log to the same intervention ID', async () => {
+    it('sends the student directly to the generated mini quiz and keeps teacher/log tied to the intervention', async () => {
       await service.evaluateSignal({
         kind: 'quiz_score',
         studentId,
@@ -185,10 +185,23 @@ describe('InterventionsService', () => {
       });
 
       const notifyCalls = notificationPort.notify.mock.calls as Array<
-        [{ relatedEntityId: string }]
+        [
+          {
+            type: string;
+            relatedEntityType: string;
+            relatedEntityId: string;
+          },
+        ]
       >;
       expect(notifyCalls).toHaveLength(2);
-      expect(notifyCalls[0][0].relatedEntityId).toBe('intervention-1');
+      expect(notifyCalls[0][0]).toEqual(
+        expect.objectContaining({
+          type: 'quiz_ready',
+          relatedEntityType: 'mini_quiz',
+          relatedEntityId: 'mini-quiz-1',
+        }),
+      );
+      expect(notifyCalls[1][0].relatedEntityType).toBe('intervention');
       expect(notifyCalls[1][0].relatedEntityId).toBe('intervention-1');
 
       const [logCall] = agentLogPort.record.mock.calls[0] as [
@@ -196,6 +209,34 @@ describe('InterventionsService', () => {
       ];
       expect(logCall.targetEntityId).toBe('intervention-1');
       expect(logCall.agentType).toBe('proactive_proctor');
+    });
+
+    it('falls back to an intervention notification when mini quiz generation fails', async () => {
+      miniQuizService.generateForIntervention.mockResolvedValueOnce(null);
+
+      await service.evaluateSignal({
+        kind: 'quiz_score',
+        studentId,
+        courseId: course.id,
+        weakConcept: 'قوانين نيوتن',
+        scorePercent: 40,
+        evidenceRefId: 'submission-1',
+      });
+
+      const [studentNotification] = notificationPort.notify.mock.calls[0] as [
+        {
+          type: string;
+          relatedEntityType: string;
+          relatedEntityId: string;
+        },
+      ];
+      expect(studentNotification).toEqual(
+        expect.objectContaining({
+          type: 'progress_report',
+          relatedEntityType: 'intervention',
+          relatedEntityId: 'intervention-1',
+        }),
+      );
     });
   });
 

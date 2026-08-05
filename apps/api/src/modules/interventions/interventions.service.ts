@@ -163,11 +163,17 @@ export class InterventionsService implements InterventionEvaluatorPort {
       await queryRunner.release();
     }
 
-    await this.notifyAndLog(intervention, course.teacherId, weakConcept);
-
     // Nabile N-1: attach the deterministic mini-quiz. MiniQuizService
     // never throws (a quiz failure must not break the intervention).
-    await this.miniQuizService.generateForIntervention(intervention);
+    const miniQuizId =
+      await this.miniQuizService.generateForIntervention(intervention);
+
+    await this.notifyAndLog(
+      intervention,
+      course.teacherId,
+      weakConcept,
+      miniQuizId,
+    );
   }
 
   async listForStudent(
@@ -216,16 +222,28 @@ export class InterventionsService implements InterventionEvaluatorPort {
     intervention: InterventionEntity,
     teacherId: string,
     weakConcept: string,
+    miniQuizId: string | null,
   ): Promise<void> {
+    const studentNotification = miniQuizId
+      ? {
+          userId: intervention.studentId,
+          type: 'quiz_ready',
+          title: 'اختبار قصير جاهز للمراجعة',
+          message: `يبدو إنك محتاج تراجع "${weakConcept}". افتح الاختبار القصير وراجع النقطة دي بسرعة.`,
+          relatedEntityType: 'mini_quiz',
+          relatedEntityId: miniQuizId,
+        }
+      : {
+          userId: intervention.studentId,
+          type: 'progress_report',
+          title: 'تم رصد نقطة تحتاج مراجعة',
+          message: `يبدو إنك محتاج تراجع "${weakConcept}"، هنجهزلك اختبار قصير.`,
+          relatedEntityType: 'intervention',
+          relatedEntityId: intervention.id,
+        };
+
     const results = await Promise.allSettled([
-      this.notificationPort.notify({
-        userId: intervention.studentId,
-        type: 'progress_report',
-        title: 'تم رصد نقطة تحتاج مراجعة',
-        message: `يبدو إنك محتاج تراجع "${weakConcept}"، هنجهزلك اختبار قصير.`,
-        relatedEntityType: 'intervention',
-        relatedEntityId: intervention.id,
-      }),
+      this.notificationPort.notify(studentNotification),
       this.notificationPort.notify({
         userId: teacherId,
         type: 'progress_report',
