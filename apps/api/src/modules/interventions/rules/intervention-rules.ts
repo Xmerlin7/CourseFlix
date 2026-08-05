@@ -14,6 +14,19 @@ export const LOW_QUIZ_SCORE_THRESHOLD_PERCENT = 60;
 // Deliberately literal, matching sprint3-plan.md's exact demo phrases —
 // not a general sentiment classifier.
 const CONFUSION_PHRASES = ['مش فاهم', "i don't understand"];
+const CONFUSION_PATTERNS = [
+  /مش فاهم(?:ة|ه)?/,
+  /مش مستوعب(?:ة)?/,
+  /مش واضح/,
+  /مفهمتش/,
+  /مو فاهم/,
+  /مش عارف افهم/,
+  /مش عارف أفهم/,
+  /i don't understand/,
+  /i do not understand/,
+  /i'm confused/,
+  /i am confused/,
+];
 
 function normalize(text: string): string {
   return text.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -25,7 +38,10 @@ export function evaluateLowQuizScore(scorePercent: number): boolean {
 
 export function detectExplicitConfusionPhrase(messageText: string): boolean {
   const normalized = normalize(messageText);
-  return CONFUSION_PHRASES.some((phrase) => normalized.includes(phrase));
+  return (
+    CONFUSION_PHRASES.some((phrase) => normalized.includes(phrase)) ||
+    CONFUSION_PATTERNS.some((pattern) => pattern.test(normalized))
+  );
 }
 
 // A student asking the exact same normalized question again, in the

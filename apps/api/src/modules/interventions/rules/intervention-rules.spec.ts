@@ -29,6 +29,13 @@ describe('detectExplicitConfusionPhrase', () => {
     ).toBe(true);
   });
 
+  it.each(['مش فاهمة الدرس', 'مش مستوعب الفكرة', 'الموضوع مش واضح', 'مفهمتش'])(
+    'detects common Arabic confusion wording: %s',
+    (message) => {
+      expect(detectExplicitConfusionPhrase(message)).toBe(true);
+    },
+  );
+
   it('does not trigger on unrelated text', () => {
     expect(detectExplicitConfusionPhrase('ممكن توضح لي أكتر؟')).toBe(false);
   });
