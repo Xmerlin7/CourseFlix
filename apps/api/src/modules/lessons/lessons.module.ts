@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { LessonEntity } from '../courses/entities/lesson.entity';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { SessionsModule } from '../sessions/sessions.module';
@@ -13,6 +14,7 @@ import { LessonsService } from './lessons.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
+      CourseEntity,
       LessonEntity,
       VideoEntity,
       ContentProgressEntity,
@@ -25,5 +27,6 @@ import { LessonsService } from './lessons.service';
   ],
   controllers: [LessonsController],
   providers: [LessonsService, AttendanceService],
+  exports: [LessonsService],
 })
 export class LessonsModule {}

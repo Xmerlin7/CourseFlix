@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { LessonEntity } from '../courses/entities/lesson.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { AttendanceService } from './attendance.service';
@@ -11,8 +12,12 @@ import { LessonsService } from './lessons.service';
 describe('LessonsService', () => {
   let lessonsService: LessonsService;
   let lessonsRepository: { findOne: jest.Mock };
-  let videosRepository: { findOne: jest.Mock };
+  let coursesRepository: {
+    createQueryBuilder: jest.Mock;
+  };
+  let videosRepository: { find: jest.Mock; findOne: jest.Mock };
   let progressRepository: {
+    find: jest.Mock;
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
@@ -25,23 +30,71 @@ describe('LessonsService', () => {
   const courseId = 'course-1';
   const lessonId = 'lesson-1';
   const videoId = 'video-1';
+  const completedLessonId = 'lesson-2';
+  const completedVideoId = 'video-2';
 
   const lesson = {
     id: lessonId,
     courseId,
+    sectionId: 'section-1',
     title: 'الدرس الأول',
   } as LessonEntity;
+  const course = {
+    id: courseId,
+    title: 'فيزياء',
+    teacherId: 'teacher-1',
+    sections: [
+      {
+        id: 'section-1',
+        title: 'القسم الأول',
+        sortOrder: 1,
+        lessons: [
+          {
+            id: lessonId,
+            title: 'الدرس الأول',
+            sortOrder: 1,
+          },
+          {
+            id: completedLessonId,
+            title: 'الدرس المكتمل',
+            sortOrder: 2,
+          },
+        ],
+      },
+    ],
+  } as CourseEntity;
   // 200s of a 400s video = 50%.
   const video = {
     id: videoId,
+    lessonId,
     videoUrl: 'https://example.test/video.mp4',
     durationSeconds: 400,
+  } as VideoEntity;
+  const completedVideo = {
+    id: completedVideoId,
+    lessonId: completedLessonId,
+    videoUrl: 'https://example.test/completed.mp4',
+    durationSeconds: 300,
   } as VideoEntity;
 
   beforeEach(async () => {
     lessonsRepository = { findOne: jest.fn().mockResolvedValue(lesson) };
-    videosRepository = { findOne: jest.fn().mockResolvedValue(video) };
+    coursesRepository = {
+      createQueryBuilder: jest.fn(() => ({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(course),
+      })),
+    };
+    videosRepository = {
+      find: jest.fn().mockResolvedValue([video, completedVideo]),
+      findOne: jest.fn().mockResolvedValue(video),
+    };
     progressRepository = {
+      find: jest.fn().mockResolvedValue([]),
       findOne: jest.fn().mockResolvedValue(null),
       create: jest.fn((input: Partial<ContentProgressEntity>) => input),
       save: jest.fn((input: Partial<ContentProgressEntity>) => ({
@@ -65,6 +118,10 @@ describe('LessonsService', () => {
           useValue: lessonsRepository,
         },
         {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
+        {
           provide: getRepositoryToken(VideoEntity),
           useValue: videosRepository,
         },
@@ -84,6 +141,23 @@ describe('LessonsService', () => {
     it('returns the zero-state on a first visit, not a 404', async () => {
       const result = await lessonsService.getLessonDetail(lessonId, studentId);
 
+      expect(result.course).toMatchObject({
+        id: courseId,
+        title: 'فيزياء',
+        currentSectionId: 'section-1',
+      });
+      expect(result.course.sections[0].lessons).toEqual([
+        expect.objectContaining({
+          id: lessonId,
+          progressStatus: 'not_started',
+          watchedPercentage: 0,
+        }),
+        expect.objectContaining({
+          id: completedLessonId,
+          progressStatus: 'not_started',
+          watchedPercentage: 0,
+        }),
+      ]);
       expect(result.progress).toEqual({
         lastPositionSeconds: 0,
         watchedPercentage: 0,
@@ -104,6 +178,24 @@ describe('LessonsService', () => {
         lastPositionSeconds: 120,
         watchedPercentage: 45,
         status: 'in_progress',
+      });
+    });
+
+    it('returns per-lesson progress in the course outline', async () => {
+      progressRepository.find.mockResolvedValue([
+        {
+          videoId: completedVideoId,
+          progressPercentage: '100.00',
+          status: 'completed',
+        },
+      ]);
+
+      const result = await lessonsService.getLessonDetail(lessonId, studentId);
+
+      expect(result.course.sections[0].lessons[1]).toMatchObject({
+        id: completedLessonId,
+        progressStatus: 'completed',
+        watchedPercentage: 100,
       });
     });
 
@@ -192,6 +284,28 @@ describe('LessonsService', () => {
 
       expect(first.watchedPercentage).toBe(50);
       expect(second.watchedPercentage).toBe(50);
+    });
+
+    it('uses the client-reported duration when the stored video duration is missing', async () => {
+      videosRepository.findOne.mockResolvedValue({
+        ...video,
+        durationSeconds: null,
+      });
+      progressRepository.findOne.mockResolvedValue(null);
+
+      const result = await lessonsService.updateProgress(lessonId, studentId, {
+        positionSeconds: 60,
+        watchedSeconds: 60,
+        durationSeconds: 600,
+      });
+
+      expect(result.watchedPercentage).toBe(10);
+      expect(progressRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          progressPercentage: '10.00',
+          status: 'in_progress',
+        }),
+      );
     });
 
     it('seek-back then replay does not inflate progress', async () => {
