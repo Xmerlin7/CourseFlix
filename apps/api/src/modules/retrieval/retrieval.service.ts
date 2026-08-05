@@ -1,7 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ChromaClient, Collection } from 'chromadb';
+import type { EmbeddingFunction as ChromaEmbeddingFunction } from 'chromadb';
 import {
   RetrievalPort,
   SearchQueryInput,
@@ -24,6 +26,24 @@ interface ChromaQueryResult {
   documents?: (string | null)[][];
 }
 
+const explicitEmbeddingsOnly: ChromaEmbeddingFunction = {
+  name: 'courseflix-explicit-embeddings',
+  async generate(): Promise<number[][]> {
+    throw new Error('CourseFlix passes embeddings explicitly to ChromaDB');
+  },
+};
+
+function isChromaNotFoundError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return (
+    error.name === 'ChromaNotFoundError' ||
+    error.message.toLowerCase().includes('resource could not be found')
+  );
+}
+
 @Injectable()
 export class RetrievalService implements RetrievalPort {
   private readonly logger = new Logger(RetrievalService.name);
@@ -31,6 +51,7 @@ export class RetrievalService implements RetrievalPort {
 
   constructor(
     private readonly configService: ConfigService,
+    @InjectDataSource()
     private readonly dataSource: DataSource,
     @Inject(EMBEDDING_PROVIDER)
     private readonly embeddingProvider: EmbeddingProvider,
@@ -49,6 +70,7 @@ export class RetrievalService implements RetrievalPort {
     const client = new ChromaClient({ path: chromaUrl });
     this.collection = await client.getOrCreateCollection({
       name: collectionName,
+      embeddingFunction: explicitEmbeddingsOnly,
     });
 
     return this.collection;
@@ -57,7 +79,8 @@ export class RetrievalService implements RetrievalPort {
   /**
    * Queries ChromaDB vector store with mandatory course-level isolation filter.
    *
-   * Filter rule: `where: { courseId: input.courseId, isActive: true }`
+   * Filter rule:
+   * `where: { $and: [{ courseId: input.courseId }, { isActive: true }] }`
    *
    * Joins retrieved vector IDs with Postgres `document_chunks` table to populate
    * exact page numbers and document IDs.
@@ -78,17 +101,18 @@ export class RetrievalService implements RetrievalPort {
       return [];
     }
 
-    const collection = await this.getCollection();
-
     // Mandatory courseId and isActive isolation filter
-    const queryResponse = (await collection.query({
+    const chromaQuery: Parameters<Collection['query']>[0] = {
       queryEmbeddings: [queryVector],
       nResults: topK,
       where: {
-        courseId,
-        isActive: true,
+        $and: [{ courseId } as Record<string, string>, { isActive: true }],
       },
-    })) as unknown as ChromaQueryResult;
+    };
+
+    const queryResponse = (await this.queryCollectionWithRetry(
+      chromaQuery,
+    )) as unknown as ChromaQueryResult;
 
     const ids = queryResponse.ids?.[0] || [];
     const distances = queryResponse.distances?.[0] || [];
@@ -137,5 +161,24 @@ export class RetrievalService implements RetrievalPort {
     }
 
     return results;
+  }
+
+  private async queryCollectionWithRetry(
+    query: Parameters<Collection['query']>[0],
+  ): Promise<unknown> {
+    const collection = await this.getCollection();
+
+    try {
+      return await collection.query(query);
+    } catch (error) {
+      if (!isChromaNotFoundError(error)) {
+        throw error;
+      }
+
+      this.logger.warn('Chroma collection handle was stale; reconnecting');
+      this.collection = null;
+      const refreshedCollection = await this.getCollection();
+      return refreshedCollection.query(query);
+    }
   }
 }

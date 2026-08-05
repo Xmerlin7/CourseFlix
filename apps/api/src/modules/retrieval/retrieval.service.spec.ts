@@ -5,8 +5,7 @@ import { MockEmbeddingProvider } from './embedding.adapter';
 
 interface MockQueryOptions {
   where: {
-    courseId: string;
-    isActive: boolean;
+    $and: [{ courseId: string }, { isActive: boolean }];
   };
 }
 
@@ -62,11 +61,10 @@ describe('RetrievalService (Isolation Proof)', () => {
 
       // Verify mandatory isolation filter
       expect(whereClause).toEqual({
-        courseId: courseA,
-        isActive: true,
+        $and: [{ courseId: courseA }, { isActive: true }],
       });
 
-      if (whereClause.courseId === courseA) {
+      if (whereClause.$and[0].courseId === courseA) {
         return Promise.resolve({
           ids: [[`${docAId}:1:0`]],
           distances: [[0.05]],
@@ -129,7 +127,7 @@ describe('RetrievalService (Isolation Proof)', () => {
       [MockQueryOptions]
     >;
     const chromaCallArgs = calls[0][0];
-    expect(chromaCallArgs.where.courseId).not.toBe(courseB);
+    expect(chromaCallArgs.where.$and[0].courseId).not.toBe(courseB);
     expect(results.some((r) => r.documentId === docBId)).toBe(false);
   });
 
@@ -137,8 +135,7 @@ describe('RetrievalService (Isolation Proof)', () => {
     // 1. Mock ChromaDB response with isActive: true filter
     mockCollection.query.mockImplementation((options: MockQueryOptions) => {
       expect(options.where).toEqual({
-        courseId: courseA,
-        isActive: true,
+        $and: [{ courseId: courseA }, { isActive: true }],
       });
 
       // Returns active version 2 chunk only
