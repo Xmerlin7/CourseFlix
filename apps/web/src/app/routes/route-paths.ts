@@ -47,6 +47,8 @@ export const ROUTE_PATHS = {
     CREATE_ADMIN: '/admin/users/new',
     COURSES: '/admin/courses',
     COURSE_DETAIL: '/admin/courses/:courseId',
+    ORDERS: '/admin/orders',
+    ORDER_DETAIL: '/admin/orders/:orderId',
     NOTIFICATIONS: '/admin/notifications',
   },
 } as const

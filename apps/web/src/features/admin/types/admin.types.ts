@@ -64,3 +64,34 @@ export interface UpdateAdminCoursePayload {
   gradeLevel?: string | null
   status?: 'draft' | 'published'
 }
+
+export type OrderStatus = 'pending' | 'paid' | 'failed'
+
+export interface AdminOrderListItem {
+  id: string
+  studentId: string
+  studentName: string
+  status: OrderStatus
+  paymentStatus: OrderStatus
+  currency: string
+  totalMinor: number
+  createdAt: string
+  paidAt: string | null
+}
+
+export interface AdminOrderDetail extends AdminOrderListItem {
+  items: Array<{ courseId: string; title: string; priceMinor: number }>
+  payments: Array<{
+    id: string
+    attemptNo: number
+    status: OrderStatus
+    method: string
+    externalRef: string | null
+    createdAt: string
+  }>
+}
+
+export interface AdminOrdersFilter {
+  status?: OrderStatus
+  studentId?: string
+}
