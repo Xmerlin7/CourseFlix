@@ -30,6 +30,7 @@ export class QuizEntity {
     string | null;
 
   @Column({
+    name: 'generation_type',
     type: 'enum',
     enum: ['manual', 'rag_generated'],
     enumName: 'quiz_generation_type',
