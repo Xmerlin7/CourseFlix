@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { memoryStorage } from 'multer';
 import { JobsModule } from '../jobs/jobs.module';
 import { CourseEntity } from '../courses/entities/course.entity';
+import { SectionEntity } from '../courses/entities/section.entity';
+import { LessonEntity } from '../courses/entities/lesson.entity';
 import { SessionsModule } from '../sessions/sessions.module';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
@@ -16,7 +18,13 @@ import {
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DocumentEntity, FileEntity, CourseEntity]),
+    TypeOrmModule.forFeature([
+      DocumentEntity,
+      FileEntity,
+      CourseEntity,
+      SectionEntity,
+      LessonEntity,
+    ]),
     // Buffered in memory, not disk — DocumentsService needs the raw
     // bytes for the SHA-256 checksum and the PDF magic-byte check
     // before LocalStorageAdapter ever writes to STORAGE_ROOT.

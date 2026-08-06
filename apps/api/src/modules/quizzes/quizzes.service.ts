@@ -113,7 +113,9 @@ export class QuizzesService {
     quizId: string,
     studentId: string,
   ): Promise<StudentQuizResponse> {
-    const quiz = await this.quizRepo.findOne({ where: { id: quizId } });
+    const quiz = await this.quizRepo.findOne({
+      where: { id: quizId, status: 'published' },
+    });
     if (!quiz) throw new NotFoundException('Quiz not found');
     await this.enrollmentsService.assertStudentEnrolled(
       studentId,
@@ -168,7 +170,9 @@ export class QuizzesService {
     total: number;
     answers: Array<{ questionId: string; isCorrect: boolean }>;
   }> {
-    const quiz = await this.quizRepo.findOne({ where: { id: quizId } });
+    const quiz = await this.quizRepo.findOne({
+      where: { id: quizId, status: 'published' },
+    });
     if (!quiz) throw new NotFoundException('Quiz not found');
     await this.enrollmentsService.assertStudentEnrolled(
       studentId,
@@ -266,7 +270,7 @@ export class QuizzesService {
     );
 
     const quizzes = await this.quizRepo.find({
-      where: { lessonId, deletedAt: IsNull() },
+      where: { lessonId, deletedAt: IsNull(), status: 'published' },
     });
     return this.buildSummaries(quizzes, studentId);
   }
@@ -285,7 +289,7 @@ export class QuizzesService {
     );
 
     const quizzes = await this.quizRepo.find({
-      where: { sectionId, deletedAt: IsNull() },
+      where: { sectionId, deletedAt: IsNull(), status: 'published' },
     });
     return this.buildSummaries(quizzes, studentId);
   }
@@ -301,7 +305,7 @@ export class QuizzesService {
     await this.enrollmentsService.assertStudentEnrolled(studentId, courseId);
 
     const quizzes = await this.quizRepo.find({
-      where: { courseId, deletedAt: IsNull() },
+      where: { courseId, deletedAt: IsNull(), status: 'published' },
       order: { createdAt: 'DESC' },
     });
     return this.buildSummaries(quizzes, studentId);
@@ -370,8 +374,11 @@ export class QuizzesService {
   ): Promise<TeacherQuizResponse[]> {
     await this.assertTeacherOwnsCourse(teacherId, courseId);
 
+    // AI drafts awaiting review live in the exam-generation review screen,
+    // not here — they only show up in this list once the teacher accepts
+    // them (which flips them to 'published').
     const quizzes = await this.quizRepo.find({
-      where: { courseId, deletedAt: IsNull() },
+      where: { courseId, deletedAt: IsNull(), status: 'published' },
     });
 
     const results: TeacherQuizResponse[] = [];
