@@ -19,6 +19,18 @@ function getServerMessage(error: ApiError): string | null {
   return null
 }
 
+// Same host check StudentLessonPage uses — most seeded/ingested lesson
+// videos are plain MP4 URLs (playable with a <video> tag), only Bunny
+// Stream lessons need an <iframe> embed.
+function isBunnyStreamPlayerHost(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '').toLowerCase()
+    return ['iframe.mediadelivery.net', 'player.mediadelivery.net'].includes(hostname)
+  } catch {
+    return false
+  }
+}
+
 export function AdminCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
@@ -125,7 +137,7 @@ export function AdminCourseDetailPage() {
           void handleSaveProfile()
         }}
         className="card section"
-        style={{ maxWidth: 640, margin: '0 auto' }}
+        style={{ maxWidth: 640, marginInline: 'auto' }}
       >
         <div className="tf">
           <label htmlFor="admin-course-title">العنوان</label>
@@ -186,7 +198,7 @@ export function AdminCourseDetailPage() {
       </form>
 
       {data.status !== 'archived' && (
-        <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div className="card section" style={{ maxWidth: 640, marginInline: 'auto' }}>
           <div className="tf">
             <label htmlFor="admin-course-status">الحالة</label>
             <select
@@ -206,7 +218,7 @@ export function AdminCourseDetailPage() {
           lesson — lets an admin actually watch the content (not just see
           a title) to check it's appropriate, without needing a separate
           student/teacher impersonation mode. */}
-      <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div className="card section" style={{ maxWidth: 640, marginInline: 'auto' }}>
         <h3 style={{ marginBottom: 4 }}>المحتوى</h3>
         {data.sections.length === 0 ? (
           <p className="meta">لا توجد أقسام في هذه الدورة بعد</p>
@@ -248,12 +260,20 @@ export function AdminCourseDetailPage() {
                     </div>
                     {expandedLessonId === lesson.id && lesson.videoUrl && (
                       <div style={{ position: 'relative', paddingTop: '56.25%', marginBottom: 8 }}>
-                        <iframe
-                          src={lesson.videoUrl}
-                          allow="autoplay; fullscreen"
-                          allowFullScreen
-                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0, borderRadius: 12 }}
-                        />
+                        {isBunnyStreamPlayerHost(lesson.videoUrl) ? (
+                          <iframe
+                            src={lesson.videoUrl}
+                            allow="autoplay; fullscreen"
+                            allowFullScreen
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0, borderRadius: 12 }}
+                          />
+                        ) : (
+                          <video
+                            src={lesson.videoUrl}
+                            controls
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: 12, background: '#000' }}
+                          />
+                        )}
                       </div>
                     )}
                   </Fragment>
@@ -264,7 +284,7 @@ export function AdminCourseDetailPage() {
         )}
       </div>
 
-      <div className="card section" style={{ maxWidth: 640, margin: '0 auto', borderColor: 'var(--error)' }}>
+      <div className="card section" style={{ maxWidth: 640, marginInline: 'auto', borderColor: 'var(--error)' }}>
         <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
         <p className="meta">حذف هذه الدورة يخفيها فورًا من كل مكان في المنصة.</p>
         <div className="actions">

@@ -88,7 +88,7 @@ export function AdminQuizDetailPage() {
           void handleSaveTitle()
         }}
         className="card section"
-        style={{ maxWidth: 640, margin: '0 auto' }}
+        style={{ maxWidth: 640, marginInline: 'auto' }}
       >
         <div className="tf">
           <label htmlFor="admin-quiz-title">العنوان</label>
@@ -115,7 +115,7 @@ export function AdminQuizDetailPage() {
         </div>
       </form>
 
-      <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div className="card section" style={{ maxWidth: 640, marginInline: 'auto' }}>
         <h3 style={{ marginBottom: 8 }}>الأسئلة</h3>
         {data.questions.map((question, index) => (
           <div key={question.id} style={{ marginBottom: 12 }}>
@@ -136,7 +136,7 @@ export function AdminQuizDetailPage() {
         ))}
       </div>
 
-      <div className="card section" style={{ maxWidth: 640, margin: '0 auto', borderColor: 'var(--error)' }}>
+      <div className="card section" style={{ maxWidth: 640, marginInline: 'auto', borderColor: 'var(--error)' }}>
         <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
         <p className="meta">حذف هذا الاختبار يخفيه فورًا من كل مكان في المنصة.</p>
         <div className="actions">
