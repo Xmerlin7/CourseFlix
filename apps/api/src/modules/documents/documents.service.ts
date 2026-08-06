@@ -16,6 +16,7 @@ import { CourseEntity } from '../courses/entities/course.entity';
 import { SectionEntity } from '../courses/entities/section.entity';
 import { LessonEntity } from '../courses/entities/lesson.entity';
 import { UploadDocumentDto } from './dto/upload-document.dto';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
 import {
   DocumentEntity,
   DocumentProcessingStatus,
@@ -49,6 +50,18 @@ export interface RetryDocumentResponse {
   processingStatus: DocumentProcessingStatus;
 }
 
+export interface StudentDocumentResponse {
+  id: string;
+  fileName: string;
+  createdAt: string;
+}
+
+export interface StudentDocumentFile {
+  buffer: Buffer;
+  mimeType: string;
+  fileName: string;
+}
+
 @Injectable()
 export class DocumentsService {
   constructor(
@@ -66,7 +79,8 @@ export class DocumentsService {
     private readonly storageAdapter: StorageAdapter,
     @Inject(JOB_QUEUE_PORT)
     private readonly jobQueue: JobQueuePort,
-  ) {}
+    private readonly enrollmentsService: EnrollmentsService
+  ) { }
 
   /**
    * Validation runs before a single byte is stored, in the order fixed
@@ -115,26 +129,26 @@ export class DocumentsService {
 
     const document = existing
       ? await this.documentsRepository.save({
-          ...existing,
-          fileId: file.id,
-          version: existing.version + 1,
-          processingStatus: 'pending' as const,
-          errorMessage: null,
-        })
+        ...existing,
+        fileId: file.id,
+        version: existing.version + 1,
+        processingStatus: 'pending' as const,
+        errorMessage: null,
+      })
       : await this.documentsRepository.save(
-          this.documentsRepository.create({
-            courseId,
-            sectionId,
-            lessonId,
-            uploadedBy: teacherId,
-            fileId: file.id,
-            fileName: originalName,
-            fileType: 'pdf',
-            processingStatus: 'pending',
-            checksum,
-            version: 1,
-          }),
-        );
+        this.documentsRepository.create({
+          courseId,
+          sectionId,
+          lessonId,
+          uploadedBy: teacherId,
+          fileId: file.id,
+          fileName: originalName,
+          fileType: 'pdf',
+          processingStatus: 'pending',
+          checksum,
+          version: 1,
+        }),
+      );
 
     await this.jobQueue.enqueueDocumentIngestion(document.id, document.version);
 
@@ -193,6 +207,58 @@ export class DocumentsService {
     await this.jobQueue.enqueueDocumentIngestion(saved.id, saved.version);
 
     return { id: saved.id, processingStatus: saved.processingStatus };
+  }
+
+  async listStudentDocuments(
+    courseId: string,
+    studentId: string,
+  ): Promise<StudentDocumentResponse[]> {
+    await this.enrollmentsService.assertStudentEnrolled(studentId, courseId);
+
+    // Only 'completed' — a student has no business seeing a document that's
+    // still processing or that failed; those aren't real content yet.
+    const documents = await this.documentsRepository.find({
+      where: { courseId, processingStatus: 'completed', deletedAt: IsNull() },
+      order: { createdAt: 'DESC' },
+    });
+
+    return documents.map((document) => ({
+      id: document.id,
+      fileName: document.fileName,
+      createdAt: document.createdAt.toISOString(),
+    }));
+  }
+
+  async getFileForStudentDownload(
+    documentId: string,
+    studentId: string,
+  ): Promise<StudentDocumentFile> {
+    const document = await this.documentsRepository.findOne({
+      where: { id: documentId, deletedAt: IsNull() },
+    });
+    if (!document || document.processingStatus !== 'completed') {
+      // Same 404 whether the row is missing or just not ready yet — a
+      // student has no legitimate reason to distinguish the two cases.
+      throw new NotFoundException('Document not found.');
+    }
+
+    await this.enrollmentsService.assertStudentEnrolled(
+      studentId,
+      document.courseId,
+    );
+
+    if (!document.fileId) {
+      throw new NotFoundException('Document not found.');
+    }
+
+    const file = await this.filesRepository.findOne({
+      where: { id: document.fileId },
+    });
+    if (!file) {
+      throw new NotFoundException('Document not found.');
+    }
+    const buffer = await this.storageAdapter.read(file.storagePath);
+    return { buffer, mimeType: file.mimeType, fileName: document.fileName };
   }
 
   // A lesson's section is authoritative if both are given — lessonId wins
