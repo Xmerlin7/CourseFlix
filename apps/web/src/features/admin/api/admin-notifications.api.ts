@@ -12,3 +12,15 @@ export async function getAdminNotifications(
 export async function deleteAdminNotification(notificationId: string): Promise<void> {
   await httpClient.delete(`/admin/notifications-log/${notificationId}`)
 }
+
+export interface SendAdminNotificationPayload {
+  userId: string
+  title: string
+  message: string
+  relatedEntityType?: string
+  relatedEntityId?: string
+}
+
+export async function sendAdminNotification(payload: SendAdminNotificationPayload): Promise<void> {
+  await httpClient.post('/admin/notifications-log/send', payload)
+}

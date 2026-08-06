@@ -7,6 +7,7 @@ import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { useAdminQuizDetail } from '../hooks/useAdminQuizDetail'
+import { AdminSendNotificationForm } from '../components/AdminSendNotificationForm'
 import { deleteAdminQuiz, updateAdminQuiz } from '../api/admin-quizzes.api'
 
 function getServerMessage(error: ApiError): string | null {
@@ -80,70 +81,85 @@ export function AdminQuizDetailPage() {
 
   return (
     <>
-      <PageHeader title={data.title} description={`${data.questions.length} سؤال`} />
+      <PageHeader title={data.title} description={`${data.courseTitle} — المعلم: ${data.teacherName}`} />
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          void handleSaveTitle()
-        }}
-        className="card section"
-        style={{ maxWidth: 640, marginInline: 'auto' }}
-      >
-        <div className="tf">
-          <label htmlFor="admin-quiz-title">العنوان</label>
-          <input
-            id="admin-quiz-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            minLength={1}
-            required
-          />
-        </div>
+      <div className="detail-grid section">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              void handleSaveTitle()
+            }}
+            className="card"
+          >
+            <div className="tf">
+              <label htmlFor="admin-quiz-title">العنوان</label>
+              <input
+                id="admin-quiz-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                minLength={1}
+                required
+              />
+            </div>
 
-        {actionError && (
-          <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
-            {actionError}
-          </p>
-        )}
-
-        <div className="actions">
-          <button type="submit" disabled={isSaving} className="btn">
-            <span className="ms">save</span>
-            {isSaving ? 'جارٍ الحفظ...' : 'حفظ العنوان'}
-          </button>
-        </div>
-      </form>
-
-      <div className="card section" style={{ maxWidth: 640, marginInline: 'auto' }}>
-        <h3 style={{ marginBottom: 8 }}>الأسئلة</h3>
-        {data.questions.map((question, index) => (
-          <div key={question.id} style={{ marginBottom: 12 }}>
-            <strong>
-              {index + 1}. {question.text}
-            </strong>
-            {question.options && (
-              <ul style={{ margin: '4px 0', paddingInlineStart: 20 }}>
-                {question.options.map((option) => (
-                  <li key={option} className="meta">
-                    {option}
-                  </li>
-                ))}
-              </ul>
+            {actionError && (
+              <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
+                {actionError}
+              </p>
             )}
-            <p className="meta">الإجابة الصحيحة: {question.correctAnswer}</p>
-          </div>
-        ))}
-      </div>
 
-      <div className="card section" style={{ maxWidth: 640, marginInline: 'auto', borderColor: 'var(--error)' }}>
-        <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
-        <p className="meta">حذف هذا الاختبار يخفيه فورًا من كل مكان في المنصة.</p>
-        <div className="actions">
-          <button type="button" disabled={isSaving} className="btn text" onClick={() => void handleDelete()}>
-            <span className="ms">delete</span>
-            حذف الاختبار
-          </button>
+            <div className="actions">
+              <button type="submit" disabled={isSaving} className="btn">
+                <span className="ms">save</span>
+                {isSaving ? 'جارٍ الحفظ...' : 'حفظ العنوان'}
+              </button>
+            </div>
+          </form>
+
+          <div className="card">
+            <h3 style={{ marginBottom: 8 }}>الأسئلة ({data.questions.length})</h3>
+            {data.questions.map((question, index) => (
+              <div key={question.id} style={{ marginBottom: 12 }}>
+                <strong>
+                  {index + 1}. {question.text}
+                </strong>
+                {question.options && (
+                  <ul style={{ margin: '4px 0', paddingInlineStart: 20 }}>
+                    {question.options.map((option) => (
+                      <li key={option} className="meta">
+                        {option}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="meta">الإجابة الصحيحة: {question.correctAnswer}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div className="card">
+            <h3 style={{ marginBottom: 0 }}>التواصل مع المعلم</h3>
+            <AdminSendNotificationForm
+              targetUserId={data.teacherId}
+              targetLabel={`المعلم: ${data.teacherName}`}
+              relatedEntityType="quiz"
+              relatedEntityId={quizId}
+            />
+          </div>
+
+          <div className="card" style={{ borderColor: 'var(--error)' }}>
+            <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
+            <p className="meta">حذف هذا الاختبار يخفيه فورًا من كل مكان في المنصة.</p>
+            <div className="actions">
+              <button type="button" disabled={isSaving} className="btn text" onClick={() => void handleDelete()}>
+                <span className="ms">delete</span>
+                حذف الاختبار
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </>

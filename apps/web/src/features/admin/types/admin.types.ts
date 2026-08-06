@@ -120,6 +120,10 @@ export interface AdminQuizDetail {
     options: string[] | null
     correctAnswer: string
   }>
+  courseId: string
+  courseTitle: string
+  teacherId: string
+  teacherName: string
 }
 
 export interface UpdateAdminQuizPayload {
