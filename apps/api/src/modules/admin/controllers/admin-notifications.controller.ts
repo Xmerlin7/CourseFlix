@@ -28,8 +28,13 @@ export class AdminNotificationsController {
     return this.adminNotificationsService.listNotifications(query);
   }
 
+  // NO_CONTENT, not CREATED — this returns no body, and the frontend's
+  // parseResponse only special-cases 204 to skip response.json(); a 201
+  // with an empty body made it throw a raw SyntaxError instead of a real
+  // ApiError, which is why the UI only ever showed the generic fallback
+  // message. Same convention as every other void-returning endpoint here.
   @Post('send')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.NO_CONTENT)
   async sendNotification(@Body() dto: SendAdminNotificationDto) {
     await this.adminNotificationsService.sendNotification(dto);
   }
