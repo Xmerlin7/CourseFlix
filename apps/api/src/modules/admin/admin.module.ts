@@ -6,8 +6,11 @@ import { EnrollmentEntity } from '../enrollments/entities/enrollment.entity';
 import { OrderEntity } from '../commerce/entities/order.entity';
 import { OrderItemEntity } from '../commerce/entities/order-item.entity';
 import { PaymentEntity } from '../commerce/entities/payment.entity';
+import { QuizEntity } from '../quizzes/entities/quiz.entity';
+import { DocumentEntity } from '../documents/entities/document.entity';
 import { UsersModule } from '../users/users.module';
 import { CoursesModule } from '../courses/courses.module';
+import { QuizzesModule } from '../quizzes/quiz.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminUsersService } from './services/admin-users.service';
@@ -15,6 +18,10 @@ import { AdminCoursesController } from './controllers/admin-courses.controller';
 import { AdminCoursesService } from './services/admin-courses.service';
 import { AdminOrdersController } from './controllers/admin-orders.controller';
 import { AdminOrdersService } from './services/admin-orders.service';
+import { AdminQuizzesController } from './controllers/admin-quizzes.controller';
+import { AdminQuizzesService } from './services/admin-quizzes.service';
+import { AdminDocumentsController } from './controllers/admin-documents.controller';
+import { AdminDocumentsService } from './services/admin-documents.service';
 
 @Module({
   // SessionsModule is required directly here (not just transitively) for
@@ -28,12 +35,27 @@ import { AdminOrdersService } from './services/admin-orders.service';
       OrderEntity,
       OrderItemEntity,
       PaymentEntity,
+      QuizEntity,
+      DocumentEntity,
     ]),
     UsersModule,
     CoursesModule,
+    QuizzesModule,
     SessionsModule,
   ],
-  controllers: [AdminUsersController, AdminCoursesController, AdminOrdersController],
-  providers: [AdminUsersService, AdminCoursesService, AdminOrdersService],
+  controllers: [
+    AdminUsersController,
+    AdminCoursesController,
+    AdminOrdersController,
+    AdminQuizzesController,
+    AdminDocumentsController,
+  ],
+  providers: [
+    AdminUsersService,
+    AdminCoursesService,
+    AdminOrdersService,
+    AdminQuizzesService,
+    AdminDocumentsService,
+  ],
 })
 export class AdminModule {}

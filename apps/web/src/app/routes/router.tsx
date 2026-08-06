@@ -122,6 +122,19 @@ const AdminOrderDetailPage = lazy(() =>
     default: m.AdminOrderDetailPage,
   }))
 )
+const AdminQuizzesPage = lazy(() =>
+  import('../../features/admin/pages/AdminQuizzesPage').then((m) => ({ default: m.AdminQuizzesPage }))
+)
+const AdminQuizDetailPage = lazy(() =>
+  import('../../features/admin/pages/AdminQuizDetailPage').then((m) => ({
+    default: m.AdminQuizDetailPage,
+  }))
+)
+const AdminDocumentsPage = lazy(() =>
+  import('../../features/admin/pages/AdminDocumentsPage').then((m) => ({
+    default: m.AdminDocumentsPage,
+  }))
+)
 
 // Lazy-loaded status pages
 const ForbiddenStatePage = lazy(() =>
@@ -457,6 +470,30 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <AdminOrderDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.QUIZZES,
+            element: (
+              <SuspenseWrapper>
+                <AdminQuizzesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.QUIZ_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <AdminQuizDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.DOCUMENTS,
+            element: (
+              <SuspenseWrapper>
+                <AdminDocumentsPage />
               </SuspenseWrapper>
             ),
           },

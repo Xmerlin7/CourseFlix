@@ -49,6 +49,9 @@ export const ROUTE_PATHS = {
     COURSE_DETAIL: '/admin/courses/:courseId',
     ORDERS: '/admin/orders',
     ORDER_DETAIL: '/admin/orders/:orderId',
+    QUIZZES: '/admin/quizzes',
+    QUIZ_DETAIL: '/admin/quizzes/:quizId',
+    DOCUMENTS: '/admin/documents',
     NOTIFICATIONS: '/admin/notifications',
   },
 } as const

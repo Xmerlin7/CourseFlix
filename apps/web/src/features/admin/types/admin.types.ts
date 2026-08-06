@@ -1,5 +1,6 @@
 import type { UserRole } from '../../auth/types/auth.types'
 import type { CourseStatus } from '../../courses/types/course.types'
+import type { DocumentProcessingStatus } from '../../documents/types/document.types'
 
 export type UserStatus = 'active' | 'suspended' | 'inactive'
 
@@ -94,4 +95,48 @@ export interface AdminOrderDetail extends AdminOrderListItem {
 export interface AdminOrdersFilter {
   status?: OrderStatus
   studentId?: string
+}
+
+export interface AdminQuizListItem {
+  id: string
+  title: string
+  courseId: string
+  courseTitle: string
+  createdAt: string
+}
+
+export interface AdminQuizzesFilter {
+  courseId?: string
+}
+
+export interface AdminQuizDetail {
+  id: string
+  title: string
+  version: number
+  questions: Array<{
+    id: string
+    type: string
+    text: string
+    options: string[] | null
+    correctAnswer: string
+  }>
+}
+
+export interface UpdateAdminQuizPayload {
+  title?: string
+}
+
+export interface AdminDocumentListItem {
+  id: string
+  fileName: string
+  courseId: string
+  courseTitle: string
+  processingStatus: DocumentProcessingStatus
+  version: number
+  createdAt: string
+  errorMessage: string | null
+}
+
+export interface AdminDocumentsFilter {
+  courseId?: string
 }

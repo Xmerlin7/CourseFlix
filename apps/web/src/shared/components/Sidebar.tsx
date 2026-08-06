@@ -45,6 +45,8 @@ const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.USERS, label: 'المستخدمون', icon: 'manage_accounts' },
   { path: ROUTE_PATHS.ADMIN.COURSES, label: 'الدورات', icon: 'menu_book' },
   { path: ROUTE_PATHS.ADMIN.ORDERS, label: 'الطلبات', icon: 'shopping_cart' },
+  { path: ROUTE_PATHS.ADMIN.QUIZZES, label: 'الاختبارات', icon: 'quiz' },
+  { path: ROUTE_PATHS.ADMIN.DOCUMENTS, label: 'المستندات', icon: 'description' },
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
 ]
 
