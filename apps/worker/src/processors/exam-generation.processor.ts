@@ -6,9 +6,9 @@ import { randomUUID } from 'node:crypto';
 import { ChromaAdapter } from '../adapters/chroma.adapter';
 import {
   EXAM_LLM_PROVIDER,
-  ExamLlmProvider,
   GeneratedQuestion,
 } from '../adapters/exam-llm.adapter';
+import type { ExamLlmProvider } from '../adapters/exam-llm.adapter';
 import {
   buildExamGenerationPrompt,
   PreviousDraftQuestion,
