@@ -38,6 +38,15 @@ export const ROUTE_PATHS = {
     SALES: '/teacher/sales',
     ANALYTICS: '/teacher/analytics',
   },
+
+  ADMIN: {
+    ROOT: '/admin',
+    DASHBOARD: '/admin/dashboard',
+    USERS: '/admin/users',
+    USER_DETAIL: '/admin/users/:userId',
+    CREATE_ADMIN: '/admin/users/new',
+    NOTIFICATIONS: '/admin/notifications',
+  },
 } as const
 
 export type RoutePaths = typeof ROUTE_PATHS

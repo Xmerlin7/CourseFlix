@@ -5,6 +5,8 @@ import { RequireRole } from './RequireRole'
 import { AuthLayout } from '../layouts/AuthLayout'
 import { StudentLayout } from '../layouts/StudentLayout'
 import { TeacherLayout } from '../layouts/TeacherLayout'
+import { AdminLayout } from '../layouts/AdminLayout'
+import { AdminLayout } from '../layouts/AdminLayout'
 import { LoadingState } from '../../shared/components/LoadingState'
 import { ErrorState } from '../../shared/components/ErrorState'
 
@@ -85,6 +87,24 @@ const TeacherAnalyticsPage = lazy(() =>
 const CheckoutPage = lazy(() =>
   import('../../features/checkout/pages/CheckoutPage').then((m) => ({
     default: m.CheckoutPage,
+  }))
+)
+const AdminDashboardPage = lazy(() =>
+  import('../../features/admin/pages/AdminDashboardPage').then((m) => ({
+    default: m.AdminDashboardPage,
+  }))
+)
+const AdminUsersPage = lazy(() =>
+  import('../../features/admin/pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage }))
+)
+const AdminUserDetailPage = lazy(() =>
+  import('../../features/admin/pages/AdminUserDetailPage').then((m) => ({
+    default: m.AdminUserDetailPage,
+  }))
+)
+const AdminCreateAdminPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateAdminPage').then((m) => ({
+    default: m.AdminCreateAdminPage,
   }))
 )
 
@@ -344,6 +364,60 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <TeacherAnalyticsPage />
+              </SuspenseWrapper>
+            ),
+          },
+        ],
+      },
+    ],
+  },
+
+  /* Admin Routes — gated behind RequireRole("admin"). */
+  {
+    element: <RequireRole role="admin" />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        path: ROUTE_PATHS.ADMIN.ROOT,
+        element: <AdminLayout />,
+        children: [
+          {
+            path: ROUTE_PATHS.ADMIN.DASHBOARD,
+            element: (
+              <SuspenseWrapper>
+                <AdminDashboardPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.USERS,
+            element: (
+              <SuspenseWrapper>
+                <AdminUsersPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_ADMIN,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateAdminPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.USER_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <AdminUserDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.NOTIFICATIONS,
+            element: (
+              <SuspenseWrapper>
+                <NotificationsPage />
               </SuspenseWrapper>
             ),
           },
