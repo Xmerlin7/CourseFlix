@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AdminModule } from './modules/admin/admin.module';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -81,6 +82,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     CommerceModule,
     SalesModule,
     AnalyticsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
