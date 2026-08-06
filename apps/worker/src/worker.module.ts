@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { IngestionProcessor } from './processors/ingestion.processor';
+import { VideoIngestionProcessor } from './processors/video-ingestion.processor';
 import {
   EMBEDDING_PROVIDER,
   MockEmbeddingProvider,
@@ -10,6 +11,8 @@ import {
 } from './adapters/embedding.adapter';
 import { ChromaAdapter } from './adapters/chroma.adapter';
 import { DbNotificationProducer } from './adapters/db-notification.adapter';
+import { BunnyCaptionsAdapter } from './adapters/captions/bunny-captions.adapter';
+import { YoutubeCaptionsAdapter } from './adapters/captions/youtube-captions.adapter';
 import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer.port';
 
 /**
@@ -47,12 +50,17 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
       }),
     }),
 
-    BullModule.registerQueue({
-      name: 'ingestion',
-    }),
+    BullModule.registerQueue(
+      { name: 'ingestion' },
+      { name: 'video-ingestion' },
+      { name: 'exam-generation' },
+    ),
   ],
   providers: [
     IngestionProcessor,
+    VideoIngestionProcessor,
+    BunnyCaptionsAdapter,
+    YoutubeCaptionsAdapter,
     ChromaAdapter,
     {
       provide: EMBEDDING_PROVIDER,
