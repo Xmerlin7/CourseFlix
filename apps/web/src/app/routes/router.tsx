@@ -425,6 +425,10 @@ export const router = createBrowserRouter([
         element: <AdminLayout />,
         children: [
           {
+            index: true,
+            element: <Navigate to={ROUTE_PATHS.ADMIN.DASHBOARD} replace />,
+          },
+          {
             path: ROUTE_PATHS.ADMIN.DASHBOARD,
             element: (
               <SuspenseWrapper>
