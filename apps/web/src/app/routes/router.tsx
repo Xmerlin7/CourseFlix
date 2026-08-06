@@ -6,7 +6,6 @@ import { AuthLayout } from '../layouts/AuthLayout'
 import { StudentLayout } from '../layouts/StudentLayout'
 import { TeacherLayout } from '../layouts/TeacherLayout'
 import { AdminLayout } from '../layouts/AdminLayout'
-import { AdminLayout } from '../layouts/AdminLayout'
 import { LoadingState } from '../../shared/components/LoadingState'
 import { ErrorState } from '../../shared/components/ErrorState'
 
