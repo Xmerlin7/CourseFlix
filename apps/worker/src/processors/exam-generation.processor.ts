@@ -4,13 +4,13 @@ import { Job } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 import { ChromaAdapter } from '../adapters/chroma.adapter';
-import {
-  EXAM_LLM_PROVIDER,
+import { EXAM_LLM_PROVIDER } from '../adapters/exam-llm.adapter';
+import type {
   ExamLlmProvider,
   GeneratedQuestion,
 } from '../adapters/exam-llm.adapter';
-import {
-  buildExamGenerationPrompt,
+import { buildExamGenerationPrompt } from '../prompt/exam-generation-prompt';
+import type {
   PreviousDraftQuestion,
   QuestionSpecItem,
 } from '../prompt/exam-generation-prompt';
