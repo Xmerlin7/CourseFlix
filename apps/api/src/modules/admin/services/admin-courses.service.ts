@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, IsNull, Repository } from 'typeorm';
+import { ILike, In, IsNull, Repository } from 'typeorm';
 import {
   CourseEntity,
   CourseStatus,
@@ -10,6 +10,7 @@ import {
   UpdateCourseFields,
 } from '../../courses/courses.service';
 import { CourseDetailResponseDto } from '../../courses/dto/course-detail-response.dto';
+import { VideoEntity } from '../../lessons/entities/video.entity';
 import { ListCoursesQueryDto } from '../dto/list-courses-query.dto';
 
 export interface AdminCourseListItem {
@@ -31,6 +32,8 @@ export class AdminCoursesService {
   constructor(
     @InjectRepository(CourseEntity)
     private readonly coursesRepository: Repository<CourseEntity>,
+    @InjectRepository(VideoEntity)
+    private readonly videosRepository: Repository<VideoEntity>,
     private readonly coursesService: CoursesService,
   ) {}
 
@@ -61,8 +64,40 @@ export class AdminCoursesService {
     }));
   }
 
-  getCourseDetail(courseId: string): Promise<CourseDetailResponseDto> {
-    return this.coursesService.getCourseDetailForAdmin(courseId);
+  // CourseDetailResponseDto's lesson.videoUrl comes from the legacy
+  // lessons.video_url column, which nothing writes for content created
+  // via the video seed/ingestion path — VideoEntity is the actual
+  // authoritative playback source (see its docblock). Overlay the real
+  // URL here so admin content review shows every lesson's true video
+  // instead of "no video" for anything not authored through the
+  // teacher lesson-editor form specifically.
+  async getCourseDetail(courseId: string): Promise<CourseDetailResponseDto> {
+    const detail = await this.coursesService.getCourseDetailForAdmin(courseId);
+
+    const lessonIds = detail.sections.flatMap((section) =>
+      section.lessons.map((lesson) => lesson.id),
+    );
+    if (lessonIds.length === 0) {
+      return detail;
+    }
+
+    const videos = await this.videosRepository.find({
+      where: { lessonId: In(lessonIds), deletedAt: IsNull() },
+    });
+    const videoUrlByLessonId = new Map(
+      videos.map((video) => [video.lessonId, video.videoUrl]),
+    );
+
+    return {
+      ...detail,
+      sections: detail.sections.map((section) => ({
+        ...section,
+        lessons: section.lessons.map((lesson) => ({
+          ...lesson,
+          videoUrl: videoUrlByLessonId.get(lesson.id) ?? lesson.videoUrl,
+        })),
+      })),
+    };
   }
 
   async updateCourse(

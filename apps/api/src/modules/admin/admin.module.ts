@@ -7,6 +7,7 @@ import { OrderEntity } from '../commerce/entities/order.entity';
 import { OrderItemEntity } from '../commerce/entities/order-item.entity';
 import { PaymentEntity } from '../commerce/entities/payment.entity';
 import { QuizEntity } from '../quizzes/entities/quiz.entity';
+import { VideoEntity } from '../lessons/entities/video.entity';
 import { DocumentEntity } from '../documents/entities/document.entity';
 import { FileEntity } from '../documents/entities/file.entity';
 import { InterventionEntity } from '../interventions/entities/intervention.entity';
@@ -49,6 +50,7 @@ import { AdminAnalyticsService } from './services/admin-analytics.service';
       OrderItemEntity,
       PaymentEntity,
       QuizEntity,
+      VideoEntity,
       DocumentEntity,
       FileEntity,
       InterventionEntity,

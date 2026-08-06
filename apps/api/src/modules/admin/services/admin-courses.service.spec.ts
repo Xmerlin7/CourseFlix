@@ -3,11 +3,13 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CourseEntity } from '../../courses/entities/course.entity';
 import { CoursesService } from '../../courses/courses.service';
+import { VideoEntity } from '../../lessons/entities/video.entity';
 import { AdminCoursesService } from './admin-courses.service';
 
 describe('AdminCoursesService', () => {
   let service: AdminCoursesService;
   let coursesRepository: { find: jest.Mock };
+  let videosRepository: { find: jest.Mock };
   let coursesService: {
     getCourseDetailForAdmin: jest.Mock;
     updateCourseMetadata: jest.Mock;
@@ -20,6 +22,7 @@ describe('AdminCoursesService', () => {
 
   beforeEach(async () => {
     coursesRepository = { find: jest.fn() };
+    videosRepository = { find: jest.fn().mockResolvedValue([]) };
     coursesService = {
       getCourseDetailForAdmin: jest.fn(),
       updateCourseMetadata: jest.fn(),
@@ -33,6 +36,10 @@ describe('AdminCoursesService', () => {
         {
           provide: getRepositoryToken(CourseEntity),
           useValue: coursesRepository,
+        },
+        {
+          provide: getRepositoryToken(VideoEntity),
+          useValue: videosRepository,
         },
         { provide: CoursesService, useValue: coursesService },
       ],
@@ -73,6 +80,47 @@ describe('AdminCoursesService', () => {
     });
   });
 
+  describe('getCourseDetail', () => {
+    it('overlays the VideoEntity url — the authoritative playback source — over the legacy lesson.videoUrl', async () => {
+      coursesService.getCourseDetailForAdmin.mockResolvedValue({
+        id: courseId,
+        sections: [
+          {
+            id: 'section-1',
+            lessons: [
+              { id: 'lesson-1', videoUrl: null },
+              { id: 'lesson-2', videoUrl: null },
+            ],
+          },
+        ],
+      });
+      videosRepository.find.mockResolvedValue([
+        {
+          lessonId: 'lesson-1',
+          videoUrl: 'https://example.com/real-video.mp4',
+        },
+      ]);
+
+      const result = await service.getCourseDetail(courseId);
+
+      expect(result.sections[0].lessons[0].videoUrl).toBe(
+        'https://example.com/real-video.mp4',
+      );
+      expect(result.sections[0].lessons[1].videoUrl).toBeNull();
+    });
+
+    it('skips the video lookup entirely for a course with no lessons', async () => {
+      coursesService.getCourseDetailForAdmin.mockResolvedValue({
+        id: courseId,
+        sections: [],
+      });
+
+      await service.getCourseDetail(courseId);
+
+      expect(videosRepository.find).not.toHaveBeenCalled();
+    });
+  });
+
   describe('updateCourse', () => {
     it('resolves the real owning teacherId before delegating to CoursesService', async () => {
       coursesService.findCourseById.mockResolvedValue({
@@ -82,6 +130,7 @@ describe('AdminCoursesService', () => {
       coursesService.updateCourseMetadata.mockResolvedValue({});
       coursesService.getCourseDetailForAdmin.mockResolvedValue({
         id: courseId,
+        sections: [],
       });
 
       await service.updateCourse(courseId, { title: 'New Title' });
