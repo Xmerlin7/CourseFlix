@@ -1,12 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import {
   DocumentEntity,
   DocumentProcessingStatus,
 } from '../../documents/entities/document.entity';
+import { FileEntity } from '../../documents/entities/file.entity';
+import {
+  STORAGE_ADAPTER,
+  StorageAdapter,
+} from '../../documents/storage/local-storage.adapter';
 import { CourseEntity } from '../../courses/entities/course.entity';
 import { ListDocumentsQueryDto } from '../dto/list-documents-query.dto';
+
+export interface AdminDocumentFile {
+  buffer: Buffer;
+  fileName: string;
+  mimeType: string;
+}
 
 export interface AdminDocumentListItem {
   id: string;
@@ -26,9 +37,36 @@ export class AdminDocumentsService {
   constructor(
     @InjectRepository(DocumentEntity)
     private readonly documentsRepository: Repository<DocumentEntity>,
+    @InjectRepository(FileEntity)
+    private readonly filesRepository: Repository<FileEntity>,
     @InjectRepository(CourseEntity)
     private readonly coursesRepository: Repository<CourseEntity>,
+    @Inject(STORAGE_ADAPTER)
+    private readonly storageAdapter: StorageAdapter,
   ) {}
+
+  // Moderation read path — lets an admin open the actual uploaded PDF to
+  // check its content is appropriate, something even the uploading
+  // teacher currently has no endpoint to do (documents were only ever
+  // written for ingestion, never read back).
+  async getFileForDownload(documentId: string): Promise<AdminDocumentFile> {
+    const document = await this.documentsRepository.findOne({
+      where: { id: documentId, deletedAt: IsNull() },
+    });
+    if (!document || !document.fileId) {
+      throw new NotFoundException('Document not found.');
+    }
+
+    const file = await this.filesRepository.findOne({
+      where: { id: document.fileId },
+    });
+    if (!file) {
+      throw new NotFoundException('Underlying file not found.');
+    }
+
+    const buffer = await this.storageAdapter.read(file.storagePath);
+    return { buffer, fileName: file.fileName, mimeType: file.mimeType };
+  }
 
   async listDocuments(
     query: ListDocumentsQueryDto,

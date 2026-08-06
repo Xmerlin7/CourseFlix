@@ -8,12 +8,14 @@ import { OrderItemEntity } from '../commerce/entities/order-item.entity';
 import { PaymentEntity } from '../commerce/entities/payment.entity';
 import { QuizEntity } from '../quizzes/entities/quiz.entity';
 import { DocumentEntity } from '../documents/entities/document.entity';
+import { FileEntity } from '../documents/entities/file.entity';
 import { InterventionEntity } from '../interventions/entities/intervention.entity';
 import { NotificationEntity } from '../notifications/entities/notification.entity';
 import { AgentLogEntity } from '../agent-logs/entities/agent-log.entity';
 import { UsersModule } from '../users/users.module';
 import { CoursesModule } from '../courses/courses.module';
 import { QuizzesModule } from '../quizzes/quiz.module';
+import { DocumentsModule } from '../documents/documents.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminUsersService } from './services/admin-users.service';
@@ -48,6 +50,7 @@ import { AdminAnalyticsService } from './services/admin-analytics.service';
       PaymentEntity,
       QuizEntity,
       DocumentEntity,
+      FileEntity,
       InterventionEntity,
       NotificationEntity,
       AgentLogEntity,
@@ -55,6 +58,7 @@ import { AdminAnalyticsService } from './services/admin-analytics.service';
     UsersModule,
     CoursesModule,
     QuizzesModule,
+    DocumentsModule,
     SessionsModule,
   ],
   controllers: [
