@@ -9,6 +9,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { JOB_QUEUE_PORT } from '../../common/ports/job-queue.port';
 import { CourseEntity } from '../courses/entities/course.entity';
+import { SectionEntity } from '../courses/entities/section.entity';
+import { LessonEntity } from '../courses/entities/lesson.entity';
 import { DocumentsService } from './documents.service';
 import { DocumentEntity } from './entities/document.entity';
 import { FileEntity } from './entities/file.entity';
@@ -30,6 +32,8 @@ describe('DocumentsService', () => {
   };
   let filesRepository: { create: jest.Mock; save: jest.Mock };
   let coursesRepository: { findOne: jest.Mock };
+  let sectionsRepository: { findOne: jest.Mock };
+  let lessonsRepository: { findOne: jest.Mock };
   let storageAdapter: { save: jest.Mock };
   let jobQueue: { enqueueDocumentIngestion: jest.Mock };
 
@@ -55,6 +59,8 @@ describe('DocumentsService', () => {
       })),
     };
     coursesRepository = { findOne: jest.fn() };
+    sectionsRepository = { findOne: jest.fn() };
+    lessonsRepository = { findOne: jest.fn() };
     storageAdapter = {
       save: jest
         .fn()
@@ -75,6 +81,14 @@ describe('DocumentsService', () => {
         {
           provide: getRepositoryToken(CourseEntity),
           useValue: coursesRepository,
+        },
+        {
+          provide: getRepositoryToken(SectionEntity),
+          useValue: sectionsRepository,
+        },
+        {
+          provide: getRepositoryToken(LessonEntity),
+          useValue: lessonsRepository,
         },
         { provide: STORAGE_ADAPTER, useValue: storageAdapter },
         { provide: JOB_QUEUE_PORT, useValue: jobQueue },

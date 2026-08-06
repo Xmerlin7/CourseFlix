@@ -13,6 +13,8 @@ import { IsNull, Repository } from 'typeorm';
 import { JOB_QUEUE_PORT } from '../../common/ports/job-queue.port';
 import type { JobQueuePort } from '../../common/ports/job-queue.port';
 import { CourseEntity } from '../courses/entities/course.entity';
+import { SectionEntity } from '../courses/entities/section.entity';
+import { LessonEntity } from '../courses/entities/lesson.entity';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import {
   DocumentEntity,
@@ -56,6 +58,10 @@ export class DocumentsService {
     private readonly filesRepository: Repository<FileEntity>,
     @InjectRepository(CourseEntity)
     private readonly coursesRepository: Repository<CourseEntity>,
+    @InjectRepository(SectionEntity)
+    private readonly sectionsRepository: Repository<SectionEntity>,
+    @InjectRepository(LessonEntity)
+    private readonly lessonsRepository: Repository<LessonEntity>,
     @Inject(STORAGE_ADAPTER)
     private readonly storageAdapter: StorageAdapter,
     @Inject(JOB_QUEUE_PORT)
@@ -82,6 +88,11 @@ export class DocumentsService {
     this.assertWithinSizeLimit(upload.sizeBytes);
     this.assertNonEmpty(upload.sizeBytes);
     await this.assertTeacherOwnsCourse(courseId, teacherId);
+    const { sectionId, lessonId } = await this.resolvePlacement(
+      courseId,
+      upload.sectionId,
+      upload.lessonId,
+    );
 
     const checksum = createHash('sha256').update(upload.buffer).digest('hex');
     const originalName = this.normalizeOriginalName(upload.originalName);
@@ -113,6 +124,8 @@ export class DocumentsService {
       : await this.documentsRepository.save(
           this.documentsRepository.create({
             courseId,
+            sectionId,
+            lessonId,
             uploadedBy: teacherId,
             fileId: file.id,
             fileName: originalName,
@@ -180,6 +193,36 @@ export class DocumentsService {
     await this.jobQueue.enqueueDocumentIngestion(saved.id, saved.version);
 
     return { id: saved.id, processingStatus: saved.processingStatus };
+  }
+
+  // A lesson's section is authoritative if both are given — lessonId wins
+  // and its parent sectionId is derived, so the two can never disagree.
+  private async resolvePlacement(
+    courseId: string,
+    sectionId: string | undefined,
+    lessonId: string | undefined,
+  ): Promise<{ sectionId: string | null; lessonId: string | null }> {
+    if (lessonId) {
+      const lesson = await this.lessonsRepository.findOne({
+        where: { id: lessonId, courseId, deletedAt: IsNull() },
+      });
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found in this course.');
+      }
+      return { sectionId: lesson.sectionId, lessonId: lesson.id };
+    }
+
+    if (sectionId) {
+      const section = await this.sectionsRepository.findOne({
+        where: { id: sectionId, courseId, deletedAt: IsNull() },
+      });
+      if (!section) {
+        throw new NotFoundException('Section not found in this course.');
+      }
+      return { sectionId: section.id, lessonId: null };
+    }
+
+    return { sectionId: null, lessonId: null };
   }
 
   private async assertTeacherOwnsCourse(
