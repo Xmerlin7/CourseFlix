@@ -47,6 +47,7 @@ export interface QuizSummary {
   sectionId: string | null;
   lessonId: string | null;
   questionCount: number;
+  dueAt: string | null;
   submission: { score: number; total: number } | null;
 }
 
@@ -330,6 +331,7 @@ export class QuizzesService {
         sectionId: quiz.sectionId,
         lessonId: quiz.lessonId,
         questionCount: count,
+        dueAt: quiz.dueAt ? quiz.dueAt.toISOString() : null,
         submission: submission
           ? { score: Number(submission.score), total: count }
           : null,
