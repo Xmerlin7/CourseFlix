@@ -52,7 +52,7 @@ export function AdminDocumentsPage() {
       )}
 
       {!isLoading && !error && data && data.length === 0 && (
-        <EmptyState title="لا توجد مستندات" message="مفيش مستندات مرفوعة على المنصة حاليًا" />
+        <EmptyState fullPage title="لا توجد مستندات" message="مفيش مستندات مرفوعة على المنصة حاليًا" />
       )}
 
       {!isLoading && !error && data && data.length > 0 && (
@@ -92,25 +92,27 @@ export function AdminDocumentsPage() {
                     </td>
                     <td>{document.version}</td>
                     <td>{formatDate(document.createdAt)}</td>
-                    <td style={{ display: 'flex', gap: 6 }}>
-                      <a
-                        href={getAdminDocumentViewUrl(document.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn text"
-                      >
-                        <span className="ms">visibility</span>
-                        عرض
-                      </a>
-                      <button
-                        type="button"
-                        className="btn text"
-                        disabled={deletingId === document.id}
-                        onClick={() => void handleDelete(document.id, document.fileName)}
-                      >
-                        <span className="ms">delete</span>
-                        حذف
-                      </button>
+                    <td>
+                      <div className="actions">
+                        <a
+                          href={getAdminDocumentViewUrl(document.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn text"
+                        >
+                          <span className="ms">visibility</span>
+                          عرض
+                        </a>
+                        <button
+                          type="button"
+                          className="btn text"
+                          disabled={deletingId === document.id}
+                          onClick={() => void handleDelete(document.id, document.fileName)}
+                        >
+                          <span className="ms">delete</span>
+                          حذف
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )

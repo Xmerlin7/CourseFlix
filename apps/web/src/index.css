@@ -1277,12 +1277,24 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
   font-weight: 700;
   padding: 16px 20px;
   border-bottom: 1px solid var(--outline-variant);
+  white-space: nowrap;
 }
 .mtable td {
   padding: 14px 20px;
   border-bottom: 1px solid var(--outline-variant);
   font-size: 14px;
   vertical-align: middle;
+  /* Single-line rows — a long name/title pushes the table's own
+     horizontal scroll (.table-wrap) instead of wrapping and throwing
+     row heights out of sync with neighboring cells. A cell that
+     deliberately stacks two lines (e.g. a name + email) does so via an
+     inner block-level child, which still gets its own single line.
+     Cells with an actions row of buttons opt back into wrapping so
+     nothing gets clipped. */
+  white-space: nowrap;
+}
+.mtable td:has(.actions) {
+  white-space: normal;
 }
 .mtable tr:last-child td { border-bottom: none; }
 .mtable tr:hover td { background: var(--hover); }

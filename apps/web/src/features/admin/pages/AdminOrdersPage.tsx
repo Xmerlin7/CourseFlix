@@ -53,7 +53,7 @@ export function AdminOrdersPage() {
       )}
 
       {!isLoading && !error && data && data.length === 0 && (
-        <EmptyState title="لا توجد طلبات" message="مفيش طلبات مطابقة للفلتر الحالي" />
+        <EmptyState fullPage title="لا توجد طلبات" message="مفيش طلبات مطابقة للفلتر الحالي" />
       )}
 
       {!isLoading && !error && data && data.length > 0 && (

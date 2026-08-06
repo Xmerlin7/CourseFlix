@@ -94,7 +94,7 @@ export function AdminUsersPage() {
       )}
 
       {!isLoading && !error && data && data.length === 0 && (
-        <EmptyState title="لا توجد نتائج" message="غيّر الفلاتر أو مصطلح البحث" />
+        <EmptyState fullPage title="لا توجد نتائج" message="غيّر الفلاتر أو مصطلح البحث" />
       )}
 
       {!isLoading && !error && data && data.length > 0 && (

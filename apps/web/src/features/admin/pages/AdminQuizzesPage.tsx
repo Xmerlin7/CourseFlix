@@ -27,7 +27,7 @@ export function AdminQuizzesPage() {
       )}
 
       {!isLoading && !error && data && data.length === 0 && (
-        <EmptyState title="لا توجد اختبارات" message="مفيش اختبارات على المنصة حاليًا" />
+        <EmptyState fullPage title="لا توجد اختبارات" message="مفيش اختبارات على المنصة حاليًا" />
       )}
 
       {!isLoading && !error && data && data.length > 0 && (

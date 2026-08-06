@@ -89,7 +89,7 @@ export function AdminInterventionsPage() {
       )}
 
       {!isLoading && !error && data && data.length === 0 && (
-        <EmptyState title="لا توجد تنبيهات" message="مفيش تنبيهات مطابقة للفلتر الحالي" />
+        <EmptyState fullPage title="لا توجد تنبيهات" message="مفيش تنبيهات مطابقة للفلتر الحالي" />
       )}
 
       {!isLoading && !error && data && data.length > 0 && (
@@ -122,23 +122,25 @@ export function AdminInterventionsPage() {
                     </span>
                   </td>
                   <td>{formatDate(item.createdAt)}</td>
-                  <td style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      type="button"
-                      className="btn text"
-                      disabled={busyId === item.id}
-                      onClick={() => void handleToggleStatus(item.id, item.status)}
-                    >
-                      {item.status === 'active' ? 'وضع كمحلول' : 'إعادة فتح'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn text"
-                      disabled={busyId === item.id}
-                      onClick={() => void handleDelete(item.id)}
-                    >
-                      <span className="ms">delete</span>
-                    </button>
+                  <td>
+                    <div className="actions">
+                      <button
+                        type="button"
+                        className="btn text"
+                        disabled={busyId === item.id}
+                        onClick={() => void handleToggleStatus(item.id, item.status)}
+                      >
+                        {item.status === 'active' ? 'وضع كمحلول' : 'إعادة فتح'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn text"
+                        disabled={busyId === item.id}
+                        onClick={() => void handleDelete(item.id)}
+                      >
+                        <span className="ms">delete</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -56,7 +56,7 @@ export function AdminAgentLogsPage() {
       )}
 
       {!isLoading && !error && data && data.length === 0 && (
-        <EmptyState title="لا توجد سجلات" message="مفيش عمليات وكلاء مسجلة حاليًا" />
+        <EmptyState fullPage title="لا توجد سجلات" message="مفيش عمليات وكلاء مسجلة حاليًا" />
       )}
 
       {!isLoading && !error && data && data.length > 0 && (

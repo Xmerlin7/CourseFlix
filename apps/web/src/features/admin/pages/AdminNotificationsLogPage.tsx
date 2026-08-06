@@ -50,7 +50,7 @@ export function AdminNotificationsLogPage() {
       )}
 
       {!isLoading && !error && data && data.length === 0 && (
-        <EmptyState title="لا توجد إشعارات" message="مفيش إشعارات مسجلة حاليًا" />
+        <EmptyState fullPage title="لا توجد إشعارات" message="مفيش إشعارات مسجلة حاليًا" />
       )}
 
       {!isLoading && !error && data && data.length > 0 && (
