@@ -7,22 +7,42 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * draft's questions are replaced in place, not re-created under a new
  * quiz). `quiz_generation_feedback` is the append-only thread of teacher
  * messages that drive each regeneration attempt.
+ *
+ * Defensive (IF NOT EXISTS / DO-block) rather than a plain CREATE, same
+ * as `1785000063000-CreateInterventionMiniQuizzes.ts` and
+ * `1785000080000-AddAiExamFieldsToQuizzes.ts` — the app runs with
+ * `synchronize: true` (see `app.module.ts`), so these types/tables may
+ * already exist from a dev run that started the API before migrations
+ * ran here. A plain `CREATE TYPE`/`CREATE TABLE` would fail with
+ * "already exists" in that case (confirmed against a real dev DB).
  */
 export class CreateQuizGenerationRequests1785000081000 implements MigrationInterface {
   name = 'CreateQuizGenerationRequests1785000081000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TYPE "quiz_generation_scope_type" AS ENUM ('lesson', 'section', 'course');
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'quiz_generation_scope_type') THEN
+          CREATE TYPE "quiz_generation_scope_type" AS ENUM ('lesson', 'section', 'course');
+        END IF;
+      END
+      $$;
     `);
     await queryRunner.query(`
-      CREATE TYPE "quiz_generation_request_status" AS ENUM (
-        'queued', 'processing', 'pending_review', 'accepted', 'rejected', 'failed'
-      );
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'quiz_generation_request_status') THEN
+          CREATE TYPE "quiz_generation_request_status" AS ENUM (
+            'queued', 'processing', 'pending_review', 'accepted', 'rejected', 'failed'
+          );
+        END IF;
+      END
+      $$;
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "quiz_generation_requests" (
+      CREATE TABLE IF NOT EXISTS "quiz_generation_requests" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "course_id" UUID NOT NULL REFERENCES "courses"("id") ON DELETE CASCADE,
         "scope_type" quiz_generation_scope_type NOT NULL,
@@ -41,17 +61,17 @@ export class CreateQuizGenerationRequests1785000081000 implements MigrationInter
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_quiz_gen_requests_course_id" ON "quiz_generation_requests" ("course_id");
+      CREATE INDEX IF NOT EXISTS "idx_quiz_gen_requests_course_id" ON "quiz_generation_requests" ("course_id");
     `);
     await queryRunner.query(`
-      CREATE INDEX "idx_quiz_gen_requests_teacher_id" ON "quiz_generation_requests" ("teacher_id");
+      CREATE INDEX IF NOT EXISTS "idx_quiz_gen_requests_teacher_id" ON "quiz_generation_requests" ("teacher_id");
     `);
     await queryRunner.query(`
-      CREATE INDEX "idx_quiz_gen_requests_quiz_id" ON "quiz_generation_requests" ("quiz_id");
+      CREATE INDEX IF NOT EXISTS "idx_quiz_gen_requests_quiz_id" ON "quiz_generation_requests" ("quiz_id");
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "quiz_generation_feedback" (
+      CREATE TABLE IF NOT EXISTS "quiz_generation_feedback" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "request_id" UUID NOT NULL REFERENCES "quiz_generation_requests"("id") ON DELETE CASCADE,
         "message" TEXT NOT NULL,
@@ -60,7 +80,7 @@ export class CreateQuizGenerationRequests1785000081000 implements MigrationInter
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_quiz_gen_feedback_request_id" ON "quiz_generation_feedback" ("request_id");
+      CREATE INDEX IF NOT EXISTS "idx_quiz_gen_feedback_request_id" ON "quiz_generation_feedback" ("request_id");
     `);
   }
 
