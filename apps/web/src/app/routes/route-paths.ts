@@ -52,7 +52,10 @@ export const ROUTE_PATHS = {
     QUIZZES: '/admin/quizzes',
     QUIZ_DETAIL: '/admin/quizzes/:quizId',
     DOCUMENTS: '/admin/documents',
+    INTERVENTIONS: '/admin/interventions',
     NOTIFICATIONS: '/admin/notifications',
+    NOTIFICATIONS_LOG: '/admin/notifications-log',
+    AGENT_LOGS: '/admin/agent-logs',
   },
 } as const
 

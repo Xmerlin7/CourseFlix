@@ -8,6 +8,9 @@ import { OrderItemEntity } from '../commerce/entities/order-item.entity';
 import { PaymentEntity } from '../commerce/entities/payment.entity';
 import { QuizEntity } from '../quizzes/entities/quiz.entity';
 import { DocumentEntity } from '../documents/entities/document.entity';
+import { InterventionEntity } from '../interventions/entities/intervention.entity';
+import { NotificationEntity } from '../notifications/entities/notification.entity';
+import { AgentLogEntity } from '../agent-logs/entities/agent-log.entity';
 import { UsersModule } from '../users/users.module';
 import { CoursesModule } from '../courses/courses.module';
 import { QuizzesModule } from '../quizzes/quiz.module';
@@ -22,6 +25,12 @@ import { AdminQuizzesController } from './controllers/admin-quizzes.controller';
 import { AdminQuizzesService } from './services/admin-quizzes.service';
 import { AdminDocumentsController } from './controllers/admin-documents.controller';
 import { AdminDocumentsService } from './services/admin-documents.service';
+import { AdminInterventionsController } from './controllers/admin-interventions.controller';
+import { AdminInterventionsService } from './services/admin-interventions.service';
+import { AdminNotificationsController } from './controllers/admin-notifications.controller';
+import { AdminNotificationsService } from './services/admin-notifications.service';
+import { AdminAgentLogsController } from './controllers/admin-agent-logs.controller';
+import { AdminAgentLogsService } from './services/admin-agent-logs.service';
 
 @Module({
   // SessionsModule is required directly here (not just transitively) for
@@ -37,6 +46,9 @@ import { AdminDocumentsService } from './services/admin-documents.service';
       PaymentEntity,
       QuizEntity,
       DocumentEntity,
+      InterventionEntity,
+      NotificationEntity,
+      AgentLogEntity,
     ]),
     UsersModule,
     CoursesModule,
@@ -49,6 +61,9 @@ import { AdminDocumentsService } from './services/admin-documents.service';
     AdminOrdersController,
     AdminQuizzesController,
     AdminDocumentsController,
+    AdminInterventionsController,
+    AdminNotificationsController,
+    AdminAgentLogsController,
   ],
   providers: [
     AdminUsersService,
@@ -56,6 +71,9 @@ import { AdminDocumentsService } from './services/admin-documents.service';
     AdminOrdersService,
     AdminQuizzesService,
     AdminDocumentsService,
+    AdminInterventionsService,
+    AdminNotificationsService,
+    AdminAgentLogsService,
   ],
 })
 export class AdminModule {}

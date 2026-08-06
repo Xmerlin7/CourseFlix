@@ -135,6 +135,21 @@ const AdminDocumentsPage = lazy(() =>
     default: m.AdminDocumentsPage,
   }))
 )
+const AdminInterventionsPage = lazy(() =>
+  import('../../features/admin/pages/AdminInterventionsPage').then((m) => ({
+    default: m.AdminInterventionsPage,
+  }))
+)
+const AdminNotificationsLogPage = lazy(() =>
+  import('../../features/admin/pages/AdminNotificationsLogPage').then((m) => ({
+    default: m.AdminNotificationsLogPage,
+  }))
+)
+const AdminAgentLogsPage = lazy(() =>
+  import('../../features/admin/pages/AdminAgentLogsPage').then((m) => ({
+    default: m.AdminAgentLogsPage,
+  }))
+)
 
 // Lazy-loaded status pages
 const ForbiddenStatePage = lazy(() =>
@@ -498,10 +513,34 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: ROUTE_PATHS.ADMIN.INTERVENTIONS,
+            element: (
+              <SuspenseWrapper>
+                <AdminInterventionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
             path: ROUTE_PATHS.ADMIN.NOTIFICATIONS,
             element: (
               <SuspenseWrapper>
                 <NotificationsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG,
+            element: (
+              <SuspenseWrapper>
+                <AdminNotificationsLogPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.AGENT_LOGS,
+            element: (
+              <SuspenseWrapper>
+                <AdminAgentLogsPage />
               </SuspenseWrapper>
             ),
           },

@@ -47,7 +47,10 @@ const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.ORDERS, label: 'الطلبات', icon: 'shopping_cart' },
   { path: ROUTE_PATHS.ADMIN.QUIZZES, label: 'الاختبارات', icon: 'quiz' },
   { path: ROUTE_PATHS.ADMIN.DOCUMENTS, label: 'المستندات', icon: 'description' },
+  { path: ROUTE_PATHS.ADMIN.INTERVENTIONS, label: 'تنبيهات المتابعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
+  { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG, label: 'سجل الإشعارات', icon: 'history' },
+  { path: ROUTE_PATHS.ADMIN.AGENT_LOGS, label: 'سجل الوكلاء', icon: 'smart_toy' },
 ]
 
 const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {

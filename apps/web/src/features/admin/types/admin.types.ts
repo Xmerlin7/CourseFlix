@@ -140,3 +140,59 @@ export interface AdminDocumentListItem {
 export interface AdminDocumentsFilter {
   courseId?: string
 }
+
+export type InterventionStatus = 'active' | 'resolved'
+
+export interface AdminInterventionListItem {
+  id: string
+  studentId: string
+  studentName: string
+  teacherId: string
+  teacherName: string
+  courseId: string
+  ruleKey: string
+  weakConcept: string
+  status: InterventionStatus
+  createdAt: string
+  resolvedAt: string | null
+}
+
+export interface AdminInterventionsFilter {
+  status?: InterventionStatus
+  studentId?: string
+  teacherId?: string
+}
+
+export interface AdminNotificationListItem {
+  id: string
+  userId: string
+  userName: string
+  type: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+}
+
+export interface AdminNotificationsFilter {
+  userId?: string
+}
+
+export interface AdminAgentLogListItem {
+  id: string
+  agentType: string
+  courseId: string | null
+  action: string
+  status: 'success' | 'failed' | 'retrying' | 'skipped'
+  tokensUsed: number | null
+  durationMs: number | null
+  correlationId: string | null
+  errorMessage: string | null
+  executedAt: string
+}
+
+export interface AdminAgentLogsFilter {
+  agentType?: string
+  status?: string
+  courseId?: string
+}
