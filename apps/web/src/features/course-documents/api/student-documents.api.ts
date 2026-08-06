@@ -10,13 +10,11 @@ export async function getStudentCourseDocuments(
 }
 
 /**
- * Returns the full download URL for opening in a new tab.
- * The backend streams the file with `Content-Disposition: inline`, so
- * the browser will open it directly (PDF viewer, image viewer, etc.)
- * without needing any client-side library.
+ * Fetches the file body as a Blob (with the same session-cookie
+ * credentials as every other request) so the caller can trigger a
+ * proper named download via an object URL, instead of navigating the
+ * browser to a bare backend URL.
  */
-export function getDocumentDownloadUrl(documentId: string): string {
-  const base =
-    import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1'
-  return `${base}/student/documents/${documentId}/download`
+export async function downloadStudentDocument(documentId: string): Promise<Blob> {
+  return httpClient.getBlob(`/student/documents/${documentId}/download`)
 }
