@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
+import { StudentDocumentsList } from '../../course-documents/components/StudentDocumentsList'
 import type { QuizSummary } from '../../quizzes/types/quiz.types'
 import type { CourseDetail } from '../types/course.types'
 
@@ -129,6 +130,10 @@ export function CourseDetailView({
             )}
           </section>
         ))
+      )}
+
+      {!course.canEdit && (
+        <StudentDocumentsList courseId={course.id} />
       )}
 
       {!course.canEdit && areQuizzesLoading && (

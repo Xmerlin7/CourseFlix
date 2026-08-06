@@ -202,6 +202,10 @@ export const handlers = [
     ]),
   ),
 
+  http.get(apiUrl("/student/courses/:courseId/documents"), () =>
+    HttpResponse.json([]),
+  ),
+
   http.get(apiUrl("/teacher/courses/:courseId/quizzes"), () =>
     HttpResponse.json([]),
   ),
