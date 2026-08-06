@@ -1,4 +1,5 @@
 import type { UserRole } from '../../auth/types/auth.types'
+import type { CourseStatus } from '../../courses/types/course.types'
 
 export type UserStatus = 'active' | 'suspended' | 'inactive'
 
@@ -37,4 +38,29 @@ export interface CreateAdminAccountPayload {
   fullName: string
   email: string
   password: string
+}
+
+export interface AdminCourseListItem {
+  id: string
+  title: string
+  slug: string
+  gradeLevel: string | null
+  status: CourseStatus
+  teacherId: string
+  teacherName: string
+  createdAt: string
+}
+
+export interface AdminCoursesFilter {
+  status?: CourseStatus
+  teacherId?: string
+  search?: string
+}
+
+export interface UpdateAdminCoursePayload {
+  title?: string
+  description?: string | null
+  coverImageUrl?: string | null
+  gradeLevel?: string | null
+  status?: 'draft' | 'published'
 }

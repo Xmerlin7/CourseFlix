@@ -5,9 +5,12 @@ import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentEntity } from '../enrollments/entities/enrollment.entity';
 import { OrderEntity } from '../commerce/entities/order.entity';
 import { UsersModule } from '../users/users.module';
+import { CoursesModule } from '../courses/courses.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminUsersService } from './services/admin-users.service';
+import { AdminCoursesController } from './controllers/admin-courses.controller';
+import { AdminCoursesService } from './services/admin-courses.service';
 
 @Module({
   // SessionsModule is required directly here (not just transitively) for
@@ -21,9 +24,10 @@ import { AdminUsersService } from './services/admin-users.service';
       OrderEntity,
     ]),
     UsersModule,
+    CoursesModule,
     SessionsModule,
   ],
-  controllers: [AdminUsersController],
-  providers: [AdminUsersService],
+  controllers: [AdminUsersController, AdminCoursesController],
+  providers: [AdminUsersService, AdminCoursesService],
 })
 export class AdminModule {}

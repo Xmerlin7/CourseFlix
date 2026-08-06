@@ -43,6 +43,7 @@ const teacherNavItems: NavItem[] = [
 const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.ADMIN.USERS, label: 'المستخدمون', icon: 'manage_accounts' },
+  { path: ROUTE_PATHS.ADMIN.COURSES, label: 'الدورات', icon: 'menu_book' },
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
 ]
 

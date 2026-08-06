@@ -45,6 +45,8 @@ export const ROUTE_PATHS = {
     USERS: '/admin/users',
     USER_DETAIL: '/admin/users/:userId',
     CREATE_ADMIN: '/admin/users/new',
+    COURSES: '/admin/courses',
+    COURSE_DETAIL: '/admin/courses/:courseId',
     NOTIFICATIONS: '/admin/notifications',
   },
 } as const

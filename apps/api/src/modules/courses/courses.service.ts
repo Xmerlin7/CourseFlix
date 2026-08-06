@@ -149,6 +149,19 @@ export class CoursesService {
     }));
   }
 
+  // Admin-only: platform-wide detail view, bypasses the ownership/
+  // enrollment gating in getCourseDetail() since an admin is neither the
+  // owning teacher nor necessarily enrolled. canEdit is always true here.
+  async getCourseDetailForAdmin(
+    courseId: string,
+  ): Promise<CourseDetailResponseDto> {
+    const course = await this.loadCourseWithSectionsAndLessons(courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+    return this.toDetailDto(course, true);
+  }
+
   async findOwnedCourses(
     teacherId: string,
     status?: CourseStatus,

@@ -106,6 +106,14 @@ const AdminCreateAdminPage = lazy(() =>
     default: m.AdminCreateAdminPage,
   }))
 )
+const AdminCoursesPage = lazy(() =>
+  import('../../features/admin/pages/AdminCoursesPage').then((m) => ({ default: m.AdminCoursesPage }))
+)
+const AdminCourseDetailPage = lazy(() =>
+  import('../../features/admin/pages/AdminCourseDetailPage').then((m) => ({
+    default: m.AdminCourseDetailPage,
+  }))
+)
 
 // Lazy-loaded status pages
 const ForbiddenStatePage = lazy(() =>
@@ -409,6 +417,22 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <AdminUserDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.COURSES,
+            element: (
+              <SuspenseWrapper>
+                <AdminCoursesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.COURSE_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <AdminCourseDetailPage />
               </SuspenseWrapper>
             ),
           },
