@@ -71,7 +71,9 @@ export class AdminOrdersService {
   }
 
   async getOrderDetail(orderId: string): Promise<AdminOrderDetail> {
-    const order = await this.ordersRepository.findOne({ where: { id: orderId } });
+    const order = await this.ordersRepository.findOne({
+      where: { id: orderId },
+    });
     if (!order) {
       throw new NotFoundException('Order not found.');
     }

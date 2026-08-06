@@ -110,7 +110,7 @@ export class AdminUsersService {
     const user = await this.findActiveUserOrThrow(userId);
 
     if (user.role === 'admin' && role !== 'admin') {
-      await this.assertNotLastAdmin(userId);
+      await this.assertNotLastAdmin();
     }
 
     user.role = role;
@@ -131,7 +131,7 @@ export class AdminUsersService {
     const user = await this.findActiveUserOrThrow(userId);
 
     if (user.role === 'admin' && status !== 'active') {
-      await this.assertNotLastAdmin(userId);
+      await this.assertNotLastAdmin();
     }
 
     user.status = status;
@@ -143,11 +143,15 @@ export class AdminUsersService {
   // history. See admin.module.ts / plan doc for why this is the default
   // over a true hard delete.
   async softDelete(currentUserId: string, userId: string): Promise<void> {
-    this.assertNotActingOnSelf(currentUserId, userId, 'delete their own account');
+    this.assertNotActingOnSelf(
+      currentUserId,
+      userId,
+      'delete their own account',
+    );
     const user = await this.findActiveUserOrThrow(userId);
 
     if (user.role === 'admin') {
-      await this.assertNotLastAdmin(userId);
+      await this.assertNotLastAdmin();
     }
 
     user.deletedAt = new Date();
@@ -160,11 +164,15 @@ export class AdminUsersService {
   // case surfaces a clear 409 instead of a raw Postgres error or a silent
   // cascade — use softDelete for real accounts with history.
   async hardDelete(currentUserId: string, userId: string): Promise<void> {
-    this.assertNotActingOnSelf(currentUserId, userId, 'delete their own account');
+    this.assertNotActingOnSelf(
+      currentUserId,
+      userId,
+      'delete their own account',
+    );
     const user = await this.findActiveUserOrThrow(userId);
 
     if (user.role === 'admin') {
-      await this.assertNotLastAdmin(userId);
+      await this.assertNotLastAdmin();
     }
 
     try {
@@ -215,12 +223,12 @@ export class AdminUsersService {
     return { coursesTaught, enrollments, orders };
   }
 
-  private async assertNotLastAdmin(adminUserId: string): Promise<void> {
-    const otherAdmins = await this.usersRepository.count({
+  private async assertNotLastAdmin(): Promise<void> {
+    const adminCount = await this.usersRepository.count({
       where: { role: 'admin', deletedAt: IsNull() },
     });
-    // otherAdmins includes adminUserId itself, so 1 means "only me left".
-    if (otherAdmins <= 1) {
+    // Includes the admin being acted on, so 1 means "only me left".
+    if (adminCount <= 1) {
       throw new BadRequestException(
         'Cannot remove the last remaining admin account.',
       );

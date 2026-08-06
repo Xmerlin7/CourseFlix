@@ -42,7 +42,9 @@ describe('AdminNotificationsService', () => {
 
     await service.deleteNotification('n-1');
 
-    expect(notificationsRepository.softRemove).toHaveBeenCalledWith(notification);
+    expect(notificationsRepository.softRemove).toHaveBeenCalledWith(
+      notification,
+    );
   });
 
   it('throws NotFoundException for a missing notification', async () => {

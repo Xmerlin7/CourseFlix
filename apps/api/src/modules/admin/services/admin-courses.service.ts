@@ -1,8 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, IsNull, Repository } from 'typeorm';
-import { CourseEntity, CourseStatus } from '../../courses/entities/course.entity';
-import { CoursesService, UpdateCourseFields } from '../../courses/courses.service';
+import {
+  CourseEntity,
+  CourseStatus,
+} from '../../courses/entities/course.entity';
+import {
+  CoursesService,
+  UpdateCourseFields,
+} from '../../courses/courses.service';
 import { CourseDetailResponseDto } from '../../courses/dto/course-detail-response.dto';
 import { ListCoursesQueryDto } from '../dto/list-courses-query.dto';
 
@@ -28,7 +34,9 @@ export class AdminCoursesService {
     private readonly coursesService: CoursesService,
   ) {}
 
-  async listCourses(query: ListCoursesQueryDto): Promise<AdminCourseListItem[]> {
+  async listCourses(
+    query: ListCoursesQueryDto,
+  ): Promise<AdminCourseListItem[]> {
     const where: Record<string, unknown> = { deletedAt: IsNull() };
     if (query.status) where.status = query.status;
     if (query.teacherId) where.teacherId = query.teacherId;

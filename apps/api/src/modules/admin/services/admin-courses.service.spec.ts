@@ -30,7 +30,10 @@ describe('AdminCoursesService', () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         AdminCoursesService,
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
         { provide: CoursesService, useValue: coursesService },
       ],
     }).compile();
@@ -72,9 +75,14 @@ describe('AdminCoursesService', () => {
 
   describe('updateCourse', () => {
     it('resolves the real owning teacherId before delegating to CoursesService', async () => {
-      coursesService.findCourseById.mockResolvedValue({ id: courseId, teacherId });
+      coursesService.findCourseById.mockResolvedValue({
+        id: courseId,
+        teacherId,
+      });
       coursesService.updateCourseMetadata.mockResolvedValue({});
-      coursesService.getCourseDetailForAdmin.mockResolvedValue({ id: courseId });
+      coursesService.getCourseDetailForAdmin.mockResolvedValue({
+        id: courseId,
+      });
 
       await service.updateCourse(courseId, { title: 'New Title' });
 
@@ -95,11 +103,17 @@ describe('AdminCoursesService', () => {
 
   describe('deleteCourse', () => {
     it('resolves the real owning teacherId before delegating the soft delete', async () => {
-      coursesService.findCourseById.mockResolvedValue({ id: courseId, teacherId });
+      coursesService.findCourseById.mockResolvedValue({
+        id: courseId,
+        teacherId,
+      });
 
       await service.deleteCourse(courseId);
 
-      expect(coursesService.deleteCourse).toHaveBeenCalledWith(courseId, teacherId);
+      expect(coursesService.deleteCourse).toHaveBeenCalledWith(
+        courseId,
+        teacherId,
+      );
     });
   });
 });

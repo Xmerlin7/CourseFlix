@@ -9,12 +9,18 @@ describe('AdminAgentLogsService', () => {
   let agentLogsRepository: { find: jest.Mock; delete: jest.Mock };
 
   beforeEach(async () => {
-    agentLogsRepository = { find: jest.fn().mockResolvedValue([]), delete: jest.fn() };
+    agentLogsRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      delete: jest.fn(),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AdminAgentLogsService,
-        { provide: getRepositoryToken(AgentLogEntity), useValue: agentLogsRepository },
+        {
+          provide: getRepositoryToken(AgentLogEntity),
+          useValue: agentLogsRepository,
+        },
       ],
     }).compile();
 

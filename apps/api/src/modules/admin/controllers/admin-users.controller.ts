@@ -54,11 +54,7 @@ export class AdminUsersController {
     @Body() dto: UpdateUserRoleDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.adminUsersService.updateRole(
-      currentUser.id,
-      userId,
-      dto.role,
-    );
+    return this.adminUsersService.updateRole(currentUser.id, userId, dto.role);
   }
 
   @Patch(':userId/status')

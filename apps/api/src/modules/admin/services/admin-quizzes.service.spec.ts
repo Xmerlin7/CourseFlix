@@ -33,7 +33,10 @@ describe('AdminQuizzesService', () => {
       providers: [
         AdminQuizzesService,
         { provide: getRepositoryToken(QuizEntity), useValue: quizRepository },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
         { provide: QuizzesService, useValue: quizzesService },
       ],
     }).compile();
@@ -48,7 +51,10 @@ describe('AdminQuizzesService', () => {
 
     await service.getQuizDetail(quizId);
 
-    expect(quizzesService.getTeacherQuiz).toHaveBeenCalledWith(quizId, teacherId);
+    expect(quizzesService.getTeacherQuiz).toHaveBeenCalledWith(
+      quizId,
+      teacherId,
+    );
   });
 
   it('throws NotFoundException when the quiz does not exist', async () => {

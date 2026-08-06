@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -48,7 +49,10 @@ describe('AdminInterventionsService', () => {
     await service.updateStatus('iv-1', 'resolved');
 
     expect(interventionsRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'resolved', resolvedAt: expect.any(Date) }),
+      expect.objectContaining({
+        status: 'resolved',
+        resolvedAt: expect.any(Date),
+      }),
     );
   });
 

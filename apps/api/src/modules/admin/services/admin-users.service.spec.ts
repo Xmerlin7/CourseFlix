@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { QueryFailedError } from 'typeorm';
@@ -41,7 +45,7 @@ describe('AdminUsersService', () => {
       createdAt: new Date('2026-01-01T00:00:00Z'),
       updatedAt: new Date('2026-01-01T00:00:00Z'),
       ...overrides,
-    } as UserEntity;
+    };
   }
 
   beforeEach(async () => {
@@ -61,12 +65,18 @@ describe('AdminUsersService', () => {
       providers: [
         AdminUsersService,
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
         {
           provide: getRepositoryToken(EnrollmentEntity),
           useValue: enrollmentsRepository,
         },
-        { provide: getRepositoryToken(OrderEntity), useValue: ordersRepository },
+        {
+          provide: getRepositoryToken(OrderEntity),
+          useValue: ordersRepository,
+        },
         { provide: UsersService, useValue: usersService },
       ],
     }).compile();
@@ -153,9 +163,9 @@ describe('AdminUsersService', () => {
       enrollmentsRepository.count.mockResolvedValue(3);
       ordersRepository.count.mockResolvedValue(0);
 
-      await expect(
-        service.hardDelete(adminId, studentId),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.hardDelete(adminId, studentId)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('deletes cleanly when the user has no dependent rows', async () => {

@@ -22,15 +22,26 @@ describe('AdminOrdersService', () => {
     orderItemsRepository = { find: jest.fn().mockResolvedValue([]) };
     paymentsRepository = { find: jest.fn().mockResolvedValue([]) };
     usersRepository = {
-      find: jest.fn().mockResolvedValue([{ id: studentId, fullName: 'طالب تجريبي' }]),
+      find: jest
+        .fn()
+        .mockResolvedValue([{ id: studentId, fullName: 'طالب تجريبي' }]),
     };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AdminOrdersService,
-        { provide: getRepositoryToken(OrderEntity), useValue: ordersRepository },
-        { provide: getRepositoryToken(OrderItemEntity), useValue: orderItemsRepository },
-        { provide: getRepositoryToken(PaymentEntity), useValue: paymentsRepository },
+        {
+          provide: getRepositoryToken(OrderEntity),
+          useValue: ordersRepository,
+        },
+        {
+          provide: getRepositoryToken(OrderItemEntity),
+          useValue: orderItemsRepository,
+        },
+        {
+          provide: getRepositoryToken(PaymentEntity),
+          useValue: paymentsRepository,
+        },
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
       ],
     }).compile();

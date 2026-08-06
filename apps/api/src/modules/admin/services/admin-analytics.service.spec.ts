@@ -35,8 +35,14 @@ describe('AdminAnalyticsService', () => {
       providers: [
         AdminAnalyticsService,
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
-        { provide: getRepositoryToken(OrderEntity), useValue: ordersRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
+        {
+          provide: getRepositoryToken(OrderEntity),
+          useValue: ordersRepository,
+        },
         {
           provide: getRepositoryToken(InterventionEntity),
           useValue: interventionsRepository,

@@ -7,7 +7,11 @@ import { AdminDocumentsService } from './admin-documents.service';
 
 describe('AdminDocumentsService', () => {
   let service: AdminDocumentsService;
-  let documentsRepository: { find: jest.Mock; findOne: jest.Mock; softRemove: jest.Mock };
+  let documentsRepository: {
+    find: jest.Mock;
+    findOne: jest.Mock;
+    softRemove: jest.Mock;
+  };
   let coursesRepository: { find: jest.Mock };
 
   const documentId = 'document-1';
@@ -24,8 +28,14 @@ describe('AdminDocumentsService', () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         AdminDocumentsService,
-        { provide: getRepositoryToken(DocumentEntity), useValue: documentsRepository },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(DocumentEntity),
+          useValue: documentsRepository,
+        },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
       ],
     }).compile();
 
@@ -44,7 +54,9 @@ describe('AdminDocumentsService', () => {
         errorMessage: null,
       },
     ]);
-    coursesRepository.find.mockResolvedValue([{ id: courseId, title: 'الفيزياء' }]);
+    coursesRepository.find.mockResolvedValue([
+      { id: courseId, title: 'الفيزياء' },
+    ]);
 
     const result = await service.listDocuments({});
 
