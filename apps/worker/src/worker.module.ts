@@ -4,11 +4,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { IngestionProcessor } from './processors/ingestion.processor';
 import { VideoIngestionProcessor } from './processors/video-ingestion.processor';
+import { ExamGenerationProcessor } from './processors/exam-generation.processor';
 import {
   EMBEDDING_PROVIDER,
   MockEmbeddingProvider,
   OpenAIEmbeddingProvider,
 } from './adapters/embedding.adapter';
+import {
+  EXAM_LLM_PROVIDER,
+  MockExamLlmProvider,
+  OpenAIExamLlmProvider,
+} from './adapters/exam-llm.adapter';
 import { ChromaAdapter } from './adapters/chroma.adapter';
 import { DbNotificationProducer } from './adapters/db-notification.adapter';
 import { BunnyCaptionsAdapter } from './adapters/captions/bunny-captions.adapter';
@@ -59,6 +65,7 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
   providers: [
     IngestionProcessor,
     VideoIngestionProcessor,
+    ExamGenerationProcessor,
     BunnyCaptionsAdapter,
     YoutubeCaptionsAdapter,
     ChromaAdapter,
@@ -75,6 +82,21 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
           return new MockEmbeddingProvider();
         }
         return new OpenAIEmbeddingProvider(configService);
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: EXAM_LLM_PROVIDER,
+      useFactory: (configService: ConfigService) => {
+        const apiKey =
+          configService.get<string>('OPENAI_API_KEY') ||
+          configService.get<string>('LLM_API_KEY');
+        const env = configService.get<string>('NODE_ENV');
+
+        if (!apiKey || apiKey === 'replace-me' || env === 'test') {
+          return new MockExamLlmProvider();
+        }
+        return new OpenAIExamLlmProvider(configService);
       },
       inject: [ConfigService],
     },
