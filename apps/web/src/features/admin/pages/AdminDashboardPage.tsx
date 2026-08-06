@@ -10,7 +10,11 @@ import { useAdminInterventions } from '../hooks/useAdminInterventions'
 import { USER_ROLE_LABEL } from '../lib/user-labels'
 import { ORDER_STATUS_LABEL } from '../lib/order-labels'
 
-const RECENT_ITEMS_LIMIT = 5
+// Kept low deliberately — this page is meant to fit one screen with no
+// page-level scroll, so each panel only ever shows a handful of rows.
+// (Each panel still scrolls internally as a safety net if a screen is
+// short enough that even this doesn't fit — see overflowY below.)
+const RECENT_ITEMS_LIMIT = 4
 
 const RULE_LABELS: Record<string, string> = {
   low_quiz_score: 'نتيجة اختبار منخفضة',
@@ -34,11 +38,21 @@ export function AdminDashboardPage() {
   const activeInterventions = useAdminInterventions({ status: 'active' })
 
   return (
-    <>
-      <h1 className="page-title">أهلاً، {user?.fullName ?? 'أدمن'}</h1>
-      <p className="subtitle">لوحة تحكم الأدمن — إدارة المنصة بالكامل من مكان واحد</p>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: '0 0 auto' }}>
+        <h1 className="page-title" style={{ marginBottom: 2 }}>
+          أهلاً، {user?.fullName ?? 'أدمن'}
+        </h1>
+        <p className="subtitle" style={{ marginBottom: 16 }}>
+          لوحة تحكم الأدمن — إدارة المنصة بالكامل من مكان واحد
+        </p>
+      </div>
 
-      {overview.isLoading && <LoadingState variant="cards" />}
+      {overview.isLoading && (
+        <div style={{ flex: '0 0 auto' }}>
+          <LoadingState variant="cards" />
+        </div>
+      )}
 
       {!overview.isLoading && overview.error && (
         <ErrorState
@@ -49,7 +63,7 @@ export function AdminDashboardPage() {
       )}
 
       {!overview.isLoading && !overview.error && overview.data && (
-        <div className="tiles section">
+        <div className="tiles" style={{ flex: '0 0 auto', marginBottom: 16 }}>
           <Link to={ROUTE_PATHS.ADMIN.USERS} className="tile" style={{ cursor: 'pointer' }}>
             <span className="lead-ic">
               <span className="ms">manage_accounts</span>
@@ -96,9 +110,9 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      <div className="grid-2 section">
-        <div className="card">
-          <div className="section-head" style={{ marginBottom: 0 }}>
+      <div className="grid-2" style={{ flex: '1 1 0', minHeight: 0, marginBottom: 16 }}>
+        <div className="card" style={{ height: '100%', minHeight: 0, overflowY: 'auto' }}>
+          <div className="section-head" style={{ marginBottom: 0, flex: '0 0 auto' }}>
             <h3>أحدث المستخدمين</h3>
             <Link to={ROUTE_PATHS.ADMIN.USERS} className="btn text">
               عرض الكل
@@ -113,7 +127,7 @@ export function AdminDashboardPage() {
               <Link
                 key={item.id}
                 to={`/admin/users/${item.id}`}
-                style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--outline-variant)' }}
+                style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderTop: '1px solid var(--outline-variant)' }}
               >
                 <span>{item.fullName}</span>
                 <span className={`chip ${USER_ROLE_LABEL[item.role].chip}`}>{USER_ROLE_LABEL[item.role].label}</span>
@@ -121,8 +135,8 @@ export function AdminDashboardPage() {
             ))}
         </div>
 
-        <div className="card">
-          <div className="section-head" style={{ marginBottom: 0 }}>
+        <div className="card" style={{ height: '100%', minHeight: 0, overflowY: 'auto' }}>
+          <div className="section-head" style={{ marginBottom: 0, flex: '0 0 auto' }}>
             <h3>أحدث الطلبات</h3>
             <Link to={ROUTE_PATHS.ADMIN.ORDERS} className="btn text">
               عرض الكل
@@ -137,7 +151,7 @@ export function AdminDashboardPage() {
               <Link
                 key={item.id}
                 to={`/admin/orders/${item.id}`}
-                style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--outline-variant)' }}
+                style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderTop: '1px solid var(--outline-variant)' }}
               >
                 <span>{item.studentName}</span>
                 <span className={`chip ${ORDER_STATUS_LABEL[item.status].chip}`}>
@@ -148,7 +162,7 @@ export function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="card section">
+      <div className="card" style={{ flex: '0 0 auto', maxHeight: '30%', minHeight: 0, overflowY: 'auto' }}>
         <div className="section-head" style={{ marginBottom: 0 }}>
           <h3>تنبيهات متابعة نشطة</h3>
           <Link to={ROUTE_PATHS.ADMIN.INTERVENTIONS} className="btn text">
@@ -166,7 +180,7 @@ export function AdminDashboardPage() {
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                padding: '8px 0',
+                padding: '6px 0',
                 borderTop: '1px solid var(--outline-variant)',
               }}
             >
@@ -177,6 +191,6 @@ export function AdminDashboardPage() {
             </div>
           ))}
       </div>
-    </>
+    </div>
   )
 }
