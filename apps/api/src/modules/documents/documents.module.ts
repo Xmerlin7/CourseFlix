@@ -33,5 +33,6 @@ import {
     DocumentsService,
     { provide: STORAGE_ADAPTER, useClass: LocalStorageAdapter },
   ],
+  exports: [STORAGE_ADAPTER],
 })
 export class DocumentsModule {}

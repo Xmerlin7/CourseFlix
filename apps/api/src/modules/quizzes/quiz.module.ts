@@ -27,5 +27,6 @@ import { GradingService } from './grading.service';
   ],
   controllers: [QuizzesController],
   providers: [QuizzesService, GradingService],
+  exports: [QuizzesService],
 })
 export class QuizzesModule {}
