@@ -11,6 +11,8 @@ import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
 import { DocumentEntity } from './entities/document.entity';
 import { FileEntity } from './entities/file.entity';
+import { EnrollmentsModule } from '../enrollments/enrollments.module';
+import { StudentDocumentsController } from './student-documents.controller';
 import {
   LocalStorageAdapter,
   STORAGE_ADAPTER,
@@ -35,8 +37,11 @@ import {
     // Real BullMQ-backed job queue (sprint2-plan.md §2.1 one-line swap).
     // JobsModule exports JOB_QUEUE_PORT bound to BullMqJobQueue.
     JobsModule,
+    // For DocumentsService.listStudentDocuments/getFileForStudentDownload
+    // to verify enrollment before showing/streaming a document.
+    EnrollmentsModule,
   ],
-  controllers: [DocumentsController],
+  controllers: [DocumentsController, StudentDocumentsController],
   providers: [
     DocumentsService,
     { provide: STORAGE_ADAPTER, useClass: LocalStorageAdapter },
