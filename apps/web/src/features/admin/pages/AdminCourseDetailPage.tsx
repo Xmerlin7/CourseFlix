@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
 import { ErrorState } from '../../../shared/components/ErrorState'
@@ -31,6 +31,7 @@ export function AdminCourseDetailPage() {
   const [isSynced, setIsSynced] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null)
 
   // Same one-time sync pattern as AdminUserDetailPage — avoids clobbering
   // in-progress edits on a refetch after saving.
@@ -124,7 +125,7 @@ export function AdminCourseDetailPage() {
           void handleSaveProfile()
         }}
         className="card section"
-        style={{ maxWidth: 520 }}
+        style={{ maxWidth: 640, margin: '0 auto' }}
       >
         <div className="tf">
           <label htmlFor="admin-course-title">العنوان</label>
@@ -185,7 +186,7 @@ export function AdminCourseDetailPage() {
       </form>
 
       {data.status !== 'archived' && (
-        <div className="card section" style={{ maxWidth: 520 }}>
+        <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
           <div className="tf">
             <label htmlFor="admin-course-status">الحالة</label>
             <select
@@ -201,21 +202,69 @@ export function AdminCourseDetailPage() {
         </div>
       )}
 
-      <div className="card section" style={{ maxWidth: 520 }}>
+      {/* Full lesson-by-lesson breakdown with an inline video preview per
+          lesson — lets an admin actually watch the content (not just see
+          a title) to check it's appropriate, without needing a separate
+          student/teacher impersonation mode. */}
+      <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
         <h3 style={{ marginBottom: 4 }}>المحتوى</h3>
         {data.sections.length === 0 ? (
           <p className="meta">لا توجد أقسام في هذه الدورة بعد</p>
         ) : (
           data.sections.map((section) => (
-            <div key={section.id} style={{ marginBottom: 12 }}>
+            <div key={section.id} style={{ marginBottom: 16 }}>
               <strong>{section.title}</strong>
-              <p className="meta">{section.lessons.length} درس</p>
+              {section.lessons.length === 0 ? (
+                <p className="meta">لا توجد دروس في هذا القسم</p>
+              ) : (
+                section.lessons.map((lesson) => (
+                  <Fragment key={lesson.id}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 0',
+                        borderTop: '1px solid var(--outline-variant)',
+                      }}
+                    >
+                      <span>{lesson.title}</span>
+                      {lesson.videoUrl ? (
+                        <button
+                          type="button"
+                          className="btn text"
+                          onClick={() =>
+                            setExpandedLessonId((current) => (current === lesson.id ? null : lesson.id))
+                          }
+                        >
+                          <span className="ms">
+                            {expandedLessonId === lesson.id ? 'expand_less' : 'play_circle'}
+                          </span>
+                          {expandedLessonId === lesson.id ? 'إخفاء' : 'مشاهدة'}
+                        </button>
+                      ) : (
+                        <span className="meta">بدون فيديو</span>
+                      )}
+                    </div>
+                    {expandedLessonId === lesson.id && lesson.videoUrl && (
+                      <div style={{ position: 'relative', paddingTop: '56.25%', marginBottom: 8 }}>
+                        <iframe
+                          src={lesson.videoUrl}
+                          allow="autoplay; fullscreen"
+                          allowFullScreen
+                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0, borderRadius: 12 }}
+                        />
+                      </div>
+                    )}
+                  </Fragment>
+                ))
+              )}
             </div>
           ))
         )}
       </div>
 
-      <div className="card section" style={{ maxWidth: 520, borderColor: 'var(--error)' }}>
+      <div className="card section" style={{ maxWidth: 640, margin: '0 auto', borderColor: 'var(--error)' }}>
         <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
         <p className="meta">حذف هذه الدورة يخفيها فورًا من كل مكان في المنصة.</p>
         <div className="actions">

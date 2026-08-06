@@ -45,7 +45,7 @@ export function AdminOrderDetailPage() {
         </span>
       </PageHeader>
 
-      <div className="card section" style={{ maxWidth: 520 }}>
+      <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
         <h3 style={{ marginBottom: 8 }}>عناصر الطلب</h3>
         {data.items.length === 0 ? (
           <p className="meta">لا توجد عناصر</p>
@@ -74,7 +74,7 @@ export function AdminOrderDetailPage() {
         </div>
       </div>
 
-      <div className="card section" style={{ maxWidth: 520 }}>
+      <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
         <h3 style={{ marginBottom: 8 }}>محاولات الدفع</h3>
         {data.payments.length === 0 ? (
           <p className="meta">لا توجد محاولات دفع بعد</p>

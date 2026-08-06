@@ -6,7 +6,7 @@ import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DOCUMENT_STATUS } from '../../../shared/lib/status-labels'
 import { useAdminDocuments } from '../hooks/useAdminDocuments'
-import { deleteAdminDocument } from '../api/admin-documents.api'
+import { deleteAdminDocument, getAdminDocumentViewUrl } from '../api/admin-documents.api'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -92,7 +92,16 @@ export function AdminDocumentsPage() {
                     </td>
                     <td>{document.version}</td>
                     <td>{formatDate(document.createdAt)}</td>
-                    <td>
+                    <td style={{ display: 'flex', gap: 6 }}>
+                      <a
+                        href={getAdminDocumentViewUrl(document.id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn text"
+                      >
+                        <span className="ms">visibility</span>
+                        عرض
+                      </a>
                       <button
                         type="button"
                         className="btn text"

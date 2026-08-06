@@ -37,7 +37,7 @@ export function AdminCreateAdminPage() {
         هذا الحساب هيقدر يدخل بنفس صفحة تسجيل الدخول، وهيكون عنده نفس صلاحياتك بالكامل
       </p>
 
-      <form onSubmit={(event) => void handleSubmit(event)} className="card" style={{ maxWidth: 520 }}>
+      <form onSubmit={(event) => void handleSubmit(event)} className="card" style={{ maxWidth: 640, margin: '0 auto' }}>
         <div className="tf">
           <label htmlFor="new-admin-name">الاسم الكامل</label>
           <input

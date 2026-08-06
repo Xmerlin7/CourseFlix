@@ -184,7 +184,7 @@ export function AdminUserDetailPage() {
           void handleSaveProfile()
         }}
         className="card section"
-        style={{ maxWidth: 520 }}
+        style={{ maxWidth: 640, margin: '0 auto' }}
       >
         <div className="tf">
           <label htmlFor="admin-user-name">الاسم الكامل</label>
@@ -222,7 +222,7 @@ export function AdminUserDetailPage() {
         </div>
       </form>
 
-      <div className="card section" style={{ maxWidth: 520 }}>
+      <div className="card section" style={{ maxWidth: 640, margin: '0 auto' }}>
         <div className="tf">
           <label htmlFor="admin-user-role">الدور</label>
           <select
@@ -256,7 +256,7 @@ export function AdminUserDetailPage() {
         </div>
       </div>
 
-      <div className="card section" style={{ maxWidth: 520, borderColor: 'var(--error)' }}>
+      <div className="card section" style={{ maxWidth: 640, margin: '0 auto', borderColor: 'var(--error)' }}>
         <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
         <p className="meta">
           {hasDependents
