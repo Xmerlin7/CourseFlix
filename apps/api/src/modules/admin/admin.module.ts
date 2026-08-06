@@ -31,6 +31,8 @@ import { AdminNotificationsController } from './controllers/admin-notifications.
 import { AdminNotificationsService } from './services/admin-notifications.service';
 import { AdminAgentLogsController } from './controllers/admin-agent-logs.controller';
 import { AdminAgentLogsService } from './services/admin-agent-logs.service';
+import { AdminAnalyticsController } from './controllers/admin-analytics.controller';
+import { AdminAnalyticsService } from './services/admin-analytics.service';
 
 @Module({
   // SessionsModule is required directly here (not just transitively) for
@@ -64,6 +66,7 @@ import { AdminAgentLogsService } from './services/admin-agent-logs.service';
     AdminInterventionsController,
     AdminNotificationsController,
     AdminAgentLogsController,
+    AdminAnalyticsController,
   ],
   providers: [
     AdminUsersService,
@@ -74,6 +77,7 @@ import { AdminAgentLogsService } from './services/admin-agent-logs.service';
     AdminInterventionsService,
     AdminNotificationsService,
     AdminAgentLogsService,
+    AdminAnalyticsService,
   ],
 })
 export class AdminModule {}

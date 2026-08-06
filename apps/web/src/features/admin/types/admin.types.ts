@@ -191,6 +191,29 @@ export interface AdminAgentLogListItem {
   executedAt: string
 }
 
+export interface AdminAnalyticsOverview {
+  users: {
+    total: number
+    students: number
+    teachers: number
+    admins: number
+  }
+  courses: {
+    total: number
+    published: number
+    draft: number
+  }
+  commerce: {
+    totalOrders: number
+    paidOrders: number
+    revenueMinor: number
+    currency: string
+  }
+  interventions: {
+    active: number
+  }
+}
+
 export interface AdminAgentLogsFilter {
   agentType?: string
   status?: string
