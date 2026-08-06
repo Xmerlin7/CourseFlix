@@ -9,10 +9,8 @@ import {
   OpenAIEmbeddingProvider,
 } from './adapters/embedding.adapter';
 import { ChromaAdapter } from './adapters/chroma.adapter';
-import {
-  NOTIFICATION_PRODUCER_PORT,
-  NoopNotificationProducer,
-} from './common/ports/notification-producer.port';
+import { DbNotificationProducer } from './adapters/db-notification.adapter';
+import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer.port';
 
 /**
  * Root module for the standalone BullMQ worker application.
@@ -74,7 +72,7 @@ import {
     },
     {
       provide: NOTIFICATION_PRODUCER_PORT,
-      useClass: NoopNotificationProducer,
+      useClass: DbNotificationProducer,
     },
   ],
 })
