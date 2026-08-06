@@ -367,9 +367,14 @@ export class ExamGenerationProcessor extends WorkerHost {
         [quizId],
       );
     } else {
+      // "generationType" (not generation_type): the pre-existing
+      // QuizEntity column has no explicit `name:` mapping, so
+      // TypeORM's synchronize created it camelCase — everywhere else
+      // in this schema is snake_case, this one column isn't. Verified
+      // against the live DB (`\d quizzes`), not guessed.
       await this.dataSource.query(
         `INSERT INTO quizzes (
-          id, course_id, section_id, lesson_id, created_by, generation_type,
+          id, course_id, section_id, lesson_id, created_by, "generationType",
           title, status, due_at, version
         ) VALUES ($1, $2, $3, $4, NULL, 'rag_generated', $5, 'pending_review', $6, 1)`,
         [
