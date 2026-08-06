@@ -12,6 +12,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
+import { ExamGenerationModule } from './modules/exam-generation/exam-generation.module';
 import { HealthModule } from './modules/health/health.module';
 import { InterventionsModule } from './modules/interventions/interventions.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
@@ -73,6 +74,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     DocumentsModule,
     NotificationsModule,
     QuizzesModule,
+    ExamGenerationModule,
     JobsModule,
     RetrievalModule,
     LessonsModule,
