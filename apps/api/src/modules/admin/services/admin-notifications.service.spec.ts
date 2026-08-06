@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { NOTIFICATION_PRODUCER_PORT } from '../../../common/ports/notification-producer.port';
 import { NotificationEntity } from '../../notifications/entities/notification.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import { AdminNotificationsService } from './admin-notifications.service';
@@ -12,7 +13,8 @@ describe('AdminNotificationsService', () => {
     findOne: jest.Mock;
     softRemove: jest.Mock;
   };
-  let usersRepository: { find: jest.Mock };
+  let usersRepository: { find: jest.Mock; findOne: jest.Mock };
+  let notificationProducer: { notify: jest.Mock };
 
   beforeEach(async () => {
     notificationsRepository = {
@@ -20,7 +22,11 @@ describe('AdminNotificationsService', () => {
       findOne: jest.fn(),
       softRemove: jest.fn(),
     };
-    usersRepository = { find: jest.fn().mockResolvedValue([]) };
+    usersRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+    };
+    notificationProducer = { notify: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -30,6 +36,7 @@ describe('AdminNotificationsService', () => {
           useValue: notificationsRepository,
         },
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
+        { provide: NOTIFICATION_PRODUCER_PORT, useValue: notificationProducer },
       ],
     }).compile();
 
@@ -52,5 +59,38 @@ describe('AdminNotificationsService', () => {
     await expect(service.deleteNotification('missing')).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  describe('sendNotification', () => {
+    it('routes the message through the notification producer as an announcement', async () => {
+      usersRepository.findOne.mockResolvedValue({ id: 'user-1' });
+
+      await service.sendNotification({
+        userId: 'user-1',
+        title: 'مراجعة الدورة',
+        message: 'في مشكلة في الدرس التالت',
+      });
+
+      expect(notificationProducer.notify).toHaveBeenCalledWith({
+        userId: 'user-1',
+        type: 'announcement',
+        title: 'مراجعة الدورة',
+        message: 'في مشكلة في الدرس التالت',
+        relatedEntityType: undefined,
+        relatedEntityId: undefined,
+      });
+    });
+
+    it('throws NotFoundException when the target user does not exist', async () => {
+      usersRepository.findOne.mockResolvedValue(null);
+      await expect(
+        service.sendNotification({
+          userId: 'missing',
+          title: 'x',
+          message: 'y',
+        }),
+      ).rejects.toThrow(NotFoundException);
+      expect(notificationProducer.notify).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
+import {
+  NOTIFICATION_PRODUCER_PORT,
+  NotificationProducerPort,
+} from '../../../common/ports/notification-producer.port';
 import { NotificationEntity } from '../../notifications/entities/notification.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import { ListAdminNotificationsQueryDto } from '../dto/list-admin-notifications-query.dto';
+import { SendAdminNotificationDto } from '../dto/send-admin-notification.dto';
 
 export interface AdminNotificationListItem {
   id: string;
@@ -28,7 +33,32 @@ export class AdminNotificationsService {
     private readonly notificationsRepository: Repository<NotificationEntity>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @Inject(NOTIFICATION_PRODUCER_PORT)
+    private readonly notificationProducer: NotificationProducerPort,
   ) {}
+
+  // Lets an admin message any user directly — the moderation counterpart
+  // to viewing content: if something needs a comment or action from the
+  // owning teacher/student (a course, a lesson inside it, a quiz, the
+  // account itself), this is how it reaches them, going through the same
+  // notification pipeline every other producer in the app uses.
+  async sendNotification(dto: SendAdminNotificationDto): Promise<void> {
+    const user = await this.usersRepository.findOne({
+      where: { id: dto.userId, deletedAt: IsNull() },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    await this.notificationProducer.notify({
+      userId: dto.userId,
+      type: 'announcement',
+      title: dto.title,
+      message: dto.message,
+      relatedEntityType: dto.relatedEntityType,
+      relatedEntityId: dto.relatedEntityId,
+    });
+  }
 
   async listNotifications(
     query: ListAdminNotificationsQueryDto,

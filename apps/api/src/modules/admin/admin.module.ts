@@ -17,6 +17,7 @@ import { UsersModule } from '../users/users.module';
 import { CoursesModule } from '../courses/courses.module';
 import { QuizzesModule } from '../quizzes/quiz.module';
 import { DocumentsModule } from '../documents/documents.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminUsersService } from './services/admin-users.service';
@@ -61,6 +62,7 @@ import { AdminAnalyticsService } from './services/admin-analytics.service';
     CoursesModule,
     QuizzesModule,
     DocumentsModule,
+    NotificationsModule,
     SessionsModule,
   ],
   controllers: [

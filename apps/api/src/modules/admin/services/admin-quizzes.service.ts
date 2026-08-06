@@ -8,6 +8,7 @@ import {
 } from '../../quizzes/quizzes.service';
 import { UpdateQuizDto } from '../../quizzes/dto/update-quiz.dto';
 import { CourseEntity } from '../../courses/entities/course.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { ListQuizzesQueryDto } from '../dto/list-quizzes-query.dto';
 
 export interface AdminQuizListItem {
@@ -16,6 +17,20 @@ export interface AdminQuizListItem {
   courseId: string;
   courseTitle: string;
   createdAt: string;
+}
+
+export interface AdminQuizDetail extends TeacherQuizResponse {
+  courseId: string;
+  courseTitle: string;
+  teacherId: string;
+  teacherName: string;
+}
+
+interface OwningCourse {
+  courseId: string;
+  courseTitle: string;
+  teacherId: string;
+  teacherName: string;
 }
 
 const MAX_RESULTS = 200;
@@ -27,6 +42,8 @@ export class AdminQuizzesService {
     private readonly quizRepository: Repository<QuizEntity>,
     @InjectRepository(CourseEntity)
     private readonly coursesRepository: Repository<CourseEntity>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
     private readonly quizzesService: QuizzesService,
   ) {}
 
@@ -53,26 +70,30 @@ export class AdminQuizzesService {
     }));
   }
 
-  async getQuizDetail(quizId: string): Promise<TeacherQuizResponse> {
-    const teacherId = await this.resolveTeacherId(quizId);
-    return this.quizzesService.getTeacherQuiz(quizId, teacherId);
+  async getQuizDetail(quizId: string): Promise<AdminQuizDetail> {
+    const owner = await this.resolveOwningCourse(quizId);
+    const quiz = await this.quizzesService.getTeacherQuiz(
+      quizId,
+      owner.teacherId,
+    );
+    return { ...quiz, ...owner };
   }
 
   async updateQuiz(
     quizId: string,
     dto: UpdateQuizDto,
   ): Promise<TeacherQuizResponse> {
-    const teacherId = await this.resolveTeacherId(quizId);
-    return this.quizzesService.updateQuiz(quizId, teacherId, dto);
+    const owner = await this.resolveOwningCourse(quizId);
+    return this.quizzesService.updateQuiz(quizId, owner.teacherId, dto);
   }
 
   // Soft delete — QuizzesService.deleteQuiz() already uses softRemove().
   async deleteQuiz(quizId: string): Promise<void> {
-    const teacherId = await this.resolveTeacherId(quizId);
-    await this.quizzesService.deleteQuiz(quizId, teacherId);
+    const owner = await this.resolveOwningCourse(quizId);
+    await this.quizzesService.deleteQuiz(quizId, owner.teacherId);
   }
 
-  private async resolveTeacherId(quizId: string): Promise<string> {
+  private async resolveOwningCourse(quizId: string): Promise<OwningCourse> {
     const quiz = await this.quizRepository.findOne({
       where: { id: quizId, deletedAt: IsNull() },
     });
@@ -85,7 +106,15 @@ export class AdminQuizzesService {
     if (!course) {
       throw new NotFoundException('Course not found for this quiz.');
     }
-    return course.teacherId;
+    const teacher = await this.usersRepository.findOne({
+      where: { id: course.teacherId },
+    });
+    return {
+      courseId: course.id,
+      courseTitle: course.title,
+      teacherId: course.teacherId,
+      teacherName: teacher?.fullName ?? '—',
+    };
   }
 
   private async loadCourseTitles(
