@@ -12,6 +12,10 @@ import {
   INTERVENTION_EVALUATOR_PORT,
   InterventionEvaluatorPort,
 } from '../../common/ports/intervention-evaluator.port';
+import {
+  NOTIFICATION_PRODUCER_PORT,
+  NotificationProducerPort,
+} from '../../common/ports/notification-producer.port';
 import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { QuestionEntity, QuestionType } from './entities/question.entity';
@@ -83,6 +87,8 @@ export class QuizzesService {
     private enrollmentsService: EnrollmentsService,
     @Inject(INTERVENTION_EVALUATOR_PORT)
     private interventionEvaluator: InterventionEvaluatorPort,
+    @Inject(NOTIFICATION_PRODUCER_PORT)
+    private notificationProducer: NotificationProducerPort,
   ) {}
 
   private async assertTeacherOwnsCourse(
@@ -448,6 +454,17 @@ export class QuizzesService {
         })),
       );
       await queryRunner.commitTransaction();
+
+      // Fire-and-forget, same as the intervention evaluator below — a
+      // notification hiccup must never fail the already-committed quiz.
+      this.notifyEnrolledStudents(dto.courseId, quiz.id, quiz.title).catch(
+        (error: unknown) => {
+          this.logger.warn(
+            `Quiz-ready notification failed for quiz=${quiz.id}: ${String(error)}`,
+          );
+        },
+      );
+
       return {
         id: quiz.id,
         title: quiz.title,
@@ -468,6 +485,29 @@ export class QuizzesService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  // Notifies every actively enrolled student that a new quiz is
+  // available — used for manual creation here and for AI-generated
+  // quizzes in ExamGenerationService#accept.
+  private async notifyEnrolledStudents(
+    courseId: string,
+    quizId: string,
+    quizTitle: string,
+  ): Promise<void> {
+    const studentIds = await this.enrollmentsService.listActiveStudentIds(courseId);
+    await Promise.all(
+      studentIds.map((studentId) =>
+        this.notificationProducer.notify({
+          userId: studentId,
+          type: 'quiz_ready',
+          title: 'اختبار جديد متاح',
+          message: `اختبار جديد "${quizTitle}" متاح دلوقتي، جاهز للحل.`,
+          relatedEntityType: 'quiz',
+          relatedEntityId: quizId,
+        }),
+      ),
+    );
   }
 
   async updateQuiz(

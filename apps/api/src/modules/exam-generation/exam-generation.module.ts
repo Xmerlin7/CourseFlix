@@ -3,7 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CourseEntity } from '../courses/entities/course.entity';
 import { SectionEntity } from '../courses/entities/section.entity';
 import { LessonEntity } from '../courses/entities/lesson.entity';
+import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { JobsModule } from '../jobs/jobs.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { QuizEntity } from '../quizzes/entities/quiz.entity';
 import { QuestionEntity } from '../quizzes/entities/question.entity';
 import { QuizQuestionEntity } from '../quizzes/entities/quiz-question.entity';
@@ -29,6 +31,8 @@ import { ExamGenerationService } from './exam-generation.service';
     // module's own DI context (same fix as CF-BUG-001 in TeacherModule).
     SessionsModule,
     JobsModule,
+    EnrollmentsModule,
+    NotificationsModule,
   ],
   controllers: [ExamGenerationController],
   providers: [ExamGenerationService],

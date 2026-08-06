@@ -2,14 +2,20 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
+import {
+  NOTIFICATION_PRODUCER_PORT,
+  NotificationProducerPort,
+} from '../../common/ports/notification-producer.port';
 import { CourseEntity } from '../courses/entities/course.entity';
 import { SectionEntity } from '../courses/entities/section.entity';
 import { LessonEntity } from '../courses/entities/lesson.entity';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { QuizEntity } from '../quizzes/entities/quiz.entity';
 import { QuestionEntity } from '../quizzes/entities/question.entity';
 import { QuizQuestionEntity } from '../quizzes/entities/quiz-question.entity';
@@ -72,6 +78,9 @@ export class ExamGenerationService {
     @InjectRepository(LessonEntity)
     private readonly lessonsRepo: Repository<LessonEntity>,
     private readonly jobsService: JobsService,
+    private readonly enrollmentsService: EnrollmentsService,
+    @Inject(NOTIFICATION_PRODUCER_PORT)
+    private readonly notificationProducer: NotificationProducerPort,
   ) {}
 
   async createRequest(
@@ -152,11 +161,44 @@ export class ExamGenerationService {
       throw new ConflictException('هذا الطلب ليس بانتظار المراجعة.');
     }
 
+    const quiz = await this.quizRepo.findOne({ where: { id: request.quizId } });
     await this.quizRepo.update(request.quizId, { status: 'published' });
     request.status = 'accepted';
     await this.requestRepo.save(request);
 
+    if (quiz) {
+      await this.notifyEnrolledStudents(request.courseId, quiz.id, quiz.title);
+    }
+
     return this.toSummary(request);
+  }
+
+  // Fired once the quiz actually becomes visible to students (accept
+  // here; QuizzesService#createQuiz for manually created quizzes) — a
+  // notification failure must never fail the accept action itself.
+  private async notifyEnrolledStudents(
+    courseId: string,
+    quizId: string,
+    quizTitle: string,
+  ): Promise<void> {
+    try {
+      const studentIds = await this.enrollmentsService.listActiveStudentIds(courseId);
+      await Promise.all(
+        studentIds.map((studentId) =>
+          this.notificationProducer.notify({
+            userId: studentId,
+            type: 'quiz_ready',
+            title: 'اختبار جديد متاح',
+            message: `اختبار جديد "${quizTitle}" متاح دلوقتي، جاهز للحل.`,
+            relatedEntityType: 'quiz',
+            relatedEntityId: quizId,
+          }),
+        ),
+      );
+    } catch {
+      // Swallowed on purpose — the quiz is already published; a
+      // notification hiccup shouldn't surface as an accept failure.
+    }
   }
 
   async reject(
