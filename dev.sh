@@ -164,29 +164,50 @@ install_ngrok() {
   step "Installing ngrok"
 
   arch="$(ngrok_arch)"
-  [ -n "$arch" ] || die "unsupported platform for ngrok auto-install: $(uname -s) $(uname -m)"
+  if [ -z "$arch" ]; then
+    warn "unsupported platform for ngrok auto-install: $(uname -s) $(uname -m)"
+    return 1
+  fi
 
   dest="$HOME/.local/bin"
   mkdir -p "$dest"
   url="$NGROK_DOWNLOAD_BASE/ngrok-v3-stable-$arch.tgz"
 
   printf '  downloading ngrok (%s) ...\n' "$arch"
-  curl -fsSL "$url" -o "$LOG_DIR/ngrok.tgz" || die "failed to download ngrok from $url"
-  tar -xzf "$LOG_DIR/ngrok.tgz" -C "$dest" ngrok || die "failed to extract ngrok."
+  if ! curl -fsSL "$url" -o "$LOG_DIR/ngrok.tgz"; then
+    warn "failed to download ngrok from $url"
+    return 1
+  fi
+  if ! tar -xzf "$LOG_DIR/ngrok.tgz" -C "$dest" ngrok; then
+    warn "failed to extract ngrok."
+    rm -f "$LOG_DIR/ngrok.tgz"
+    return 1
+  fi
   rm -f "$LOG_DIR/ngrok.tgz"
   chmod +x "$dest/ngrok"
   ok "installed ngrok to $dest/ngrok"
 }
 
+# Note: every failure path here returns 1 instead of calling die() — see
+# start_ngrok()'s docblock. `ensure_ngrok` itself is used elsewhere for
+# nothing but the tunnel, so a soft failure here just means no tunnel.
 ensure_ngrok() {
   if command -v ngrok >/dev/null 2>&1; then
     ok "ngrok $(ngrok version | sed 's/^version //' || true)"
     return 0
   fi
-  install_ngrok
-  command -v ngrok >/dev/null 2>&1 \
-    || PATH="$HOME/.local/bin:$PATH" command -v ngrok >/dev/null 2>&1 \
-    || die "ngrok installed but not on PATH. Add $HOME/.local/bin to PATH and re-run."
+  install_ngrok || return 1
+  # `PATH=... command -v ngrok` only extends PATH for that one check, not
+  # for the rest of the script — so a freshly auto-installed binary would
+  # pass this probe but still fail to `exec` from start_ngrok(). Export it
+  # for real so every later `ngrok` invocation in this script can find it.
+  if [ -x "$HOME/.local/bin/ngrok" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
+  if ! command -v ngrok >/dev/null 2>&1; then
+    warn "ngrok installed but not on PATH ($HOME/.local/bin)"
+    return 1
+  fi
 }
 
 ngrok_public_url() {
@@ -196,7 +217,16 @@ ngrok_public_url() {
 
 start_ngrok() {
   step "Starting ngrok tunnel (API port $API_PORT)"
-  ensure_ngrok
+
+  # ngrok only exists here so Paymob's payment callbacks can reach this
+  # machine — nothing else in the stack (API, web, worker) depends on it.
+  # A flaky download or a platform ngrok doesn't support must never take
+  # down the rest of local dev, so every failure path below warns and
+  # returns instead of calling die().
+  if ! ensure_ngrok; then
+    warn "ngrok unavailable — continuing without a tunnel (Paymob callbacks won't reach this machine)"
+    return 0
+  fi
 
   # Reuse an already-running tunnel for the same API port instead of
   # spawning a duplicate (ngrok refuses to run twice against one agent).
@@ -217,7 +247,12 @@ start_ngrok() {
   printf '  waiting for ngrok tunnel'
   local waited=0 url
   until url="$(ngrok_public_url)" && [ -n "$url" ]; do
-    [ "$waited" -ge 30 ] && { printf '\n'; tail -5 "$NGROK_LOG" >&2; die "ngrok did not start within 30s. See $NGROK_LOG"; }
+    if [ "$waited" -ge 30 ]; then
+      printf '\n'
+      tail -5 "$NGROK_LOG" >&2
+      warn "ngrok did not start within 30s — continuing without a tunnel. See $NGROK_LOG"
+      return 0
+    fi
     printf '.'
     sleep 1
     waited=$((waited + 1))
