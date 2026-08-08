@@ -121,7 +121,7 @@ export async function seedDocuments(
       }),
     );
 
-    await documentRepository.save(
+    const savedDoc = await documentRepository.save(
       documentRepository.create({
         courseId,
         uploadedBy: teacherId,
@@ -135,7 +135,95 @@ export async function seedDocuments(
       }),
     );
     created += 1;
+
+    // Seed document_chunks for completed documents so Tutor has grounded physics knowledge
+    if (blueprint.status === 'completed') {
+      await seedDocumentChunksForDoc(dataSource, savedDoc.id, blueprint.fileName);
+    }
+  }
+
+  // Also ensure completed documents already existing get their chunks seeded
+  const completedDocs = await documentRepository.find({
+    where: { processingStatus: 'completed' },
+  });
+
+  for (const doc of completedDocs) {
+    await seedDocumentChunksForDoc(dataSource, doc.id, doc.fileName);
   }
 
   return { created, reset };
 }
+
+async function seedDocumentChunksForDoc(
+  dataSource: DataSource,
+  documentId: string,
+  fileName: string,
+): Promise<void> {
+  const existingChunks = await dataSource.query(
+    `SELECT id FROM document_chunks WHERE document_id = $1`,
+    [documentId],
+  );
+
+  if (existingChunks.length > 0) {
+    return;
+  }
+
+  const sampleChunksMap: Record<string, Array<{ page: number; text: string }>> = {
+    'ملخص-قوانين-نيوتن.pdf': [
+      {
+        page: 1,
+        text: 'قانون نيوتن الأول (قانون القصور الذاتي): يظل الجسم على حالته من السكون أو الحركة المنتظمة في خط مستقيم ما لم تؤثر عليه قوة محصلة خارجية تغير من حالته.',
+      },
+      {
+        page: 2,
+        text: 'قانون نيوتن الثاني: القوة المحصلة المؤثرة على جسم تساوي حاصل ضرب كتلة الجسم في عجلة تسارعه، بالصيغة الرياضية F = m * a. تقاس القوة بوحدة نيوتن.',
+      },
+      {
+        page: 3,
+        text: 'قانون نيوتن الثالث: لكل قوة فعل قوة رد فعل مساوية لها في المقدار ومضادة لها في الاتجاه، وتعملان على جسمين مختلفين وفي نفس الوقت.',
+      },
+    ],
+    'مسائل-محلولة-الشغل-والطاقة.pdf': [
+      {
+        page: 1,
+        text: 'الشغل والطاقة الحركية: الشغل المبذول بواسطة قوة ثابتة تحرك جسماً إزاحة d يعطى بالمعادلة W = F * d * cos(theta). الطاقة الحركية تساوي KE = 0.5 * m * v^2.',
+      },
+      {
+        page: 2,
+        text: 'قانون حفظ الطاقة الميكانيكية: الطاقة لا تفنى ولا تستحدث من العدم ولكنها تتحول من شكل لآخر. المجموع الكلي لطاقة الوضع والطاقة الحركية يبقى ثابتاً.',
+      },
+    ],
+    default: [
+      {
+        page: 1,
+        text: 'مقدمة في الكهرومغناطيسية وقانون كولوم: ينص قانون كولوم على أن التجاذب أو التنافر بين شحنتين تناسب طردياً مع حاصل ضرب الشحنتين وعكسياً مع مربع المسافة F = k * |q1 * q2| / r^2.',
+      },
+      {
+        page: 2,
+        text: 'المجال الكهربي والجهد الكهربي: شدة المجال الكهربي الناشئ عن شحنة نقطية يحسب بالقانون E = k * |Q| / r^2 ويكون اتجاهه خارجاً من الشحنة الموجبة وداخلاً للشحنة السالبة.',
+      },
+    ],
+  };
+
+  const chunks = sampleChunksMap[fileName] || sampleChunksMap['default'];
+
+  for (let index = 0; index < chunks.length; index++) {
+    const chunk = chunks[index];
+    const vectorId = `${documentId}:1:${index}`;
+
+    await dataSource.query(
+      `INSERT INTO document_chunks (
+        document_id, chunk_index, text_preview, vector_id, page_number, token_count, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, true)`,
+      [
+        documentId,
+        index,
+        chunk.text,
+        vectorId,
+        chunk.page,
+        Math.ceil(chunk.text.length / 4),
+      ],
+    );
+  }
+}
+

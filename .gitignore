@@ -29,6 +29,9 @@ demo-logins.md
 # Local document storage runtime data (STORAGE_ROOT default = ./storage, cwd = apps/api)
 /apps/api/storage/
 
+# Downloaded local tooling (e.g. yt-dlp.exe, see YT_DLP_PATH in .env)
+/bin/
+
 # Editors and OS
 .DS_Store
 .idea/
