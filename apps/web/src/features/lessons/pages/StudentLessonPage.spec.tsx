@@ -492,4 +492,16 @@ describe('StudentLessonPage', () => {
     expect(nextBtn).toHaveClass('disabled')
     expect(nextBtn).toHaveAttribute('aria-disabled', 'true')
   })
+
+  it('renders the detailed lesson page skeleton while loading', () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/lessons/lesson-1`, async () => {
+        await new Promise(() => {})
+      }),
+    )
+
+    renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(screen.getByTestId('lesson-skeleton')).toBeInTheDocument()
+  })
 })

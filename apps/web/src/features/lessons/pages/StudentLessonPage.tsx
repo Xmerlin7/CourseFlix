@@ -191,7 +191,7 @@ export function StudentLessonPage() {
   })
 
   if (isLoading) {
-    return <LoadingState variant="text" />
+    return <LoadingState variant="lesson" />
   }
 
   if (error) {
