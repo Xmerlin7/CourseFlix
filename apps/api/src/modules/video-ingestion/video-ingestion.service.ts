@@ -9,10 +9,10 @@ import {
 } from './entities/video-transcript.entity';
 
 /**
- * Only the two hosts `courses.service.ts#normalizeLessonVideoUrl` is
- * aware of have a captions API we can call — a plain self-hosted MP4 (or
- * any other host) has no captions to fetch, so it's skipped rather than
- * failed.
+ * YouTube and Bunny Stream have a captions API we can call directly; any
+ * other http(s) host — a self-hosted or otherwise directly-linked MP4 —
+ * has no captions to fetch, so it's routed to `local`, which the worker
+ * transcribes via Whisper instead. Only an unparseable URL is skipped.
  */
 function detectCaptionProvider(videoUrl: string): VideoTranscriptProvider | null {
   let hostname: string;
@@ -28,7 +28,7 @@ function detectCaptionProvider(videoUrl: string): VideoTranscriptProvider | null
   if (['iframe.mediadelivery.net', 'player.mediadelivery.net'].includes(hostname)) {
     return 'bunny';
   }
-  return null;
+  return 'local';
 }
 
 @Injectable()

@@ -1,125 +1,81 @@
-import { Injectable, Logger } from '@nestjs/common';
-import {
-  CaptionCue,
-  CaptionProvider,
-  CaptionsUnavailableError,
-  decodeHtmlEntities,
-} from './caption-provider';
+import { spawn } from 'node:child_process';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { CaptionCue, CaptionProvider, CaptionsUnavailableError } from './caption-provider';
+import { transcribeAudioBytes } from './whisper-transcribe';
 
-const TIMEDTEXT_BASE = 'https://www.youtube.com/api/timedtext';
-
-function extractVideoId(videoUrl: string): string | null {
-  let parsed: URL;
-  try {
-    parsed = new URL(videoUrl);
-  } catch {
-    return null;
-  }
-
-  const hostname = parsed.hostname.replace(/^www\./, '').toLowerCase();
-  if (hostname === 'youtu.be') {
-    return parsed.pathname.slice(1) || null;
-  }
-  if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
-    return (
-      parsed.searchParams.get('v') ??
-      parsed.pathname.match(/\/embed\/([^/]+)/)?.[1] ??
-      null
-    );
-  }
-  return null;
-}
-
-function parseTrackList(xml: string): string[] {
-  const langCodes: string[] = [];
-  const trackPattern = /<track\b[^>]*lang_code="([^"]+)"[^>]*>/g;
-  let match: RegExpExecArray | null;
-  while ((match = trackPattern.exec(xml)) !== null) {
-    langCodes.push(match[1]);
-  }
-  return langCodes;
-}
-
-function parseTranscript(xml: string): CaptionCue[] {
-  const cues: CaptionCue[] = [];
-  const textPattern =
-    /<text start="([\d.]+)" dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g;
-  let match: RegExpExecArray | null;
-  while ((match = textPattern.exec(xml)) !== null) {
-    const [, startRaw, durRaw, rawText] = match;
-    const text = decodeHtmlEntities(rawText.replace(/<[^>]+>/g, '')).trim();
-    if (!text) {
-      continue;
-    }
-    const start = Number(startRaw);
-    const dur = Number(durRaw);
-    cues.push({
-      startSeconds: Math.round(start),
-      endSeconds: Math.round(start + dur),
-      text,
-    });
-  }
-  return cues;
-}
+const DEFAULT_YT_DLP_PATH = 'yt-dlp';
 
 /**
- * Fetches YouTube's auto-generated or uploader-provided captions via the
- * unofficial `timedtext` endpoint — there is no official public API to
- * read another channel's captions without that channel owner completing
- * an OAuth grant, which this platform's teachers haven't done. This is
- * best-effort: YouTube can change or rate-limit this endpoint without
- * notice, so a failure here surfaces as a normal ingestion failure
- * (`video_transcripts.processing_status = 'failed'`), not a crash.
+ * Downloads a YouTube video's best audio-only stream via `yt-dlp` and
+ * returns the raw bytes on stdout (`-o -`), so nothing touches disk.
+ *
+ * `yt-dlp` (not a plain captions-API call, and not `ytdl-core`) is used
+ * deliberately: YouTube's unofficial `timedtext` endpoint now returns an
+ * empty body for every request from this environment regardless of
+ * whether the video has captions, and `ytdl-core`'s cipher/`n`-transform
+ * decoding is currently broken against YouTube's latest player (both
+ * verified by hand before writing this). `yt-dlp` is a actively
+ * maintained external binary (Python) that keeps up with YouTube's
+ * changes far faster than an in-process JS decipher implementation can
+ * — it must be installed and on `PATH` (or pointed to via `YT_DLP_PATH`)
+ * wherever the worker runs.
  */
+function downloadAudioViaYtDlp(
+  videoUrl: string,
+  ytDlpPath: string,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(ytDlpPath, [
+      '-f',
+      'bestaudio',
+      '--max-filesize',
+      '25M',
+      '--no-playlist',
+      '-o',
+      '-',
+      videoUrl,
+    ]);
+
+    const chunks: Buffer[] = [];
+    let stderr = '';
+
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+
+    child.on('error', (err) => {
+      reject(
+        new CaptionsUnavailableError(
+          `Could not start yt-dlp (is it installed and on PATH?): ${err.message}`,
+        ),
+      );
+    });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(
+          new CaptionsUnavailableError(
+            `yt-dlp exited with code ${code}: ${stderr.slice(-500)}`,
+          ),
+        );
+        return;
+      }
+      resolve(Buffer.concat(chunks));
+    });
+  });
+}
+
 @Injectable()
 export class YoutubeCaptionsAdapter implements CaptionProvider {
-  private readonly logger = new Logger(YoutubeCaptionsAdapter.name);
+  constructor(private readonly configService: ConfigService) {}
 
   async fetchCaptions(videoUrl: string): Promise<CaptionCue[]> {
-    const videoId = extractVideoId(videoUrl);
-    if (!videoId) {
-      throw new CaptionsUnavailableError(
-        `Could not extract a YouTube video id from ${videoUrl}`,
-      );
-    }
+    const ytDlpPath =
+      this.configService.get<string>('YT_DLP_PATH') || DEFAULT_YT_DLP_PATH;
 
-    const listResponse = await fetch(
-      `${TIMEDTEXT_BASE}?type=list&v=${videoId}`,
-    );
-    if (!listResponse.ok) {
-      throw new CaptionsUnavailableError(
-        `YouTube caption track list failed with status ${listResponse.status}`,
-      );
-    }
-
-    const availableLangs = parseTrackList(await listResponse.text());
-    if (availableLangs.length === 0) {
-      throw new CaptionsUnavailableError(
-        `Video ${videoId} has no captions available on YouTube.`,
-      );
-    }
-
-    const lang =
-      availableLangs.find((code) => code === 'ar') ??
-      availableLangs.find((code) => code === 'en') ??
-      availableLangs[0];
-
-    const transcriptResponse = await fetch(
-      `${TIMEDTEXT_BASE}?v=${videoId}&lang=${lang}`,
-    );
-    if (!transcriptResponse.ok) {
-      throw new CaptionsUnavailableError(
-        `YouTube transcript fetch failed with status ${transcriptResponse.status}`,
-      );
-    }
-
-    const cues = parseTranscript(await transcriptResponse.text());
-    if (cues.length === 0) {
-      throw new CaptionsUnavailableError(
-        `Video ${videoId}'s "${lang}" caption track was empty.`,
-      );
-    }
-
-    return cues;
+    const audioBytes = await downloadAudioViaYtDlp(videoUrl, ytDlpPath);
+    return transcribeAudioBytes(audioBytes, 'audio/webm', this.configService);
   }
 }

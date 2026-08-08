@@ -19,6 +19,7 @@ import { ChromaAdapter } from './adapters/chroma.adapter';
 import { DbNotificationProducer } from './adapters/db-notification.adapter';
 import { BunnyCaptionsAdapter } from './adapters/captions/bunny-captions.adapter';
 import { YoutubeCaptionsAdapter } from './adapters/captions/youtube-captions.adapter';
+import { WhisperCaptionsAdapter } from './adapters/captions/whisper-captions.adapter';
 import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer.port';
 
 /**
@@ -68,6 +69,7 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
     ExamGenerationProcessor,
     BunnyCaptionsAdapter,
     YoutubeCaptionsAdapter,
+    WhisperCaptionsAdapter,
     ChromaAdapter,
     {
       provide: EMBEDDING_PROVIDER,

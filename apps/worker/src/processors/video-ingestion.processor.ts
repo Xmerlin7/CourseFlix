@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { BunnyCaptionsAdapter } from '../adapters/captions/bunny-captions.adapter';
 import { YoutubeCaptionsAdapter } from '../adapters/captions/youtube-captions.adapter';
+import { WhisperCaptionsAdapter } from '../adapters/captions/whisper-captions.adapter';
 import { CaptionProvider } from '../adapters/captions/caption-provider';
 import { ChromaAdapter } from '../adapters/chroma.adapter';
 import type { EmbeddingProvider } from '../adapters/embedding.adapter';
@@ -20,7 +21,7 @@ interface TranscriptRecord {
   id: string;
   video_id: string;
   course_id: string;
-  provider: 'bunny' | 'youtube';
+  provider: 'bunny' | 'youtube' | 'local';
   version: number;
 }
 
@@ -54,6 +55,7 @@ export class VideoIngestionProcessor extends WorkerHost {
     private readonly dataSource: DataSource,
     private readonly bunnyCaptionsAdapter: BunnyCaptionsAdapter,
     private readonly youtubeCaptionsAdapter: YoutubeCaptionsAdapter,
+    private readonly whisperCaptionsAdapter: WhisperCaptionsAdapter,
     @Inject(EMBEDDING_PROVIDER)
     private readonly embeddingProvider: EmbeddingProvider,
     private readonly chromaAdapter: ChromaAdapter,
@@ -157,7 +159,9 @@ export class VideoIngestionProcessor extends WorkerHost {
     const provider: CaptionProvider =
       transcript.provider === 'bunny'
         ? this.bunnyCaptionsAdapter
-        : this.youtubeCaptionsAdapter;
+        : transcript.provider === 'youtube'
+          ? this.youtubeCaptionsAdapter
+          : this.whisperCaptionsAdapter;
 
     const cues = await provider.fetchCaptions(video.video_url);
 
