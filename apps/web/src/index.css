@@ -1597,7 +1597,7 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
   font-weight: 800;
 }
 .lesson-nav-item.locked {
-  opacity: 0.65;
+  opacity: 0.6;
   cursor: not-allowed;
   background: var(--surface-container-lowest);
 }
@@ -1607,6 +1607,11 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
 }
 .lesson-nav-item.locked .body .s {
   color: var(--on-surface-variant);
+}
+.lesson-nav-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: auto;
 }
 .quiz-after-lesson {
   margin-inline-start: 28px;
