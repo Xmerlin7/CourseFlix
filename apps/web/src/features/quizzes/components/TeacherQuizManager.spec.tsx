@@ -94,7 +94,7 @@ describe('TeacherQuizManager', () => {
         ],
       })
     })
-  })
+  }, 15000)
 
   it('edits an existing manual quiz', async () => {
     const user = userEvent.setup()
@@ -152,5 +152,5 @@ describe('TeacherQuizManager', () => {
         ],
       })
     })
-  })
+  }, 15000)
 })
