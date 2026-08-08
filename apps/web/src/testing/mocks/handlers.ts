@@ -344,4 +344,26 @@ export const handlers = [
       ],
     }),
   ),
+
+  http.get(apiUrl("/admin/users/:userId"), ({ params }) =>
+    HttpResponse.json({
+      id: params.userId,
+      fullName: "طالب تجريبي",
+      email: "student@example.com",
+      role: "student",
+      status: "active",
+      avatarUrl: null,
+      lastLoginAt: null,
+      createdAt: "2026-08-01T10:00:00.000Z",
+      updatedAt: "2026-08-01T10:00:00.000Z",
+      dependentRecordCounts: {
+        coursesTaught: 0,
+        enrollments: 0,
+        orders: 0,
+      },
+    }),
+  ),
+
+  http.delete(apiUrl("/admin/users/:userId"), () => new HttpResponse(null, { status: 204 })),
+  http.delete(apiUrl("/admin/users/:userId/hard"), () => new HttpResponse(null, { status: 204 })),
 ];
