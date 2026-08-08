@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router'
 import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import { env } from '../../../shared/lib/env'
@@ -355,5 +356,109 @@ describe('StudentLessonPage', () => {
       expect(link).toHaveAttribute('href', '/teacher/lessons/lesson-2')
     })
     expect(screen.getByText('معاينة المدرس')).toBeInTheDocument()
+  })
+
+  it('locks next lesson when current progress is 0%, 55%, or 99%, and unlocks at 100%', async () => {
+    const user = userEvent.setup()
+    const buildCourse = (progressPercentage: number, status: 'not_started' | 'in_progress' | 'completed') => ({
+      id: 'lesson-1',
+      title: 'الدرس الأول',
+      video: { id: 'v-1', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', durationSeconds: 100 },
+      course: {
+        id: 'c-1',
+        title: 'دورة الفيزياء',
+        currentSectionId: 's-1',
+        sections: [
+          {
+            id: 's-1',
+            title: 'الفصل الأول',
+            sortOrder: 1,
+            lessons: [
+              { id: 'lesson-1', title: 'الدرس الأول', sortOrder: 1, progressStatus: status, watchedPercentage: progressPercentage },
+              { id: 'lesson-2', title: 'الدرس الثاني', sortOrder: 2, progressStatus: 'not_started', watchedPercentage: 0 },
+            ],
+          },
+        ],
+      },
+      progress: { lastPositionSeconds: 0, watchedPercentage: progressPercentage, status },
+    })
+
+    // 1. Progress = 55% -> Next lesson locked
+    server.use(http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () => HttpResponse.json(buildCourse(55, 'in_progress'))))
+    const { unmount } = renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+    const lockedItems55 = screen.getAllByRole('link', { name: /مغلق/ })
+    expect(lockedItems55.length).toBeGreaterThanOrEqual(1)
+    await user.click(lockedItems55[0])
+    expect(screen.getByText('أكمل الدرس السابق بنسبة 100% لفتح هذا الدرس.')).toBeInTheDocument()
+    unmount()
+
+    // 2. Progress = 99% -> Still locked
+    server.use(http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () => HttpResponse.json(buildCourse(99, 'in_progress'))))
+    const { unmount: unmount99 } = renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+    const lockedItems99 = screen.getAllByRole('link', { name: /مغلق/ })
+    expect(lockedItems99.length).toBeGreaterThanOrEqual(1)
+    unmount99()
+
+    // 3. Progress = 100% -> Unlocked!
+    server.use(http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () => HttpResponse.json(buildCourse(100, 'completed'))))
+    renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /مغلق/ })).not.toBeInTheDocument()
+    const nextLessonLink = screen.getByRole('link', { name: /الدرس التالي/ })
+    expect(nextLessonLink).toHaveAttribute('href', '/student/lessons/lesson-2')
+  })
+
+  it('enforces sequential unlocking across multiple lessons', async () => {
+    // L1 = 100% (completed), L2 = 100% (completed), L3 = 55% (in_progress), L4 = not_started
+    server.use(
+      http.get(`${env.apiBaseUrl}/lessons/lesson-3`, () =>
+        HttpResponse.json({
+          id: 'lesson-3',
+          title: 'الدرس الثالث',
+          video: { id: 'v-3', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', durationSeconds: 100 },
+          course: {
+            id: 'c-1',
+            title: 'دورة الفيزياء',
+            currentSectionId: 's-1',
+            sections: [
+              {
+                id: 's-1',
+                title: 'الفصل الأول',
+                sortOrder: 1,
+                lessons: [
+                  { id: 'lesson-1', title: 'الدرس الأول', sortOrder: 1, progressStatus: 'completed', watchedPercentage: 100 },
+                  { id: 'lesson-2', title: 'الدرس الثاني', sortOrder: 2, progressStatus: 'completed', watchedPercentage: 100 },
+                  { id: 'lesson-3', title: 'الدرس الثالث', sortOrder: 3, progressStatus: 'in_progress', watchedPercentage: 55 },
+                  { id: 'lesson-4', title: 'الدرس الرابع', sortOrder: 4, progressStatus: 'not_started', watchedPercentage: 0 },
+                ],
+              },
+            ],
+          },
+          progress: { lastPositionSeconds: 55, watchedPercentage: 55, status: 'in_progress' },
+        }),
+      ),
+    )
+
+    renderPage(['/student/lessons/lesson-3'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الثالث' })).toBeInTheDocument()
+
+    // Lessons 1, 2, 3 should be unlocked (accessible)
+    expect(screen.getByRole('link', { name: /الدرس الأول/ })).toHaveAttribute('href', '/student/lessons/lesson-1')
+    expect(screen.getByRole('link', { name: /الدرس الثاني/ })).toHaveAttribute('href', '/student/lessons/lesson-2')
+    expect(screen.getByRole('link', { current: 'page' })).toHaveTextContent('الدرس الثالث')
+
+    // Lesson 4 should be locked (both playlist link and next lesson link)
+    const l4Links = screen.getAllByRole('link', { name: /الدرس الرابع/ })
+    expect(l4Links.length).toBeGreaterThanOrEqual(1)
+    l4Links.forEach((link) => {
+      expect(link).toHaveClass('locked')
+      expect(link).toHaveAttribute('aria-disabled', 'true')
+    })
   })
 })
