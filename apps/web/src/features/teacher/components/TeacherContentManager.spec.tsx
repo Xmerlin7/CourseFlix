@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
@@ -98,9 +98,9 @@ describe('TeacherContentManager', () => {
     renderWithProviders(<TeacherContentManager course={course} onChange={onChange} />)
 
     await user.type(screen.getByPlaceholderText('اسم الدرس'), 'Bunny lesson')
-    await user.type(
+    fireEvent.change(
       screen.getByPlaceholderText('رابط الفيديو أو كود embed من Bunny.net (اختياري)'),
-      embedCode,
+      { target: { value: embedCode } },
     )
     await user.click(screen.getByRole('button', { name: /إضافة درس/ }))
 
@@ -109,5 +109,23 @@ describe('TeacherContentManager', () => {
       videoUrl: embedCode,
     })
     expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens custom confirmation modal when deleting a section', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const confirmSpy = vi.spyOn(window, 'confirm')
+
+    renderWithProviders(<TeacherContentManager course={course} onChange={onChange} />)
+
+    await user.click(screen.getByRole('button', { name: 'حذف قسم قوانين نيوتن' }))
+
+    expect(confirmSpy).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'حذف القسم' })).toBeInTheDocument()
+    expect(
+      screen.getByText('حذف القسم سيؤدي إلى حذف كل الدروس الموجودة بداخله. هل أنت متأكد؟'),
+    ).toBeInTheDocument()
+
+    confirmSpy.mockRestore()
   })
 })

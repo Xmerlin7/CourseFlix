@@ -4,6 +4,8 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { useAdminAgentLogs } from '../hooks/useAdminAgentLogs'
 import { deleteAdminAgentLog } from '../api/admin-agent-logs.api'
 
@@ -18,21 +20,25 @@ const STATUS_CHIP: Record<string, string> = {
   skipped: 'outline',
 }
 
-// Read + delete only — these are immutable audit records, not something
-// an admin edits.
 export function AdminAgentLogsPage() {
   const { data, isLoading, error, refetch } = useAdminAgentLogs({})
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  async function handleDelete(id: string) {
-    if (!window.confirm('حذف هذا السجل نهائيًا؟')) return
-    setDeletingId(id)
+  async function handleConfirmDelete() {
+    if (!deleteTargetId || deletingId) return
+
+    setDeletingId(deleteTargetId)
     setActionError(null)
     try {
-      await deleteAdminAgentLog(id)
+      await deleteAdminAgentLog(deleteTargetId)
+      setDeleteTargetId(null)
+      showToast('تم حذف السجل بنجاح', 'success')
       refetch()
     } catch (err) {
+      setDeleteTargetId(null)
+      showToast('حدث خطأ أثناء حذف السجل. حاول مرة أخرى.', 'error')
       setActionError(err instanceof ApiError ? err.message : 'تعذر حذف السجل، حاول مرة أخرى')
     } finally {
       setDeletingId(null)
@@ -92,7 +98,7 @@ export function AdminAgentLogsPage() {
                       type="button"
                       className="btn text"
                       disabled={deletingId === log.id}
-                      onClick={() => void handleDelete(log.id)}
+                      onClick={() => setDeleteTargetId(log.id)}
                     >
                       <span className="ms">delete</span>
                     </button>
@@ -103,6 +109,18 @@ export function AdminAgentLogsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="حذف السجل"
+        message="هل أنت متأكد من حذف هذا السجل نهائيًا؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="حذف السجل"
+        cancelLabel="إلغاء"
+        isLoading={deletingId !== null}
+        variant="danger"
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </>
   )
 }

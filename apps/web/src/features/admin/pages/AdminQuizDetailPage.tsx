@@ -5,6 +5,8 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { useAdminQuizDetail } from '../hooks/useAdminQuizDetail'
 import { AdminSendNotificationForm } from '../components/AdminSendNotificationForm'
@@ -19,10 +21,6 @@ function getServerMessage(error: ApiError): string | null {
   return null
 }
 
-// Admin edit scope is deliberately limited to the title — full question
-// editing already has a dedicated authoring UI for teachers
-// (TeacherQuizManager); an admin's job here is audit + quick cleanup,
-// not content authoring.
 export function AdminQuizDetailPage() {
   const { quizId } = useParams<{ quizId: string }>()
   const navigate = useNavigate()
@@ -31,6 +29,8 @@ export function AdminQuizDetailPage() {
   const [title, setTitle] = useState('')
   const [isSynced, setIsSynced] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
   if (data && !isSynced) {
@@ -54,19 +54,22 @@ export function AdminQuizDetailPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!quizId) return
-    if (!window.confirm(`حذف اختبار "${data?.title}"؟`)) return
-    setIsSaving(true)
+  async function handleDeleteConfirm() {
+    if (!quizId || isDeleting) return
+    setIsDeleting(true)
     setActionError(null)
     try {
       await deleteAdminQuiz(quizId)
+      setShowDeleteModal(false)
+      showToast('تم حذف الاختبار بنجاح', 'success')
       navigate(ROUTE_PATHS.ADMIN.QUIZZES)
     } catch (err) {
+      setShowDeleteModal(false)
+      setIsDeleting(false)
+      showToast('حدث خطأ أثناء حذف الاختبار. حاول مرة أخرى.', 'error')
       setActionError(
         err instanceof ApiError ? (getServerMessage(err) ?? 'حدث خطأ ما، حاول مرة أخرى') : 'حدث خطأ ما، حاول مرة أخرى',
       )
-      setIsSaving(false)
     }
   }
 
@@ -154,14 +157,32 @@ export function AdminQuizDetailPage() {
             <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
             <p className="meta">حذف هذا الاختبار يخفيه فورًا من كل مكان في المنصة.</p>
             <div className="actions">
-              <button type="button" disabled={isSaving} className="btn text" onClick={() => void handleDelete()}>
+              <button
+                type="button"
+                disabled={isSaving || isDeleting}
+                className="btn text"
+                style={{ color: 'var(--error)' }}
+                onClick={() => setShowDeleteModal(true)}
+              >
                 <span className="ms">delete</span>
-                حذف الاختبار
+                {isDeleting ? 'جارٍ الحذف...' : 'حذف الاختبار'}
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={showDeleteModal}
+        title="حذف الاختبار"
+        message={`هل أنت متأكد من حذف اختبار "${data.title}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف الاختبار"
+        cancelLabel="إلغاء"
+        isLoading={isDeleting}
+        variant="danger"
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </>
   )
 }

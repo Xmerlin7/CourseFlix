@@ -79,10 +79,20 @@ export function AdminUserDetailPage() {
     await withAction(() => updateAdminUser(userId, { fullName }))
   }
 
-  async function handleRoleChange(role: UserRole) {
-    if (!userId) return
-    if (!window.confirm(`تغيير دور المستخدم إلى "${USER_ROLE_LABEL[role].label}"؟`)) return
-    await withAction(() => updateAdminUserRole(userId, role))
+  const [targetRole, setTargetRole] = useState<UserRole | null>(null)
+
+  function handleRoleChange(role: UserRole) {
+    setTargetRole(role)
+  }
+
+  async function handleConfirmRoleChange() {
+    if (!userId || !targetRole) return
+    const roleToSet = targetRole
+    setTargetRole(null)
+    const result = await withAction(() => updateAdminUserRole(userId, roleToSet))
+    if (result) {
+      showToast('تم تغيير دور المستخدم بنجاح', 'success')
+    }
   }
 
   async function handleStatusChange(status: UserStatus) {
@@ -304,6 +314,16 @@ export function AdminUserDetailPage() {
         variant="danger"
         onConfirm={() => void handleDeleteConfirm()}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmModal
+        open={targetRole !== null}
+        title="تغيير دور المستخدم"
+        message={`هل أنت متأكد من تغيير دور المستخدم إلى "${targetRole ? USER_ROLE_LABEL[targetRole].label : ''}"؟`}
+        confirmLabel="تأكيد التغيير"
+        cancelLabel="إلغاء"
+        isLoading={isSaving}
+        onConfirm={() => void handleConfirmRoleChange()}
+        onCancel={() => setTargetRole(null)}
       />
     </>
   )

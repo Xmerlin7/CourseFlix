@@ -4,6 +4,8 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { DOCUMENT_STATUS } from '../../../shared/lib/status-labels'
 import { useAdminDocuments } from '../hooks/useAdminDocuments'
 import { deleteAdminDocument, getAdminDocumentViewUrl } from '../api/admin-documents.api'
@@ -14,17 +16,23 @@ function formatDate(iso: string) {
 
 export function AdminDocumentsPage() {
   const { data, isLoading, error, refetch } = useAdminDocuments({})
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; fileName: string } | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  async function handleDelete(documentId: string, fileName: string) {
-    if (!window.confirm(`حذف المستند "${fileName}"؟`)) return
-    setDeletingId(documentId)
+  async function handleConfirmDelete() {
+    if (!deleteTarget || deletingId) return
+
+    setDeletingId(deleteTarget.id)
     setActionError(null)
     try {
-      await deleteAdminDocument(documentId)
+      await deleteAdminDocument(deleteTarget.id)
+      setDeleteTarget(null)
+      showToast('تم حذف المستند بنجاح', 'success')
       refetch()
     } catch (err) {
+      setDeleteTarget(null)
+      showToast('حدث خطأ أثناء حذف المستند. حاول مرة أخرى.', 'error')
       setActionError(err instanceof ApiError ? err.message : 'تعذر حذف المستند، حاول مرة أخرى')
     } finally {
       setDeletingId(null)
@@ -107,7 +115,7 @@ export function AdminDocumentsPage() {
                           type="button"
                           className="btn text"
                           disabled={deletingId === document.id}
-                          onClick={() => void handleDelete(document.id, document.fileName)}
+                          onClick={() => setDeleteTarget({ id: document.id, fileName: document.fileName })}
                         >
                           <span className="ms">delete</span>
                           حذف
@@ -121,6 +129,18 @@ export function AdminDocumentsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="حذف المستند"
+        message={`هل أنت متأكد من حذف المستند "${deleteTarget?.fileName ?? ''}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف المستند"
+        cancelLabel="إلغاء"
+        isLoading={deletingId !== null}
+        variant="danger"
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </>
   )
 }
