@@ -4,6 +4,8 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { useAdminInterventions } from '../hooks/useAdminInterventions'
 import {
   deleteAdminIntervention,
@@ -25,6 +27,7 @@ function formatDate(iso: string) {
 
 export function AdminInterventionsPage() {
   const [status, setStatus] = useState<StatusFilter>('all')
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const { data, isLoading, error, refetch } = useAdminInterventions({
@@ -44,14 +47,19 @@ export function AdminInterventionsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm('حذف هذا التنبيه نهائيًا؟')) return
-    setBusyId(id)
+  async function handleConfirmDelete() {
+    if (!deleteTargetId || busyId) return
+
+    setBusyId(deleteTargetId)
     setActionError(null)
     try {
-      await deleteAdminIntervention(id)
+      await deleteAdminIntervention(deleteTargetId)
+      setDeleteTargetId(null)
+      showToast('تم حذف التنبيه بنجاح', 'success')
       refetch()
     } catch (err) {
+      setDeleteTargetId(null)
+      showToast('حدث خطأ أثناء حذف التنبيه. حاول مرة أخرى.', 'error')
       setActionError(err instanceof ApiError ? err.message : 'تعذر حذف التنبيه، حاول مرة أخرى')
     } finally {
       setBusyId(null)
@@ -136,7 +144,7 @@ export function AdminInterventionsPage() {
                         type="button"
                         className="btn text"
                         disabled={busyId === item.id}
-                        onClick={() => void handleDelete(item.id)}
+                        onClick={() => setDeleteTargetId(item.id)}
                       >
                         <span className="ms">delete</span>
                       </button>
@@ -148,6 +156,18 @@ export function AdminInterventionsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="حذف التنبيه"
+        message="هل أنت متأكد من حذف هذا التنبيه نهائيًا؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="حذف التنبيه"
+        cancelLabel="إلغاء"
+        isLoading={busyId !== null}
+        variant="danger"
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </>
   )
 }

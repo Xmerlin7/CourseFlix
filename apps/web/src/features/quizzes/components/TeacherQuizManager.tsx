@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import type { CourseDetail } from '../../courses/types/course.types'
 import {
   createTeacherQuiz,
@@ -256,17 +258,30 @@ export function TeacherQuizManager({ course }: TeacherQuizManagerProps) {
     }
   }
 
-  async function handleDelete(quiz: TeacherQuiz) {
-    if (!window.confirm(`حذف اختبار "${quiz.title}"؟`)) return
+  const [deleteTargetQuiz, setDeleteTargetQuiz] = useState<TeacherQuiz | null>(null)
+  const [isDeletingQuiz, setIsDeletingQuiz] = useState(false)
 
-    setBusyQuizId(quiz.id)
+  async function handleDelete(quiz: TeacherQuiz) {
+    setDeleteTargetQuiz(quiz)
+  }
+
+  async function handleConfirmDeleteQuiz() {
+    if (!deleteTargetQuiz || isDeletingQuiz) return
+
+    setIsDeletingQuiz(true)
+    setBusyQuizId(deleteTargetQuiz.id)
     setError(null)
     try {
-      await deleteTeacherQuiz(quiz.id)
+      await deleteTeacherQuiz(deleteTargetQuiz.id)
+      setDeleteTargetQuiz(null)
+      showToast('تم حذف الاختبار بنجاح', 'success')
       await loadQuizzes()
     } catch {
+      setDeleteTargetQuiz(null)
       setError('تعذر حذف الاختبار')
+      showToast('حدث خطأ أثناء حذف الاختبار. حاول مرة أخرى.', 'error')
     } finally {
+      setIsDeletingQuiz(false)
       setBusyQuizId(null)
     }
   }
@@ -445,6 +460,17 @@ export function TeacherQuizManager({ course }: TeacherQuizManagerProps) {
           ))}
         </div>
       )}
+      <ConfirmModal
+        open={deleteTargetQuiz !== null}
+        title="حذف الاختبار"
+        message={`هل أنت متأكد من حذف اختبار "${deleteTargetQuiz?.title ?? ''}"؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف الاختبار"
+        cancelLabel="إلغاء"
+        isLoading={isDeletingQuiz}
+        variant="danger"
+        onConfirm={() => void handleConfirmDeleteQuiz()}
+        onCancel={() => setDeleteTargetQuiz(null)}
+      />
     </section>
   )
 }
