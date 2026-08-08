@@ -19,10 +19,21 @@ export function looksLikeUuid(value: string): boolean {
 /**
  * Same derivation as `deriveWatermarkId`, computed in SQL so a search
  * term can be matched against every row's watermark without loading the
- * whole table into memory first. `columnRef` must be a trusted,
- * hardcoded column reference (e.g. `'user.id'`) — never interpolate
- * caller input here.
+ * whole table into memory first.
+ *
+ * `tableAlias`/`column` must be trusted, hardcoded identifiers (e.g.
+ * `'user'`) — never interpolate caller input here. Both are
+ * double-quoted deliberately: `user` in particular is a reserved
+ * PostgreSQL keyword (the `USER`/`CURRENT_USER` pseudo-function), so an
+ * unquoted `user.id` parses as that keyword followed by a dangling
+ * `.id` and fails with "syntax error at or near '.'" — reproduced
+ * against a live query builder alias, not a guess. Every other
+ * reference to this alias in a TypeORM query builder is already quoted
+ * for the same reason; this just matches that convention.
  */
-export function watermarkSqlExpression(columnRef: string): string {
-  return `UPPER(LEFT(REPLACE(${columnRef}::text, '-', ''), 10))`;
+export function watermarkSqlExpression(
+  tableAlias: string,
+  column = 'id',
+): string {
+  return `UPPER(LEFT(REPLACE("${tableAlias}"."${column}"::text, '-', ''), 10))`;
 }

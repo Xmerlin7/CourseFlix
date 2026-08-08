@@ -363,7 +363,7 @@ export class TeacherService {
     if (search) {
       query.andWhere(
         new Brackets((sub) => {
-          sub.where(`${watermarkSqlExpression('user.id')} = UPPER(:search)`, {
+          sub.where(`${watermarkSqlExpression('user')} = UPPER(:search)`, {
             search,
           });
           if (looksLikeUuid(search)) {

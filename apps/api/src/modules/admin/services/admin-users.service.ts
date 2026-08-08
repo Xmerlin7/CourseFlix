@@ -81,7 +81,7 @@ export class AdminUsersService {
           sub
             .where('user.full_name ILIKE :search', { search: `%${search}%` })
             .orWhere('user.email ILIKE :search', { search: `%${search}%` })
-            .orWhere(`${watermarkSqlExpression('user.id')} = UPPER(:search)`, {
+            .orWhere(`${watermarkSqlExpression('user')} = UPPER(:search)`, {
               search,
             });
           if (looksLikeUuid(search)) {
