@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router'
 import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import { env } from '../../../shared/lib/env'
@@ -355,5 +356,140 @@ describe('StudentLessonPage', () => {
       expect(link).toHaveAttribute('href', '/teacher/lessons/lesson-2')
     })
     expect(screen.getByText('معاينة المدرس')).toBeInTheDocument()
+  })
+
+  it('keeps Next disabled at 99% progress and shows in-app toast on click', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          id: 'lesson-1',
+          title: 'الدرس الأول',
+          video: { id: 'v-1', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', durationSeconds: 100 },
+          course: {
+            id: 'c-1',
+            title: 'دورة الفيزياء',
+            currentSectionId: 's-1',
+            sections: [
+              {
+                id: 's-1',
+                title: 'الفصل الأول',
+                sortOrder: 1,
+                lessons: [
+                  { id: 'lesson-1', title: 'الدرس الأول', sortOrder: 1, progressStatus: 'in_progress', watchedPercentage: 99 },
+                  { id: 'lesson-2', title: 'الدرس الثاني', sortOrder: 2, progressStatus: 'not_started', watchedPercentage: 0 },
+                ],
+              },
+            ],
+          },
+          progress: { lastPositionSeconds: 99, watchedPercentage: 99, status: 'in_progress' },
+        }),
+      ),
+    )
+
+    renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+
+    // Previous should be disabled on first lesson
+    const prevBtn = screen.getByRole('link', { name: 'الدرس السابق' })
+    expect(prevBtn).toHaveClass('disabled')
+    expect(prevBtn).toHaveAttribute('aria-disabled', 'true')
+
+    // Next should be disabled at 99%
+    const nextBtn = screen.getByRole('link', { name: 'الدرس التالي' })
+    expect(nextBtn).toHaveClass('disabled')
+    expect(nextBtn).toHaveAttribute('aria-disabled', 'true')
+
+    // Clicking locked next should show toast and not navigate
+    await user.click(nextBtn)
+    expect(screen.getByText('أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي.')).toBeInTheDocument()
+
+    // Clicking locked lesson in playlist should also show toast
+    const lockedLessonLinks = screen.getAllByRole('link', { name: /الدرس الثاني/ })
+    const lockedPlaylistLesson = lockedLessonLinks[0]
+    expect(lockedPlaylistLesson).toHaveClass('locked')
+    await user.click(lockedPlaylistLesson)
+    expect(screen.getAllByText('أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي.').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('enables Next at 100% progress and allows navigation', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          id: 'lesson-1',
+          title: 'الدرس الأول',
+          video: { id: 'v-1', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', durationSeconds: 100 },
+          course: {
+            id: 'c-1',
+            title: 'دورة الفيزياء',
+            currentSectionId: 's-1',
+            sections: [
+              {
+                id: 's-1',
+                title: 'الفصل الأول',
+                sortOrder: 1,
+                lessons: [
+                  { id: 'lesson-1', title: 'الدرس الأول', sortOrder: 1, progressStatus: 'completed', watchedPercentage: 100 },
+                  { id: 'lesson-2', title: 'الدرس الثاني', sortOrder: 2, progressStatus: 'not_started', watchedPercentage: 0 },
+                ],
+              },
+            ],
+          },
+          progress: { lastPositionSeconds: 100, watchedPercentage: 100, status: 'completed' },
+        }),
+      ),
+    )
+
+    renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+
+    const nextBtn = screen.getByRole('link', { name: 'الدرس التالي' })
+    expect(nextBtn).not.toHaveClass('disabled')
+    expect(nextBtn).toHaveAttribute('href', '/student/lessons/lesson-2')
+  })
+
+  it('disables Next on the last lesson and enables Previous navigation', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/lessons/lesson-2`, () =>
+        HttpResponse.json({
+          id: 'lesson-2',
+          title: 'الدرس الثاني',
+          video: { id: 'v-2', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', durationSeconds: 100 },
+          course: {
+            id: 'c-1',
+            title: 'دورة الفيزياء',
+            currentSectionId: 's-1',
+            sections: [
+              {
+                id: 's-1',
+                title: 'الفصل الأول',
+                sortOrder: 1,
+                lessons: [
+                  { id: 'lesson-1', title: 'الدرس الأول', sortOrder: 1, progressStatus: 'completed', watchedPercentage: 100 },
+                  { id: 'lesson-2', title: 'الدرس الثاني', sortOrder: 2, progressStatus: 'completed', watchedPercentage: 100 },
+                ],
+              },
+            ],
+          },
+          progress: { lastPositionSeconds: 100, watchedPercentage: 100, status: 'completed' },
+        }),
+      ),
+    )
+
+    renderPage(['/student/lessons/lesson-2'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الثاني' })).toBeInTheDocument()
+
+    // Previous should be enabled
+    const prevBtn = screen.getByRole('link', { name: 'الدرس السابق' })
+    expect(prevBtn).not.toHaveClass('disabled')
+    expect(prevBtn).toHaveAttribute('href', '/student/lessons/lesson-1')
+
+    // Next should be disabled on last lesson
+    const nextBtn = screen.getByRole('link', { name: 'الدرس التالي' })
+    expect(nextBtn).toHaveClass('disabled')
+    expect(nextBtn).toHaveAttribute('aria-disabled', 'true')
   })
 })
