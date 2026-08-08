@@ -149,14 +149,18 @@ export function StudentLessonPage() {
     }
   }
 
-  // The browser's native fullscreen button fullscreens the <video> element
-  // itself, which strips out the watermark overlay siblings in `.player`
-  // (they're only rendered while `.player` is the fullscreen element). Every
-  // time that happens, bounce fullscreen up to the container instead so the
-  // watermark stays on screen.
+  // The native fullscreen control (on the <video> element itself, or on an
+  // embedded YouTube/Bunny <iframe> — cross-origin fullscreen still surfaces
+  // the iframe as `document.fullscreenElement` in this top document) only
+  // fullscreens that one element, which strips out the watermark overlay
+  // siblings in `.player` (they only render while `.player` itself is the
+  // fullscreen element). Every time that happens, bounce fullscreen up to
+  // the container instead so the watermark stays on screen.
   useEffect(() => {
     function handleFullscreenChange() {
-      if (document.fullscreenElement === videoRef.current && playerRef.current) {
+      const fullscreenElement = document.fullscreenElement
+      const isBareMedia = fullscreenElement === videoRef.current || fullscreenElement === iframeRef.current
+      if (isBareMedia && playerRef.current) {
         document.exitFullscreen().catch(() => {})
         playerRef.current.requestFullscreen?.().catch(() => {})
       }
