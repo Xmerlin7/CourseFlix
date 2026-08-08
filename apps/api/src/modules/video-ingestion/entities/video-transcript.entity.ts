@@ -6,14 +6,15 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type VideoTranscriptProvider = 'bunny' | 'youtube';
+export type VideoTranscriptProvider = 'bunny' | 'youtube' | 'local';
 export type VideoTranscriptStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 /**
  * Mirrors `documents` for video content — one row per video, tracking
- * caption-extraction progress. `provider` is derived from the video's
- * `videoUrl` host (Bunny Stream player vs. YouTube) at enqueue time; see
- * `video-ingestion.service.ts`.
+ * caption/transcript-extraction progress. `provider` is derived from the
+ * video's `videoUrl` host (Bunny Stream player, YouTube, or — for
+ * anything else — `local`, transcribed via Whisper instead of a captions
+ * API) at enqueue time; see `video-ingestion.service.ts`.
  */
 @Entity({ name: 'video_transcripts' })
 export class VideoTranscriptEntity {
@@ -38,7 +39,7 @@ export class VideoTranscriptEntity {
 
   @Column({
     type: 'enum',
-    enum: ['bunny', 'youtube'],
+    enum: ['bunny', 'youtube', 'local'],
     enumName: 'video_transcript_provider',
   })
   provider!: VideoTranscriptProvider;

@@ -27,6 +27,7 @@ import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { TutorModule } from './modules/tutor/tutor.module';
+import { VideoQaModule } from './modules/video-qa/video-qa.module';
 
 // Local docker-compose Postgres has no SSL listener; only the deployed
 // Neon database needs `ssl: true` (its own hostname is never localhost).
@@ -81,6 +82,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     RetrievalModule,
     LessonsModule,
     TutorModule,
+    VideoQaModule,
     AgentLogsModule,
     InterventionsModule,
     CommerceModule,

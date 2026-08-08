@@ -114,6 +114,10 @@ export const handlers = [
     }),
   ),
 
+  http.get(apiUrl("/student/videos/:videoId/qa-status"), () =>
+    HttpResponse.json({ status: "not_available" }),
+  ),
+
   http.get(apiUrl("/teacher/lessons/:lessonId/player"), ({ params }) =>
     HttpResponse.json({
       id: params.lessonId,
