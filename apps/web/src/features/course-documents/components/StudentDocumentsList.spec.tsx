@@ -5,7 +5,6 @@ import userEvent from '@testing-library/user-event'
 import { env } from '../../../shared/lib/env'
 import { server } from '../../../testing/mocks/server'
 import { renderWithProviders } from '../../../testing/renderWithProviders'
-import type { CourseDetail } from '../../courses/types/course.types'
 import { StudentDocumentsList } from './StudentDocumentsList'
 
 const courseId = 'course-1'
@@ -72,7 +71,7 @@ describe('StudentDocumentsList', () => {
 
     await waitFor(() => expect(clickSpy).toHaveBeenCalledTimes(1))
     expect(createObjectURL).toHaveBeenCalledTimes(1)
-    expect(createObjectURL.mock.calls[0][0]).toBeInstanceOf(Blob)
+    expect((createObjectURL.mock.calls as unknown as [Blob[]])[0][0]).toBeInstanceOf(Blob)
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
     // the anchor that was clicked carried the real file name, not a generic one
     expect(clickSpy.mock.instances[0]).toHaveProperty('download', 'ملخص الفصل الأول.pdf')

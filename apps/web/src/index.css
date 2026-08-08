@@ -1535,10 +1535,10 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
   background: var(--surface-container-low);
   border-radius: 20px;
   padding: 16px;
-  max-height: calc(100vh - 150px);
+  max-height: calc(100vh - 60px);
   overflow: auto;
   position: sticky;
-  top: 96px;
+  top: 0;
 }
 .lesson-playlist-head {
   display: flex;
@@ -1595,6 +1595,23 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
 .lesson-nav-item.completed .body .s {
   color: var(--on-success-container);
   font-weight: 800;
+}
+.lesson-nav-item.locked {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--surface-container-lowest);
+}
+.lesson-nav-item.locked .lead {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+.lesson-nav-item.locked .body .s {
+  color: var(--on-surface-variant);
+}
+.lesson-nav-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: auto;
 }
 .quiz-after-lesson {
   margin-inline-start: 28px;
