@@ -5,8 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, IsNull, QueryFailedError, Repository } from 'typeorm';
+import { Brackets, IsNull, QueryFailedError, Repository } from 'typeorm';
 import * as argon2 from 'argon2';
+import {
+  looksLikeUuid,
+  watermarkSqlExpression,
+} from '../../../common/utils/watermark-id.util';
 import { UserEntity, UserStatus } from '../../users/entities/user.entity';
 import { UserRole } from '../../auth/interfaces/authenticated-user.interface';
 import { UsersService } from '../../users/users.service';
@@ -58,20 +62,39 @@ export class AdminUsersService {
   ) {}
 
   async listUsers(query: ListUsersQueryDto): Promise<AdminUserListItem[]> {
-    const where: Record<string, unknown> = { deletedAt: IsNull() };
-    if (query.role) where.role = query.role;
-    if (query.status) where.status = query.status;
+    const qb = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.deleted_at IS NULL');
 
-    const users = await this.usersRepository.find({
-      where: query.search
-        ? [
-            { ...where, fullName: ILike(`%${query.search}%`) },
-            { ...where, email: ILike(`%${query.search}%`) },
-          ]
-        : where,
-      order: { createdAt: 'DESC' },
-      take: MAX_RESULTS,
-    });
+    if (query.role) qb.andWhere('user.role = :role', { role: query.role });
+    if (query.status) {
+      qb.andWhere('user.status = :status', { status: query.status });
+    }
+
+    const search = query.search?.trim();
+    if (search) {
+      // Name/email substring match, plus an exact match against the
+      // student's video watermark code (and their full UUID, if the
+      // search string looks like one) — see watermark-id.util.ts.
+      qb.andWhere(
+        new Brackets((sub) => {
+          sub
+            .where('user.full_name ILIKE :search', { search: `%${search}%` })
+            .orWhere('user.email ILIKE :search', { search: `%${search}%` })
+            .orWhere(`${watermarkSqlExpression('user.id')} = UPPER(:search)`, {
+              search,
+            });
+          if (looksLikeUuid(search)) {
+            sub.orWhere('user.id = :fullId', { fullId: search });
+          }
+        }),
+      );
+    }
+
+    const users = await qb
+      .orderBy('user.created_at', 'DESC')
+      .take(MAX_RESULTS)
+      .getMany();
 
     return users.map((user) => this.toListItem(user));
   }

@@ -13,10 +13,6 @@ import type { UserStatus } from '../types/admin.types'
 type RoleFilter = UserRole | 'all'
 type StatusFilter = UserStatus | 'all'
 
-function shortId(id: string) {
-  return id.length > 12 ? `${id.slice(0, 8)}...${id.slice(-4)}` : id
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
 }
@@ -74,12 +70,12 @@ export function AdminUsersPage() {
       </div>
 
       <div className="tf section" style={{ maxWidth: 360 }}>
-        <label htmlFor="admin-users-search">بحث بالاسم أو البريد</label>
+        <label htmlFor="admin-users-search">بحث بالاسم أو البريد أو معرف تتبع الفيديو (ID)</label>
         <input
           id="admin-users-search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="اكتب اسم أو بريد إلكتروني..."
+          placeholder="اسم، بريد إلكتروني، أو الكود الظاهر على فيديو مسرّب..."
         />
       </div>
 
@@ -125,9 +121,7 @@ export function AdminUsersPage() {
                       </span>
                     </td>
                     <td>
-                      <code dir="ltr" title={user.id}>
-                        {shortId(user.id)}
-                      </code>
+                      <code dir="ltr">{user.id}</code>
                     </td>
                     <td>
                       <span className={`chip ${roleLabel.chip}`}>{roleLabel.label}</span>

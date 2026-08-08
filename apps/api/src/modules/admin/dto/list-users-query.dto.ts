@@ -9,7 +9,9 @@ export class ListUsersQueryDto {
   @IsIn(['active', 'suspended', 'inactive'])
   status?: 'active' | 'suspended' | 'inactive';
 
-  // Matched against fullName/email, case-insensitive, substring match.
+  // Matched against fullName/email (case-insensitive substring), the
+  // student's video watermark code (exact), and their full UUID (exact,
+  // if the string looks like one) — see watermark-id.util.ts.
   @IsOptional()
   @IsString()
   @MaxLength(150)

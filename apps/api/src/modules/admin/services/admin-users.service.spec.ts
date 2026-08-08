@@ -21,6 +21,14 @@ describe('AdminUsersService', () => {
     save: jest.Mock;
     delete: jest.Mock;
     count: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
+  let usersQueryBuilder: {
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    orderBy: jest.Mock;
+    take: jest.Mock;
+    getMany: jest.Mock;
   };
   let coursesRepository: { count: jest.Mock };
   let enrollmentsRepository: { count: jest.Mock };
@@ -49,12 +57,20 @@ describe('AdminUsersService', () => {
   }
 
   beforeEach(async () => {
+    usersQueryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
     usersRepository = {
       find: jest.fn(),
       findOne: jest.fn(),
       save: jest.fn((user) => Promise.resolve(user)),
       delete: jest.fn(),
       count: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(usersQueryBuilder),
     };
     coursesRepository = { count: jest.fn().mockResolvedValue(0) };
     enrollmentsRepository = { count: jest.fn().mockResolvedValue(0) };
@@ -82,6 +98,30 @@ describe('AdminUsersService', () => {
     }).compile();
 
     service = moduleRef.get(AdminUsersService);
+  });
+
+  describe('listUsers', () => {
+    it('applies only the deleted_at filter with no role/status/search', async () => {
+      await service.listUsers({});
+
+      expect(usersRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(usersQueryBuilder.where).toHaveBeenCalledWith(
+        'user.deleted_at IS NULL',
+      );
+      expect(usersQueryBuilder.andWhere).not.toHaveBeenCalled();
+    });
+
+    it('matches name/email/watermark-ID/full-UUID together when searching', async () => {
+      usersQueryBuilder.getMany.mockResolvedValue([makeUser()]);
+
+      const result = await service.listUsers({ search: '183C1F78A6' });
+
+      expect(usersQueryBuilder.andWhere).toHaveBeenCalledWith(
+        expect.any(Object),
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(studentId);
+    });
   });
 
   describe('getUserDetail', () => {
