@@ -1376,6 +1376,45 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
     visibility: hidden !important;
   }
 }
+/* Native video fullscreen only fullscreens the <video> itself, which would
+   leave the watermark overlay behind — StudentLessonPage bounces fullscreen
+   requests up to this container instead, so size the container (not just
+   the video) to fill the screen while fullscreen. */
+.player:fullscreen,
+.player:-webkit-full-screen {
+  aspect-ratio: unset;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+.player:fullscreen video,
+.player:-webkit-full-screen video {
+  object-fit: contain;
+}
+.player-capture-guard {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  color: #fff;
+  background: rgba(12, 10, 18, 0.92);
+  backdrop-filter: blur(6px);
+}
+.player-capture-guard strong {
+  font-size: 16px;
+}
+.player-capture-guard p {
+  max-width: 340px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
 .player-watermark {
   position: absolute;
   inset-block-start: 16%;

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
@@ -8,9 +8,29 @@ import { formatDuration } from '../../../shared/lib/formatters'
 import { LESSON_PROGRESS_STATUS } from '../../../shared/lib/status-labels'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { VideoQaPanel } from '../../video-qa/components/VideoQaPanel'
+import type { CaptureBlockReason } from '../hooks/useAntiCapture'
+import { useAntiCapture } from '../hooks/useAntiCapture'
 import { useLesson } from '../hooks/useLesson'
 import { useProgressHeartbeat } from '../hooks/useProgressHeartbeat'
 import type { LessonCourseOutlineLesson, LessonProgressStatus } from '../types/lesson.types'
+
+const CAPTURE_BLOCK_COPY: Record<Exclude<CaptureBlockReason, null>, { icon: string; title: string; body: string }> = {
+  'window-blur': {
+    icon: 'visibility_off',
+    title: 'الفيديو متوقف',
+    body: 'حصل تبديل بره نافذة المتصفح، فوقفنا الفيديو تلقائيًا. دوس استكمال عشان تكمل المشاهدة.',
+  },
+  devtools: {
+    icon: 'code_off',
+    title: 'الفيديو متوقف',
+    body: 'أدوات المطور مفتوحة في المتصفح. اقفلها وبعدين استكمل المشاهدة.',
+  },
+  'print-screen': {
+    icon: 'screenshot_monitor',
+    title: 'محاولة تصوير الشاشة',
+    body: 'المحتوى ده محمي بحقوق النشر ومربوط بحسابك. دوس استكمال عشان تكمل المشاهدة.',
+  },
+}
 
 const EXTERNAL_VIDEO_FALLBACK_DURATION_SECONDS = 600
 
@@ -96,6 +116,7 @@ export function StudentLessonPage() {
   const { data, isLoading, error, refetch } = useLesson(lessonId ?? '', viewerRole)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const playerRef = useRef<HTMLDivElement | null>(null)
   const [watchedPercentage, setWatchedPercentage] = useState<number | null>(null)
   const [status, setStatus] = useState<LessonProgressStatus | null>(null)
   const [attendanceAwarded, setAttendanceAwarded] = useState(false)
@@ -121,6 +142,35 @@ export function StudentLessonPage() {
       )
     }
   }
+
+  function postYoutubeCommand(func: 'pauseVideo' | 'playVideo') {
+    if (isYoutubeEmbed) {
+      iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*')
+    }
+  }
+
+  // The browser's native fullscreen button fullscreens the <video> element
+  // itself, which strips out the watermark overlay siblings in `.player`
+  // (they're only rendered while `.player` is the fullscreen element). Every
+  // time that happens, bounce fullscreen up to the container instead so the
+  // watermark stays on screen.
+  useEffect(() => {
+    function handleFullscreenChange() {
+      if (document.fullscreenElement === videoRef.current && playerRef.current) {
+        document.exitFullscreen().catch(() => {})
+        playerRef.current.requestFullscreen?.().catch(() => {})
+      }
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  const { blockReason, resume } = useAntiCapture({
+    enabled: viewerRole === 'student' && Boolean(data),
+    videoRef,
+    onCapturePause: () => postYoutubeCommand('pauseVideo'),
+    onCaptureResume: () => postYoutubeCommand('playVideo'),
+  })
 
   useProgressHeartbeat({
     lessonId: lessonId ?? '',
@@ -187,6 +237,7 @@ export function StudentLessonPage() {
       <div className="lesson-shell">
         <main className="lesson-main">
           <div
+            ref={playerRef}
             className="player secure-player"
             onContextMenu={(event) => {
               if (viewerRole === 'student') event.preventDefault()
@@ -239,6 +290,19 @@ export function StudentLessonPage() {
                   ID {studentWatermarkId}
                 </span>
               </>
+            )}
+            {blockReason && (
+              <div className="player-capture-guard" data-testid="capture-guard" role="alertdialog">
+                <span className="ms" style={{ fontSize: 36 }}>
+                  {CAPTURE_BLOCK_COPY[blockReason].icon}
+                </span>
+                <strong>{CAPTURE_BLOCK_COPY[blockReason].title}</strong>
+                <p>{CAPTURE_BLOCK_COPY[blockReason].body}</p>
+                <button type="button" className="btn tonal" onClick={resume}>
+                  <span className="ms">play_arrow</span>
+                  استكمال المشاهدة
+                </button>
+              </div>
             )}
           </div>
 
