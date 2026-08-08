@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { VideoEntity } from '../lessons/entities/video.entity';
 import { RetrievalModule } from '../retrieval/retrieval.module';
+import { SessionsModule } from '../sessions/sessions.module';
 import {
   LLM_PROVIDER,
   MockLlmProvider,
@@ -21,6 +22,7 @@ import { VideoQaService } from './video-qa.service';
     TypeOrmModule.forFeature([VideoEntity, VideoTranscriptEntity]),
     EnrollmentsModule,
     RetrievalModule,
+    SessionsModule,
     ThrottlerModule.forRoot([
       {
         ttl: Number(process.env.LOGIN_RATE_LIMIT_WINDOW_SECONDS ?? 900) * 1000,
