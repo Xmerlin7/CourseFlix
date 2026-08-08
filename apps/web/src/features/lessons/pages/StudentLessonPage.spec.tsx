@@ -388,10 +388,10 @@ describe('StudentLessonPage', () => {
     const { unmount } = renderPage(['/student/lessons/lesson-1'], studentAuth)
 
     expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
-    const lockedItems55 = screen.getAllByRole('link', { name: /مغلق/ })
+    const lockedItems55 = screen.getAllByRole('link', { name: /مقفل/ })
     expect(lockedItems55.length).toBeGreaterThanOrEqual(1)
     await user.click(lockedItems55[0])
-    expect(screen.getByText('أكمل الدرس السابق بنسبة 100% لفتح هذا الدرس.')).toBeInTheDocument()
+    expect(screen.getByText('أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي.')).toBeInTheDocument()
     unmount()
 
     // 2. Progress = 99% -> Still locked
@@ -399,7 +399,7 @@ describe('StudentLessonPage', () => {
     const { unmount: unmount99 } = renderPage(['/student/lessons/lesson-1'], studentAuth)
 
     expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
-    const lockedItems99 = screen.getAllByRole('link', { name: /مغلق/ })
+    const lockedItems99 = screen.getAllByRole('link', { name: /مقفل/ })
     expect(lockedItems99.length).toBeGreaterThanOrEqual(1)
     unmount99()
 
@@ -408,9 +408,10 @@ describe('StudentLessonPage', () => {
     renderPage(['/student/lessons/lesson-1'], studentAuth)
 
     expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /مغلق/ })).not.toBeInTheDocument()
-    const nextLessonLink = screen.getByRole('link', { name: /الدرس التالي/ })
-    expect(nextLessonLink).toHaveAttribute('href', '/student/lessons/lesson-2')
+    expect(screen.queryByRole('link', { name: /مقفل/ })).not.toBeInTheDocument()
+    const nextLessonLinks = screen.getAllByRole('link', { name: /الدرس التالي/ })
+    expect(nextLessonLinks.length).toBeGreaterThanOrEqual(1)
+    nextLessonLinks.forEach((link) => expect(link).toHaveAttribute('href', '/student/lessons/lesson-2'))
   })
 
   it('enforces sequential unlocking across multiple lessons', async () => {
