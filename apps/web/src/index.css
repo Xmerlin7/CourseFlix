@@ -1688,11 +1688,16 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
 
 /* ---------- Confirm modal ---------- */
 .confirm-modal-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
   border: none;
   background: transparent;
   padding: 0;
   max-width: min(440px, calc(100vw - 32px));
   width: 100%;
+  height: fit-content;
+  max-height: calc(100vh - 32px);
   border-radius: 28px;
   overflow: visible;
 }
