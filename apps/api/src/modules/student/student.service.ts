@@ -11,6 +11,11 @@ import type {
   EnrollmentEntity,
   EnrollmentStatus,
 } from '../enrollments/entities/enrollment.entity';
+import { LessonsService } from '../lessons/lessons.service';
+import type {
+  CourseCurrentLesson,
+  CourseProgressSummary,
+} from '../lessons/lessons.service';
 import { UsersService } from '../users/users.service';
 
 export interface StudentDashboardRecentCourse {
@@ -41,9 +46,23 @@ export interface StudentEnrollmentResponse {
   id: string;
   courseId: string;
   courseTitle?: string;
+  coverImageUrl: string | null;
   gradeLevel?: string;
   status: EnrollmentStatus;
+  progressPercent: number;
+  completedLessonsCount: number;
+  totalLessonsCount: number;
+  currentLesson: CourseCurrentLesson | null;
+  lastActivityAt: string;
 }
+
+const EMPTY_PROGRESS_SUMMARY: CourseProgressSummary = {
+  totalLessonsCount: 0,
+  completedLessonsCount: 0,
+  progressPercent: 0,
+  currentLesson: null,
+  lastActivityAt: null,
+};
 
 const VALID_ENROLLMENT_STATUSES: readonly EnrollmentStatus[] = [
   'active',
@@ -71,6 +90,7 @@ export class StudentService {
     private readonly enrollmentsService: EnrollmentsService,
     private readonly coursesService: CoursesService,
     private readonly usersService: UsersService,
+    private readonly lessonsService: LessonsService,
   ) {}
 
   async getDashboard(studentId: string): Promise<StudentDashboardResponse> {
@@ -133,7 +153,7 @@ export class StudentService {
     );
     const courseById = this.indexCoursesById(courses);
 
-    return enrollments
+    const matched = enrollments
       .map((enrollment) => ({
         enrollment,
         course: courseById.get(enrollment.courseId),
@@ -141,10 +161,20 @@ export class StudentService {
       .filter(
         ({ course }) =>
           !filters.gradeLevel || course?.gradeLevel === filters.gradeLevel,
-      )
-      .map(({ enrollment, course }) =>
-        this.toEnrollmentResponse(enrollment, course),
       );
+
+    const summaries = await this.lessonsService.getCourseProgressSummaries(
+      studentId,
+      matched.map(({ enrollment }) => enrollment.courseId),
+    );
+
+    return matched.map(({ enrollment, course }) =>
+      this.toEnrollmentResponse(
+        enrollment,
+        course,
+        summaries.get(enrollment.courseId),
+      ),
+    );
   }
 
   async enroll(
@@ -169,7 +199,11 @@ export class StudentService {
       studentId,
       courseId,
     );
-    return this.toEnrollmentResponse(enrollment, course);
+    const summary = await this.getSingleCourseProgressSummary(
+      studentId,
+      courseId,
+    );
+    return this.toEnrollmentResponse(enrollment, course, summary);
   }
 
   async getEnrollment(
@@ -183,7 +217,11 @@ export class StudentService {
     const course = await this.coursesService.findCourseById(
       enrollment.courseId,
     );
-    return this.toEnrollmentResponse(enrollment, course ?? undefined);
+    const summary = await this.getSingleCourseProgressSummary(
+      studentId,
+      enrollment.courseId,
+    );
+    return this.toEnrollmentResponse(enrollment, course ?? undefined, summary);
   }
 
   async updateEnrollment(
@@ -199,7 +237,22 @@ export class StudentService {
     const course = await this.coursesService.findCourseById(
       enrollment.courseId,
     );
-    return this.toEnrollmentResponse(enrollment, course ?? undefined);
+    const summary = await this.getSingleCourseProgressSummary(
+      studentId,
+      enrollment.courseId,
+    );
+    return this.toEnrollmentResponse(enrollment, course ?? undefined, summary);
+  }
+
+  private async getSingleCourseProgressSummary(
+    studentId: string,
+    courseId: string,
+  ): Promise<CourseProgressSummary> {
+    const summaries = await this.lessonsService.getCourseProgressSummaries(
+      studentId,
+      [courseId],
+    );
+    return summaries.get(courseId) ?? EMPTY_PROGRESS_SUMMARY;
   }
 
   async unenroll(enrollmentId: string, studentId: string): Promise<void> {
@@ -213,13 +266,22 @@ export class StudentService {
   private toEnrollmentResponse(
     enrollment: EnrollmentEntity,
     course: CourseEntity | undefined,
+    summary: CourseProgressSummary = EMPTY_PROGRESS_SUMMARY,
   ): StudentEnrollmentResponse {
     return {
       id: enrollment.id,
       courseId: enrollment.courseId,
       courseTitle: course?.title,
+      coverImageUrl: course?.coverImageUrl ?? null,
       gradeLevel: course?.gradeLevel ?? undefined,
       status: enrollment.status,
+      progressPercent: summary.progressPercent,
+      completedLessonsCount: summary.completedLessonsCount,
+      totalLessonsCount: summary.totalLessonsCount,
+      currentLesson: summary.currentLesson,
+      lastActivityAt: (
+        summary.lastActivityAt ?? enrollment.enrolledAt
+      ).toISOString(),
     };
   }
 }

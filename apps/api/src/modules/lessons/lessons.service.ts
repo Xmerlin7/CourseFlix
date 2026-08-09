@@ -46,6 +46,21 @@ export interface UpdateProgressResponse {
   attendanceAwarded: boolean;
 }
 
+export interface CourseCurrentLesson {
+  id: string;
+  title: string;
+  lastVideoPosition: number;
+}
+
+export interface CourseProgressSummary {
+  totalLessonsCount: number;
+  completedLessonsCount: number;
+  progressPercent: number;
+  currentLesson: CourseCurrentLesson | null;
+  /** Most recent `completedAt` among this course's progress rows, if any. */
+  lastActivityAt: Date | null;
+}
+
 @Injectable()
 export class LessonsService {
   constructor(
@@ -125,6 +140,138 @@ export class LessonsService {
         status: 'not_started',
       },
     };
+  }
+
+  /**
+   * Batch-computes an enrollment-list-friendly progress summary per course
+   * (lesson counts, resume target, recency) from the same `content_progress`
+   * rows `getLessonDetail`/`loadCourseLessonProgress` already use — no
+   * parallel progress store, just a different projection of it.
+   *
+   * "Current lesson" priority mirrors the student-facing resume flow:
+   * 1) a lesson still `in_progress` (earliest in course order, i.e. the one
+   *    the student hasn't finished yet), 2) otherwise the most recently
+   *    completed lesson (there's no `updated_at` on content_progress to
+   *    rank multiple in-progress rows by recency, so `completedAt` is the
+   *    only real timestamp available), 3) otherwise the first lesson, if
+   *    the course has never been started.
+   */
+  async getCourseProgressSummaries(
+    studentId: string,
+    courseIds: string[],
+  ): Promise<Map<string, CourseProgressSummary>> {
+    const summaries = new Map<string, CourseProgressSummary>();
+    if (courseIds.length === 0) {
+      return summaries;
+    }
+
+    const lessons = await this.lessonsRepository
+      .createQueryBuilder('lesson')
+      .innerJoin('lesson.section', 'section', 'section.deleted_at IS NULL')
+      .where('lesson.course_id IN (:...courseIds)', { courseIds })
+      .andWhere('lesson.deleted_at IS NULL')
+      .andWhere('lesson.status = :status', { status: 'published' })
+      .orderBy('section.order_index', 'ASC')
+      .addOrderBy('lesson.order_index', 'ASC')
+      .getMany();
+
+    const lessonsByCourseId = new Map<string, LessonEntity[]>();
+    for (const lesson of lessons) {
+      const list = lessonsByCourseId.get(lesson.courseId) ?? [];
+      list.push(lesson);
+      lessonsByCourseId.set(lesson.courseId, list);
+    }
+
+    const lessonIds = lessons.map((lesson) => lesson.id);
+    const videos = lessonIds.length
+      ? await this.videosRepository.find({
+          where: { lessonId: In(lessonIds), deletedAt: IsNull() },
+        })
+      : [];
+    const videoByLessonId = new Map(
+      videos.map((video) => [video.lessonId!, video]),
+    );
+
+    const videoIds = videos.map((video) => video.id);
+    const progressRows = videoIds.length
+      ? await this.progressRepository.find({
+          where: { studentId, itemType: 'video', videoId: In(videoIds) },
+        })
+      : [];
+    const progressByVideoId = new Map(
+      progressRows.map((progress) => [progress.videoId, progress]),
+    );
+
+    for (const courseId of courseIds) {
+      const courseLessons = (lessonsByCourseId.get(courseId) ?? []).filter(
+        (lesson) => videoByLessonId.has(lesson.id),
+      );
+      const totalLessonsCount = courseLessons.length;
+
+      let completedLessonsCount = 0;
+      let inProgressLesson: CourseCurrentLesson | null = null;
+      let lastCompletedLesson: CourseCurrentLesson | null = null;
+      let lastCompletedAt: Date | null = null;
+
+      for (const lesson of courseLessons) {
+        const video = videoByLessonId.get(lesson.id)!;
+        const progress = progressByVideoId.get(video.id);
+        if (!progress) {
+          continue;
+        }
+
+        if (progress.status === 'completed') {
+          completedLessonsCount += 1;
+          if (
+            !lastCompletedAt ||
+            (progress.completedAt && progress.completedAt > lastCompletedAt)
+          ) {
+            lastCompletedAt = progress.completedAt;
+            lastCompletedLesson = {
+              id: lesson.id,
+              title: lesson.title,
+              lastVideoPosition: progress.lastVideoPosition ?? 0,
+            };
+          }
+        } else if (progress.status === 'in_progress' && !inProgressLesson) {
+          inProgressLesson = {
+            id: lesson.id,
+            title: lesson.title,
+            lastVideoPosition: progress.lastVideoPosition ?? 0,
+          };
+        }
+      }
+
+      let currentLesson: CourseCurrentLesson | null = null;
+      if (inProgressLesson) {
+        currentLesson = inProgressLesson;
+      } else if (
+        completedLessonsCount > 0 &&
+        completedLessonsCount < totalLessonsCount
+      ) {
+        currentLesson = lastCompletedLesson;
+      } else if (completedLessonsCount === 0 && totalLessonsCount > 0) {
+        const first = courseLessons[0];
+        currentLesson = {
+          id: first.id,
+          title: first.title,
+          lastVideoPosition: 0,
+        };
+      }
+
+      summaries.set(courseId, {
+        totalLessonsCount,
+        completedLessonsCount,
+        progressPercent:
+          totalLessonsCount > 0
+            ? Math.round((completedLessonsCount / totalLessonsCount) * 100)
+            : 0,
+        currentLesson,
+        lastActivityAt: lastCompletedAt,
+      });
+    }
+
+    return summaries;
   }
 
   /**
@@ -250,7 +397,9 @@ export class LessonsService {
   private async loadCourseLessonProgress(
     course: CourseEntity,
     studentId: string,
-  ): Promise<Map<string, { status: ContentProgressStatus; watchedPercentage: number }>> {
+  ): Promise<
+    Map<string, { status: ContentProgressStatus; watchedPercentage: number }>
+  > {
     const lessonIds = (course.sections ?? [])
       .flatMap((section) => section.lessons ?? [])
       .map((lesson) => lesson.id);
