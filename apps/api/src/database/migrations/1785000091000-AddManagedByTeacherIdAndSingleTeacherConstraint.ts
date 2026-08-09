@@ -17,6 +17,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * migration to creating the column (without the FK/CHECK/index, which
  * aren't decorator-driven and synchronize doesn't know about) — a plain
  * unguarded `ADD COLUMN` would then fail with "already exists".
+ *
+ * Also demotes every non-deleted 'teacher' row but the oldest into an
+ * 'assistant' before creating the unique index — a database seeded
+ * before this migration existed can have more than one, which would
+ * otherwise make the index creation fail outright.
  */
 export class AddManagedByTeacherIdAndSingleTeacherConstraint1785000091000 implements MigrationInterface {
   name = 'AddManagedByTeacherIdAndSingleTeacherConstraint1785000091000';
@@ -59,6 +64,30 @@ export class AddManagedByTeacherIdAndSingleTeacherConstraint1785000091000 implem
         );
       `);
     }
+
+    // Pre-existing databases seeded before this migration can have more
+    // than one non-deleted 'teacher' row (the old fixture's second demo
+    // teacher) — the unique index below would fail outright on that
+    // data. Demote every teacher but the oldest into an assistant
+    // managed by it, the same outcome the updated seed produces for a
+    // fresh database, instead of just erroring out or deleting rows.
+    await queryRunner.query(`
+      UPDATE "users"
+      SET "role" = 'assistant',
+          "managed_by_teacher_id" = (
+            SELECT "id" FROM "users"
+            WHERE "role" = 'teacher' AND "deleted_at" IS NULL
+            ORDER BY "created_at" ASC
+            LIMIT 1
+          )
+      WHERE "role" = 'teacher' AND "deleted_at" IS NULL
+        AND "id" <> (
+          SELECT "id" FROM "users"
+          WHERE "role" = 'teacher' AND "deleted_at" IS NULL
+          ORDER BY "created_at" ASC
+          LIMIT 1
+        );
+    `);
 
     await queryRunner.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS "ux_users_single_teacher"
