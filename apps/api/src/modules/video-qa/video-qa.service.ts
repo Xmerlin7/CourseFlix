@@ -117,8 +117,11 @@ export class VideoQaService {
       query: question,
       topK: 5,
     });
-    const relevantChunks =
-      this.answerPolicyService.getRelevantChunks(retrievedChunks);
+    const relevantChunks = this.answerPolicyService.getRelevantChunks(
+      retrievedChunks,
+      'VIDEO_QA_MAX_DISTANCE',
+      1.8,
+    );
 
     if (relevantChunks.length === 0) {
       this.logger.log(
