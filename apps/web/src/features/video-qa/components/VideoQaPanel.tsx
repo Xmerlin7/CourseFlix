@@ -27,7 +27,7 @@ const NOT_READY_MESSAGES: Record<Exclude<VideoQaTranscriptStatus, 'completed'>, 
  */
 export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const { status, isLoading: isStatusLoading } = useVideoQaStatus(videoId)
+  const { status, isLoading: isStatusLoading, error: statusError } = useVideoQaStatus(videoId)
   const { messages, isSending, error, send, retryLast } = useVideoQaChat(videoId)
   const [draft, setDraft] = useState('')
 
@@ -66,6 +66,15 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
         <div style={{ display: 'grid', gap: 12 }}>
           {isStatusLoading ? (
             <span className="meta">جارٍ التحقق من جاهزية المساعد...</span>
+          ) : statusError ? (
+            // A failed status check (network hiccup, rate limit, ...) is
+            // not the same claim as "no transcript exists for this video"
+            // — conflating the two used to show the permanent-sounding
+            // "غير متاح" message for what's often a transient error.
+            <span className="chip outline" role="status">
+              <span className="ms">error</span>
+              تعذر التحقق من جاهزية المساعد، جرب تاني
+            </span>
           ) : !isReady ? (
             <span className="chip outline" role="status">
               <span className="ms">info</span>
