@@ -168,4 +168,26 @@ describe('VideoQaPanel', () => {
     expect(await screen.findByText('تعذر إرسال السؤال')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'إعادة المحاولة' })).toBeInTheDocument();
   });
+
+  it('sends question on Enter key press', async () => {
+    mockStatus('completed');
+    server.use(
+      http.post(`${env.apiBaseUrl}/student/videos/${videoId}/ask`, () =>
+        HttpResponse.json({
+          status: 'answered',
+          answer: 'إجابة عند الضغط على Enter.',
+          citations: [],
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<VideoQaPanel videoId={videoId} canSeek onSeek={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: /اسأل عن هذا الفيديو/ }));
+
+    const input = await waitForQuestionInput();
+    await user.type(input, 'سؤال على انتر{Enter}');
+
+    expect(await screen.findByText('إجابة عند الضغط على Enter.')).toBeInTheDocument();
+  });
 });

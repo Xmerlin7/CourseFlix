@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { handleChatInputKeyDown } from '../../../shared/utils/chatInput'
 import { useVideoQaChat } from '../hooks/useVideoQaChat'
 import { useVideoQaStatus } from '../hooks/useVideoQaStatus'
 import type { VideoQaTranscriptStatus } from '../types/video-qa.types'
@@ -33,10 +34,10 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
 
   const isReady = status === 'completed'
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleSubmit(event?: FormEvent<HTMLFormElement>) {
+    if (event) event.preventDefault()
     const question = draft.trim()
-    if (!question) return
+    if (!question || isSending) return
     setDraft('')
     await send(question)
   }
@@ -134,13 +135,22 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
               >
                 <div className="tf" style={{ flex: 1 }}>
                   <label htmlFor={`video-qa-question-${videoId}`}>سؤالك عن الفيديو</label>
-                  <input
+                  <textarea
                     id={`video-qa-question-${videoId}`}
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) =>
+                      handleChatInputKeyDown(
+                        event,
+                        () => void handleSubmit(),
+                        isSending || !draft.trim(),
+                      )
+                    }
+                    rows={1}
                     maxLength={1000}
                     placeholder="مثلاً: ايه اللي اتقال في الدقيقة الثالثة؟"
                     disabled={isSending}
+                    style={{ resize: 'none' }}
                   />
                 </div>
                 <button

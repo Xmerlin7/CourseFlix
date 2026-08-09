@@ -55,4 +55,46 @@ describe('FloatingAssistant', () => {
     expect(await screen.findByText(/الطلاب النشطون: 12/)).toBeInTheDocument()
     expect(screen.getByText(/التسجيلات النشطة: 14/)).toBeInTheDocument()
   })
+
+  it('sends question on Enter in student floating panel', async () => {
+    const user = userEvent.setup()
+
+    renderWithProviders(<FloatingAssistant role="student" />, {
+      initialEntries: ['/student/courses/course-1'],
+    })
+
+    await user.click(screen.getByRole('button', { name: 'افتح مساعد الدورة' }))
+    const input = await screen.findByLabelText('سؤالك للمساعد')
+    await user.type(input, 'اشرح قانون نيوتن الثالث{Enter}')
+
+    expect(await screen.findByText(/حسب المادة المرفوعة/)).toBeInTheDocument()
+  })
+
+  it('sends question on Enter in teacher floating panel', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/teacher/analytics/questions`, () =>
+        HttpResponse.json({
+          status: 'success',
+          intent: 'student_count',
+          result: {
+            activeStudentCount: 12,
+            enrollmentCount: 14,
+            dateRange: { from: null, to: null },
+          },
+        }),
+      ),
+    )
+
+    const user = userEvent.setup()
+
+    renderWithProviders(<FloatingAssistant role="teacher" />, {
+      initialEntries: ['/teacher/dashboard'],
+    })
+
+    await user.click(screen.getByRole('button', { name: 'افتح مساعد التحليلات' }))
+    const input = await screen.findByLabelText('سؤالك لمساعد التحليلات')
+    await user.type(input, 'عندي كام طالب؟{Enter}')
+
+    expect(await screen.findByText(/الطلاب النشطون: 12/)).toBeInTheDocument()
+  })
 })

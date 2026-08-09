@@ -110,4 +110,29 @@ describe('TeacherAnalyticsPage', () => {
     })
     expect(screen.getAllByText('كم إيراداتي من 1 يناير إلى 31 مارس؟')).toHaveLength(2)
   })
+
+  it('submits analytics question when pressing Enter', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/teacher/analytics/questions`, () =>
+        HttpResponse.json({
+          status: 'success',
+          intent: 'student_count',
+          result: {
+            activeStudentCount: 12,
+            enrollmentCount: 14,
+            dateRange: { from: null, to: null },
+          },
+        }),
+      ),
+    )
+
+    const user = userEvent.setup()
+    renderWithProviders(<TeacherAnalyticsPage />)
+
+    const input = await screen.findByPlaceholderText('اكتب سؤالك هنا...')
+    await user.type(input, 'عندي كام طالب؟{Enter}')
+
+    expect(await screen.findByText('الطلاب النشطون')).toBeInTheDocument()
+    expect(screen.getByText('12')).toBeInTheDocument()
+  })
 })

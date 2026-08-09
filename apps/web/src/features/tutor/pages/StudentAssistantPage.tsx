@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { EmptyState } from "../../../shared/components/EmptyState";
 import { ErrorState } from "../../../shared/components/ErrorState";
 import { NotFoundState } from "../../../shared/components/NotFoundState";
+import { handleChatInputKeyDown } from "../../../shared/utils/chatInput";
 import { CitationList } from "../components/CitationList";
 import { useTutorChat } from "../hooks/useTutorChat";
 
@@ -16,10 +17,10 @@ export function StudentAssistantPage() {
     return <NotFoundState />;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(event?: FormEvent<HTMLFormElement>) {
+    if (event) event.preventDefault();
     const message = draft.trim();
-    if (!message) return;
+    if (!message || isSending || isLoadingHistory) return;
     setDraft("");
     await send(message);
   }
@@ -115,6 +116,13 @@ export function StudentAssistantPage() {
             id="tutor-message"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) =>
+              handleChatInputKeyDown(
+                event,
+                () => void handleSubmit(),
+                isSending || isLoadingHistory || draft.trim().length === 0,
+              )
+            }
             rows={3}
             maxLength={1000}
             placeholder="مثلاً: اشرح قانون نيوتن الثالث من الملفات المرفوعة"

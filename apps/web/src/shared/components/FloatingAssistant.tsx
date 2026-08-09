@@ -5,6 +5,7 @@ import type { AnalyticsQuestionResponse } from '../../features/analytics/types/a
 import { getLesson } from '../../features/lessons/api/lessons.api'
 import { CitationList } from '../../features/tutor/components/CitationList'
 import { useTutorChat } from '../../features/tutor/hooks/useTutorChat'
+import { handleChatInputKeyDown } from '../utils/chatInput'
 
 interface FloatingAssistantProps {
   role: 'student' | 'teacher'
@@ -185,10 +186,10 @@ function StudentFloatingAssistant({ courseId }: { courseId: string }) {
     }
   }, [messages.length, isSending])
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleSubmit(event?: FormEvent<HTMLFormElement>) {
+    if (event) event.preventDefault()
     const message = draft.trim()
-    if (!message) return
+    if (!message || isSending || isLoadingHistory) return
     setDraft('')
     await send(message)
   }
@@ -230,6 +231,13 @@ function StudentFloatingAssistant({ courseId }: { courseId: string }) {
         <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) =>
+            handleChatInputKeyDown(
+              event,
+              () => void handleSubmit(),
+              isSending || isLoadingHistory || !draft.trim(),
+            )
+          }
           rows={2}
           maxLength={1000}
           placeholder="اسأل عن محتوى الدورة..."
@@ -261,8 +269,8 @@ function TeacherFloatingAssistant() {
     }
   }, [messages.length, isLoading])
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleSubmit(event?: FormEvent<HTMLFormElement>) {
+    if (event) event.preventDefault()
     const question = draft.trim()
     if (!question || isLoading) return
 
@@ -311,10 +319,17 @@ function TeacherFloatingAssistant() {
       </div>
 
       <form className="floating-assistant-form" onSubmit={(event) => void handleSubmit(event)}>
-        <input
-          type="text"
+        <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) =>
+            handleChatInputKeyDown(
+              event,
+              () => void handleSubmit(),
+              isLoading || !draft.trim(),
+            )
+          }
+          rows={1}
           maxLength={500}
           placeholder="مثلاً: عندي كام طالب؟"
           disabled={isLoading}
