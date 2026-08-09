@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CaptionCue, CaptionProvider, CaptionsUnavailableError } from './caption-provider';
 import {
-  MAX_TRANSCRIPTION_UPLOAD_BYTES,
+  MAX_SOURCE_MEDIA_BYTES,
   transcribeAudioBytes,
 } from './whisper-transcribe';
 
@@ -28,10 +28,10 @@ export class WhisperCaptionsAdapter implements CaptionProvider {
     const contentLengthHeader = videoResponse.headers.get('content-length');
     if (
       contentLengthHeader &&
-      Number(contentLengthHeader) > MAX_TRANSCRIPTION_UPLOAD_BYTES
+      Number(contentLengthHeader) > MAX_SOURCE_MEDIA_BYTES
     ) {
       throw new CaptionsUnavailableError(
-        `Video is ${Number(contentLengthHeader)} bytes, over the ${MAX_TRANSCRIPTION_UPLOAD_BYTES}-byte transcription limit.`,
+        `Video is ${Number(contentLengthHeader)} bytes, over the ${MAX_SOURCE_MEDIA_BYTES}-byte download limit.`,
       );
     }
 
