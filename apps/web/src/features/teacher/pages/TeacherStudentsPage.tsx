@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
+import { showToast } from '../../../shared/components/Toast'
 import { COURSE_STATUS, ENROLLMENT_STATUS } from '../../../shared/lib/status-labels'
+import { updateStudentEnrollmentStatus } from '../api/teacher.api'
 import { useTeacherStudents } from '../hooks/useTeacherStudents'
 
 type Filter = 'all' | 'subscribed' | 'unsubscribed'
@@ -14,9 +16,35 @@ function formatMoney(minor: number, currency: string) {
 export function TeacherStudentsPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const [studentIdSearch, setStudentIdSearch] = useState('')
+  const [pendingKey, setPendingKey] = useState<string | null>(null)
   const { data, isLoading, error, refetch } = useTeacherStudents(
     studentIdSearch.trim() || undefined,
   )
+
+  async function handleToggleSuspend(
+    studentId: string,
+    courseId: string,
+    currentStatus: 'active' | 'suspended' | 'completed',
+  ) {
+    if (currentStatus === 'completed') return
+    const nextStatus = currentStatus === 'suspended' ? 'active' : 'suspended'
+    const key = `${studentId}:${courseId}`
+
+    setPendingKey(key)
+    try {
+      await updateStudentEnrollmentStatus(studentId, courseId, nextStatus)
+      showToast(
+        nextStatus === 'suspended'
+          ? 'تم إيقاف اشتراك الطالب وإرسال إشعار له'
+          : 'تم إعادة تفعيل اشتراك الطالب',
+      )
+      refetch()
+    } catch {
+      showToast('تعذر تحديث حالة الاشتراك، حاول مرة أخرى', 'error')
+    } finally {
+      setPendingKey(null)
+    }
+  }
 
   const students = useMemo(() => {
     if (!data) return []
@@ -149,12 +177,27 @@ export function TeacherStudentsPage() {
                         {student.courses.map((course) => {
                           const courseStatus = COURSE_STATUS[course.status]
                           const enrollmentStatus = ENROLLMENT_STATUS[course.enrollmentStatus]
+                          const key = `${student.id}:${course.id}`
+                          const isCompleted = course.enrollmentStatus === 'completed'
+                          const isSuspended = course.enrollmentStatus === 'suspended'
 
                           return (
                             <div key={course.id} className="student-course-pill">
                               <span>{course.title}</span>
                               <span className={`chip ${courseStatus.chip}`}>{courseStatus.label}</span>
                               <span className={`chip ${enrollmentStatus.chip}`}>{enrollmentStatus.label}</span>
+                              {!isCompleted && (
+                                <button
+                                  type="button"
+                                  className="btn text btn-compact"
+                                  disabled={pendingKey === key}
+                                  onClick={() =>
+                                    handleToggleSuspend(student.id, course.id, course.enrollmentStatus)
+                                  }
+                                >
+                                  {isSuspended ? 'تفعيل' : 'إيقاف'}
+                                </button>
+                              )}
                             </div>
                           )
                         })}
