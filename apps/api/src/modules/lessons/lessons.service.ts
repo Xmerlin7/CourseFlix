@@ -86,7 +86,7 @@ export class LessonsService {
       lesson.courseId,
     );
     const video = await this.loadVideoForLesson(lesson.id);
-    const course = await this.loadCourseOutline(lesson.courseId);
+    const course = await this.loadCourseOutline(lesson.courseId, true);
     const lessonProgress = await this.loadCourseLessonProgress(
       course,
       studentId,
@@ -368,8 +368,20 @@ export class LessonsService {
     return video;
   }
 
-  private async loadCourseOutline(courseId: string): Promise<CourseEntity> {
-    const course = await this.coursesRepository
+  // `publishedOnly` must stay false for the teacher/assistant path
+  // (getTeacherLessonDetail) — they need draft lessons in the outline to
+  // manage them. Students only ever get true: a draft or unpublished
+  // lesson sitting between two published ones would otherwise show up
+  // in StudentLessonPage's sequential-unlock walk as a lesson the
+  // student can never complete, permanently locking every lesson after
+  // it. Keep in sync with the same `lesson.status = 'published'` filter
+  // in getCourseProgressSummaries, which already only counts published
+  // lessons — a mismatch here is exactly what caused that bug.
+  private async loadCourseOutline(
+    courseId: string,
+    publishedOnly = false,
+  ): Promise<CourseEntity> {
+    const query = this.coursesRepository
       .createQueryBuilder('course')
       .leftJoinAndSelect(
         'course.sections',
@@ -379,13 +391,16 @@ export class LessonsService {
       .leftJoinAndSelect(
         'section.lessons',
         'lesson',
-        'lesson.deleted_at IS NULL',
+        publishedOnly
+          ? "lesson.deleted_at IS NULL AND lesson.status = 'published'"
+          : 'lesson.deleted_at IS NULL',
       )
       .where('course.id = :courseId', { courseId })
       .andWhere('course.deleted_at IS NULL')
       .orderBy('section.order_index', 'ASC')
-      .addOrderBy('lesson.order_index', 'ASC')
-      .getOne();
+      .addOrderBy('lesson.order_index', 'ASC');
+
+    const course = await query.getOne();
 
     if (!course) {
       throw new NotFoundException('Course not found.');

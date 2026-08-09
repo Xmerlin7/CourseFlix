@@ -103,7 +103,14 @@ export class CoursesService {
     courseId: string,
     viewer: AuthenticatedUser,
   ): Promise<CourseDetailResponseDto> {
-    const course = await this.loadCourseWithSectionsAndLessons(courseId);
+    // Non-teacher viewers (students) never see draft lessons here, same
+    // as loadCourseOutline in lessons.service.ts — otherwise a draft
+    // sitting between two published lessons shows up in the student's
+    // own outline as a lesson they can never complete.
+    const course = await this.loadCourseWithSectionsAndLessons(
+      courseId,
+      viewer.role !== 'teacher',
+    );
     if (!course) {
       throw new NotFoundException('Course not found.');
     }
@@ -522,6 +529,7 @@ export class CoursesService {
 
   private async loadCourseWithSectionsAndLessons(
     courseId: string,
+    publishedOnly = false,
   ): Promise<CourseEntity | null> {
     return this.coursesRepository
       .createQueryBuilder('course')
@@ -534,7 +542,9 @@ export class CoursesService {
       .leftJoinAndSelect(
         'section.lessons',
         'lesson',
-        'lesson.deleted_at IS NULL',
+        publishedOnly
+          ? "lesson.deleted_at IS NULL AND lesson.status = 'published'"
+          : 'lesson.deleted_at IS NULL',
       )
       .where('course.id = :courseId', { courseId })
       .andWhere('course.deleted_at IS NULL')
