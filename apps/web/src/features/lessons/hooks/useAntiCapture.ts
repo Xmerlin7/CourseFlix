@@ -7,6 +7,16 @@ interface UseAntiCaptureOptions {
   isPlaying: boolean
   onPause: () => void
   onResume: () => void
+  /**
+   * Clicking into a same-page <iframe> (YouTube/Bunny's own player chrome
+   * inside the embed) fires a `window` blur event on the parent document —
+   * focus moved into the iframe's own browsing context, not to another
+   * app/window. Without this check, every click on the video itself (pause,
+   * seek, the iframe's native fullscreen button, YouTube's click-to-pause)
+   * looked identical to alt-tabbing away and tripped the guard. Return true
+   * when the blur is just that in-page focus shift, so it gets ignored.
+   */
+  isFocusShiftInternal?: () => boolean
 }
 
 interface UseAntiCaptureResult {
@@ -27,16 +37,24 @@ const DEVTOOLS_POLL_MS = 1500
  * whatever the active PlayerController (native video / YouTube / Bunny)
  * provides, so this works the same regardless of video source.
  */
-export function useAntiCapture({ enabled, isPlaying, onPause, onResume }: UseAntiCaptureOptions): UseAntiCaptureResult {
+export function useAntiCapture({
+  enabled,
+  isPlaying,
+  onPause,
+  onResume,
+  isFocusShiftInternal,
+}: UseAntiCaptureOptions): UseAntiCaptureResult {
   const [blockReason, setBlockReason] = useState<CaptureBlockReason>(null)
   const blockReasonRef = useRef<CaptureBlockReason>(null)
   const isPlayingRef = useRef(isPlaying)
   const wasPlayingRef = useRef(false)
   const onPauseRef = useRef(onPause)
   const onResumeRef = useRef(onResume)
+  const isFocusShiftInternalRef = useRef(isFocusShiftInternal)
   isPlayingRef.current = isPlaying
   onPauseRef.current = onPause
   onResumeRef.current = onResume
+  isFocusShiftInternalRef.current = isFocusShiftInternal
 
   const setReason = useCallback((reason: CaptureBlockReason) => {
     blockReasonRef.current = reason
@@ -67,6 +85,9 @@ export function useAntiCapture({ enabled, isPlaying, onPause, onResume }: UseAnt
     }
 
     function handleBlur() {
+      if (isFocusShiftInternalRef.current?.()) {
+        return
+      }
       pauseVideo()
       setReason('window-blur')
     }

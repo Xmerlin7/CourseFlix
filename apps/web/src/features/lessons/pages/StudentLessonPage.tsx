@@ -202,6 +202,10 @@ export function StudentLessonPage() {
     isPlaying: activeController.isPlaying,
     onPause: activeController.pause,
     onResume: activeController.play,
+    // Clicking anywhere on a YouTube/Bunny iframe (pause, seek, its own
+    // fullscreen button) shifts focus into it and fires a `window` blur on
+    // us — that's normal video interaction, not the user alt-tabbing away.
+    isFocusShiftInternal: () => Boolean(iframeEmbedUrl) && document.activeElement === iframeRef.current,
   })
 
   useProgressHeartbeat({
@@ -356,6 +360,7 @@ export function StudentLessonPage() {
                 onLoadedMetadata={handleLoadedMetadata}
                 onError={() => setVideoError(true)}
                 onClick={() => nativeVideoController.togglePlay()}
+                onDoubleClick={toggleFullscreen}
               />
             )}
             {studentWatermarkId && (
