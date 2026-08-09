@@ -106,6 +106,16 @@ const AdminCreateAdminPage = lazy(() =>
     default: m.AdminCreateAdminPage,
   }))
 )
+const AdminCreateTeacherPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateTeacherPage').then((m) => ({
+    default: m.AdminCreateTeacherPage,
+  }))
+)
+const AdminCreateAssistantPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateAssistantPage').then((m) => ({
+    default: m.AdminCreateAssistantPage,
+  }))
+)
 const AdminCoursesPage = lazy(() =>
   import('../../features/admin/pages/AdminCoursesPage').then((m) => ({ default: m.AdminCoursesPage }))
 )
@@ -460,6 +470,22 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <AdminCreateAdminPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_TEACHER,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateTeacherPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_ASSISTANT,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateAssistantPage />
               </SuspenseWrapper>
             ),
           },

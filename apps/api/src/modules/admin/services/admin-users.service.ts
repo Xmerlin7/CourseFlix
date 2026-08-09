@@ -150,8 +150,18 @@ export class AdminUsersService {
     if (user.role === 'admin' && role !== 'admin') {
       await this.assertNotLastAdmin();
     }
+    if (role === 'teacher' && user.role !== 'teacher') {
+      await this.assertNoExistingTeacher();
+    }
 
     user.role = role;
+    // CHK_users_assistant_has_teacher requires managedByTeacherId to be
+    // null for every non-assistant role — clear it whenever a former
+    // assistant moves elsewhere (role can never be set to 'assistant'
+    // through this endpoint, see UpdateUserRoleDto).
+    if (role !== 'assistant') {
+      user.managedByTeacherId = null;
+    }
     await this.usersRepository.save(user);
     return this.getUserDetail(userId);
   }

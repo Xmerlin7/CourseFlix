@@ -10,6 +10,7 @@ export const USER_ROLE_LABEL: Record<UserRole, { label: string; chip: ChipVarian
   student: { label: 'طالب', chip: 'outline' },
   teacher: { label: 'معلم', chip: 'pink' },
   admin: { label: 'أدمن', chip: 'green' },
+  assistant: { label: 'مساعد', chip: '' },
 }
 
 export const USER_STATUS_LABEL: Record<UserStatus, { label: string; chip: ChipVariant }> = {

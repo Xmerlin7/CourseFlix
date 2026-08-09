@@ -4,6 +4,8 @@ import type {
   AdminUserListItem,
   AdminUsersFilter,
   CreateAdminAccountPayload,
+  CreateAssistantAccountPayload,
+  CreateTeacherAccountPayload,
   UpdateAdminUserPayload,
   UserStatus,
 } from '../types/admin.types'
@@ -52,4 +54,16 @@ export async function createAdminAccount(
   payload: CreateAdminAccountPayload,
 ): Promise<AdminUserDetail> {
   return httpClient.post<AdminUserDetail>('/admin/users/admins', payload)
+}
+
+export async function createTeacherAccount(
+  payload: CreateTeacherAccountPayload,
+): Promise<AdminUserDetail> {
+  return httpClient.post<AdminUserDetail>('/admin/users/teachers', payload)
+}
+
+export async function createAssistantAccount(
+  payload: CreateAssistantAccountPayload,
+): Promise<AdminUserDetail> {
+  return httpClient.post<AdminUserDetail>('/admin/users/assistants', payload)
 }

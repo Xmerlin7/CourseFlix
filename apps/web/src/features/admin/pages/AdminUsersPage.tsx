@@ -32,17 +32,27 @@ export function AdminUsersPage() {
     <>
       <PageHeader
         title="المستخدمون"
-        description="كل الطلاب والمعلمين والأدمنز على المنصة"
+        description="كل الطلاب والمعلمين والمساعدين والأدمنز على المنصة"
         actions={
-          <Link to={ROUTE_PATHS.ADMIN.CREATE_ADMIN} className="btn">
-            <span className="ms">person_add</span>
-            أدمن جديد
-          </Link>
+          <>
+            <Link to={ROUTE_PATHS.ADMIN.CREATE_TEACHER} className="btn tonal">
+              <span className="ms">school</span>
+              حساب المعلم
+            </Link>
+            <Link to={ROUTE_PATHS.ADMIN.CREATE_ASSISTANT} className="btn tonal">
+              <span className="ms">group_add</span>
+              مساعد جديد
+            </Link>
+            <Link to={ROUTE_PATHS.ADMIN.CREATE_ADMIN} className="btn">
+              <span className="ms">person_add</span>
+              أدمن جديد
+            </Link>
+          </>
         }
       />
 
       <div className="actions section" style={{ flexWrap: 'wrap', gap: 8 }}>
-        {(['all', 'student', 'teacher', 'admin'] as const).map((option) => (
+        {(['all', 'student', 'teacher', 'assistant', 'admin'] as const).map((option) => (
           <button
             key={option}
             type="button"
