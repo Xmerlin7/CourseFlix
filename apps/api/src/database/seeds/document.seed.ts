@@ -1,10 +1,13 @@
 import { createHash } from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import {
   DocumentEntity,
   DocumentProcessingStatus,
 } from '../../modules/documents/entities/document.entity';
 import { FileEntity } from '../../modules/documents/entities/file.entity';
+import { OpenAIEmbeddingProvider } from '../../modules/retrieval/embedding.adapter';
+import { toVectorLiteral } from '../../modules/retrieval/retrieval.service';
 
 interface DocumentBlueprint {
   fileName: string;
@@ -207,21 +210,40 @@ async function seedDocumentChunksForDoc(
 
   const chunks = sampleChunksMap[fileName] || sampleChunksMap['default'];
 
+  // Embeddings need a real OpenAI key; without one the chunks are seeded
+  // with a NULL embedding (unsearchable) exactly like the pre-pgvector
+  // seed behaved, instead of aborting the whole reseed.
+  let embeddings: number[][] | null = null;
+  try {
+    const configService = new ConfigService();
+    const embeddingProvider = new OpenAIEmbeddingProvider(configService);
+    embeddings = await embeddingProvider.embed(chunks.map((chunk) => chunk.text));
+  } catch (error) {
+    console.warn(
+      `Skipping document chunk embeddings for ${fileName}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
   for (let index = 0; index < chunks.length; index++) {
     const chunk = chunks[index];
     const vectorId = `${documentId}:1:${index}`;
 
     await dataSource.query(
       `INSERT INTO document_chunks (
-        document_id, chunk_index, text_preview, vector_id, page_number, token_count, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, true)`,
+        document_id, chunk_index, text_preview, text_content, vector_id,
+        page_number, token_count, is_active, embedding
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8::vector)`,
       [
         documentId,
         index,
         chunk.text,
+        chunk.text,
         vectorId,
         chunk.page,
         Math.ceil(chunk.text.length / 4),
+        embeddings ? toVectorLiteral(embeddings[index]) : null,
       ],
     );
   }

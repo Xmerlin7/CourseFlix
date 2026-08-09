@@ -30,10 +30,33 @@ import { TutorModule } from './modules/tutor/tutor.module';
 import { VideoQaModule } from './modules/video-qa/video-qa.module';
 
 // Local docker-compose Postgres has no SSL listener; only the deployed
-// Neon database needs `ssl: true` (its own hostname is never localhost).
+// Neon/Render database needs `ssl: true` (its own hostname is never localhost).
 const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
   process.env.DATABASE_URL ?? '',
 );
+
+/**
+ * Resolves the ioredis connection options for BullMQ. Prefers a full
+ * `REDIS_URL` (the only form Render and other managed providers hand
+ * out), falling back to the split `REDIS_HOST`/`REDIS_PORT` used locally.
+ */
+function redisConnection(configService: ConfigService) {
+  const url = configService.get<string>('REDIS_URL');
+  if (url) {
+    const parsed = new URL(url);
+    return {
+      host: parsed.hostname,
+      port: Number(parsed.port || 6379),
+      username: parsed.username ? decodeURIComponent(parsed.username) : undefined,
+      password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+      tls: parsed.protocol === 'rediss:' ? {} : undefined,
+    };
+  }
+  return {
+    host: configService.get<string>('REDIS_HOST', 'localhost'),
+    port: configService.get<number>('REDIS_PORT', 6379),
+  };
+}
 
 @Module({
   imports: [
@@ -43,10 +66,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        },
+        connection: redisConnection(configService),
       }),
     }),
 
@@ -54,14 +74,16 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: true,
+      // Schema is owned by migrations on any deployed database; the
+      // local docker-compose instance can keep auto-syncing for DX.
+      synchronize: isLocalDatabaseUrl,
       port: 5432,
       ssl: isLocalDatabaseUrl ? false : true,
       extra: isLocalDatabaseUrl
         ? {}
         : {
             ssl: {
-              rejectUnauthorized: false, // Allows connection to Neon over safe TLS
+              rejectUnauthorized: false, // Allows connection to Neon/Render over safe TLS
             },
           },
     }),

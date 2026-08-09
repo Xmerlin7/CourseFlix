@@ -4,7 +4,6 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { DataSource } from 'typeorm';
 import { Queue } from 'bullmq';
-import { ChromaClient } from 'chromadb';
 
 export interface HealthResponse {
   api: 'ok';
@@ -26,7 +25,7 @@ export interface ReadinessResponse {
     api: DependencyStatus;
     database: DependencyStatus;
     redis: DependencyStatus;
-    chroma: DependencyStatus;
+    vectorStore: DependencyStatus;
     aiProvider: DependencyStatus;
   };
 }
@@ -48,9 +47,8 @@ export class HealthService {
   }
 
   // Liveness: only answers "is the process up". No dependency calls — a
-  // slow/unreachable Redis or Chroma must never fail liveness, or an
-  // orchestrator would kill a perfectly healthy process for a problem a
-  // restart can't fix.
+  // slow/unreachable Redis must never fail liveness, or an orchestrator
+  // would kill a perfectly healthy process for a problem a restart can't fix.
   getLiveness(): LivenessResponse {
     return { status: 'ok', timestamp: new Date().toISOString() };
   }
@@ -59,10 +57,10 @@ export class HealthService {
   // throws — a failing dependency is reported as 'error' in the payload,
   // never as a raw connection string, host, or stack trace.
   async getReadiness(): Promise<ReadinessResponse> {
-    const [database, redis, chroma] = await Promise.all([
+    const [database, redis, vectorStore] = await Promise.all([
       this.checkDatabase(),
       this.checkRedis(),
-      this.checkChroma(),
+      this.checkVectorStore(),
     ]);
     const aiProvider = this.checkAiProviderConfigured();
 
@@ -70,7 +68,7 @@ export class HealthService {
       api: 'ok' as const,
       database,
       redis,
-      chroma,
+      vectorStore,
       aiProvider,
     };
 
@@ -100,13 +98,13 @@ export class HealthService {
     }
   }
 
-  private async checkChroma(): Promise<DependencyStatus> {
+  private async checkVectorStore(): Promise<DependencyStatus> {
     try {
-      const chromaUrl =
-        this.configService.get<string>('CHROMA_URL') || 'http://localhost:8000';
-      const client = new ChromaClient({ path: chromaUrl });
-      await client.heartbeat();
-      return 'ok';
+      // pgvector extension present means chunk embeddings can be searched.
+      const rows = (await this.dataSource.query(
+        `SELECT 1 FROM pg_extension WHERE extname = 'vector'`,
+      )) as unknown as Array<unknown>;
+      return rows.length > 0 ? 'ok' : 'error';
     } catch {
       return 'error';
     }

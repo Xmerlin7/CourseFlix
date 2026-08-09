@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
-import { ChromaClient } from 'chromadb';
 import { DataSource } from 'typeorm';
 import { OpenAIEmbeddingProvider } from '../../modules/retrieval/embedding.adapter';
+import { toVectorLiteral } from '../../modules/retrieval/retrieval.service';
 import { VIDEO_SOURCES } from './video.seed';
 
 interface VideoRow {
@@ -105,20 +105,6 @@ export async function seedVideoTranscripts(dataSource: DataSource): Promise<numb
   const configService = new ConfigService();
   const embeddingProvider = new OpenAIEmbeddingProvider(configService);
 
-  const chromaUrl = process.env.CHROMA_URL || 'http://localhost:8000';
-  const collectionName = process.env.CHROMA_COLLECTION || 'courseflix-dev';
-
-  const client = new ChromaClient({ path: chromaUrl });
-  const collection = await client.getOrCreateCollection({
-    name: collectionName,
-    embeddingFunction: {
-      name: 'courseflix-explicit-embeddings',
-      async generate() {
-        throw new Error('CourseFlix passes embeddings explicitly');
-      },
-    },
-  });
-
   let seededCount = 0;
 
   for (const video of videos) {
@@ -162,9 +148,10 @@ export async function seedVideoTranscripts(dataSource: DataSource): Promise<numb
       [transcriptId],
     );
 
-    const texts: string[] = [];
-    const ids: string[] = [];
-    const metadatas: Array<Record<string, string | number | boolean>> = [];
+    // Embed once, then persist each chunk row with its embedding directly
+    // on the Postgres row (pgvector), replacing the old ChromaDB upsert.
+    const texts = cueChunks.map((cue) => cue.text);
+    const embeddings = await embeddingProvider.embed(texts);
 
     for (let index = 0; index < cueChunks.length; index++) {
       const cue = cueChunks[index];
@@ -172,43 +159,28 @@ export async function seedVideoTranscripts(dataSource: DataSource): Promise<numb
 
       await dataSource.query(
         `INSERT INTO video_chunks (
-          video_transcript_id, chunk_index, text_preview, vector_id, start_seconds, end_seconds, token_count, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          video_transcript_id, chunk_index, text_preview, text_content, vector_id,
+          start_seconds, end_seconds, token_count, is_active, embedding
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9::vector)`,
         [
           transcriptId,
           index,
+          cue.text,
           cue.text,
           vectorId,
           cue.startSeconds,
           cue.endSeconds,
           Math.ceil(cue.text.length / 4),
+          toVectorLiteral(embeddings[index]),
         ],
       );
-
-      texts.push(cue.text);
-      ids.push(vectorId);
-      metadatas.push({
-        courseId: video.course_id,
-        videoTranscriptId: transcriptId,
-        chunkIndex: index,
-        startSeconds: cue.startSeconds,
-        isActive: true,
-      });
     }
-
-    // Embed and upsert to ChromaDB
-    const embeddings = await embeddingProvider.embed(texts);
-
-    await collection.upsert({
-      ids,
-      embeddings,
-      documents: texts,
-      metadatas,
-    });
 
     seededCount++;
   }
 
-  console.log(`Seeded transcripts and embeddings for ${seededCount} videos.`);
+  console.log(
+    `Seeded transcripts and pgvector embeddings for ${seededCount} videos.`,
+  );
   return seededCount;
 }

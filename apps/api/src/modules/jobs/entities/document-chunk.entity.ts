@@ -4,7 +4,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
  * Mirrors the `document_chunks` table in `schemaV2.sql`.
  *
  * Stores metadata for indexed document chunks.
- * The full chunk text and embeddings live in ChromaDB.
+ * The full chunk text and embeddings live on the row itself (pgvector).
  */
 @Entity({ name: 'document_chunks' })
 export class DocumentChunkEntity {
@@ -40,6 +40,22 @@ export class DocumentChunkEntity {
     nullable: true,
   })
   tokenCount!: number | null;
+
+  @Column({
+    name: 'text_content',
+    type: 'text',
+    nullable: true,
+    select: false,
+  })
+  textContent!: string | null;
+
+  @Column({
+    name: 'embedding',
+    type: 'vector(1536)' as any,
+    nullable: true,
+    select: false,
+  })
+  embedding!: string | null;
 
   @Column({
     name: 'is_active',

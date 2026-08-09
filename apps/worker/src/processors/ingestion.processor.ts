@@ -9,7 +9,7 @@ import { extractPdfPages, ExtractedPage } from '../stages/extract.stage';
 import { chunkDocument, DocumentChunk } from '../stages/chunk.stage';
 import type { EmbeddingProvider } from '../adapters/embedding.adapter';
 import { EMBEDDING_PROVIDER } from '../adapters/embedding.adapter';
-import { ChromaAdapter } from '../adapters/chroma.adapter';
+import { VectorStoreAdapter } from '../adapters/vector-store.adapter';
 import type { NotificationProducerPort } from '../common/ports/notification-producer.port';
 import { NOTIFICATION_PRODUCER_PORT } from '../common/ports/notification-producer.port';
 
@@ -40,7 +40,7 @@ interface JobRecord {
 
 /**
  * BullMQ worker processor executing full PDF ingestion pipeline:
- * Extract → Chunk → Embed → Chroma Upsert → Persist document_chunks → Complete & Notify.
+ * Extract → Chunk → Embed → Persist document_chunks (with pgvector embedding) → Complete & Notify.
  *
  * Implements strict stage separation and failure contracts per Sprint 2 §E-4.
  */
@@ -53,7 +53,7 @@ export class IngestionProcessor extends WorkerHost {
     private readonly dataSource: DataSource,
     @Inject(EMBEDDING_PROVIDER)
     private readonly embeddingProvider: EmbeddingProvider,
-    private readonly chromaAdapter: ChromaAdapter,
+    private readonly vectorStoreAdapter: VectorStoreAdapter,
     @Inject(NOTIFICATION_PRODUCER_PORT)
     private readonly notificationProducer: NotificationProducerPort,
   ) {
@@ -146,9 +146,8 @@ export class IngestionProcessor extends WorkerHost {
    * 2. Extract per-page text (extractPdfPages)
    * 3. Chunk text into deterministic windows (chunkDocument)
    * 4. Generate embeddings (embeddingProvider.embed)
-   * 5. Upsert vectors to ChromaDB (chromaAdapter.upsert)
-   * 6. Persist document_chunks rows to Postgres
-   * 7. Deactivate older version chunks in Postgres
+   * 5. Upsert document_chunks rows with pgvector embeddings (vectorStoreAdapter.upsertDocumentChunks)
+   * 6. Deactivate older version chunks in Postgres
    */
   private async runStages(doc: DocumentRecord): Promise<void> {
     const fileRecord = await this.getFileRecord(doc.file_id);
@@ -182,7 +181,7 @@ export class IngestionProcessor extends WorkerHost {
       );
     }
 
-    // Stage 4: Chroma Upsert
+    // Stage 4: Persist chunks with pgvector embeddings (idempotent upsert)
     const upsertInputs = chunks.map((chunk, index) => ({
       chunk,
       courseId: doc.course_id,
@@ -190,12 +189,9 @@ export class IngestionProcessor extends WorkerHost {
       isActive: true,
     }));
 
-    await this.chromaAdapter.upsert(upsertInputs);
+    await this.vectorStoreAdapter.upsertDocumentChunks(upsertInputs);
 
-    // Stage 5: Persist Postgres document_chunks
-    await this.persistDocumentChunks(doc.id, chunks);
-
-    // Stage 6: Deactivate superseded versions in Postgres
+    // Stage 5: Deactivate superseded versions in Postgres
     if (doc.version > 1) {
       await this.deactivateSupersededVersions(doc.id, doc.version);
     }
@@ -211,30 +207,6 @@ export class IngestionProcessor extends WorkerHost {
     }
 
     return fs.promises.readFile(resolvedPath);
-  }
-
-  private async persistDocumentChunks(
-    documentId: string,
-    chunks: DocumentChunk[],
-  ): Promise<void> {
-    for (const chunk of chunks) {
-      const textPreview = chunk.text.slice(0, 300);
-      const vectorId = `${documentId}:${chunk.version}:${chunk.chunkIndex}`;
-
-      await this.dataSource.query(
-        `INSERT INTO document_chunks (
-          document_id, chunk_index, text_preview, vector_id, page_number, token_count, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, true)`,
-        [
-          documentId,
-          chunk.chunkIndex,
-          textPreview,
-          vectorId,
-          chunk.page,
-          chunk.tokenCount,
-        ],
-      );
-    }
   }
 
   private async deactivateSupersededVersions(

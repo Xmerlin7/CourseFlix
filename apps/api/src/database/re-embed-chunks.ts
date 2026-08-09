@@ -1,17 +1,19 @@
 import { ConfigService } from '@nestjs/config';
-import { ChromaClient } from 'chromadb';
 import AppDataSource from './data-source';
 import { OpenAIEmbeddingProvider } from '../modules/retrieval/embedding.adapter';
+import { toVectorLiteral } from '../modules/retrieval/retrieval.service';
 
 interface DocumentChunkRow {
-  id: string;
   vector_id: string;
-  document_id: string;
-  page_number: number;
+  text_content: string | null;
   text_preview: string;
-  course_id: string;
 }
 
+/**
+ * Regenerates embeddings for every active document chunk and writes them
+ * back onto the chunk's Postgres row (pgvector). Replaces the old
+ * ChromaDB re-embed script — the vector store now lives in Postgres.
+ */
 export async function reEmbedDocumentChunks(): Promise<number> {
   const isInitialized = AppDataSource.isInitialized;
   if (!isInitialized) {
@@ -22,25 +24,10 @@ export async function reEmbedDocumentChunks(): Promise<number> {
     const configService = new ConfigService();
     const embeddingProvider = new OpenAIEmbeddingProvider(configService);
 
-    const chromaUrl = process.env.CHROMA_URL || 'http://localhost:8000';
-    const collectionName = process.env.CHROMA_COLLECTION || 'courseflix-dev';
-
-    const client = new ChromaClient({ path: chromaUrl });
-    const collection = await client.getOrCreateCollection({
-      name: collectionName,
-      embeddingFunction: {
-        name: 'courseflix-explicit-embeddings',
-        async generate() {
-          throw new Error('CourseFlix passes embeddings explicitly');
-        },
-      },
-    });
-
     const chunks = (await AppDataSource.query(
-      `SELECT c.id, c.vector_id, c.document_id, c.page_number, c.text_preview, d.course_id
-         FROM document_chunks c
-         JOIN documents d ON c.document_id = d.id
-        WHERE c.is_active = true`,
+      `SELECT vector_id, text_content, text_preview
+         FROM document_chunks
+        WHERE is_active = true`,
     )) as DocumentChunkRow[];
 
     if (chunks.length === 0) {
@@ -48,39 +35,36 @@ export async function reEmbedDocumentChunks(): Promise<number> {
       return 0;
     }
 
-    console.log(`Re-embedding ${chunks.length} document chunks using OpenAI embeddings...`);
+    console.log(
+      `Re-embedding ${chunks.length} document chunks using OpenAI embeddings...`,
+    );
 
     const BATCH_SIZE = 20;
     let processed = 0;
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
-      const texts = batch.map((c) => c.text_preview);
+      const texts = batch.map((c) => c.text_content || c.text_preview);
 
       const embeddings = await embeddingProvider.embed(texts);
 
-      const ids = batch.map((c) => c.vector_id);
-      const documents = texts;
-      const metadatas = batch.map((c) => ({
-        courseId: c.course_id,
-        documentId: c.document_id,
-        page: c.page_number,
-        isActive: true,
-        version: 1,
-      }));
-
-      await collection.upsert({
-        ids,
-        embeddings,
-        documents,
-        metadatas,
-      });
+      for (let j = 0; j < batch.length; j++) {
+        await AppDataSource.query(
+          `UPDATE document_chunks
+              SET embedding = $1::vector,
+                  text_content = COALESCE(text_content, text_preview)
+            WHERE vector_id = $2`,
+          [toVectorLiteral(embeddings[j]), batch[j].vector_id],
+        );
+      }
 
       processed += batch.length;
       console.log(`Processed ${processed}/${chunks.length} chunks...`);
     }
 
-    console.log(`Successfully re-embedded ${processed} document chunks in ChromaDB.`);
+    console.log(
+      `Successfully re-embedded ${processed} document chunks in Postgres.`,
+    );
     return processed;
   } finally {
     if (!isInitialized && AppDataSource.isInitialized) {

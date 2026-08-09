@@ -2,8 +2,8 @@ import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * Mirrors `document_chunks`, keyed by caption timestamp instead of page
- * number. Full chunk text and embeddings live in ChromaDB; this table
- * bridges Postgres and the vector store, same as `document_chunks`.
+ * number. Full chunk text and embeddings live on the row itself
+ * (pgvector), same as `document_chunks`.
  */
 @Entity({ name: 'video_chunks' })
 export class VideoChunkEntity {
@@ -32,6 +32,22 @@ export class VideoChunkEntity {
 
   @Column({ name: 'token_count', type: 'integer', nullable: true })
   tokenCount!: number | null;
+
+  @Column({
+    name: 'text_content',
+    type: 'text',
+    nullable: true,
+    select: false,
+  })
+  textContent!: string | null;
+
+  @Column({
+    name: 'embedding',
+    type: 'vector(1536)' as any,
+    nullable: true,
+    select: false,
+  })
+  embedding!: string | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

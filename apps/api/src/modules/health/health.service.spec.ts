@@ -4,13 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { HealthService } from './health.service';
 
-const mockHeartbeat = jest.fn();
-jest.mock('chromadb', () => ({
-  ChromaClient: jest.fn().mockImplementation(() => ({
-    heartbeat: mockHeartbeat,
-  })),
-}));
-
 describe('HealthService', () => {
   let healthService: HealthService;
   let dataSource: { query: jest.Mock };
@@ -26,12 +19,10 @@ describe('HealthService', () => {
     };
     configService = {
       get: jest.fn((key: string) => {
-        if (key === 'CHROMA_URL') return 'http://localhost:8000';
         if (key === 'EMBEDDING_API_KEY') return 'valid-api-key';
         return undefined;
       }),
     };
-    mockHeartbeat.mockResolvedValue(1000);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -77,13 +68,21 @@ describe('HealthService', () => {
       expect(typeof result.timestamp).toBe('string');
       expect(dataSource.query).not.toHaveBeenCalled();
       expect(mockRedisInfo).not.toHaveBeenCalled();
-      expect(mockHeartbeat).not.toHaveBeenCalled();
     });
   });
 
   describe('getReadiness', () => {
+    function mockHealthyDatabase() {
+      dataSource.query.mockImplementation((sql: string) => {
+        if (sql.includes("extname = 'vector'")) {
+          return Promise.resolve([{ extname: 'vector' }]);
+        }
+        return Promise.resolve([{ '?column?': 1 }]);
+      });
+    }
+
     it('returns status ok when all dependency checks pass', async () => {
-      dataSource.query.mockResolvedValue([{ '?column?': 1 }]);
+      mockHealthyDatabase();
 
       const result = await healthService.getReadiness();
 
@@ -93,7 +92,7 @@ describe('HealthService', () => {
         api: 'ok',
         database: 'ok',
         redis: 'ok',
-        chroma: 'ok',
+        vectorStore: 'ok',
         aiProvider: 'ok',
       });
     });
@@ -106,12 +105,13 @@ describe('HealthService', () => {
       expect(result.status).toBe('degraded');
       expect(result.dependencies.database).toBe('error');
       expect(result.dependencies.redis).toBe('ok');
-      expect(result.dependencies.chroma).toBe('ok');
+      // vectorStore lives in Postgres now, so it degrades with the database.
+      expect(result.dependencies.vectorStore).toBe('error');
       expect(result.dependencies.aiProvider).toBe('ok');
     });
 
     it('returns status degraded when redis check fails', async () => {
-      dataSource.query.mockResolvedValue([{ '?column?': 1 }]);
+      mockHealthyDatabase();
       mockRedisInfo.mockRejectedValue(new Error('Redis connection refused'));
 
       const result = await healthService.getReadiness();
@@ -121,14 +121,13 @@ describe('HealthService', () => {
       expect(result.dependencies.database).toBe('ok');
     });
 
-    it('returns status degraded when chroma check fails', async () => {
-      dataSource.query.mockResolvedValue([{ '?column?': 1 }]);
-      mockHeartbeat.mockRejectedValue(new Error('Chroma down'));
+    it('returns status degraded when the pgvector extension is missing', async () => {
+      dataSource.query.mockResolvedValue([]);
 
       const result = await healthService.getReadiness();
 
       expect(result.status).toBe('degraded');
-      expect(result.dependencies.chroma).toBe('error');
+      expect(result.dependencies.vectorStore).toBe('error');
     });
   });
 
@@ -136,7 +135,6 @@ describe('HealthService', () => {
     it('returns error when EMBEDDING_API_KEY is missing', async () => {
       dataSource.query.mockResolvedValue([{ '?column?': 1 }]);
       configService.get.mockImplementation((key: string) => {
-        if (key === 'CHROMA_URL') return 'http://localhost:8000';
         if (key === 'EMBEDDING_API_KEY') return undefined;
         return undefined;
       });
@@ -150,7 +148,6 @@ describe('HealthService', () => {
     it('returns error when EMBEDDING_API_KEY is placeholder replace-me', async () => {
       dataSource.query.mockResolvedValue([{ '?column?': 1 }]);
       configService.get.mockImplementation((key: string) => {
-        if (key === 'CHROMA_URL') return 'http://localhost:8000';
         if (key === 'EMBEDDING_API_KEY') return 'replace-me';
         return undefined;
       });

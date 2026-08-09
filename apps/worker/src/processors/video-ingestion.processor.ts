@@ -6,7 +6,7 @@ import { BunnyCaptionsAdapter } from '../adapters/captions/bunny-captions.adapte
 import { YoutubeCaptionsAdapter } from '../adapters/captions/youtube-captions.adapter';
 import { WhisperCaptionsAdapter } from '../adapters/captions/whisper-captions.adapter';
 import { CaptionProvider } from '../adapters/captions/caption-provider';
-import { ChromaAdapter } from '../adapters/chroma.adapter';
+import { VectorStoreAdapter } from '../adapters/vector-store.adapter';
 import type { EmbeddingProvider } from '../adapters/embedding.adapter';
 import { EMBEDDING_PROVIDER } from '../adapters/embedding.adapter';
 import { chunkCaptions, VideoChunk } from '../stages/caption-chunk.stage';
@@ -38,8 +38,8 @@ interface JobRecord {
 
 /**
  * BullMQ worker processor for video caption ingestion:
- * Fetch captions (Bunny/YouTube) → Chunk → Embed → Chroma Upsert →
- * Persist video_chunks → Complete & Notify.
+ * Fetch captions (Bunny/YouTube) → Chunk → Embed → Persist video_chunks
+ * (with pgvector embeddings) → Complete & Notify.
  *
  * Deliberately isolated on its own `video-ingestion` queue/processor
  * (mirrors `IngestionProcessor`'s structure closely, but does not touch
@@ -58,7 +58,7 @@ export class VideoIngestionProcessor extends WorkerHost {
     private readonly whisperCaptionsAdapter: WhisperCaptionsAdapter,
     @Inject(EMBEDDING_PROVIDER)
     private readonly embeddingProvider: EmbeddingProvider,
-    private readonly chromaAdapter: ChromaAdapter,
+    private readonly vectorStoreAdapter: VectorStoreAdapter,
     @Inject(NOTIFICATION_PRODUCER_PORT)
     private readonly notificationProducer: NotificationProducerPort,
   ) {
@@ -184,7 +184,6 @@ export class VideoIngestionProcessor extends WorkerHost {
     }
 
     await this.upsertVideoChunks(transcript, chunks, vectors);
-    await this.persistVideoChunks(transcript.id, chunks);
 
     if (transcript.version > 1) {
       await this.deactivateSupersededVersions(transcript.id, transcript.version);
@@ -193,53 +192,21 @@ export class VideoIngestionProcessor extends WorkerHost {
 
   // `video:` prefix keeps these vector IDs disjoint from
   // `document_chunks.vector_id` (`${documentId}:${version}:${chunkIndex}`)
-  // so the existing tutor retrieval path — which joins Chroma hits back
-  // to `document_chunks` — can never accidentally match a video chunk.
+  // so the tutor retrieval path — which joins vector hits back to
+  // `document_chunks` — can never accidentally match a video chunk.
   private async upsertVideoChunks(
     transcript: TranscriptRecord,
     chunks: VideoChunk[],
     vectors: number[][],
   ): Promise<void> {
-    const collection = await this.chromaAdapter.getCollection();
-
-    const ids = chunks.map(
-      (chunk) => `video:${transcript.id}:${chunk.version}:${chunk.chunkIndex}`,
-    );
-    const documents = chunks.map((chunk) => chunk.text);
-    const metadatas = chunks.map((chunk) => ({
+    const upsertInputs = chunks.map((chunk, index) => ({
+      chunk,
       courseId: transcript.course_id,
-      videoTranscriptId: transcript.id,
-      chunkIndex: chunk.chunkIndex,
-      startSeconds: chunk.startSeconds,
+      vector: vectors[index],
       isActive: true,
     }));
 
-    await collection.upsert({ ids, embeddings: vectors, documents, metadatas });
-  }
-
-  private async persistVideoChunks(
-    videoTranscriptId: string,
-    chunks: VideoChunk[],
-  ): Promise<void> {
-    for (const chunk of chunks) {
-      const textPreview = chunk.text.slice(0, 300);
-      const vectorId = `video:${videoTranscriptId}:${chunk.version}:${chunk.chunkIndex}`;
-
-      await this.dataSource.query(
-        `INSERT INTO video_chunks (
-          video_transcript_id, chunk_index, text_preview, vector_id, start_seconds, end_seconds, token_count, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-        [
-          videoTranscriptId,
-          chunk.chunkIndex,
-          textPreview,
-          vectorId,
-          chunk.startSeconds,
-          chunk.endSeconds,
-          chunk.tokenCount,
-        ],
-      );
-    }
+    await this.vectorStoreAdapter.upsertVideoChunks(upsertInputs);
   }
 
   private async deactivateSupersededVersions(

@@ -30,19 +30,22 @@ export function useNativeVideoController(
     if (!video) {
       return
     }
+    // TS no longer preserves narrowing inside the closures below, so bind
+    // the (now non-null) node to a fresh const the handlers can reference.
+    const media = video
 
     function handleLoadedMetadata() {
-      setDuration(video.duration || 0)
-      setVolumeState(video.volume)
-      setMuted(video.muted)
+      setDuration(media.duration || 0)
+      setVolumeState(media.volume)
+      setMuted(media.muted)
       setIsReady(true)
     }
     function handleTimeUpdate() {
-      setCurrentTime(video.currentTime)
+      setCurrentTime(media.currentTime)
     }
     function handleProgress() {
-      if (video.buffered.length > 0 && video.duration > 0) {
-        setBufferedFraction(video.buffered.end(video.buffered.length - 1) / video.duration)
+      if (media.buffered.length > 0 && media.duration > 0) {
+        setBufferedFraction(media.buffered.end(media.buffered.length - 1) / media.duration)
       }
     }
     function handlePlay() {
@@ -52,33 +55,33 @@ export function useNativeVideoController(
       setIsPlaying(false)
     }
     function handleVolumeChange() {
-      setVolumeState(video.volume)
-      setMuted(video.muted)
+      setVolumeState(media.volume)
+      setMuted(media.muted)
     }
     function handleDurationChange() {
-      setDuration(video.duration || 0)
+      setDuration(media.duration || 0)
     }
 
-    video.addEventListener('loadedmetadata', handleLoadedMetadata)
-    video.addEventListener('timeupdate', handleTimeUpdate)
-    video.addEventListener('progress', handleProgress)
-    video.addEventListener('play', handlePlay)
-    video.addEventListener('pause', handlePause)
-    video.addEventListener('volumechange', handleVolumeChange)
-    video.addEventListener('durationchange', handleDurationChange)
+    media.addEventListener('loadedmetadata', handleLoadedMetadata)
+    media.addEventListener('timeupdate', handleTimeUpdate)
+    media.addEventListener('progress', handleProgress)
+    media.addEventListener('play', handlePlay)
+    media.addEventListener('pause', handlePause)
+    media.addEventListener('volumechange', handleVolumeChange)
+    media.addEventListener('durationchange', handleDurationChange)
 
-    if (video.readyState >= 1) {
+    if (media.readyState >= 1) {
       handleLoadedMetadata()
     }
 
     return () => {
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata)
-      video.removeEventListener('timeupdate', handleTimeUpdate)
-      video.removeEventListener('progress', handleProgress)
-      video.removeEventListener('play', handlePlay)
-      video.removeEventListener('pause', handlePause)
-      video.removeEventListener('volumechange', handleVolumeChange)
-      video.removeEventListener('durationchange', handleDurationChange)
+      media.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      media.removeEventListener('timeupdate', handleTimeUpdate)
+      media.removeEventListener('progress', handleProgress)
+      media.removeEventListener('play', handlePlay)
+      media.removeEventListener('pause', handlePause)
+      media.removeEventListener('volumechange', handleVolumeChange)
+      media.removeEventListener('durationchange', handleDurationChange)
     }
   }, [videoRef, mediaKey])
 

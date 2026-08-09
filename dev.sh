@@ -13,7 +13,7 @@
 #
 # Flags (for the default "up" command):
 #   --no-seed           run migrations but skip seeding
-#   --no-infra          assume Postgres/Redis/Chroma are already running
+#   --no-infra          assume Postgres/Redis are already running
 #
 set -Eeuo pipefail
 
@@ -32,7 +32,6 @@ API_PORT="${PORT:-}"
 WEB_PORT="${VITE_WEB_PORT:-}"
 POSTGRES_PORT="${POSTGRES_PORT:-}"
 REDIS_PORT="${REDIS_PORT:-}"
-CHROMA_PORT="${CHROMA_PORT:-}"
 
 # ─── output helpers ──────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -100,9 +99,6 @@ load_local_env_settings() {
 
   value="$(env_value REDIS_PORT)"
   REDIS_PORT="${REDIS_PORT:-${value:-6379}}"
-
-  value="$(env_value CHROMA_PORT)"
-  CHROMA_PORT="${CHROMA_PORT:-${value:-8000}}"
 }
 
 # ─── prerequisites ───────────────────────────────────────────────────────
@@ -277,7 +273,7 @@ stop_ngrok() {
 
 # ─── infrastructure ──────────────────────────────────────────────────────
 start_infra() {
-  step "Starting infrastructure (Postgres, Redis, Chroma)"
+  step "Starting infrastructure (Postgres, Redis)"
   compose up -d >/dev/null 2>&1
   ok "containers up"
 
@@ -526,7 +522,6 @@ ${GREEN}${BOLD}CourseFlix is running.${RESET}
                    ${DIM}$db_health${RESET}
     Postgres       localhost:$POSTGRES_PORT
     Redis          localhost:${REDIS_PORT:-6379}
-    Chroma         http://localhost:${CHROMA_PORT:-8000}
     worker         PDF ingestion jobs
 
   ${BOLD}Paymob callbacks${RESET}

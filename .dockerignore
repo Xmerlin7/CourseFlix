@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+coverage
+.git
+.env
+.env.*
+!.env.example
+.dev-logs
+storage
+/apps/api/storage
+logs
+*.log
+*.tsbuildinfo

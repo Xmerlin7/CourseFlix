@@ -37,7 +37,6 @@
     "@nestjs/typeorm": "^11.0.0",
     "argon2": "^0.41.1",
     "bullmq": "^5.81.2",
-    "chromadb": "^3.5.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",

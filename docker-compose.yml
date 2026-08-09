@@ -2,7 +2,7 @@ name: courseflix
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: courseflix-postgres
     restart: unless-stopped
     environment:
@@ -35,15 +35,5 @@ services:
       timeout: 5s
       retries: 5
 
-  chroma:
-    image: chromadb/chroma
-    container_name: courseflix-chroma
-    restart: unless-stopped
-    ports:
-      - "${CHROMA_PORT:-8000}:8000"
-    volumes:
-      - courseflix_chroma_data:/chroma/chroma
-
 volumes:
   courseflix_postgres_data:
-  courseflix_chroma_data:

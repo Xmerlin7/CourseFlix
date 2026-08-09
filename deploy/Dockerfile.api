@@ -1,0 +1,25 @@
+# CourseFlix API — NestJS. Runs migrations before starting so a fresh
+# database (Render Postgres / Neon) is always up to date.
+FROM node:22-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY apps/worker/package.json apps/worker/package.json
+RUN npm ci
+COPY . .
+RUN npm run build -w apps/api
+
+FROM node:22-bookworm-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+# Full dependency tree (dev deps included) so ts-node/typeorm-cli can run
+# migrations from this image.
+COPY --from=build /app/package.json ./
+COPY --from=build /app/package-lock.json ./
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/api ./apps/api
+COPY --from=build /app/apps/web/package.json ./apps/web/package.json
+COPY --from=build /app/apps/worker/package.json ./apps/worker/package.json
+EXPOSE 3000
+CMD ["sh", "-c", "npm run migration:run -w apps/api && node apps/api/dist/main.js"]

@@ -3,7 +3,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { randomUUID } from 'node:crypto';
-import { ChromaAdapter } from '../adapters/chroma.adapter';
+import { VectorStoreAdapter } from '../adapters/vector-store.adapter';
 import {
   EXAM_LLM_PROVIDER,
   GeneratedQuestion,
@@ -63,7 +63,7 @@ export class ExamGenerationProcessor extends WorkerHost {
 
   constructor(
     private readonly dataSource: DataSource,
-    private readonly chromaAdapter: ChromaAdapter,
+    private readonly vectorStoreAdapter: VectorStoreAdapter,
     @Inject(EXAM_LLM_PROVIDER)
     private readonly llmProvider: ExamLlmProvider,
     @Inject(NOTIFICATION_PRODUCER_PORT)
@@ -208,13 +208,8 @@ export class ExamGenerationProcessor extends WorkerHost {
       return null;
     }
 
-    const collection = await this.chromaAdapter.getCollection();
-    const got = (await collection.get({ ids: vectorIds })) as unknown as {
-      ids?: string[];
-      documents?: (string | null)[];
-    };
-
-    const texts = (got.documents ?? []).filter((text): text is string => Boolean(text));
+    const rows = await this.vectorStoreAdapter.getChunkTexts(vectorIds);
+    const texts = rows.map((row) => row.text);
 
     let budget = MAX_CONTENT_CHARS;
     const included: string[] = [];

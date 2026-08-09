@@ -7,7 +7,7 @@ describe('IngestionProcessor', () => {
   let processor: IngestionProcessor;
   let dataSource: { query: jest.Mock };
   let embeddingProvider: MockEmbeddingProvider;
-  let chromaAdapter: { upsert: jest.Mock };
+  let vectorStoreAdapter: { upsertDocumentChunks: jest.Mock };
   let notificationProducer: { notify: jest.Mock };
 
   const samplePdfPath = path.resolve(
@@ -21,8 +21,8 @@ describe('IngestionProcessor', () => {
     };
 
     embeddingProvider = new MockEmbeddingProvider();
-    chromaAdapter = {
-      upsert: jest.fn().mockResolvedValue(undefined),
+    vectorStoreAdapter = {
+      upsertDocumentChunks: jest.fn().mockResolvedValue(undefined),
     };
     notificationProducer = {
       notify: jest.fn().mockResolvedValue(undefined),
@@ -31,12 +31,12 @@ describe('IngestionProcessor', () => {
     processor = new IngestionProcessor(
       dataSource as unknown as import('typeorm').DataSource,
       embeddingProvider,
-      chromaAdapter as unknown as import('../adapters/chroma.adapter').ChromaAdapter,
+      vectorStoreAdapter as unknown as import('../adapters/vector-store.adapter').VectorStoreAdapter,
       notificationProducer,
     );
   });
 
-  it('processes ingestion job through extract -> chunk -> embed -> Chroma upsert -> DB persist -> complete', async () => {
+  it('processes ingestion job through extract -> chunk -> embed -> vector store upsert -> complete', async () => {
     // Mock claim UPDATE returning one row and SQL queries
     dataSource.query.mockImplementation((sql: string) => {
       if (
@@ -89,19 +89,13 @@ describe('IngestionProcessor', () => {
 
     await processor.process(job);
 
-    expect(chromaAdapter.upsert).toHaveBeenCalledWith(
+    expect(vectorStoreAdapter.upsertDocumentChunks).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
           courseId: 'course-uuid-1',
           isActive: true,
         }),
       ]),
-    );
-
-    // Verify document_chunks insertion into Postgres
-    expect(dataSource.query).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO document_chunks'),
-      expect.any(Array),
     );
 
     // Verify completion status updates
@@ -298,7 +292,7 @@ describe('IngestionProcessor', () => {
       expect.any(Array),
     );
 
-    // Assert Chroma upsert invoked with single set of chunks
-    expect(chromaAdapter.upsert).toHaveBeenCalledTimes(1);
+    // Assert vector store upsert invoked with single set of chunks
+    expect(vectorStoreAdapter.upsertDocumentChunks).toHaveBeenCalledTimes(1);
   });
 });

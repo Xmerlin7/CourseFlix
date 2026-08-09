@@ -1,0 +1,152 @@
+# Render Blueprint — deploys the whole CourseFlix stack on Render's free
+# tier: API (NestJS), worker (BullMQ), web (Vite SPA on nginx), Redis.
+#
+# Getting started:
+#   1. Push this branch and use the "Blueprint" option in Render's New+ menu,
+#      pointing it at this repo/branch.
+#   2. In the dashboard, fill the "sync: false" secrets below
+#      (OPENAI_API_KEY, PAYMOB_*, BUNNY_STREAM_API_KEY, EMBEDDING_API_KEY).
+#   3. The Render Postgres included here is FREE but expires after 90 days.
+#      For a permanent free database, create a Neon Postgres project and
+#      replace DATABASE_URL on both the api and worker services instead.
+#   4. Public URLs below are hardcoded guesses (courseflix-api/web.onrender.com).
+#      If Render assigned different names, update VITE_API_BASE_URL (web) and
+#      WEB_ORIGIN (api) to the real URLs and redeploy.
+#
+# Free-tier caveats: web services sleep after ~15 min idle (slow first load),
+# and the filesystem is ephemeral — uploaded PDFs (STORAGE_ROOT) are lost on
+# redeploy. A real deployment should point storage at Bunny/S3.
+
+services:
+  - type: web
+    name: courseflix-api
+    runtime: docker
+    repo: https://github.com/Xmerlin7/CourseFlix
+    branch: feature/deploy-render # change to dev/main before going live
+    dockerfilePath: deploy/Dockerfile.api
+    plan: free
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: courseflix-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: courseflix-redis
+          property: connectionString
+      - key: WEB_ORIGIN
+        value: https://courseflix-web.onrender.com # change to real web URL
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SESSION_TTL_DAYS
+        value: "7"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAME_SITE
+        value: lax
+      - key: LOGIN_RATE_LIMIT_WINDOW_SECONDS
+        value: "900"
+      - key: LOGIN_RATE_LIMIT_MAX_ATTEMPTS
+        value: "5"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: EMBEDDING_API_KEY
+        sync: false
+      - key: EMBEDDING_MODEL
+        value: text-embedding-3-small
+      - key: EMBEDDING_PROVIDER
+        value: openai
+      - key: LLM_MODEL
+        value: gpt-5.6
+      - key: TUTOR_MAX_DISTANCE
+        value: "1.35"
+      - key: PAYMOB_BASE_URL
+        value: https://accept.paymob.com/api
+      - key: PAYMOB_API_KEY
+        sync: false
+      - key: PAYMOB_INTEGRATION_ID
+        sync: false
+      - key: PAYMOB_IFRAME_ID
+        sync: false
+      - key: PAYMOB_HMAC_SECRET
+        sync: false
+      - key: COURSE_PRICE_MINOR
+        value: "50000"
+      - key: MAX_UPLOAD_BYTES
+        value: "20971520"
+      - key: ATTENDANCE_THRESHOLD_PERCENT
+        value: "70"
+      - key: STORAGE_ROOT
+        value: ./storage
+
+  - type: worker
+    name: courseflix-worker
+    runtime: docker
+    repo: https://github.com/Xmerlin7/CourseFlix
+    branch: feature/deploy-render # change to dev/main before going live
+    dockerfilePath: deploy/Dockerfile.worker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: courseflix-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: courseflix-redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: EMBEDDING_API_KEY
+        sync: false
+      - key: EMBEDDING_MODEL
+        value: text-embedding-3-small
+      - key: EMBEDDING_PROVIDER
+        value: openai
+      - key: LLM_MODEL
+        value: gpt-5.6
+      - key: INGESTION_CHUNK_TOKENS
+        value: "800"
+      - key: INGESTION_CHUNK_OVERLAP
+        value: "120"
+      - key: BUNNY_STREAM_API_KEY
+        sync: false
+      - key: BUNNY_STREAM_API_BASE
+        value: https://video.bunnycdn.com
+      - key: YT_DLP_PATH
+        value: yt-dlp
+
+  - type: web
+    name: courseflix-web
+    runtime: docker
+    repo: https://github.com/Xmerlin7/CourseFlix
+    branch: feature/deploy-render # change to dev/main before going live
+    dockerfilePath: deploy/Dockerfile.web
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://courseflix-api.onrender.com/api/v1 # change to real API URL
+
+  - type: redis
+    name: courseflix-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList:
+      - 0.0.0.0/0
+      - ::/0
+
+  - type: postgres
+    name: courseflix-postgres
+    plan: free # expires after 90 days — use Neon for a permanent free DB

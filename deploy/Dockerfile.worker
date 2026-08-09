@@ -1,0 +1,22 @@
+# CourseFlix worker — BullMQ background processor (PDF/video ingestion,
+# exam generation). Long-running process; Render "worker" service type.
+FROM node:22-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY apps/worker/package.json apps/worker/package.json
+RUN npm ci
+COPY . .
+RUN npm run build -w apps/worker
+
+FROM node:22-bookworm-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/package.json ./
+COPY --from=build /app/package-lock.json ./
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/worker ./apps/worker
+COPY --from=build /app/apps/api/package.json ./apps/api/package.json
+COPY --from=build /app/apps/web/package.json ./apps/web/package.json
+CMD ["node", "apps/worker/dist/main.js"]

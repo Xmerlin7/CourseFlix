@@ -1,18 +1,10 @@
-import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { RetrievalService } from './retrieval.service';
 import { MockEmbeddingProvider } from './embedding.adapter';
 
-interface MockQueryOptions {
-  where: {
-    $and: [{ courseId: string }, { isActive: boolean }];
-  };
-}
-
-describe('RetrievalService (Isolation Proof)', () => {
+describe('RetrievalService (pgvector Isolation Proof)', () => {
   let service: RetrievalService;
   let dataSource: { query: jest.Mock };
-  let mockCollection: { query: jest.Mock };
   let mockEmbeddingProvider: MockEmbeddingProvider;
 
   const courseA = 'course-A-physics-mechanics';
@@ -27,83 +19,23 @@ describe('RetrievalService (Isolation Proof)', () => {
       query: jest.fn(),
     };
 
-    mockCollection = {
-      query: jest.fn(),
-    };
-
     mockEmbeddingProvider = new MockEmbeddingProvider();
 
-    const configService = {
-      get: jest.fn((key: string) => {
-        if (key === 'CHROMA_URL') return 'http://localhost:8000';
-        if (key === 'CHROMA_COLLECTION') return 'courseflix-test';
-        return undefined;
-      }),
-    } as unknown as ConfigService;
-
     service = new RetrievalService(
-      configService,
       dataSource as unknown as DataSource,
       mockEmbeddingProvider,
     );
-
-    // Inject mock collection directly
-    Object.defineProperty(service, 'collection', {
-      value: mockCollection,
-      writable: true,
-    });
   });
 
-  it('proves course isolation: queries course A and returns ZERO chunks from course B despite identical Arabic physics text', async () => {
-    // 1. Mock ChromaDB response when queried with courseA filter (only returns courseA chunks)
-    mockCollection.query.mockImplementation((options: MockQueryOptions) => {
-      const whereClause = options.where;
-
-      // Verify mandatory isolation filter
-      expect(whereClause).toEqual({
-        $and: [{ courseId: courseA }, { isActive: true }],
-      });
-
-      if (whereClause.$and[0].courseId === courseA) {
-        return Promise.resolve({
-          ids: [[`${docAId}:1:0`]],
-          distances: [[0.05]],
-          documents: [
-            [
-              'لكل فعل رد فعل مساوٍ له في المقدار ومضاد له في الاتجاه (قانون نيوتن الثالث)',
-            ],
-          ],
-          metadatas: [
-            [
-              {
-                courseId: courseA,
-                documentId: docAId,
-                version: 1,
-                chunkIndex: 0,
-                page: 1,
-                isActive: true,
-              },
-            ],
-          ],
-        });
-      }
-
-      return Promise.resolve({
-        ids: [[]],
-        distances: [[]],
-        documents: [[]],
-        metadatas: [[]],
-      });
-    });
-
-    // 2. Mock Postgres document_chunks DB query response
+  it('proves course isolation: embeds the query and filters by courseId in SQL', async () => {
     dataSource.query.mockResolvedValue([
       {
         id: chunkAId,
         vector_id: `${docAId}:1:0`,
         document_id: docAId,
         page_number: 1,
-        text_preview:
+        distance: 0.05,
+        excerpt:
           'لكل فعل رد فعل مساوٍ له في المقدار ومضاد له في الاتجاه (قانون نيوتن الثالث)',
       },
     ]);
@@ -114,57 +46,38 @@ describe('RetrievalService (Isolation Proof)', () => {
       topK: 5,
     });
 
-    // Assert results returned for Course A
     expect(results).toHaveLength(1);
     expect(results[0].documentId).toBe(docAId);
     expect(results[0].page).toBe(1);
     expect(results[0].chunkId).toBe(chunkAId);
     expect(results[0].vectorId).toBe(`${docAId}:1:0`);
+    expect(results[0].score).toBe(0.05);
     expect(results[0].excerpt).toContain('قانون نيوتن الثالث');
 
-    // Assert ZERO chunks from Course B were queried or returned
-    const calls = mockCollection.query.mock.calls as unknown as Array<
-      [MockQueryOptions]
-    >;
-    const chromaCallArgs = calls[0][0];
-    expect(chromaCallArgs.where.$and[0].courseId).not.toBe(courseB);
+    const [sql, params] = dataSource.query.mock.calls[0] as [string, unknown[]];
+    expect(sql).toContain('JOIN documents d ON d.id = c.document_id');
+    expect(sql).toContain('d.course_id = $1');
+    expect(sql).toContain('c.is_active = true');
+    expect(sql).toContain('ORDER BY c.embedding <=> $2::vector');
+    expect(sql).toContain('LIMIT $3');
+    expect(params[0]).toBe(courseA);
+    expect(String(params[1])).toMatch(/^\[.*\]$/);
+    expect(params[2]).toBe(5);
+
+    // Isolation: the query must never be scoped to courseB
+    expect(params[0]).not.toBe(courseB);
     expect(results.some((r) => r.documentId === docBId)).toBe(false);
   });
 
-  it('proves version isolation: superseded versions (version < active, isActive = false) are NEVER returned', async () => {
-    // 1. Mock ChromaDB response with isActive: true filter
-    mockCollection.query.mockImplementation((options: MockQueryOptions) => {
-      expect(options.where).toEqual({
-        $and: [{ courseId: courseA }, { isActive: true }],
-      });
-
-      // Returns active version 2 chunk only
-      return Promise.resolve({
-        ids: [[`${docAId}:2:0`]],
-        distances: [[0.02]],
-        documents: [['النسخة الحديثة الثانية من درس قانون نيوتن الثالث']],
-        metadatas: [
-          [
-            {
-              courseId: courseA,
-              documentId: docAId,
-              version: 2,
-              chunkIndex: 0,
-              page: 1,
-              isActive: true,
-            },
-          ],
-        ],
-      });
-    });
-
+  it('proves version isolation: only the is_active=true chunk is returned', async () => {
     dataSource.query.mockResolvedValue([
       {
         id: 'chunk-A-v2-db-id',
         vector_id: `${docAId}:2:0`,
         document_id: docAId,
         page_number: 1,
-        text_preview: 'النسخة الحديثة الثانية من درس قانون نيوتن الثالث',
+        distance: 0.02,
+        excerpt: 'النسخة الحديثة الثانية من درس قانون نيوتن الثالث',
       },
     ]);
 
@@ -177,18 +90,11 @@ describe('RetrievalService (Isolation Proof)', () => {
     expect(results).toHaveLength(1);
     expect(results[0].chunkId).toBe('chunk-A-v2-db-id');
     expect(results[0].vectorId).toBe(`${docAId}:2:0`);
-
-    // Verify superseded version 1 (`${docAId}:1:0`) was NOT returned
     expect(results.some((r) => r.vectorId === `${docAId}:1:0`)).toBe(false);
   });
 
   it('returns empty array if courseId has no matching chunks', async () => {
-    mockCollection.query.mockResolvedValue({
-      ids: [[]],
-      distances: [[]],
-      documents: [[]],
-      metadatas: [[]],
-    });
+    dataSource.query.mockResolvedValue([]);
 
     const results = await service.search({
       courseId: 'non-existent-course',
@@ -212,25 +118,7 @@ describe('RetrievalService (Isolation Proof)', () => {
     const transcriptB = 'transcript-B-uuid';
     const videoChunkAId = 'video-chunk-A-db-id';
 
-    interface MockVideoQueryOptions {
-      where: {
-        $and: [{ videoTranscriptId: string }, { isActive: boolean }];
-      };
-    }
-
-    it('proves video isolation: queries transcript A and joins video_chunks, never courseId', async () => {
-      mockCollection.query.mockImplementation((options: MockVideoQueryOptions) => {
-        expect(options.where).toEqual({
-          $and: [{ videoTranscriptId: transcriptA }, { isActive: true }],
-        });
-
-        return Promise.resolve({
-          ids: [[`video:${transcriptA}:1:0`]],
-          distances: [[0.05]],
-          documents: [['في الدقيقة الثالثة يشرح المحاضر قانون نيوتن الثالث']],
-        });
-      });
-
+    it('proves video isolation: filters by videoTranscriptId, never courseId', async () => {
       dataSource.query.mockResolvedValue([
         {
           id: videoChunkAId,
@@ -238,7 +126,8 @@ describe('RetrievalService (Isolation Proof)', () => {
           video_transcript_id: transcriptA,
           start_seconds: 180,
           end_seconds: 200,
-          text_preview: 'في الدقيقة الثالثة يشرح المحاضر قانون نيوتن الثالث',
+          distance: 0.05,
+          excerpt: 'في الدقيقة الثالثة يشرح المحاضر قانون نيوتن الثالث',
         },
       ]);
 
@@ -255,23 +144,22 @@ describe('RetrievalService (Isolation Proof)', () => {
       expect(results[0].endSeconds).toBe(200);
       expect(results[0].vectorId).toBe(`video:${transcriptA}:1:0`);
 
-      const calls = mockCollection.query.mock.calls as unknown as Array<
-        [MockVideoQueryOptions]
-      >;
-      expect(calls[0][0].where.$and[0].videoTranscriptId).not.toBe(
-        transcriptB,
-      );
+      const [sql, params] = dataSource.query.mock.calls[0] as [
+        string,
+        unknown[],
+      ];
+      expect(sql).toContain('video_transcript_id = $1');
+      expect(sql).toContain('is_active = true');
+      expect(sql).toContain('ORDER BY embedding <=> $2::vector');
+      expect(params[0]).toBe(transcriptA);
+      expect(params[0]).not.toBe(transcriptB);
       expect(results.some((r) => r.videoTranscriptId === transcriptB)).toBe(
         false,
       );
     });
 
     it('returns empty array if videoTranscriptId has no matching chunks', async () => {
-      mockCollection.query.mockResolvedValue({
-        ids: [[]],
-        distances: [[]],
-        documents: [[]],
-      });
+      dataSource.query.mockResolvedValue([]);
 
       const results = await service.searchVideo({
         videoTranscriptId: 'non-existent-transcript',

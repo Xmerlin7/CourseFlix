@@ -9,7 +9,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { IngestionProcessor } from '../src/processors/ingestion.processor';
 import { EMBEDDING_PROVIDER, MockEmbeddingProvider } from '../src/adapters/embedding.adapter';
-import { ChromaAdapter } from '../src/adapters/chroma.adapter';
+import { VectorStoreAdapter } from '../src/adapters/vector-store.adapter';
 import { NOTIFICATION_PRODUCER_PORT, NoopNotificationProducer } from '../../api/src/common/ports/notification-producer.port';
 
 describe('WorkerModule (smoke)', () => {
@@ -33,8 +33,8 @@ describe('WorkerModule (smoke)', () => {
           useClass: MockEmbeddingProvider,
         },
         {
-          provide: ChromaAdapter,
-          useValue: { upsert: jest.fn() },
+          provide: VectorStoreAdapter,
+          useValue: { upsertDocumentChunks: jest.fn() },
         },
         {
           provide: NOTIFICATION_PRODUCER_PORT,
