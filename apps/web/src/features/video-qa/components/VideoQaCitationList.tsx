@@ -18,17 +18,22 @@ export function VideoQaCitationList({ citations, canSeek, onSeek }: VideoQaCitat
   }
 
   return (
-    <div className="list" style={{ marginTop: 12 }}>
+    <div className="list" style={{ marginTop: 12, gap: 8 }}>
       {citations.map((citation) => {
         const hasTimestamp = citation.startSeconds !== null
         const timestampLabel = hasTimestamp ? formatDuration(citation.startSeconds!) : null
 
         return (
-          <div key={citation.chunkId} className="list-item">
-            <span className="lead">
-              <span className="ms">movie</span>
+          // `.list-item`/`.lead`/`.s` are sized for the wide lesson sidebar
+          // (46px avatar, single-line ellipsis subtitle) — reused as-is here
+          // they crushed a full-sentence excerpt into one truncated line
+          // inside a ~500px chat bubble. Overridden below for a compact,
+          // fully-readable quote instead.
+          <div key={citation.chunkId} className="list-item" style={{ padding: 10, gap: 10, alignItems: 'flex-start' }}>
+            <span className="lead" style={{ width: 28, height: 28, flex: 'none' }}>
+              <span className="ms sm">movie</span>
             </span>
-            <span className="body">
+            <span className="body" style={{ minWidth: 0 }}>
               {timestampLabel &&
                 (canSeek && onSeek ? (
                   <button
@@ -49,7 +54,12 @@ export function VideoQaCitationList({ citations, canSeek, onSeek }: VideoQaCitat
                     عند {timestampLabel}
                   </span>
                 ))}
-              <span className="s">{citation.excerpt}</span>
+              <span
+                className="s"
+                style={{ display: 'block', whiteSpace: 'normal', overflow: 'visible', textOverflow: 'clip' }}
+              >
+                {citation.excerpt}
+              </span>
             </span>
           </div>
         )

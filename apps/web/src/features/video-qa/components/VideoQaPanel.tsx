@@ -42,7 +42,15 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
   }
 
   return (
-    <div className="card" style={{ gap: 12, marginTop: 18 }}>
+    <div
+      className="card"
+      // One elevation step above the default `.card` background (which the
+      // assistant message bubbles below use) — without this the panel and
+      // the assistant's own bubbles render in the exact same color, so the
+      // assistant's replies looked like un-styled floating text with no
+      // bubble around them at all.
+      style={{ gap: 12, marginTop: 18, background: 'var(--surface-container)' }}
+    >
       <button
         type="button"
         className="btn tonal"
@@ -80,12 +88,14 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
                           message.role === 'student'
                             ? 'var(--primary-container)'
                             : 'var(--surface-container-low)',
+                        border: message.role === 'student' ? 'none' : '1px solid var(--outline-variant)',
+                        borderRadius: 16,
                         padding: 12,
                       }}
                     >
                       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                        <span className="lead">
-                          <span className="ms">
+                        <span className="lead" style={{ width: 32, height: 32, flex: 'none' }}>
+                          <span className="ms sm">
                             {message.role === 'student' ? 'person' : 'smart_toy'}
                           </span>
                         </span>
