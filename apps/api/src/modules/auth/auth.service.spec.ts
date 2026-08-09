@@ -120,6 +120,7 @@ describe('AuthService', () => {
       fullName: 'New User',
       email: 'NEW@TEST.COM',
       password: 'StrongPass1',
+      acceptedTerms: true,
     });
     expect(result.token).toBe('session-token');
     expect(result.user.role).toBe('student');
@@ -136,6 +137,7 @@ describe('AuthService', () => {
         fullName: 'Duplicate',
         email: 'existing@test.com',
         password: 'StrongPass1',
+        acceptedTerms: true,
       }),
     ).rejects.toThrow('Email already in use.');
   });

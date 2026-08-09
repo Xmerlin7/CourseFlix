@@ -14,5 +14,8 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  fullName: string; email: string; password: string;
+  fullName: string
+  email: string
+  password: string
+  acceptedTerms: boolean
 }

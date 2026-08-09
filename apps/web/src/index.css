@@ -927,7 +927,8 @@ code {
   color: var(--on-surface-variant);
 }
 
-.tf .error-text {
+.error-text {
+  display: block;
   font-size: 12px;
   color: var(--error);
 }
@@ -1242,6 +1243,163 @@ code {
 
 .auth-switch a:hover {
   text-decoration: underline;
+}
+
+/* ---------- Register wizard ---------- */
+.stepper {
+  margin-bottom: 26px;
+}
+
+.stepper-track {
+  display: flex;
+  align-items: center;
+}
+
+.stepper-line {
+  flex: 1;
+  height: 2px;
+  background: var(--outline-variant);
+  transition: background 0.25s ease;
+}
+
+.stepper-line.done {
+  background: var(--primary);
+}
+
+.stepper-circle {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13.5px;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  border: 2px solid var(--outline-variant);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.stepper-circle.current {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.stepper-circle.done {
+  border-color: var(--primary);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.stepper-labels {
+  display: flex;
+  margin-top: 8px;
+}
+
+.stepper-labels .stepper-label {
+  flex: 1;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.stepper-labels .stepper-label.current {
+  color: var(--on-surface);
+  font-weight: 700;
+}
+
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: wizard-step-in 0.22s ease;
+}
+
+@keyframes wizard-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wizard-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.wizard-actions .btn {
+  flex: 1;
+}
+
+.legal-doc {
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--surface-container-low);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.legal-doc h4 {
+  margin: 0 0 10px;
+  font-size: 14.5px;
+}
+
+.legal-section {
+  margin-bottom: 12px;
+}
+
+.legal-section .legal-heading {
+  font-weight: 700;
+  font-size: 12.5px;
+  margin-bottom: 3px;
+}
+
+.legal-section .legal-body {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--on-surface-variant);
+}
+
+.legal-updated {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  margin-top: 4px;
+}
+
+.legal-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-top: -4px;
+  border-radius: 14px;
+  border: 1.5px solid var(--outline-variant);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.legal-check input {
+  accent-color: var(--primary);
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.legal-check.checked {
+  border-color: var(--primary);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
 }
 
 /* ===================================================================
