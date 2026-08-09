@@ -29,6 +29,21 @@ export async function getTeacherStudents(
   })
 }
 
+export async function updateStudentEnrollmentStatus(
+  studentId: string,
+  courseId: string,
+  status: 'active' | 'suspended',
+  reason?: string,
+): Promise<{ courseId: string; enrollmentStatus: 'active' | 'suspended' | 'completed' }> {
+  return httpClient.patch<{
+    courseId: string
+    enrollmentStatus: 'active' | 'suspended' | 'completed'
+  }>(`/teacher/students/${studentId}/courses/${courseId}/enrollment-status`, {
+    status,
+    reason,
+  })
+}
+
 export async function createTeacherCourse(
   payload: CreateTeacherCoursePayload,
 ): Promise<TeacherCourse> {

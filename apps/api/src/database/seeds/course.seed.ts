@@ -200,9 +200,11 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
 ];
 
 /**
- * Seeds the full demo catalogue: seven courses across two teachers,
- * covering every course status (published / draft / archived) and both
- * school stages, each with real Arabic physics sections and lessons.
+ * Seeds the full demo catalogue: seven courses, covering every course
+ * status (published / draft / archived) and both school stages, each
+ * with real Arabic physics sections and lessons. `extraTeacherIds` is
+ * only for pre-single-teacher fixtures/tests — the live seed runner
+ * passes none, so every course falls back to the one primary teacher.
  *
  * Safe to run on every reseed: upserts by slug (course) and by title
  * within its parent (section, lesson) instead of inserting duplicates.

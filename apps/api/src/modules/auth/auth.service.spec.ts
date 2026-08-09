@@ -21,6 +21,7 @@ describe('AuthService', () => {
     status: 'active' as const,
     fullName: 'Abdullah Habseh',
     avatarUrl: null,
+    managedByTeacherId: null,
   };
 
   beforeEach(async () => {
@@ -62,6 +63,7 @@ describe('AuthService', () => {
       role: activeUser.role,
       fullName: activeUser.fullName,
       avatarUrl: activeUser.avatarUrl,
+      managedByTeacherId: activeUser.managedByTeacherId,
     });
     expect(sessionsService.createSession).toHaveBeenCalledWith(activeUser.id);
   });
@@ -108,6 +110,7 @@ describe('AuthService', () => {
       role: 'student',
       fullName: 'New User',
       avatarUrl: null,
+      managedByTeacherId: null,
     });
     sessionsService.createSession.mockResolvedValue({
       token: 'session-token',

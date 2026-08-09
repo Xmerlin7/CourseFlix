@@ -5,8 +5,12 @@ import { UserEntity } from '../../modules/users/entities/user.entity';
 export interface SeededUsers {
   /** The primary demo teacher — a named field because the rest of the
    *  fixture, and every doc that quotes credentials, points at this
-   *  specific account. */
+   *  specific account. The platform supports exactly one teacher, so
+   *  this is *the* teacher, not just the first of several. */
   teacher: UserEntity;
+  /** Demo assistant, scoped to `teacher` — shows off the role without
+   *  needing a second teacher account (the platform only allows one). */
+  assistant: UserEntity;
   /** The primary demo student, same reasoning. */
   student: UserEntity;
   /** The bootstrap admin account — every other admin is created from
@@ -18,9 +22,9 @@ export interface SeededUsers {
 }
 
 /**
- * Seeds the demo roster: two teachers and ten students, enough for the
- * dashboards, enrollment lists and notification feeds to look like a real
- * class instead of a single row.
+ * Seeds the demo roster: one teacher, one assistant, an admin and ten
+ * students, enough for the dashboards, enrollment lists and notification
+ * feeds to look like a real class instead of a single row.
  *
  * Safe to run on every reseed: upserts by email instead of inserting
  * duplicates.
@@ -43,11 +47,12 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
     role: 'teacher',
   });
 
-  const secondTeacher = await upsertUser(repository, {
+  const assistant = await upsertUser(repository, {
     fullName: 'سارة إبراهيم',
-    email: 'sara.teacher@courseflix.local',
+    email: 'sara.assistant@courseflix.local',
     password: teacherPassword,
-    role: 'teacher',
+    role: 'assistant',
+    managedByTeacherId: teacher.id,
   });
 
   const student = await upsertUser(repository, {
@@ -92,9 +97,10 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
 
   return {
     teacher,
+    assistant,
     student,
     admin,
-    teachers: [teacher, secondTeacher],
+    teachers: [teacher],
     students: [student, ...extraStudents],
   };
 }
@@ -105,8 +111,9 @@ async function upsertUser(
     fullName: string;
     email: string;
     password: string;
-    role: 'student' | 'teacher' | 'admin';
+    role: 'student' | 'teacher' | 'admin' | 'assistant';
     status?: 'active' | 'suspended' | 'inactive';
+    managedByTeacherId?: string;
   },
 ): Promise<UserEntity> {
   const email = input.email.trim().toLowerCase();
@@ -123,6 +130,7 @@ async function upsertUser(
       passwordHash,
       role: input.role,
       status: input.status ?? 'active',
+      managedByTeacherId: input.managedByTeacherId ?? null,
     }),
   );
 }

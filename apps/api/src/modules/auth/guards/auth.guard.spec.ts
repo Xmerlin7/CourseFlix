@@ -49,6 +49,7 @@ describe('AuthGuard', () => {
         role: 'student',
         fullName: 'عبدالله حبسه',
         avatarUrl: null,
+        managedByTeacherId: null,
       },
     });
     const { context, request } = createContext({
@@ -64,6 +65,7 @@ describe('AuthGuard', () => {
       role: 'student',
       fullName: 'عبدالله حبسه',
       avatarUrl: null,
+      managedByTeacherId: null,
     });
   });
 });

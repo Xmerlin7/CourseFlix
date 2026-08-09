@@ -1,10 +1,20 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, In, IsNull, Repository } from 'typeorm';
 import {
   looksLikeUuid,
   watermarkSqlExpression,
 } from '../../common/utils/watermark-id.util';
+import {
+  NOTIFICATION_PRODUCER_PORT,
+  type NotificationProducerPort,
+} from '../../common/ports/notification-producer.port';
 import { OrderItemEntity } from '../commerce/entities/order-item.entity';
 import { OrderEntity } from '../commerce/entities/order.entity';
 import { CoursesService } from '../courses/courses.service';
@@ -115,6 +125,8 @@ export class TeacherService {
     private readonly teacherEnrollmentsRepository: Repository<EnrollmentEntity>,
     @InjectRepository(OrderEntity)
     private readonly teacherOrdersRepository: Repository<OrderEntity>,
+    @Inject(NOTIFICATION_PRODUCER_PORT)
+    private readonly notificationPort: NotificationProducerPort,
   ) {}
 
   async getDashboard(teacherId: string): Promise<TeacherDashboardResponse> {
@@ -248,6 +260,52 @@ export class TeacherService {
       },
       students: items,
     };
+  }
+
+  async setStudentEnrollmentStatus(
+    teacherId: string,
+    studentId: string,
+    courseId: string,
+    status: 'active' | 'suspended',
+    reason?: string,
+  ): Promise<{ courseId: string; enrollmentStatus: EnrollmentStatus }> {
+    const course = await this.coursesService.findCourseById(courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+    if (course.teacherId !== teacherId) {
+      throw new ForbiddenException('You do not own this course.');
+    }
+
+    const enrollment = await this.teacherEnrollmentsRepository.findOne({
+      where: { studentId, courseId, deletedAt: IsNull() },
+    });
+    if (!enrollment) {
+      throw new NotFoundException('This student is not enrolled in this course.');
+    }
+
+    enrollment.status = status;
+    enrollment.statusChangedBy = 'teacher';
+    enrollment.suspendedAt = status === 'suspended' ? new Date() : null;
+    enrollment.suspendedReason = status === 'suspended' ? (reason ?? null) : null;
+    await this.teacherEnrollmentsRepository.save(enrollment);
+
+    await this.notificationPort.notify({
+      userId: studentId,
+      type: 'course_update',
+      title:
+        status === 'suspended'
+          ? 'تم إيقاف اشتراكك في الدورة'
+          : 'تم إعادة تفعيل اشتراكك في الدورة',
+      message:
+        status === 'suspended'
+          ? `تم إيقاف اشتراكك في "${course.title}"${reason ? `: ${reason}` : '.'}`
+          : `تم إعادة تفعيل اشتراكك في "${course.title}".`,
+      relatedEntityType: 'course',
+      relatedEntityId: courseId,
+    });
+
+    return { courseId, enrollmentStatus: enrollment.status };
   }
 
   async updateCourse(

@@ -20,6 +20,7 @@ describe('AdminUsersService', () => {
     findOne: jest.Mock;
     save: jest.Mock;
     delete: jest.Mock;
+    update: jest.Mock;
     count: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
@@ -47,6 +48,7 @@ describe('AdminUsersService', () => {
       passwordHash: 'hash',
       role: 'student',
       avatarUrl: null,
+      managedByTeacherId: null,
       status: 'active',
       lastLoginAt: null,
       deletedAt: null,
@@ -69,6 +71,7 @@ describe('AdminUsersService', () => {
       findOne: jest.fn(),
       save: jest.fn((user) => Promise.resolve(user)),
       delete: jest.fn(),
+      update: jest.fn(),
       count: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue(usersQueryBuilder),
     };
@@ -252,6 +255,95 @@ describe('AdminUsersService', () => {
         'active',
         'admin',
       );
+    });
+  });
+
+  describe('createTeacher', () => {
+    it('rejects when a teacher already exists', async () => {
+      usersRepository.count.mockResolvedValue(1);
+
+      await expect(
+        service.createTeacher({
+          fullName: 'Second Teacher',
+          email: 'teacher2@courseflix.local',
+          password: 'Password123!',
+        }),
+      ).rejects.toThrow(ConflictException);
+      expect(usersService.createUser).not.toHaveBeenCalled();
+    });
+
+    it('creates the user with role teacher when none exists yet', async () => {
+      usersRepository.count.mockResolvedValue(0);
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.createUser.mockResolvedValue(
+        makeUser({ id: 'new-teacher', role: 'teacher' }),
+      );
+      usersRepository.findOne.mockResolvedValue(
+        makeUser({ id: 'new-teacher', role: 'teacher' }),
+      );
+
+      await service.createTeacher({
+        fullName: 'The Teacher',
+        email: 'teacher@courseflix.local',
+        password: 'Password123!',
+      });
+
+      expect(usersService.createUser).toHaveBeenCalledWith(
+        'The Teacher',
+        'teacher@courseflix.local',
+        expect.any(String),
+        'active',
+        'teacher',
+      );
+    });
+  });
+
+  describe('createAssistant', () => {
+    it('rejects when no teacher exists yet', async () => {
+      usersRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.createAssistant({
+          fullName: 'New Assistant',
+          email: 'assistant@courseflix.local',
+          password: 'Password123!',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(usersService.createUser).not.toHaveBeenCalled();
+    });
+
+    it('creates the user with role assistant, linked to the sole teacher', async () => {
+      const teacher = makeUser({ id: 'teacher-1', role: 'teacher' });
+      usersRepository.findOne
+        .mockResolvedValueOnce(teacher) // the "find the teacher" lookup
+        .mockResolvedValue(
+          makeUser({
+            id: 'new-assistant',
+            role: 'assistant',
+            managedByTeacherId: teacher.id,
+          }),
+        );
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.createUser.mockResolvedValue(
+        makeUser({ id: 'new-assistant', role: 'assistant' }),
+      );
+
+      await service.createAssistant({
+        fullName: 'New Assistant',
+        email: 'assistant@courseflix.local',
+        password: 'Password123!',
+      });
+
+      expect(usersService.createUser).toHaveBeenCalledWith(
+        'New Assistant',
+        'assistant@courseflix.local',
+        expect.any(String),
+        'active',
+        'assistant',
+      );
+      expect(usersRepository.update).toHaveBeenCalledWith('new-assistant', {
+        managedByTeacherId: 'teacher-1',
+      });
     });
   });
 });

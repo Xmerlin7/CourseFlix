@@ -149,7 +149,11 @@ export function AdminUserDetailPage() {
     <>
       <PageHeader
         title={data.fullName}
-        description={data.email}
+        description={
+          data.role === 'assistant' && data.managedByTeacherName
+            ? `${data.email} — يساعد: ${data.managedByTeacherName}`
+            : data.email
+        }
         badges={
           <>
             <span className={`chip ${roleLabel.chip}`}>{roleLabel.label}</span>
@@ -236,6 +240,16 @@ export function AdminUserDetailPage() {
                 disabled={isSaving}
                 onChange={(event) => void handleRoleChange(event.target.value as UserRole)}
               >
+                {/* Assistants aren't a selectable target here (see
+                    UpdateUserRoleDto) — they're only created via the
+                    dedicated "مساعد جديد" flow. This option exists purely
+                    so the select displays the current value correctly;
+                    picking one of the other three demotes the assistant. */}
+                {data.role === 'assistant' && (
+                  <option value="assistant" disabled>
+                    {USER_ROLE_LABEL.assistant.label}
+                  </option>
+                )}
                 {(['student', 'teacher', 'admin'] as const).map((role) => (
                   <option key={role} value={role}>
                     {USER_ROLE_LABEL[role].label}

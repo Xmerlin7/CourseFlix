@@ -12,11 +12,15 @@ export interface AdminUserListItem {
   status: UserStatus
   lastLoginAt: string | null
   createdAt: string
+  // Only set for role: 'assistant'.
+  managedByTeacherId: string | null
 }
 
 export interface AdminUserDetail extends AdminUserListItem {
   avatarUrl: string | null
   updatedAt: string
+  // Only set for role: 'assistant'.
+  managedByTeacherName: string | null
   dependentRecordCounts: {
     coursesTaught: number
     enrollments: number
@@ -36,6 +40,18 @@ export interface UpdateAdminUserPayload {
 }
 
 export interface CreateAdminAccountPayload {
+  fullName: string
+  email: string
+  password: string
+}
+
+export interface CreateTeacherAccountPayload {
+  fullName: string
+  email: string
+  password: string
+}
+
+export interface CreateAssistantAccountPayload {
   fullName: string
   email: string
   password: string

@@ -106,6 +106,16 @@ const AdminCreateAdminPage = lazy(() =>
     default: m.AdminCreateAdminPage,
   }))
 )
+const AdminCreateTeacherPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateTeacherPage').then((m) => ({
+    default: m.AdminCreateTeacherPage,
+  }))
+)
+const AdminCreateAssistantPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateAssistantPage').then((m) => ({
+    default: m.AdminCreateAssistantPage,
+  }))
+)
 const AdminCoursesPage = lazy(() =>
   import('../../features/admin/pages/AdminCoursesPage').then((m) => ({ default: m.AdminCoursesPage }))
 )
@@ -313,9 +323,13 @@ export const router = createBrowserRouter([
     ],
   },
 
-  /* Teacher Routes — gated behind RequireRole("teacher"). */
+  /* Teacher Routes — gated behind RequireRole(["teacher", "assistant"]).
+     Assistants share the teacher's course/student surface; anything
+     payment- or analytics-adjacent (sales, analytics, agent logs,
+     intervention reports) is nested under its own RequireRole("teacher")
+     below, mirroring the API's TeacherRoleGuard-only controllers. */
   {
-    element: <RequireRole role="teacher" />,
+    element: <RequireRole role={['teacher', 'assistant']} />,
     errorElement: <RouteErrorBoundary />,
     children: [
       {
@@ -379,36 +393,43 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: ROUTE_PATHS.TEACHER.AGENT_LOGS,
-            element: (
-              <SuspenseWrapper>
-                <AgentLogsPage />
-              </SuspenseWrapper>
-            ),
-          },
-          {
-            path: ROUTE_PATHS.TEACHER.INTERVENTIONS,
-            element: (
-              <SuspenseWrapper>
-                <TeacherInterventionsPage />
-              </SuspenseWrapper>
-            ),
-          },
-          {
-            path: ROUTE_PATHS.TEACHER.SALES,
-            element: (
-              <SuspenseWrapper fallback={<LoadingState variant="sales" />}>
-                <TeacherSalesPage />
-              </SuspenseWrapper>
-            ),
-          },
-          {
-            path: ROUTE_PATHS.TEACHER.ANALYTICS,
-            element: (
-              <SuspenseWrapper>
-                <TeacherAnalyticsPage />
-              </SuspenseWrapper>
-            ),
+            // Teacher-only: assistants get redirected to /403 here, same
+            // as hitting the equivalent API route.
+            element: <RequireRole role="teacher" />,
+            children: [
+              {
+                path: ROUTE_PATHS.TEACHER.AGENT_LOGS,
+                element: (
+                  <SuspenseWrapper>
+                    <AgentLogsPage />
+                  </SuspenseWrapper>
+                ),
+              },
+              {
+                path: ROUTE_PATHS.TEACHER.INTERVENTIONS,
+                element: (
+                  <SuspenseWrapper>
+                    <TeacherInterventionsPage />
+                  </SuspenseWrapper>
+                ),
+              },
+              {
+                path: ROUTE_PATHS.TEACHER.SALES,
+                element: (
+                  <SuspenseWrapper fallback={<LoadingState variant="sales" />}>
+                    <TeacherSalesPage />
+                  </SuspenseWrapper>
+                ),
+              },
+              {
+                path: ROUTE_PATHS.TEACHER.ANALYTICS,
+                element: (
+                  <SuspenseWrapper>
+                    <TeacherAnalyticsPage />
+                  </SuspenseWrapper>
+                ),
+              },
+            ],
           },
         ],
       },
@@ -449,6 +470,22 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <AdminCreateAdminPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_TEACHER,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateTeacherPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_ASSISTANT,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateAssistantPage />
               </SuspenseWrapper>
             ),
           },

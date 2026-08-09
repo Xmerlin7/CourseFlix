@@ -125,6 +125,10 @@ export function StudentLessonPage() {
   const { lessonId } = useParams<{ lessonId: string }>()
   const { user } = useAuth()
   const viewerRole = user?.role ?? 'student'
+  // Assistants view lessons the same way the teacher does (full preview,
+  // no progress/watermark/locking) — everywhere below that used to branch
+  // on viewerRole === 'teacher' now branches on isTeacher instead.
+  const isTeacher = viewerRole === 'teacher' || viewerRole === 'assistant'
   const { data, isLoading, error, refetch } = useLesson(lessonId ?? '', viewerRole)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -198,7 +202,7 @@ export function StudentLessonPage() {
   }, [isBunnyEmbed])
 
   const { blockReason, resume } = useAntiCapture({
-    enabled: viewerRole === 'student' && Boolean(data),
+    enabled: !isTeacher && Boolean(data),
     isPlaying: activeController.isPlaying,
     onPause: activeController.pause,
     onResume: activeController.play,
@@ -211,7 +215,7 @@ export function StudentLessonPage() {
   useProgressHeartbeat({
     lessonId: lessonId ?? '',
     videoRef,
-    enabled: viewerRole === 'student' && Boolean(data),
+    enabled: !isTeacher && Boolean(data),
     externalTracking: Boolean(iframeEmbedUrl),
     fallbackDurationSeconds: progressDurationSeconds,
     initialPositionSeconds: data?.progress.lastPositionSeconds ?? 0,
@@ -247,12 +251,10 @@ export function StudentLessonPage() {
   const displayedPercentage = watchedPercentage ?? data.progress.watchedPercentage
   const displayedStatus = status ?? data.progress.status
   const statusMeta = LESSON_PROGRESS_STATUS[displayedStatus]
-  const lessonPathPrefix = viewerRole === 'teacher' ? '/teacher/lessons' : '/student/lessons'
-  const coursePath =
-    viewerRole === 'teacher'
-      ? `/teacher/courses/${data.course.id}`
-      : `/student/courses/${data.course.id}`
-  const isTeacher = viewerRole === 'teacher'
+  const lessonPathPrefix = isTeacher ? '/teacher/lessons' : '/student/lessons'
+  const coursePath = isTeacher
+    ? `/teacher/courses/${data.course.id}`
+    : `/student/courses/${data.course.id}`
   const courseLessons = data.course.sections.flatMap((section) => section.lessons)
   const currentLessonIndex = courseLessons.findIndex((lesson) => lesson.id === data.id)
   const prevLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null
@@ -293,7 +295,7 @@ export function StudentLessonPage() {
     }
   }
 
-  if (viewerRole === 'student' && data && !unlockedLessonIds.has(data.id)) {
+  if (!isTeacher && data && !unlockedLessonIds.has(data.id)) {
     return (
       <ForbiddenState
         title="هذا الدرس مغلق حاليًا"
@@ -303,7 +305,7 @@ export function StudentLessonPage() {
   }
 
   const studentWatermarkId =
-    viewerRole === 'student' ? getStudentWatermarkId(user?.id) : null
+    !isTeacher ? getStudentWatermarkId(user?.id) : null
 
   function handleLoadedMetadata() {
     const video = videoRef.current
@@ -323,7 +325,7 @@ export function StudentLessonPage() {
             ref={playerRef}
             className="player secure-player"
             onContextMenu={(event) => {
-              if (viewerRole === 'student') event.preventDefault()
+              if (!isTeacher) event.preventDefault()
             }}
             onDragStart={(event) => event.preventDefault()}
           >
@@ -417,7 +419,7 @@ export function StudentLessonPage() {
                 {data.title}
               </h1>
             </div>
-            {viewerRole === 'student' ? (
+            {!isTeacher ? (
               <span className={`chip ${statusMeta.chip}`}>{statusMeta.label}</span>
             ) : (
               <span className="chip">
@@ -470,14 +472,14 @@ export function StudentLessonPage() {
             </Link>
           </div>
 
-          {resumeSeconds > 0 && displayedStatus !== 'completed' && viewerRole === 'student' && (
+          {resumeSeconds > 0 && displayedStatus !== 'completed' && !isTeacher && (
             <div className="resume-banner">
               <span className="ms">history</span>
               هتكمل من {formatDuration(resumeSeconds)}
             </div>
           )}
 
-          {viewerRole === 'student' && (
+          {!isTeacher && (
             <div className="card" style={{ gap: 10, marginTop: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700 }}>
                 <span style={{ color: 'var(--on-surface-variant)' }}>نسبة المشاهدة (تُحسب في الحضور)</span>
@@ -490,7 +492,7 @@ export function StudentLessonPage() {
             </div>
           )}
 
-          {viewerRole === 'student' && (
+          {!isTeacher && (
             <VideoQaPanel
               videoId={data.video.id}
               canSeek={canSeekVideo}

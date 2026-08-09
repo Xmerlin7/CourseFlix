@@ -20,6 +20,8 @@ import { OrderEntity } from '../../commerce/entities/order.entity';
 import { ListUsersQueryDto } from '../dto/list-users-query.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { CreateAdminDto } from '../dto/create-admin.dto';
+import { CreateTeacherDto } from '../dto/create-teacher.dto';
+import { CreateAssistantDto } from '../dto/create-assistant.dto';
 
 export interface AdminUserListItem {
   id: string;
@@ -29,11 +31,15 @@ export interface AdminUserListItem {
   status: UserStatus;
   lastLoginAt: string | null;
   createdAt: string;
+  // Only set for role: 'assistant'.
+  managedByTeacherId: string | null;
 }
 
 export interface AdminUserDetail extends AdminUserListItem {
   avatarUrl: string | null;
   updatedAt: string;
+  // Only set for role: 'assistant'.
+  managedByTeacherName: string | null;
   dependentRecordCounts: {
     coursesTaught: number;
     enrollments: number;
@@ -103,10 +109,19 @@ export class AdminUsersService {
     const user = await this.findActiveUserOrThrow(userId);
     const counts = await this.getDependentRecordCounts(userId);
 
+    let managedByTeacherName: string | null = null;
+    if (user.managedByTeacherId) {
+      const teacher = await this.usersRepository.findOne({
+        where: { id: user.managedByTeacherId },
+      });
+      managedByTeacherName = teacher?.fullName ?? null;
+    }
+
     return {
       ...this.toListItem(user),
       avatarUrl: user.avatarUrl,
       updatedAt: user.updatedAt.toISOString(),
+      managedByTeacherName,
       dependentRecordCounts: counts,
     };
   }
@@ -135,8 +150,18 @@ export class AdminUsersService {
     if (user.role === 'admin' && role !== 'admin') {
       await this.assertNotLastAdmin();
     }
+    if (role === 'teacher' && user.role !== 'teacher') {
+      await this.assertNoExistingTeacher();
+    }
 
     user.role = role;
+    // CHK_users_assistant_has_teacher requires managedByTeacherId to be
+    // null for every non-assistant role — clear it whenever a former
+    // assistant moves elsewhere (role can never be set to 'assistant'
+    // through this endpoint, see UpdateUserRoleDto).
+    if (role !== 'assistant') {
+      user.managedByTeacherId = null;
+    }
     await this.usersRepository.save(user);
     return this.getUserDetail(userId);
   }
@@ -235,6 +260,73 @@ export class AdminUsersService {
     return this.getUserDetail(newUser.id);
   }
 
+  // The platform supports exactly one teacher account — enforced here as
+  // a friendly 409 (the DB's ux_users_single_teacher partial index is the
+  // backstop against races/direct SQL, not the primary guard).
+  async createTeacher(dto: CreateTeacherDto): Promise<AdminUserDetail> {
+    await this.assertNoExistingTeacher();
+
+    const existing = await this.usersService.findByEmail(dto.email);
+    if (existing) {
+      throw new BadRequestException('Email already in use.');
+    }
+
+    const passwordHash = await argon2.hash(dto.password);
+    const newUser = await this.usersService.createUser(
+      dto.fullName,
+      dto.email,
+      passwordHash,
+      'active',
+      'teacher',
+    );
+
+    return this.getUserDetail(newUser.id);
+  }
+
+  // Assistants are always scoped to the one existing teacher — there's
+  // nothing for the admin to pick, so this resolves it server-side rather
+  // than taking a teacherId in the request body.
+  async createAssistant(dto: CreateAssistantDto): Promise<AdminUserDetail> {
+    const teacher = await this.usersRepository.findOne({
+      where: { role: 'teacher', deletedAt: IsNull() },
+    });
+    if (!teacher) {
+      throw new BadRequestException(
+        'Create the teacher account first — an assistant needs a teacher to be assigned to.',
+      );
+    }
+
+    const existing = await this.usersService.findByEmail(dto.email);
+    if (existing) {
+      throw new BadRequestException('Email already in use.');
+    }
+
+    const passwordHash = await argon2.hash(dto.password);
+    const newUser = await this.usersService.createUser(
+      dto.fullName,
+      dto.email,
+      passwordHash,
+      'active',
+      'assistant',
+    );
+    await this.usersRepository.update(newUser.id, {
+      managedByTeacherId: teacher.id,
+    });
+
+    return this.getUserDetail(newUser.id);
+  }
+
+  private async assertNoExistingTeacher(): Promise<void> {
+    const teacherCount = await this.usersRepository.count({
+      where: { role: 'teacher', deletedAt: IsNull() },
+    });
+    if (teacherCount > 0) {
+      throw new ConflictException(
+        'A teacher account already exists — this platform supports exactly one.',
+      );
+    }
+  }
+
   private async getDependentRecordCounts(userId: string) {
     const [coursesTaught, enrollments, orders] = await Promise.all([
       this.coursesRepository.count({ where: { teacherId: userId } }),
@@ -287,6 +379,7 @@ export class AdminUsersService {
       status: user.status,
       lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
       createdAt: user.createdAt.toISOString(),
+      managedByTeacherId: user.managedByTeacherId,
     };
   }
 }

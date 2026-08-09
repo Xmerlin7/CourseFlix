@@ -29,10 +29,15 @@ export class UserEntity {
 
   @Column({
     type: 'enum',
-    enum: ['student', 'teacher', 'admin'],
+    enum: ['student', 'teacher', 'admin', 'assistant'],
     enumName: 'user_role',
   })
   role!: UserRole;
+
+  // Only set (and required) for role: 'assistant' — the one teacher this
+  // assistant is scoped to. See CHK_users_assistant_has_teacher.
+  @Column({ name: 'managed_by_teacher_id', type: 'uuid', nullable: true })
+  managedByTeacherId!: string | null;
 
   @Column({ name: 'avatar_url', type: 'text', nullable: true })
   avatarUrl!: string | null;

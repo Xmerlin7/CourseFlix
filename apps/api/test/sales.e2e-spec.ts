@@ -10,6 +10,7 @@ import { OrderItemEntity } from '../src/modules/commerce/entities/order-item.ent
 import { OrderEntity } from '../src/modules/commerce/entities/order.entity';
 import { PaymentEntity } from '../src/modules/commerce/entities/payment.entity';
 import { CourseEntity } from '../src/modules/courses/entities/course.entity';
+import { UserEntity } from '../src/modules/users/entities/user.entity';
 import { seedCourse } from '../src/database/seeds/course.seed';
 import { seedUsers } from '../src/database/seeds/user.seed';
 
@@ -21,8 +22,8 @@ const MAX_DATE = new Date(8640000000000000);
  * Verifies the teacher sales summary against an independent raw-SQL
  * ledger query (a different code path than SalesService), so the test is
  * a true reconciliation: response totals must exactly match the order
- * rows. Also covers ownership isolation (another teacher's courses are
- * never counted), range validation, and exclusion of failed/declined
+ * rows. Also covers ownership isolation (a course owned by someone else
+ * is never counted), range validation, and exclusion of failed/declined
  * orders.
  *
  * The suite tolerates whatever paid orders other e2e suites created by
@@ -32,11 +33,14 @@ describe('Sales (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
   let teacherAId: string;
-  let teacherBId: string;
+  // Not a second teacher account — the platform now enforces exactly one
+  // (ux_users_single_teacher). This is a throwaway non-teacher user that
+  // only exists to own courseB2, so the isolation test below still has
+  // "someone else's course" to check the summary never leaks.
+  let otherOwnerId: string;
   let courseA2: CourseEntity;
   let courseB2: CourseEntity;
   let teacherACourseIds: string[];
-  let teacherBCourseIds: string[];
   let primaryStudentId: string;
 
   beforeAll(async () => {
@@ -50,23 +54,29 @@ describe('Sales (e2e)', () => {
 
     dataSource = moduleFixture.get(DataSource);
 
-    const { teacher, teachers, student } = await seedUsers(dataSource);
-    const { courses } = await seedCourse(dataSource, teacher.id, [
-      teachers[1].id,
-    ]);
+    const { teacher, student } = await seedUsers(dataSource);
+    const { courses } = await seedCourse(dataSource, teacher.id);
 
     teacherAId = teacher.id;
-    teacherBId = teachers[1].id;
     primaryStudentId = student.id;
     teacherACourseIds = courses
       .filter((c) => c.teacherId === teacherAId)
       .map((c) => c.id);
-    teacherBCourseIds = courses
-      .filter((c) => c.teacherId === teacherBId)
-      .map((c) => c.id);
 
-    // Fresh courses owned by each teacher so this suite's fixtures are
-    // never affected by other suites' demo orders.
+    const usersRepo = dataSource.getRepository(UserEntity);
+    const otherOwner = await usersRepo.save(
+      usersRepo.create({
+        fullName: 'Sales E2E Other Owner',
+        email: `sales-e2e-other-owner-${Date.now()}@courseflix.local`,
+        passwordHash: 'not-a-real-login',
+        role: 'student',
+        status: 'active',
+      }),
+    );
+    otherOwnerId = otherOwner.id;
+
+    // Fresh courses so this suite's fixtures are never affected by other
+    // suites' demo orders.
     const courseRepo = dataSource.getRepository(CourseEntity);
     courseA2 = await courseRepo.save(
       courseRepo.create({
@@ -81,7 +91,7 @@ describe('Sales (e2e)', () => {
     );
     courseB2 = await courseRepo.save(
       courseRepo.create({
-        teacherId: teacherBId,
+        teacherId: otherOwnerId,
         title: 'Commerce API Testing B',
         slug: `sales-e2e-b-${Date.now()}`,
         description: null,
@@ -91,7 +101,6 @@ describe('Sales (e2e)', () => {
       }),
     );
     teacherACourseIds.push(courseA2.id);
-    teacherBCourseIds.push(courseB2.id);
   });
 
   afterAll(async () => {
@@ -250,7 +259,7 @@ describe('Sales (e2e)', () => {
     expect(summary.currency).toBe('EGP');
   });
 
-  it('never includes another teacher courses in the summary', async () => {
+  it('never includes another owner\'s course in the summary', async () => {
     const agentA = request.agent(app.getHttpServer());
     await loginTeacher(agentA);
 
@@ -261,23 +270,6 @@ describe('Sales (e2e)', () => {
     const after = await getSummary(agentA);
     expect(after.revenueMinor).toBe(before.revenueMinor);
     expect(after.ordersCount).toBe(before.ordersCount);
-
-    const expectedB = await ledgerForCourses(
-      teacherBCourseIds,
-      MIN_DATE,
-      MAX_DATE,
-    );
-    const agentB = request.agent(app.getHttpServer());
-    await agentB
-      .post('/api/v1/auth/login')
-      .send({
-        email: 'sara.teacher@courseflix.local',
-        password: process.env.SEED_TEACHER_PASSWORD,
-      })
-      .expect(200);
-    const summaryB = await getSummary(agentB);
-    expect(summaryB.revenueMinor).toBe(expectedB.revenue);
-    expect(summaryB.ordersCount).toBe(expectedB.orders);
   });
 
   it('excludes failed and declined orders from revenue', async () => {

@@ -2,7 +2,7 @@ import { NavLink } from 'react-router'
 import { ROUTE_PATHS } from '../../app/routes/route-paths'
 
 export type SidebarProps = {
-  role: 'student' | 'teacher' | 'admin'
+  role: 'student' | 'teacher' | 'admin' | 'assistant'
   userName: string
   activePath: string
   onLogout?: () => void
@@ -38,6 +38,20 @@ const teacherNavItems: NavItem[] = [
   { path: ROUTE_PATHS.TEACHER.ANALYTICS, label: 'مساعد التحليلات', icon: 'insights' },
 ]
 
+// Assistants share the teacher's course/student surface but not
+// anything payment- or analytics-adjacent — mirrors the API's
+// TeacherRoleGuard-only controllers and the router's nested
+// RequireRole("teacher") around those same four routes.
+const assistantNavItems: NavItem[] = teacherNavItems.filter(
+  (item) =>
+    ![
+      ROUTE_PATHS.TEACHER.AGENT_LOGS,
+      ROUTE_PATHS.TEACHER.INTERVENTIONS,
+      ROUTE_PATHS.TEACHER.SALES,
+      ROUTE_PATHS.TEACHER.ANALYTICS,
+    ].includes(item.path),
+)
+
 // Grows alongside the admin route surface — only nav items whose route
 // actually exists yet, same discipline as the other two lists above.
 const adminNavItems: NavItem[] = [
@@ -57,6 +71,7 @@ const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {
   student: studentNavItems,
   teacher: teacherNavItems,
   admin: adminNavItems,
+  assistant: assistantNavItems,
 }
 
 export function Sidebar({

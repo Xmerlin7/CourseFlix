@@ -44,7 +44,7 @@ sudo usermod -aG docker $USER   # then log out and back in
 | Role | Email | Password |
 |---|---|---|
 | Teacher | `teacher@courseflix.local` | `Teacher123!` |
-| Teacher | `sara.teacher@courseflix.local` | `Teacher123!` |
+| Assistant | `sara.assistant@courseflix.local` | `Teacher123!` |
 | Student | `student@courseflix.local` | `Student123!` |
 | Students | `student2@…` through `student10@courseflix.local` | `Student123!` |
 

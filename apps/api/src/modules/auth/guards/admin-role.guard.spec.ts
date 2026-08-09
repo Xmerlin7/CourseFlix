@@ -23,6 +23,7 @@ describe('AdminRoleGuard', () => {
       role: 'admin',
       fullName: 'Admin One',
       avatarUrl: null,
+      managedByTeacherId: null,
     });
     expect(guard.canActivate(context)).toBe(true);
   });
@@ -34,6 +35,7 @@ describe('AdminRoleGuard', () => {
       role: 'teacher',
       fullName: 'Teacher One',
       avatarUrl: null,
+      managedByTeacherId: null,
     });
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
@@ -45,6 +47,7 @@ describe('AdminRoleGuard', () => {
       role: 'student',
       fullName: 'Student One',
       avatarUrl: null,
+      managedByTeacherId: null,
     });
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });

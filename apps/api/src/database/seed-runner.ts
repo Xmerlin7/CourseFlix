@@ -13,6 +13,7 @@ import { clearTransactionalDemoState } from './seeds/transactional-reset.seed';
 export interface SeedSummary {
   teacherCount: number;
   primaryTeacherEmail: string;
+  assistantEmail: string;
   studentCount: number;
   primaryStudentEmail: string;
   courseCount: number;
@@ -49,7 +50,8 @@ export async function runSeed(
         agentLogsCleared: 0,
       };
 
-  const { teacher, student, teachers, students } = await seedUsers(dataSource);
+  const { teacher, assistant, student, teachers, students } =
+    await seedUsers(dataSource);
 
   const { course, section, lessons, courses } = await seedCourse(
     dataSource,
@@ -94,6 +96,7 @@ export async function runSeed(
   return {
     teacherCount: teachers.length,
     primaryTeacherEmail: teacher.email,
+    assistantEmail: assistant.email,
     studentCount: students.length,
     primaryStudentEmail: student.email,
     courseCount: courses.length,
@@ -122,6 +125,7 @@ export function printSeedSummary(summary: SeedSummary, heading: string): void {
   console.log(
     `  teachers:       ${summary.teacherCount} (primary: ${summary.primaryTeacherEmail})`,
   );
+  console.log(`  assistants:     1 (${summary.assistantEmail})`);
   console.log(
     `  students:       ${summary.studentCount} (primary: ${summary.primaryStudentEmail})`,
   );
