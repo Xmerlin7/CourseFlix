@@ -1,14 +1,20 @@
+export interface SalesBestSeller {
+  courseId: string
+  title: string
+  ordersCount: number
+  revenueMinor: number
+}
+
+// Mirrors apps/api/src/modules/sales/sales.service.ts SalesSummaryResponse —
+// docs/api/sprint3-sales.md is the contract of record.
 export interface SalesSummary {
-  totalRevenue: number
+  from: string | null
+  to: string | null
   currency: string
-  successfulOrderCount: number
-  bestSellingCourse: {
-    courseId: string
-    courseTitle: string
-    orderCount: number
-    totalRevenue: number
-  } | null
-  dateRange: { from: string | null; to: string | null }
+  timezone: string
+  revenueMinor: number
+  ordersCount: number
+  bestSeller: SalesBestSeller | null
 }
 
 export interface SalesDateFilter {

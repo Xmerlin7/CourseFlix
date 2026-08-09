@@ -397,7 +397,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.SALES,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<LoadingState variant="sales" />}>
                 <TeacherSalesPage />
               </SuspenseWrapper>
             ),
