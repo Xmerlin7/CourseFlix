@@ -29,8 +29,12 @@ function downloadAudioViaYtDlp(
     const child = spawn(ytDlpPath, [
       '-f',
       'bestaudio',
+      // Just a sanity cap on the download, not an upload-size constraint —
+      // transcribeAudioBytes chunks and re-encodes before ever uploading
+      // anything, so this only needs to be generous enough for a genuinely
+      // long lecture's audio track.
       '--max-filesize',
-      '25M',
+      '500M',
       '--no-playlist',
       '-o',
       '-',
