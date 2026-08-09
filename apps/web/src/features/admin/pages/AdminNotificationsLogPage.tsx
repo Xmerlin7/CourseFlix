@@ -4,6 +4,8 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { useAdminNotifications } from '../hooks/useAdminNotifications'
 import { deleteAdminNotification } from '../api/admin-notifications.api'
 
@@ -11,22 +13,25 @@ function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-// Platform-wide audit view of every user's notifications — distinct
-// from the admin's own personal inbox (reused NotificationsPage under
-// ROUTE_PATHS.ADMIN.NOTIFICATIONS / the Topbar bell).
 export function AdminNotificationsLogPage() {
   const { data, isLoading, error, refetch } = useAdminNotifications({})
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  async function handleDelete(id: string) {
-    if (!window.confirm('حذف هذا الإشعار؟')) return
-    setDeletingId(id)
+  async function handleConfirmDelete() {
+    if (!deleteTargetId || deletingId) return
+
+    setDeletingId(deleteTargetId)
     setActionError(null)
     try {
-      await deleteAdminNotification(id)
+      await deleteAdminNotification(deleteTargetId)
+      setDeleteTargetId(null)
+      showToast('تم حذف الإشعار بنجاح', 'success')
       refetch()
     } catch (err) {
+      setDeleteTargetId(null)
+      showToast('حدث خطأ أثناء حذف الإشعار. حاول مرة أخرى.', 'error')
       setActionError(err instanceof ApiError ? err.message : 'تعذر حذف الإشعار، حاول مرة أخرى')
     } finally {
       setDeletingId(null)
@@ -86,7 +91,7 @@ export function AdminNotificationsLogPage() {
                       type="button"
                       className="btn text"
                       disabled={deletingId === item.id}
-                      onClick={() => void handleDelete(item.id)}
+                      onClick={() => setDeleteTargetId(item.id)}
                     >
                       <span className="ms">delete</span>
                     </button>
@@ -97,6 +102,18 @@ export function AdminNotificationsLogPage() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="حذف الإشعار"
+        message="هل أنت متأكد من حذف هذا الإشعار؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="حذف الإشعار"
+        cancelLabel="إلغاء"
+        isLoading={deletingId !== null}
+        variant="danger"
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </>
   )
 }

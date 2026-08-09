@@ -171,8 +171,8 @@ export function RouteErrorBoundary() {
 }
 
 // Suspense helper for lazy-loaded route elements
-function SuspenseWrapper({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<LoadingState />}>{children}</Suspense>
+function SuspenseWrapper({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  return <Suspense fallback={fallback ?? <LoadingState />}>{children}</Suspense>
 }
 
 /**
@@ -255,7 +255,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.LESSON_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<LoadingState variant="lesson" />}>
                 <StudentLessonPage />
               </SuspenseWrapper>
             ),
@@ -365,7 +365,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.LESSON_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<LoadingState variant="lesson" />}>
                 <StudentLessonPage />
               </SuspenseWrapper>
             ),

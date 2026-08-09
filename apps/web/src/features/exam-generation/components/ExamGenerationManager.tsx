@@ -1,6 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { EXAM_GENERATION_STATUS } from '../../../shared/lib/status-labels'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import type { CourseDetail } from '../../courses/types/course.types'
 import { useExamGenerationRequest } from '../hooks/useExamGenerationRequest'
 import { useExamGenerationRequests } from '../hooks/useExamGenerationRequests'
@@ -373,16 +375,25 @@ function ExamGenerationReviewPanel({
     }
   }
 
-  async function handleReject() {
-    if (!window.confirm('رفض هذه المسودة نهائيًا؟')) return
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [isRejecting, setIsRejecting] = useState(false)
+
+  async function handleConfirmReject() {
+    if (isRejecting) return
+    setIsRejecting(true)
     setIsBusy(true)
     setActionError(null)
     try {
       await reject()
+      setShowRejectModal(false)
+      showToast('تم رفض المسودة بنجاح', 'success')
       onClose()
     } catch {
+      setShowRejectModal(false)
+      showToast('حدث خطأ أثناء رفض المسودة. حاول مرة أخرى.', 'error')
       setActionError('تعذر الرفض، حاول مرة أخرى')
     } finally {
+      setIsRejecting(false)
       setIsBusy(false)
     }
   }
@@ -483,7 +494,7 @@ function ExamGenerationReviewPanel({
                   type="button"
                   className="btn tonal"
                   disabled={isBusy}
-                  onClick={() => void handleReject()}
+                  onClick={() => setShowRejectModal(true)}
                   style={{ color: 'var(--error)' }}
                 >
                   <span className="ms">close</span>
@@ -509,6 +520,18 @@ function ExamGenerationReviewPanel({
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={showRejectModal}
+        title="رفض المسودة"
+        message="هل أنت متأكد من رفض هذه المسودة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="رفض المسودة"
+        cancelLabel="إلغاء"
+        isLoading={isRejecting}
+        variant="danger"
+        onConfirm={() => void handleConfirmReject()}
+        onCancel={() => setShowRejectModal(false)}
+      />
     </div>
   )
 }

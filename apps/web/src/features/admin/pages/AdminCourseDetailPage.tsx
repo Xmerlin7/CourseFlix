@@ -5,6 +5,8 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
 import { useAdminCourseDetail } from '../hooks/useAdminCourseDetail'
@@ -43,6 +45,8 @@ export function AdminCourseDetailPage() {
   const [gradeLevel, setGradeLevel] = useState('')
   const [isSynced, setIsSynced] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null)
 
@@ -93,21 +97,22 @@ export function AdminCourseDetailPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!courseId) return
-    if (!window.confirm('حذف هذه الدورة؟ يمكن استرجاعها لاحقًا من قاعدة البيانات، لكنها ستختفي من كل القوائم فورًا.')) {
-      return
-    }
-    setIsSaving(true)
+  async function handleDeleteConfirm() {
+    if (!courseId || isDeleting) return
+    setIsDeleting(true)
     setActionError(null)
     try {
       await deleteAdminCourse(courseId)
+      setShowDeleteModal(false)
+      showToast('تم حذف الدورة بنجاح', 'success')
       navigate(ROUTE_PATHS.ADMIN.COURSES)
     } catch (err) {
+      setShowDeleteModal(false)
+      setIsDeleting(false)
+      showToast('حدث خطأ أثناء حذف الدورة. حاول مرة أخرى.', 'error')
       setActionError(
         err instanceof ApiError ? (getServerMessage(err) ?? 'حدث خطأ ما، حاول مرة أخرى') : 'حدث خطأ ما، حاول مرة أخرى',
       )
-      setIsSaving(false)
     }
   }
 
@@ -304,14 +309,32 @@ export function AdminCourseDetailPage() {
             <h3 style={{ marginBottom: 4 }}>منطقة خطر</h3>
             <p className="meta">حذف هذه الدورة يخفيها فورًا من كل مكان في المنصة.</p>
             <div className="actions">
-              <button type="button" disabled={isSaving} className="btn text" onClick={() => void handleDelete()}>
+              <button
+                type="button"
+                disabled={isSaving || isDeleting}
+                className="btn text"
+                style={{ color: 'var(--error)' }}
+                onClick={() => setShowDeleteModal(true)}
+              >
                 <span className="ms">delete</span>
-                حذف الدورة
+                {isDeleting ? 'جارٍ الحذف...' : 'حذف الدورة'}
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={showDeleteModal}
+        title="حذف الدورة"
+        message="هل أنت متأكد من حذف هذه الدورة؟ يمكنك استرجاعها لاحقًا من قاعدة البيانات، لكنها ستختفي من المنصة فورًا."
+        confirmLabel="حذف الدورة"
+        cancelLabel="إلغاء"
+        isLoading={isDeleting}
+        variant="danger"
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </>
   )
 }

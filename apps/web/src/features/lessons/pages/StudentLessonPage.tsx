@@ -6,6 +6,7 @@ import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { formatDuration } from '../../../shared/lib/formatters'
 import { LESSON_PROGRESS_STATUS } from '../../../shared/lib/status-labels'
+import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { VideoQaPanel } from '../../video-qa/components/VideoQaPanel'
 import { VideoControlBar } from '../components/VideoControlBar'
@@ -221,7 +222,7 @@ export function StudentLessonPage() {
   })
 
   if (isLoading) {
-    return <LoadingState variant="text" />
+    return <LoadingState variant="lesson" />
   }
 
   if (error) {
@@ -247,9 +248,56 @@ export function StudentLessonPage() {
     viewerRole === 'teacher'
       ? `/teacher/courses/${data.course.id}`
       : `/student/courses/${data.course.id}`
+  const isTeacher = viewerRole === 'teacher'
   const courseLessons = data.course.sections.flatMap((section) => section.lessons)
   const currentLessonIndex = courseLessons.findIndex((lesson) => lesson.id === data.id)
-  const nextLesson = currentLessonIndex >= 0 ? courseLessons[currentLessonIndex + 1] : null
+  const prevLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null
+  const nextLesson = currentLessonIndex >= 0 && currentLessonIndex < courseLessons.length - 1 ? courseLessons[currentLessonIndex + 1] : null
+  const totalLessonsCount = courseLessons.length
+  const isCurrentCompleted = displayedStatus === 'completed' || displayedPercentage >= 100
+  const completedLessonsCount = courseLessons.filter((l) =>
+    l.id === data.id ? isCurrentCompleted : l.progressStatus === 'completed' || (l.watchedPercentage ?? 0) >= 100,
+  ).length
+
+  const isNextEnabled = isTeacher ? Boolean(nextLesson) : Boolean(nextLesson) && isCurrentCompleted
+
+  // Sequential unlocking: a lesson is unlocked for students if:
+  // 1. It is a teacher preview.
+  // 2. It is the first lesson in the course.
+  // 3. It is already completed.
+  // 4. All preceding lessons in the course are 100% completed.
+  const unlockedLessonIds = new Set<string>()
+  if (isTeacher) {
+    courseLessons.forEach((l) => unlockedLessonIds.add(l.id))
+  } else if (courseLessons.length > 0) {
+    unlockedLessonIds.add(courseLessons[0].id)
+    let allPreviousCompleted = true
+    for (let i = 0; i < courseLessons.length; i++) {
+      const l = courseLessons[i]
+      const isLCompleted =
+        l.id === data.id
+          ? isCurrentCompleted
+          : l.progressStatus === 'completed' || (l.watchedPercentage ?? 0) >= 100
+
+      if (allPreviousCompleted || isLCompleted) {
+        unlockedLessonIds.add(l.id)
+      }
+
+      if (!isLCompleted) {
+        allPreviousCompleted = false
+      }
+    }
+  }
+
+  if (viewerRole === 'student' && data && !unlockedLessonIds.has(data.id)) {
+    return (
+      <ForbiddenState
+        title="هذا الدرس مغلق حاليًا"
+        message="أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي."
+      />
+    )
+  }
+
   const studentWatermarkId =
     viewerRole === 'student' ? getStudentWatermarkId(user?.id) : null
 
@@ -380,6 +428,43 @@ export function StudentLessonPage() {
             )}
           </div>
 
+          <div className="lesson-nav-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 18 }}>
+            <Link
+              to={prevLesson ? `${lessonPathPrefix}/${prevLesson.id}` : '#'}
+              className={`btn outline lesson-nav-btn${!prevLesson ? ' disabled' : ''}`}
+              onClick={(e) => {
+                if (!prevLesson) e.preventDefault()
+              }}
+              aria-label="الدرس السابق"
+              aria-disabled={!prevLesson}
+            >
+              <span className="ms">arrow_forward</span>
+              السابق
+            </Link>
+
+            <span className="lesson-progress-badge" style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--on-surface-variant)' }}>
+              {completedLessonsCount} من {totalLessonsCount}
+            </span>
+
+            <Link
+              to={isNextEnabled && nextLesson ? `${lessonPathPrefix}/${nextLesson.id}` : '#'}
+              className={`btn primary lesson-nav-btn${!isNextEnabled ? ' disabled' : ''}`}
+              onClick={(e) => {
+                if (!isNextEnabled) {
+                  e.preventDefault()
+                  if (nextLesson && !isCurrentCompleted && !isTeacher) {
+                    showToast('أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي.', 'error')
+                  }
+                }
+              }}
+              aria-label="الدرس التالي"
+              aria-disabled={!isNextEnabled}
+            >
+              التالي
+              <span className="ms">arrow_back</span>
+            </Link>
+          </div>
+
           {resumeSeconds > 0 && displayedStatus !== 'completed' && viewerRole === 'student' && (
             <div className="resume-banner">
               <span className="ms">history</span>
@@ -409,10 +494,23 @@ export function StudentLessonPage() {
           )}
 
           {nextLesson && (
-            <Link to={`${lessonPathPrefix}/${nextLesson.id}`} className="next-lesson-link">
-              <span className="ms">skip_next</span>
+            <Link
+              to={isNextEnabled ? `${lessonPathPrefix}/${nextLesson.id}` : '#'}
+              onClick={(e) => {
+                if (!isNextEnabled) {
+                  e.preventDefault()
+                  if (!isCurrentCompleted && !isTeacher) {
+                    showToast('أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي.', 'error')
+                  }
+                }
+              }}
+              className={`next-lesson-link${!isNextEnabled ? ' locked' : ''}`}
+              style={!isNextEnabled ? { opacity: 0.65, cursor: 'not-allowed' } : undefined}
+              aria-disabled={!isNextEnabled}
+            >
+              <span className="ms">{isNextEnabled ? 'skip_next' : 'lock'}</span>
               <span>
-                <span className="meta">الدرس التالي</span>
+                <span className="meta">{isNextEnabled ? 'الدرس التالي' : 'الدرس التالي (مغلق)'}</span>
                 <strong>{nextLesson.title}</strong>
               </span>
             </Link>
@@ -441,6 +539,7 @@ export function StudentLessonPage() {
                       lesson={lesson}
                       isActive={lesson.id === data.id}
                       isNext={nextLesson?.id === lesson.id}
+                      isLocked={!unlockedLessonIds.has(lesson.id)}
                       progressStatus={lesson.id === data.id ? displayedStatus : lesson.progressStatus}
                       to={`${lessonPathPrefix}/${lesson.id}`}
                     />
@@ -459,32 +558,47 @@ function LessonNavLink({
   lesson,
   isActive,
   isNext,
+  isLocked,
   progressStatus,
   to,
 }: {
   lesson: LessonCourseOutlineLesson
   isActive: boolean
   isNext: boolean
+  isLocked: boolean
   progressStatus?: LessonProgressStatus
   to: string
 }) {
   const isCompleted = progressStatus === 'completed'
-  const statusLabel = isCompleted
-    ? 'تمت المشاهدة'
-    : isActive
-      ? 'الدرس الحالي'
-      : isNext
-        ? 'التالي'
-        : 'درس في الدورة'
+  const statusLabel = isLocked
+    ? 'مقفل'
+    : isCompleted
+      ? 'تمت المشاهدة'
+      : isActive
+        ? 'الدرس الحالي'
+        : isNext
+          ? 'التالي'
+          : 'درس في الدورة'
+
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (isLocked) {
+      e.preventDefault()
+      showToast('أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي.', 'error')
+    }
+  }
 
   return (
     <Link
-      to={to}
-      className={`list-item lesson-nav-item${isActive ? ' active' : ''}${isCompleted ? ' completed' : ''}`}
+      to={isLocked ? '#' : to}
+      onClick={handleClick}
+      className={`list-item lesson-nav-item${isActive ? ' active' : ''}${isCompleted ? ' completed' : ''}${isLocked ? ' locked' : ''}`}
       aria-current={isActive ? 'page' : undefined}
+      aria-disabled={isLocked}
     >
       <span className="lead">
-        <span className="ms">{isCompleted ? 'done_all' : isActive ? 'play_arrow' : 'play_circle'}</span>
+        <span className="ms">
+          {isLocked ? 'lock' : isCompleted ? 'done_all' : isActive ? 'play_arrow' : 'play_circle'}
+        </span>
       </span>
       <span className="body">
         <span className="t">{lesson.title}</span>

@@ -5,6 +5,8 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { USER_ROLE_LABEL, USER_STATUS_LABEL } from '../lib/user-labels'
 import { useAdminUserDetail } from '../hooks/useAdminUserDetail'
@@ -42,6 +44,10 @@ export function AdminUserDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
+  // Controls which delete modal is open (null = closed).
+  const [deleteTarget, setDeleteTarget] = useState<'soft' | 'hard' | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   // Sync the editable field from freshly loaded data exactly once per
   // load — avoids clobbering in-progress edits on an unrelated refetch.
   if (data && !isSyncedName) {
@@ -73,10 +79,20 @@ export function AdminUserDetailPage() {
     await withAction(() => updateAdminUser(userId, { fullName }))
   }
 
-  async function handleRoleChange(role: UserRole) {
-    if (!userId) return
-    if (!window.confirm(`تغيير دور المستخدم إلى "${USER_ROLE_LABEL[role].label}"؟`)) return
-    await withAction(() => updateAdminUserRole(userId, role))
+  const [targetRole, setTargetRole] = useState<UserRole | null>(null)
+
+  function handleRoleChange(role: UserRole) {
+    setTargetRole(role)
+  }
+
+  async function handleConfirmRoleChange() {
+    if (!userId || !targetRole) return
+    const roleToSet = targetRole
+    setTargetRole(null)
+    const result = await withAction(() => updateAdminUserRole(userId, roleToSet))
+    if (result) {
+      showToast('تم تغيير دور المستخدم بنجاح', 'success')
+    }
   }
 
   async function handleStatusChange(status: UserStatus) {
@@ -84,45 +100,28 @@ export function AdminUserDetailPage() {
     await withAction(() => updateAdminUserStatus(userId, status))
   }
 
-  // Deliberately not routed through withAction: on success we navigate
-  // away immediately, so there's nothing left on this page to refetch.
-  async function handleSoftDelete() {
-    if (!userId) return
-    if (!window.confirm('حذف هذا المستخدم؟ يمكن التراجع عن هذا لاحقًا من قاعدة البيانات، لكنه سيختفي من كل القوائم فورًا.')) {
-      return
-    }
-    setIsSaving(true)
-    setActionError(null)
-    try {
-      await softDeleteAdminUser(userId)
-      navigate(ROUTE_PATHS.ADMIN.USERS)
-    } catch (err) {
-      setActionError(
-        err instanceof ApiError ? (getServerMessage(err) ?? 'حدث خطأ ما، حاول مرة أخرى') : 'حدث خطأ ما، حاول مرة أخرى',
-      )
-      setIsSaving(false)
-    }
-  }
+  async function handleDeleteConfirm() {
+    if (!userId || isDeleting) return
 
-  async function handleHardDelete() {
-    if (!userId) return
-    if (
-      !window.confirm(
-        'حذف نهائي لا يمكن التراجع عنه. سينجح فقط إذا لم يكن للمستخدم أي بيانات مرتبطة (دورات، تسجيلات، طلبات). متأكد؟',
-      )
-    ) {
-      return
-    }
-    setIsSaving(true)
+    setIsDeleting(true)
     setActionError(null)
+
     try {
-      await hardDeleteAdminUser(userId)
+      if (deleteTarget === 'hard') {
+        await hardDeleteAdminUser(userId)
+      } else {
+        await softDeleteAdminUser(userId)
+      }
+      setDeleteTarget(null)
+      showToast('تم حذف الطالب بنجاح', 'success')
       navigate(ROUTE_PATHS.ADMIN.USERS)
     } catch (err) {
+      setDeleteTarget(null)
+      setIsDeleting(false)
+      showToast('حدث خطأ أثناء حذف الطالب. حاول مرة أخرى.', 'error')
       setActionError(
         err instanceof ApiError ? (getServerMessage(err) ?? 'حدث خطأ ما، حاول مرة أخرى') : 'حدث خطأ ما، حاول مرة أخرى',
       )
-      setIsSaving(false)
     }
   }
 
@@ -280,11 +279,11 @@ export function AdminUserDetailPage() {
                 : 'لا توجد بيانات مرتبطة بهذا المستخدم — الحذف النهائي سينجح.'}
             </p>
             <div className="actions">
-              <button type="button" disabled={isSaving} className="btn text" onClick={() => void handleSoftDelete()}>
+              <button type="button" disabled={isSaving} className="btn text" onClick={() => setDeleteTarget('soft')}>
                 <span className="ms">delete</span>
                 حذف المستخدم
               </button>
-              <button type="button" disabled={isSaving} className="btn text" onClick={() => void handleHardDelete()}>
+              <button type="button" disabled={isSaving} className="btn text" onClick={() => setDeleteTarget('hard')}>
                 <span className="ms">delete_forever</span>
                 حذف نهائي
               </button>
@@ -292,6 +291,40 @@ export function AdminUserDetailPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={deleteTarget === 'soft'}
+        title="حذف الطالب"
+        message="هل أنت متأكد من حذف هذا الطالب؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="حذف الطالب"
+        cancelLabel="إلغاء"
+        isLoading={isDeleting}
+        variant="danger"
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmModal
+        open={deleteTarget === 'hard'}
+        title="حذف نهائي"
+        message="حذف نهائي لا يمكن التراجع عنه. سينجح فقط إذا لم يكن للمستخدم أي بيانات مرتبطة (دورات، تسجيلات، طلبات). متأكد؟"
+        confirmLabel="حذف نهائي"
+        cancelLabel="إلغاء"
+        isLoading={isDeleting}
+        variant="danger"
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmModal
+        open={targetRole !== null}
+        title="تغيير دور المستخدم"
+        message={`هل أنت متأكد من تغيير دور المستخدم إلى "${targetRole ? USER_ROLE_LABEL[targetRole].label : ''}"؟`}
+        confirmLabel="تأكيد التغيير"
+        cancelLabel="إلغاء"
+        isLoading={isSaving}
+        onConfirm={() => void handleConfirmRoleChange()}
+        onCancel={() => setTargetRole(null)}
+      />
     </>
   )
 }
