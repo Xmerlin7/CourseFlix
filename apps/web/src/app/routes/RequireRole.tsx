@@ -5,7 +5,7 @@ import { LoadingState } from '../../shared/components/LoadingState'
 import { ROUTE_PATHS } from './route-paths'
 
 interface RequireRoleProps {
-  role: UserRole
+  role: UserRole | UserRole[]
 }
 
 /**
@@ -25,7 +25,8 @@ export function RequireRole({ role }: RequireRoleProps) {
     return <Navigate to={ROUTE_PATHS.LOGIN} replace />
   }
 
-  if (user.role !== role) {
+  const allowedRoles = Array.isArray(role) ? role : [role]
+  if (!allowedRoles.includes(user.role)) {
     return <Navigate to={ROUTE_PATHS.FORBIDDEN} replace />
   }
 

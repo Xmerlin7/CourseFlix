@@ -5,6 +5,8 @@ const ROLE_HOME_PATHS: Record<UserRole, string> = {
   student: ROUTE_PATHS.STUDENT.DASHBOARD,
   teacher: ROUTE_PATHS.TEACHER.DASHBOARD,
   admin: ROUTE_PATHS.ADMIN.DASHBOARD,
+  // Assistants share the teacher's dashboard (minus sales).
+  assistant: ROUTE_PATHS.TEACHER.DASHBOARD,
 }
 
 export function getRoleHomePath(role: UserRole): string {

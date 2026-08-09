@@ -11,7 +11,7 @@ export async function getLesson(
   viewerRole: UserRole = 'student',
 ): Promise<LessonDetail> {
   const path =
-    viewerRole === 'teacher'
+    viewerRole === 'teacher' || viewerRole === 'assistant'
       ? `/teacher/lessons/${lessonId}/player`
       : `/lessons/${lessonId}`
 
