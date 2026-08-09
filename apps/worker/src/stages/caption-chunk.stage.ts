@@ -1,5 +1,15 @@
 import type { CaptionCue } from '../adapters/captions/caption-provider';
-import { DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_TOKENS } from './chunk.stage';
+
+// chunk.stage.ts's DEFAULT_CHUNK_TOKENS (800 words) is sized for dense PDF
+// pages — reused here unchanged, a short video's whole transcript (a few
+// hundred words) fit in a single window, so every citation pointed at the
+// same "0:00, full transcript" chunk no matter what was actually asked.
+// Video citations are a "jump to roughly this moment" feature, so they
+// need much finer granularity: ~60 words is roughly 20-30s of spoken
+// Arabic at a normal pace, with a short overlap so a sentence split across
+// a window boundary still has surrounding context in at least one chunk.
+export const DEFAULT_VIDEO_CHUNK_WORDS = 60;
+export const DEFAULT_VIDEO_CHUNK_WORD_OVERLAP = 15;
 
 export interface ChunkCaptionsOptions {
   videoTranscriptId: string;
@@ -33,8 +43,8 @@ interface TimedToken {
  */
 export function chunkCaptions(options: ChunkCaptionsOptions): VideoChunk[] {
   const { videoTranscriptId, version, cues } = options;
-  const chunkTokens = options.chunkTokens ?? DEFAULT_CHUNK_TOKENS;
-  const chunkOverlap = options.chunkOverlap ?? DEFAULT_CHUNK_OVERLAP;
+  const chunkTokens = options.chunkTokens ?? DEFAULT_VIDEO_CHUNK_WORDS;
+  const chunkOverlap = options.chunkOverlap ?? DEFAULT_VIDEO_CHUNK_WORD_OVERLAP;
 
   if (chunkTokens <= 0) {
     throw new Error('chunkTokens must be greater than 0');
