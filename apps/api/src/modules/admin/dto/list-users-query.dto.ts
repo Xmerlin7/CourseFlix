@@ -2,8 +2,8 @@ import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class ListUsersQueryDto {
   @IsOptional()
-  @IsIn(['student', 'teacher', 'admin'])
-  role?: 'student' | 'teacher' | 'admin';
+  @IsIn(['student', 'teacher', 'admin', 'assistant'])
+  role?: 'student' | 'teacher' | 'admin' | 'assistant';
 
   @IsOptional()
   @IsIn(['active', 'suspended', 'inactive'])

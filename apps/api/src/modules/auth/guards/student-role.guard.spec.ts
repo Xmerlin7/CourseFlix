@@ -23,6 +23,7 @@ describe('StudentRoleGuard', () => {
       role: 'student',
       fullName: 'Student One',
       avatarUrl: null,
+      managedByTeacherId: null,
     });
     expect(guard.canActivate(context)).toBe(true);
   });
@@ -34,6 +35,7 @@ describe('StudentRoleGuard', () => {
       role: 'teacher',
       fullName: 'Teacher One',
       avatarUrl: null,
+      managedByTeacherId: null,
     });
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
