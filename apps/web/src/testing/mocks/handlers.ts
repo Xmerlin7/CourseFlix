@@ -45,16 +45,25 @@ export const handlers = [
 
   http.get(apiUrl("/student/dashboard"), () =>
     HttpResponse.json({
-      student: { id: "student-1", fullName: "طالب تجريبي" },
-      stats: { enrolledCoursesCount: 1, activeCoursesCount: 1 },
+      student: {
+        id: "student-1",
+        fullName: "طالب تجريبي",
+        email: "student@example.com",
+        avatarUrl: null,
+      },
+      stats: { enrolledCoursesCount: 1, activeCoursesCount: 1, completedCoursesCount: 0 },
+      overallProgressPercent: null,
+      continueLearning: null,
       recentCourses: [
         {
           courseId: "course-1",
           courseTitle: "فيزياء",
+          coverImageUrl: null,
           status: "active",
           enrolledAt: "2026-07-27T08:00:00.000Z",
         },
       ],
+      recentActivity: [],
     }),
   ),
 

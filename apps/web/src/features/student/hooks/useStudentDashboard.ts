@@ -7,6 +7,7 @@ interface UseStudentDashboardResult {
   data: StudentDashboard | null
   isLoading: boolean
   error: ApiError | null
+  refetch: () => void
 }
 
 // NOTE: no data-fetching library (e.g. TanStack Query) is installed in
@@ -18,6 +19,7 @@ export function useStudentDashboard(): UseStudentDashboardResult {
   const [data, setData] = useState<StudentDashboard | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
+  const [refetchToken, setRefetchToken] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -45,7 +47,7 @@ export function useStudentDashboard(): UseStudentDashboardResult {
     void load()
 
     return () => controller.abort()
-  }, [])
+  }, [refetchToken])
 
-  return { data, isLoading, error }
+  return { data, isLoading, error, refetch: () => setRefetchToken((token) => token + 1) }
 }
