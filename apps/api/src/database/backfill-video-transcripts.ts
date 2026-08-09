@@ -1,3 +1,16 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// The single .env file lives at the repo root, not inside apps/api — same
+// issue data-source.ts already works around. `npm run ... --prefix
+// apps/api` runs this with cwd set to apps/api, so AppModule's
+// ConfigModule.forRoot({ isGlobal: true }) (which defaults to a
+// cwd-relative `.env` lookup) would otherwise silently find nothing,
+// leaving DATABASE_URL/REDIS_HOST etc. undefined and TypeORM/BullMQ
+// falling back to bogus defaults. This has to run before importing
+// AppModule, since Nest reads process.env at module-evaluation time.
+config({ path: resolve(process.cwd(), '../../.env') });
+
 import { NestFactory } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -32,10 +45,11 @@ export async function backfillVideoTranscripts(): Promise<{
     );
     const videoIngestionService = app.get(VideoIngestionService);
 
-    const [videos, transcripts] = await Promise.all([
-      videosRepository.find(),
-      transcriptsRepository.find(),
-    ]);
+    // Sequential, not Promise.all — TypeORM's default pool can hand both
+    // calls the same client, and running two queries at once on one
+    // client is deprecated in pg.
+    const videos = await videosRepository.find();
+    const transcripts = await transcriptsRepository.find();
     const transcriptByVideoId = new Map(
       transcripts.map((transcript) => [transcript.videoId, transcript]),
     );
