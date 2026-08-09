@@ -122,16 +122,66 @@ export async function seedVideoTranscripts(dataSource: DataSource): Promise<numb
   let seededCount = 0;
 
   for (const video of videos) {
-    // Check or upsert transcript row
-    const existingTranscripts = (await dataSource.query(
-      `SELECT id FROM video_transcripts WHERE video_id = $1`,
-      [video.id],
-    )) as Array<{ id: string }>;
+    try {
+      // Check or upsert transcript row
+      const existingTranscripts = (await dataSource.query(
+        `SELECT id FROM video_transcripts WHERE video_id = $1`,
+        [video.id],
+      )) as Array<{ id: string }>;
 
-    let transcriptId: string;
+      let transcriptId: string;
 
-    if (existingTranscripts.length > 0) {
-      transcriptId = existingTranscripts[0].id;
+      if (existingTranscripts.length > 0) {
+        transcriptId = existingTranscripts[0].id;
+      } else {
+        const inserted = (await dataSource.query(
+          `INSERT INTO video_transcripts (
+            video_id, course_id, section_id, lesson_id, provider, processing_status, version
+          ) VALUES ($1, $2, $3, $4, 'local', 'completed', 1)
+          RETURNING id`,
+          [video.id, video.course_id, video.section_id, video.lesson_id],
+        )) as Array<{ id: string }>;
+        transcriptId = inserted[0].id;
+      }
+
+      // Determine cue chunks
+      const cueChunks =
+        SAMPLE_TRANSCRIPTS[video.title] || SAMPLE_TRANSCRIPTS['default'];
+
+      const texts: string[] = [];
+      const ids: string[] = [];
+      const metadatas: Array<Record<string, string | number | boolean>> = [];
+
+      for (let index = 0; index < cueChunks.length; index++) {
+        const cue = cueChunks[index];
+        texts.push(cue.text);
+        ids.push(`video:${transcriptId}:1:${index}`);
+        metadatas.push({
+          courseId: video.course_id,
+          videoTranscriptId: transcriptId,
+          chunkIndex: index,
+          startSeconds: cue.startSeconds,
+          isActive: true,
+        });
+      }
+
+      // Embed and upsert to ChromaDB *before* touching Postgres — this is
+      // the only step that makes a real (fallible) network call. Doing it
+      // first means a rate limit/network hiccup here leaves this video's
+      // existing transcript/chunks completely untouched instead of
+      // deleted-and-never-replaced (status would still read 'completed'
+      // while video_chunks sits empty, breaking video-qa silently until
+      // the next successful reseed).
+      const embeddings = await embeddingProvider.embed(texts);
+      await collection.upsert({
+        ids,
+        embeddings,
+        documents: texts,
+        metadatas,
+      });
+
+      // Only now that the new chunks are safely in Chroma do we swap
+      // Postgres over to match.
       await dataSource.query(
         `UPDATE video_transcripts
             SET processing_status = 'completed',
@@ -141,72 +191,38 @@ export async function seedVideoTranscripts(dataSource: DataSource): Promise<numb
           WHERE id = $1`,
         [transcriptId],
       );
-    } else {
-      const inserted = (await dataSource.query(
-        `INSERT INTO video_transcripts (
-          video_id, course_id, section_id, lesson_id, provider, processing_status, version
-        ) VALUES ($1, $2, $3, $4, 'local', 'completed', 1)
-        RETURNING id`,
-        [video.id, video.course_id, video.section_id, video.lesson_id],
-      )) as Array<{ id: string }>;
-      transcriptId = inserted[0].id;
-    }
-
-    // Determine cue chunks
-    const cueChunks =
-      SAMPLE_TRANSCRIPTS[video.title] || SAMPLE_TRANSCRIPTS['default'];
-
-    // Delete existing video_chunks for this transcript
-    await dataSource.query(
-      `DELETE FROM video_chunks WHERE video_transcript_id = $1`,
-      [transcriptId],
-    );
-
-    const texts: string[] = [];
-    const ids: string[] = [];
-    const metadatas: Array<Record<string, string | number | boolean>> = [];
-
-    for (let index = 0; index < cueChunks.length; index++) {
-      const cue = cueChunks[index];
-      const vectorId = `video:${transcriptId}:1:${index}`;
-
       await dataSource.query(
-        `INSERT INTO video_chunks (
-          video_transcript_id, chunk_index, text_preview, vector_id, start_seconds, end_seconds, token_count, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-        [
-          transcriptId,
-          index,
-          cue.text,
-          vectorId,
-          cue.startSeconds,
-          cue.endSeconds,
-          Math.ceil(cue.text.length / 4),
-        ],
+        `DELETE FROM video_chunks WHERE video_transcript_id = $1`,
+        [transcriptId],
       );
+      for (let index = 0; index < cueChunks.length; index++) {
+        const cue = cueChunks[index];
+        await dataSource.query(
+          `INSERT INTO video_chunks (
+            video_transcript_id, chunk_index, text_preview, vector_id, start_seconds, end_seconds, token_count, is_active
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          [
+            transcriptId,
+            index,
+            cue.text,
+            ids[index],
+            cue.startSeconds,
+            cue.endSeconds,
+            Math.ceil(cue.text.length / 4),
+          ],
+        );
+      }
 
-      texts.push(cue.text);
-      ids.push(vectorId);
-      metadatas.push({
-        courseId: video.course_id,
-        videoTranscriptId: transcriptId,
-        chunkIndex: index,
-        startSeconds: cue.startSeconds,
-        isActive: true,
-      });
+      seededCount++;
+    } catch (error) {
+      // Best-effort, like the video-transcript backfill dev.sh runs right
+      // after this seed: one video's embedding call failing (rate limit,
+      // network) shouldn't corrupt its existing data or abort seeding for
+      // every other video/course/document that runs after this step.
+      console.warn(
+        `Skipped transcript seeding for video ${video.id} (${video.title}): ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
-
-    // Embed and upsert to ChromaDB
-    const embeddings = await embeddingProvider.embed(texts);
-
-    await collection.upsert({
-      ids,
-      embeddings,
-      documents: texts,
-      metadatas,
-    });
-
-    seededCount++;
   }
 
   console.log(`Seeded transcripts and embeddings for ${seededCount} videos.`);
