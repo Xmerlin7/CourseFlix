@@ -116,19 +116,13 @@ export function CourseDetailView({
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          {!course.canEdit && course.status === 'published' && (
-            <Link to={`/student/checkout/${course.id}`} className="btn">
-              <span className="ms">shopping_cart</span>
-              شراء الدورة
-            </Link>
-          )}
           {!course.canEdit && (
             <Link to={`/student/courses/${course.id}/assistant`} className="btn tonal">
               <span className="ms">smart_toy</span>
               اسأل المساعد
             </Link>
           )}
-          <span className={`chip ${status.chip}`}>{status.label}</span>
+          {course.canEdit && <span className={`chip ${status.chip}`}>{status.label}</span>}
         </div>
       </div>
 
