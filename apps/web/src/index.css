@@ -1129,22 +1129,208 @@ h1.page-title { font-size: 28px; font-weight: 700; margin: 0 0 6px; letter-spaci
 .card h3 { font-size: 18px; font-weight: 700; line-height: 1.45; }
 .card .meta { color: var(--on-surface-variant); font-size: 13.5px; }
 
+/* ---------- Thumbnails ---------- */
 .thumb {
-  width: 118px;
-  height: 112px;
-  flex: none;
-  border-radius: 16px;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
   background: var(--surface-container-high);
   position: relative;
   overflow: hidden;
 }
-.thumb i { position: absolute; background: var(--outline-variant); opacity: 0.9; }
-.thumb .t1 { width: 38px; height: 34px; top: 16px; inset-inline-start: 38px; clip-path: polygon(50% 0, 100% 100%, 0 100%); border-radius: 6px; }
-.thumb .t2 { width: 30px; height: 30px; bottom: 18px; inset-inline-start: 22px; border-radius: 50% 45% 55% 50% / 55% 50% 50% 45%; }
-.thumb .t3 { width: 32px; height: 30px; bottom: 20px; inset-inline-end: 20px; border-radius: 9px; }
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--surface-container-high) 0%, var(--primary-container) 100%);
+  position: relative;
+}
+.thumb-placeholder-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--outline-variant) 1px, transparent 1px);
+  background-size: 14px 14px;
+  opacity: 0.25;
+}
+.thumb-placeholder-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.thumb-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--primary);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+}
+.thumb-brand {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--on-surface-variant);
+  opacity: 0.85;
+}
+
+/* Base course card row legacy compatibility */
 .course-card .row { display: flex; gap: 18px; align-items: center; }
 .course-card .row .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.course-card .row .thumb { width: 118px; height: 112px; flex: none; }
 .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-right: 6px; }
+
+/* ---------- Student Browse Course Grid & Cards ---------- */
+.course-browse-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  align-items: stretch;
+}
+
+.course-browse-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.course-browse-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--outline);
+}
+
+.course-browse-card:hover .thumb-img {
+  transform: scale(1.04);
+}
+
+.course-card-thumb-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.course-card-badge {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  z-index: 2;
+  background: rgba(29, 27, 32, 0.75);
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.course-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 14px;
+  gap: 8px;
+}
+
+.course-card-title {
+  font-size: 16.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--on-surface);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.9em;
+}
+
+.course-card-teacher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  margin-top: 2px;
+}
+
+.course-card-teacher .teacher-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.course-card-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--outline-variant);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.course-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.price-amount {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1;
+}
+
+.btn-compact {
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.course-enrolled-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--on-primary-container);
+  background: var(--primary-container);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .grid-3.course-browse-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-3.course-browse-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
 
 /* ---------- Progress ---------- */
 .progress { height: 6px; border-radius: 999px; background: var(--data-track); position: relative; }
