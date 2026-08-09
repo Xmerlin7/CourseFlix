@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { ChromaClient } from 'chromadb';
 import { DataSource } from 'typeorm';
 import { OpenAIEmbeddingProvider } from '../../modules/retrieval/embedding.adapter';
+import { VIDEO_SOURCES } from './video.seed';
 
 interface VideoRow {
   id: string;
@@ -80,10 +81,21 @@ const SAMPLE_TRANSCRIPTS: Record<
   ],
 };
 
+// Only these MDN placeholder clips (see video.seed.ts's VIDEO_SOURCES) are
+// ours to overwrite with canned demo transcripts. Every other video row is
+// something a real teacher/student pointed at a real YouTube/Bunny/direct
+// URL — its transcript belongs to VideoIngestionService's real pipeline,
+// never to this seed. Previously this ran unfiltered and clobbered a real,
+// in-progress (or already-successful) transcript on every `./dev.sh`
+// restart, since setup_database() reseeds on every run.
+const SEED_VIDEO_URLS = new Set(VIDEO_SOURCES.map((source) => source.url));
+
 export async function seedVideoTranscripts(dataSource: DataSource): Promise<number> {
   const videos = (await dataSource.query(
-    `SELECT id, course_id, section_id, lesson_id, title FROM videos`,
-  )) as VideoRow[];
+    `SELECT id, course_id, section_id, lesson_id, title, video_url FROM videos
+      WHERE video_url = ANY($1::text[])`,
+    [Array.from(SEED_VIDEO_URLS)],
+  )) as Array<VideoRow & { video_url: string }>;
 
   if (videos.length === 0) {
     console.log('No videos found for transcript seeding.');
