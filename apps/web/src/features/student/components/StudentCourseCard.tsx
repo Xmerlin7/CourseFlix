@@ -1,5 +1,4 @@
 import { Link } from 'react-router'
-import { User } from 'lucide-react'
 import { ENROLLMENT_STATUS } from '../../../shared/lib/status-labels'
 import { CourseThumb } from '../../courses/components/CourseThumb'
 import type { StudentEnrollment } from '../types/student.types'
@@ -11,7 +10,7 @@ interface StudentCourseCardProps {
 
 export function StudentCourseCard({ enrollment, isPrimaryActive = false }: StudentCourseCardProps) {
   const status = ENROLLMENT_STATUS[enrollment.status]
-  const progressPercent = enrollment.progressPercent ?? 0
+  const progressPercent = enrollment.progressPercent
   const isCompleted = enrollment.status === 'completed' || progressPercent >= 100
   const isStarted = progressPercent > 0
   const isSuspended = enrollment.status === 'suspended'
@@ -48,25 +47,20 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
           <h3 className="student-card-title" title={enrollment.courseTitle ?? ''}>
             {enrollment.courseTitle ?? 'دورة غير متاحة'}
           </h3>
-          <span className={`chip ${status.chip} sm`}>{status.label}</span>
+          <span className={`chip ${status.chip}`}>{status.label}</span>
         </div>
 
-        {enrollment.teacherName && (
-          <div className="student-card-teacher">
-            <User size={14} className="teacher-icon" />
-            <span>{enrollment.teacherName}</span>
+        {enrollment.totalLessonsCount > 0 && (
+          <div className="student-card-progress-section">
+            <div className="progress-label-row">
+              <span className="progress-title">تقدمك في الدورة</span>
+              <span className="progress-value">{progressPercent}%</span>
+            </div>
+            <div className="progress">
+              <div className="bar" style={{ width: `${Math.min(100, progressPercent)}%` }} />
+            </div>
           </div>
         )}
-
-        <div className="student-card-progress-section">
-          <div className="progress-label-row">
-            <span className="progress-title">تقدمك في الدورة</span>
-            <span className="progress-value">{progressPercent}%</span>
-          </div>
-          <div className="progress">
-            <div className="bar" style={{ width: `${Math.min(100, progressPercent)}%` }} />
-          </div>
-        </div>
 
         {enrollment.currentLesson?.title && !isCompleted && (
           <div className="student-card-last-lesson">
@@ -77,9 +71,9 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
           </div>
         )}
 
-        {typeof enrollment.totalLessonsCount === 'number' && enrollment.totalLessonsCount > 0 && (
+        {enrollment.totalLessonsCount > 0 && (
           <div className="student-card-lesson-count">
-            {enrollment.completedLessonsCount ?? 0} من {enrollment.totalLessonsCount} درس مكتمل
+            {enrollment.completedLessonsCount} من {enrollment.totalLessonsCount} درس مكتمل
           </div>
         )}
 
@@ -87,6 +81,7 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
           <Link
             to={actionTarget}
             className={`btn btn-compact student-card-cta${isCompleted ? ' tonal' : ''}${isSuspended ? ' disabled' : ''}`}
+            aria-disabled={isSuspended}
             onClick={(e) => {
               if (isSuspended) e.preventDefault()
             }}
@@ -101,4 +96,3 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
     </article>
   )
 }
-

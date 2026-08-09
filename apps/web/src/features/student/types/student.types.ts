@@ -32,6 +32,13 @@ export interface StudentDashboard {
   recentCourses: StudentDashboardRecentCourse[]
 }
 
+export interface StudentCurrentLesson {
+  id: string
+  title: string
+  /** Seconds into the video the student last watched to — the video player seeks here on resume. */
+  lastVideoPosition: number
+}
+
 export interface StudentEnrollment {
   id: string
   courseId: string
@@ -42,6 +49,13 @@ export interface StudentEnrollment {
   coverImageUrl: string | null
   gradeLevel?: string
   status: EnrollmentStatus
+  /** 0-100, derived from completedLessonsCount/totalLessonsCount server-side. */
+  progressPercent: number
+  completedLessonsCount: number
+  totalLessonsCount: number
+  /** The lesson to resume into; null once every lesson is completed or the course has no lessons yet. */
+  currentLesson: StudentCurrentLesson | null
+  lastActivityAt: string
 }
 
 export interface StudentEnrollmentFilters {

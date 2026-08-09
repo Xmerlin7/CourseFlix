@@ -6,7 +6,7 @@ import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { StudentCourseCard } from '../components/StudentCourseCard'
 import { useStudentEnrollments } from '../hooks/useStudentEnrollments'
-import type { EnrollmentStatus } from '../types/student.types'
+import type { EnrollmentStatus, StudentEnrollment } from '../types/student.types'
 
 const STATUS_OPTIONS: Array<{ label: string; value: EnrollmentStatus | '' }> = [
   { label: 'الكل', value: '' },
@@ -15,6 +15,31 @@ const STATUS_OPTIONS: Array<{ label: string; value: EnrollmentStatus | '' }> = [
   { label: 'مكتمل', value: 'completed' },
 ]
 
+/**
+ * The course to feature in "استكمل التعلم" and pin first in the grid: an
+ * active, started-but-unfinished course with somewhere to resume to. Among
+ * several, the most recently active one wins — `lastActivityAt` is the
+ * course's last completed-lesson timestamp (falling back to enrollment
+ * date), the only recency signal the API can offer today.
+ */
+function pickActiveLearningCourse(enrollments: StudentEnrollment[]): StudentEnrollment | null {
+  const eligible = enrollments.filter(
+    (e) =>
+      e.status === 'active' &&
+      e.progressPercent > 0 &&
+      e.progressPercent < 100 &&
+      Boolean(e.currentLesson?.id),
+  )
+
+  if (eligible.length === 0) {
+    return null
+  }
+
+  return [...eligible].sort(
+    (a, b) => new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime(),
+  )[0]
+}
+
 export function StudentCoursesPage() {
   const navigate = useNavigate()
   const [status, setStatus] = useState<EnrollmentStatus | ''>('')
@@ -22,17 +47,13 @@ export function StudentCoursesPage() {
     status: status || undefined,
   })
 
-  // Find the primary in-progress active course (most recently active)
-  const activeLearningCourse = !isLoading && !error
-    ? data.find(
-        (e) =>
-          e.status === 'active' &&
-          typeof e.progressPercent === 'number' &&
-          e.progressPercent > 0 &&
-          e.progressPercent < 100 &&
-          Boolean(e.currentLesson?.id),
-      )
-    : null
+  const activeLearningCourse = !isLoading && !error ? pickActiveLearningCourse(data) : null
+
+  // Pin the active-learning course first; leave the rest of the API's
+  // ordering (enrolled_at DESC) untouched otherwise — no shuffling.
+  const orderedData = activeLearningCourse
+    ? [activeLearningCourse, ...data.filter((e) => e.id !== activeLearningCourse.id)]
+    : data
 
   return (
     <>
@@ -75,17 +96,16 @@ export function StudentCoursesPage() {
                 <div className="progress">
                   <div
                     className="bar"
-                    style={{ width: `${Math.min(100, activeLearningCourse.progressPercent ?? 0)}%` }}
+                    style={{ width: `${Math.min(100, activeLearningCourse.progressPercent)}%` }}
                   />
                 </div>
               </div>
 
-              {typeof activeLearningCourse.totalLessonsCount === 'number' &&
-                activeLearningCourse.totalLessonsCount > 0 && (
-                  <span className="continue-lesson-count">
-                    {activeLearningCourse.completedLessonsCount ?? 0} من {activeLearningCourse.totalLessonsCount} درس مكتمل
-                  </span>
-                )}
+              {activeLearningCourse.totalLessonsCount > 0 && (
+                <span className="continue-lesson-count">
+                  {activeLearningCourse.completedLessonsCount} من {activeLearningCourse.totalLessonsCount} درس مكتمل
+                </span>
+              )}
             </div>
 
             <div className="continue-learning-action">
@@ -101,7 +121,11 @@ export function StudentCoursesPage() {
         </section>
       )}
 
-      {/* Filter chips */}
+      {/* Filter chips instead of a <select>: matches the ui5 reference and
+          keeps every option one tap away on mobile.
+          gradeLevel filtering is deliberately absent — the API can't apply
+          it yet (see enrollments.service.ts), and a control that silently
+          does nothing is worse than no control. */}
       <div className="actions section" role="group" aria-label="تصفية الدورات">
         {STATUS_OPTIONS.map((option) => (
           <button
@@ -116,7 +140,7 @@ export function StudentCoursesPage() {
         ))}
       </div>
 
-      {isLoading && <LoadingState variant="cards" />}
+      {isLoading && <LoadingState variant="student-courses" />}
 
       {!isLoading &&
         error &&
@@ -135,7 +159,7 @@ export function StudentCoursesPage() {
 
       {!isLoading && !error && data.length > 0 && (
         <div className="grid-3 course-browse-grid">
-          {data.map((enrollment) => (
+          {orderedData.map((enrollment) => (
             <StudentCourseCard
               key={enrollment.id}
               enrollment={enrollment}
@@ -147,4 +171,3 @@ export function StudentCoursesPage() {
     </>
   )
 }
-

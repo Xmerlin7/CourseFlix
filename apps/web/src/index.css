@@ -1493,6 +1493,266 @@ h1.page-title {
   min-width: 6px;
 }
 
+/* ---------- Student "دوراتي" cards & Continue Learning ---------- */
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+.student-course-card {
+  padding: 16px;
+  border: 1px solid var(--outline-variant);
+  gap: 0;
+}
+
+.student-course-card.active-learning-card {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.student-card-thumb-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.active-learning-badge {
+  position: absolute;
+  top: 10px;
+  inset-inline-start: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.student-card-grade {
+  position: absolute;
+  top: 10px;
+  inset-inline-end: 10px;
+  z-index: 2;
+  background: rgba(29, 27, 32, 0.75);
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.student-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.student-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.student-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--on-surface);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.student-card-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+}
+
+.progress-title {
+  font-weight: 600;
+}
+
+.progress-value {
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.student-card-last-lesson {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  overflow: hidden;
+}
+
+.last-lesson-lbl {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.last-lesson-name {
+  color: var(--on-surface);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-card-lesson-count {
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+}
+
+.student-card-footer {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.student-card-cta {
+  width: 100%;
+}
+
+.student-card-cta.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ---------- Continue Learning ---------- */
+.continue-learning-card {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: linear-gradient(135deg, var(--primary-container) 0%, var(--surface-container-low) 70%);
+  border: 1px solid var(--outline-variant);
+}
+
+.continue-learning-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.continue-learning-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.continue-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--on-primary-container);
+  background: var(--surface);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.continue-grade {
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.continue-course-title {
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.continue-last-lesson {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+}
+
+.continue-last-lesson strong {
+  color: var(--on-surface);
+}
+
+.continue-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 360px;
+}
+
+.continue-lesson-count {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.continue-learning-action {
+  flex-shrink: 0;
+}
+
+.continue-btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .continue-learning-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .continue-progress-block {
+    max-width: none;
+  }
+
+  .continue-learning-action {
+    width: 100%;
+  }
+
+  .continue-btn {
+    width: 100%;
+  }
+}
+
 /* ---------- Stat tiles ---------- */
 .tiles {
   display: grid;
