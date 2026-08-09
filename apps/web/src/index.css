@@ -933,6 +933,10 @@ code {
   color: var(--error);
 }
 
+.tf.invalid input {
+  border-color: var(--error);
+}
+
 /* ---------- Quiz (ported from ui5/) ---------- */
 .qcard {
   background: var(--surface-container-low);
@@ -1184,47 +1188,151 @@ code {
   }
 }
 
-/* ---------- Login ---------- */
-.login-screen {
+/* ---------- Auth shell: split-screen login/register ---------- */
+.auth-shell {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-}
-
-.login-wrap {
-  width: min(440px, 100%);
   display: flex;
-  flex-direction: column;
-  gap: 18px;
 }
 
-.login-card {
+.auth-panel-form {
+  flex: 1 1 50%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
   background: var(--surface);
-  border-radius: 28px;
-  padding: 44px 38px;
+}
+
+.auth-form-inner {
+  width: min(420px, 100%);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow);
 }
 
-.login-card .logo {
-  font-size: 34px;
+.auth-form-logo {
+  font-size: 30px;
   text-align: center;
-  margin-bottom: 6px;
-}
-
-.login-card .tag {
-  text-align: center;
-  color: var(--on-surface-variant);
-  font-size: 14px;
-  margin-bottom: 30px;
+  margin-bottom: 34px;
 }
 
 .foot {
   text-align: center;
   color: var(--on-surface-variant);
   font-size: 12.5px;
+  margin-top: 26px;
+}
+
+/* Decorative brand panel — hidden below the breakpoint (see media query
+   at the bottom of this file), never the only way to reach anything. */
+.auth-panel-brand {
+  flex: 1 1 50%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 64px;
+  background: linear-gradient(155deg, var(--primary) 0%, var(--logo) 100%);
+  color: var(--on-primary);
+}
+
+.auth-brand-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.35;
+  background: var(--tertiary-container);
+}
+
+.auth-brand-blob.blob-1 {
+  width: 320px;
+  height: 320px;
+  top: -80px;
+  inset-inline-end: -100px;
+}
+
+.auth-brand-blob.blob-2 {
+  width: 260px;
+  height: 260px;
+  bottom: -100px;
+  inset-inline-start: -80px;
+  background: var(--secondary-container);
+}
+
+.auth-brand-content {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+}
+
+.auth-brand-logo {
+  font-size: 40px;
+  color: var(--on-primary);
+}
+
+.auth-brand-tag {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 14px 0 40px;
+  opacity: 0.95;
+}
+
+.auth-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.auth-feature-list .ms {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 21px;
+}
+
+@media (max-width: 980px) {
+  .auth-panel-brand {
+    display: none;
+  }
+
+  .auth-panel-form {
+    flex-basis: 100%;
+  }
+}
+
+/* ---------- Standalone legal document pages (/terms, /privacy) ---------- */
+.legal-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.legal-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px;
+}
+
+.legal-doc {
+  width: min(720px, 100%);
+  margin: 0 auto 60px;
+  padding: 0 24px;
 }
 
 .auth-switch {
@@ -1340,32 +1448,19 @@ code {
   flex: 1;
 }
 
-.legal-doc {
-  max-height: 220px;
-  overflow-y: auto;
-  background: var(--surface-container-low);
-  border-radius: 16px;
-  padding: 16px 18px;
-}
-
-.legal-doc h4 {
-  margin: 0 0 10px;
-  font-size: 14.5px;
-}
-
 .legal-section {
-  margin-bottom: 12px;
+  margin-bottom: 24px;
 }
 
 .legal-section .legal-heading {
   font-weight: 700;
-  font-size: 12.5px;
-  margin-bottom: 3px;
+  font-size: 16px;
+  margin-bottom: 6px;
 }
 
 .legal-section .legal-body {
-  font-size: 12.5px;
-  line-height: 1.6;
+  font-size: 14.5px;
+  line-height: 1.8;
   color: var(--on-surface-variant);
 }
 
@@ -1375,12 +1470,24 @@ code {
   margin-top: 4px;
 }
 
+.legal-accept {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.legal-accept-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .legal-check {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  margin-top: -4px;
   border-radius: 14px;
   border: 1.5px solid var(--outline-variant);
   cursor: pointer;

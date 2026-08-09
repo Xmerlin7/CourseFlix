@@ -16,6 +16,12 @@ const LoginPage = lazy(() =>
 const RegisterPage = lazy(() =>
   import('../../features/auth/pages/RegisterPage').then((m) => ({ default: m.RegisterPage }))
 )
+const TermsPage = lazy(() =>
+  import('../../features/auth/pages/TermsPage').then((m) => ({ default: m.TermsPage }))
+)
+const PrivacyPage = lazy(() =>
+  import('../../features/auth/pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage }))
+)
 const StudentDashboardPage = lazy(() =>
   import('../../features/student/pages/StudentDashboardPage').then((m) => ({ default: m.StudentDashboardPage }))
 )
@@ -218,6 +224,28 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+  },
+
+  /* Public legal pages — own standalone shell (not AuthLayout's split
+     form screen), reachable while logged out (linked from the register
+     wizard) or logged in. */
+  {
+    path: ROUTE_PATHS.TERMS,
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <SuspenseWrapper>
+        <TermsPage />
+      </SuspenseWrapper>
+    ),
+  },
+  {
+    path: ROUTE_PATHS.PRIVACY,
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <SuspenseWrapper>
+        <PrivacyPage />
+      </SuspenseWrapper>
+    ),
   },
 
   /* Student Routes — gated behind RequireRole("student"): unauthenticated

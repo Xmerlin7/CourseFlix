@@ -6,6 +6,8 @@ export const ROUTE_PATHS = {
   ROOT: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  TERMS: '/terms',
+  PRIVACY: '/privacy',
   FORBIDDEN: '/403',
   NOT_FOUND: '/404',
 

@@ -1,26 +1,15 @@
 import { Fragment, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
+import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { useAuth } from '../hooks/useAuth'
 import { getRoleHomePath } from '../utils/get-role-home-path'
-import { LEGAL_LAST_UPDATED, PRIVACY_SECTIONS, TERMS_SECTIONS, type LegalSection } from '../lib/legal-content'
 
 const STEPS = ['البيانات الأساسية', 'كلمة المرور', 'الشروط والأحكام'] as const
 
-function LegalDocument({ title, sections }: { title: string; sections: LegalSection[] }) {
-  return (
-    <div className="legal-doc">
-      <h4>{title}</h4>
-      {sections.map((section) => (
-        <div key={section.heading} className="legal-section">
-          <p className="legal-heading">{section.heading}</p>
-          <p className="legal-body">{section.body}</p>
-        </div>
-      ))}
-      <p className="legal-updated">آخر تحديث: {LEGAL_LAST_UPDATED}</p>
-    </div>
-  )
-}
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+type FieldName = 'fullName' | 'email' | 'password' | 'confirmPassword'
 
 export function RegisterForm() {
   const { register } = useAuth()
@@ -34,21 +23,44 @@ export function RegisterForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({})
   const [stepError, setStepError] = useState<string | null>(null)
-  const [serverError, setServerError] = useState<string | null>(null)
 
   const isLastStep = step === STEPS.length - 1
 
-  function validateStep(current: number): string | null {
+  function validateStep(current: number): boolean {
+    const errors: Partial<Record<FieldName, string>> = {}
+
     if (current === 0) {
-      if (fullName.trim().length < 3) return 'الاسم لازم يكون ٣ أحرف على الأقل'
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'البريد الإلكتروني مش صحيح'
+      if (fullName.trim().length === 0) {
+        errors.fullName = 'الاسم مطلوب'
+      } else if (fullName.trim().length < 3) {
+        errors.fullName = 'الاسم لازم يكون ٣ أحرف على الأقل'
+      }
+
+      if (email.trim().length === 0) {
+        errors.email = 'البريد الإلكتروني مطلوب'
+      } else if (!EMAIL_PATTERN.test(email.trim())) {
+        errors.email = 'البريد الإلكتروني مش صحيح، مثال: name@example.com'
+      }
     }
+
     if (current === 1) {
-      if (password.length < 8) return 'كلمة المرور لازم تكون ٨ أحرف على الأقل'
-      if (password !== confirmPassword) return 'كلمتا المرور مش متطابقتين'
+      if (password.length === 0) {
+        errors.password = 'كلمة المرور مطلوبة'
+      } else if (password.length < 8) {
+        errors.password = 'كلمة المرور لازم تكون ٨ أحرف على الأقل'
+      }
+
+      if (confirmPassword.length === 0) {
+        errors.confirmPassword = 'أكّد كلمة المرور'
+      } else if (password !== confirmPassword) {
+        errors.confirmPassword = 'كلمتا المرور مش متطابقتين'
+      }
     }
-    return null
+
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   function goBack() {
@@ -60,34 +72,33 @@ export function RegisterForm() {
     event.preventDefault()
 
     if (!isLastStep) {
-      const validationError = validateStep(step)
-      if (validationError) {
-        setStepError(validationError)
-        return
-      }
+      if (!validateStep(step)) return
       setStepError(null)
       setStep((s) => Math.min(STEPS.length - 1, s + 1))
       return
     }
 
     if (!acceptedTerms || !acceptedPrivacy) {
-      setStepError('لازم توافق على الشروط والأحكام وسياسة الخصوصية عشان تكمل')
+      setStepError('لازم توافق على الشروط والأحكام وسياسة الخصوصية عشان تكمل التسجيل')
       return
     }
 
     setStepError(null)
-    setServerError(null)
     setIsSubmitting(true)
     try {
       const user = await register({ fullName, email, password, acceptedTerms: true })
       navigate(getRoleHomePath(user.role), { replace: true })
     } catch (caughtError) {
       if (caughtError instanceof ApiError && caughtError.status === 409) {
-        setServerError('البريد الإلكتروني مستخدم بالفعل')
+        setStep(0)
+        setFieldErrors({ email: 'البريد الإلكتروني ده مسجل بالفعل — جرب بريد تاني أو سجّل الدخول' })
       } else if (caughtError instanceof ApiError && caughtError.status === 400) {
-        setServerError('البيانات غير صحيحة، راجع الحقول من فضلك')
+        setStep(0)
+        setStepError(
+          'البيانات اللي بعتها مش صحيحة — تأكد إن الاسم ٣ أحرف على الأقل، البريد الإلكتروني بصيغة صحيحة، وكلمة المرور ٨ أحرف على الأقل',
+        )
       } else {
-        setServerError('حدث خطأ ما، حاول مرة أخرى')
+        setStepError('حصل خطأ غير متوقع أثناء إنشاء الحساب، حاول تاني كمان شوية')
       }
       setIsSubmitting(false)
     }
@@ -120,7 +131,7 @@ export function RegisterForm() {
 
       {step === 0 && (
         <div className="wizard-step">
-          <div className="tf">
+          <div className={`tf${fieldErrors.fullName ? ' invalid' : ''}`}>
             <label htmlFor="fullName">الاسم الكامل</label>
             <input
               type="text"
@@ -131,9 +142,14 @@ export function RegisterForm() {
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
             />
+            {fieldErrors.fullName && (
+              <span className="error-text" role="alert">
+                {fieldErrors.fullName}
+              </span>
+            )}
           </div>
 
-          <div className="tf">
+          <div className={`tf${fieldErrors.email ? ' invalid' : ''}`}>
             <label htmlFor="email">البريد الإلكتروني</label>
             <input
               type="email"
@@ -143,13 +159,18 @@ export function RegisterForm() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
+            {fieldErrors.email && (
+              <span className="error-text" role="alert">
+                {fieldErrors.email}
+              </span>
+            )}
           </div>
         </div>
       )}
 
       {step === 1 && (
         <div className="wizard-step">
-          <div className="tf">
+          <div className={`tf${fieldErrors.password ? ' invalid' : ''}`}>
             <label htmlFor="password">كلمة المرور</label>
             <input
               type="password"
@@ -160,9 +181,14 @@ export function RegisterForm() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
+            {fieldErrors.password && (
+              <span className="error-text" role="alert">
+                {fieldErrors.password}
+              </span>
+            )}
           </div>
 
-          <div className="tf">
+          <div className={`tf${fieldErrors.confirmPassword ? ' invalid' : ''}`}>
             <label htmlFor="confirmPassword">تأكيد كلمة المرور</label>
             <input
               type="password"
@@ -172,42 +198,63 @@ export function RegisterForm() {
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
             />
+            {fieldErrors.confirmPassword && (
+              <span className="error-text" role="alert">
+                {fieldErrors.confirmPassword}
+              </span>
+            )}
           </div>
         </div>
       )}
 
       {step === 2 && (
         <div className="wizard-step">
-          <LegalDocument title="الشروط والأحكام" sections={TERMS_SECTIONS} />
-          <label className={`legal-check${acceptedTerms ? ' checked' : ''}`}>
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(event) => setAcceptedTerms(event.target.checked)}
-            />
-            قرأت ووافقت على الشروط والأحكام
-          </label>
+          <p className="subtitle" style={{ marginBottom: 0 }}>
+            لازم تقرأ وتوافق على الاثنين عشان تقدر تكمل
+          </p>
 
-          <LegalDocument title="سياسة الخصوصية" sections={PRIVACY_SECTIONS} />
-          <label className={`legal-check${acceptedPrivacy ? ' checked' : ''}`}>
-            <input
-              type="checkbox"
-              checked={acceptedPrivacy}
-              onChange={(event) => setAcceptedPrivacy(event.target.checked)}
-            />
-            قرأت ووافقت على سياسة الخصوصية
-          </label>
+          <div className="legal-accept">
+            <div className="legal-accept-row">
+              <label className={`legal-check${acceptedTerms ? ' checked' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(event) => setAcceptedTerms(event.target.checked)}
+                />
+                وافقت على الشروط والأحكام
+              </label>
+              <Link to={ROUTE_PATHS.TERMS} target="_blank" rel="noopener noreferrer" className="btn text btn-compact">
+                <span className="ms">open_in_new</span>
+                قراءة
+              </Link>
+            </div>
+
+            <div className="legal-accept-row">
+              <label className={`legal-check${acceptedPrivacy ? ' checked' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={acceptedPrivacy}
+                  onChange={(event) => setAcceptedPrivacy(event.target.checked)}
+                />
+                وافقت على سياسة الخصوصية
+              </label>
+              <Link
+                to={ROUTE_PATHS.PRIVACY}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn text btn-compact"
+              >
+                <span className="ms">open_in_new</span>
+                قراءة
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 
       {stepError && (
         <span className="error-text" role="alert">
           {stepError}
-        </span>
-      )}
-      {serverError && (
-        <span className="error-text" role="alert">
-          {serverError}
         </span>
       )}
 
