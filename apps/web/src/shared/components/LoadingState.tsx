@@ -1,7 +1,7 @@
 import './LoadingState.css'
 
 type LoadingStateProps = {
-  variant?: 'cards' | 'list' | 'text' | 'lesson'
+  variant?: 'cards' | 'list' | 'text' | 'lesson' | 'sales'
   count?: number
 }
 
@@ -118,6 +118,49 @@ export function LoadingState({ variant = 'cards', count = 3 }: LoadingStateProps
               </section>
             </div>
           </aside>
+        </div>
+      )}
+
+      {variant === 'sales' && (
+        <div style={{ display: 'grid', gap: 24 }} data-testid="sales-skeleton">
+          <div>
+            <div className="skeleton" style={{ height: 28, width: 140, borderRadius: 8, marginBottom: 8 }} />
+            <div className="skeleton" style={{ height: 16, width: 280, borderRadius: 6 }} />
+          </div>
+
+          <div className="card" style={{ gap: 16 }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <div className="skeleton" style={{ height: 44, width: 160, borderRadius: 14 }} />
+              <div className="skeleton" style={{ height: 44, width: 160, borderRadius: 14 }} />
+              <div className="skeleton" style={{ height: 44, width: 90, borderRadius: 999 }} />
+              <div className="skeleton" style={{ height: 44, width: 110, borderRadius: 999 }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div className="skeleton" style={{ height: 32, width: 60, borderRadius: 999 }} />
+              <div className="skeleton" style={{ height: 32, width: 85, borderRadius: 999 }} />
+              <div className="skeleton" style={{ height: 32, width: 75, borderRadius: 999 }} />
+              <div className="skeleton" style={{ height: 32, width: 90, borderRadius: 999 }} />
+            </div>
+          </div>
+
+          <div className="tiles">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="tile" style={{ gap: 10 }}>
+                <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 12 }} />
+                <div className="skeleton" style={{ height: 14, width: 80, borderRadius: 6 }} />
+                <div className="skeleton" style={{ height: 28, width: 110, borderRadius: 8 }} />
+              </div>
+            ))}
+          </div>
+
+          <div className="table-wrap">
+            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="skeleton" style={{ height: 20, width: '100%', borderRadius: 6 }} />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: 24, width: '100%', borderRadius: 6 }} />
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
