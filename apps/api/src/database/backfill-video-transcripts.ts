@@ -18,6 +18,21 @@ import { AppModule } from '../app.module';
 import { VideoEntity } from '../modules/lessons/entities/video.entity';
 import { VideoTranscriptEntity } from '../modules/video-ingestion/entities/video-transcript.entity';
 import { VideoIngestionService } from '../modules/video-ingestion/video-ingestion.service';
+import { VIDEO_SOURCES } from './seeds/video.seed';
+
+const SEED_VIDEO_URLS = new Set(VIDEO_SOURCES.map((source) => source.url));
+
+interface BackfillOptions {
+  // Before seedVideoTranscripts was scoped to only the known MDN seed
+  // URLs (see that file), every `./dev.sh` restart clobbered real videos'
+  // transcripts with fake `completed` demo data — a real ingestion result
+  // never got the chance to land, or got silently overwritten if it had.
+  // This forces any non-seed video back through the real pipeline
+  // regardless of its current (possibly fake) status, to undo that damage
+  // without a raw DB write. One-time cleanup; safe to run again — it's a
+  // no-op once every real video has a genuine transcript.
+  forceNonSeedVideos?: boolean;
+}
 
 // Ingestion only ever fires from CoursesService.syncLessonVideo, on create
 // or URL change of a lesson's video (see video-ingestion.service.ts) — it
@@ -28,10 +43,9 @@ import { VideoIngestionService } from '../modules/video-ingestion/video-ingestio
 // transient captions-API error) — `pending`/`processing`/`completed` rows
 // are left alone so this doesn't waste OpenAI/Bunny calls re-queuing work
 // that's already in flight or done.
-export async function backfillVideoTranscripts(): Promise<{
-  enqueued: number;
-  skipped: number;
-}> {
+export async function backfillVideoTranscripts(
+  options: BackfillOptions = {},
+): Promise<{ enqueued: number; skipped: number }> {
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ['error', 'warn'],
   });
@@ -59,7 +73,10 @@ export async function backfillVideoTranscripts(): Promise<{
 
     for (const video of videos) {
       const transcript = transcriptByVideoId.get(video.id);
-      const needsIngestion = !transcript || transcript.processingStatus === 'failed';
+      const isForcedRealVideo =
+        Boolean(options.forceNonSeedVideos) && !SEED_VIDEO_URLS.has(video.videoUrl);
+      const needsIngestion =
+        isForcedRealVideo || !transcript || transcript.processingStatus === 'failed';
 
       if (!needsIngestion) {
         skipped += 1;
@@ -83,7 +100,8 @@ export async function backfillVideoTranscripts(): Promise<{
 }
 
 if (require.main === module) {
-  backfillVideoTranscripts()
+  const forceNonSeedVideos = process.argv.includes('--force-real');
+  backfillVideoTranscripts({ forceNonSeedVideos })
     .then(() => process.exit(0))
     .catch((err) => {
       console.error('Video transcript backfill failed:', err);
