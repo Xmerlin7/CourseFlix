@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { NOTIFICATION_PRODUCER_PORT } from '../../common/ports/notification-producer.port';
 import { OrderEntity } from '../commerce/entities/order.entity';
 import { CoursesService } from '../courses/courses.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
@@ -25,8 +26,13 @@ describe('TeacherService', () => {
     addOrderBy: jest.Mock;
     getMany: jest.Mock;
   };
-  let teacherEnrollmentsRepository: { find: jest.Mock };
+  let teacherEnrollmentsRepository: {
+    find: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+  };
   let teacherOrdersRepository: { createQueryBuilder: jest.Mock };
+  let notificationPort: { notify: jest.Mock };
 
   const teacherId = 'teacher-1';
 
@@ -66,8 +72,13 @@ describe('TeacherService', () => {
     usersRepository = {
       createQueryBuilder: jest.fn().mockReturnValue(usersQueryBuilder),
     };
-    teacherEnrollmentsRepository = { find: jest.fn() };
+    teacherEnrollmentsRepository = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
     teacherOrdersRepository = { createQueryBuilder: jest.fn() };
+    notificationPort = { notify: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -84,6 +95,7 @@ describe('TeacherService', () => {
           provide: getRepositoryToken(OrderEntity),
           useValue: teacherOrdersRepository,
         },
+        { provide: NOTIFICATION_PRODUCER_PORT, useValue: notificationPort },
       ],
     }).compile();
 
