@@ -383,6 +383,18 @@ setup_database() {
     || { tail -20 "$LOG_DIR/seed.log"; die "seed failed — see $LOG_DIR/seed.log"; }
   # The seed prints its own summary; surface it rather than hiding it in a log.
   grep -A 20 '^Seed complete:' "$LOG_DIR/seed.log" | sed 's/^/  /' || true
+
+  # Best-effort, not fatal: this makes real OpenAI calls (transcription),
+  # so a hiccup here (rate limit, missing model access, network) shouldn't
+  # block the rest of the stack from starting — it only re-enqueues videos
+  # that are missing a transcript or stuck on `failed`; nothing wasteful
+  # runs against ones already `completed`. The worker isn't up yet at this
+  # point, which is fine — enqueued jobs just wait in the Redis queue
+  # until it starts a few steps down.
+  printf '  backfilling missing/failed video transcripts ...\n'
+  npm run backfill:video-transcripts --prefix apps/api --silent > "$LOG_DIR/backfill.log" 2>&1 \
+    && grep '^Backfill complete:' "$LOG_DIR/backfill.log" | sed 's/^/  /' \
+    || warn "video transcript backfill failed — see $LOG_DIR/backfill.log (non-fatal, continuing)"
 }
 
 # ─── app processes ───────────────────────────────────────────────────────
