@@ -129,17 +129,24 @@ export function LoadingState({ variant = 'cards', count = 3 }: LoadingStateProps
           </div>
 
           <div className="card" style={{ gap: 16 }}>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <div className="skeleton" style={{ height: 44, width: 160, borderRadius: 14 }} />
-              <div className="skeleton" style={{ height: 44, width: 160, borderRadius: 14 }} />
+            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              {/* "من تاريخ" / "إلى تاريخ" — label bar + input bar, matching .tf */}
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  <div className="skeleton" style={{ height: 14, width: 70, borderRadius: 6 }} />
+                  <div className="skeleton" style={{ height: 44, width: '100%', borderRadius: 14 }} />
+                </div>
+              ))}
               <div className="skeleton" style={{ height: 44, width: 90, borderRadius: 999 }} />
-              <div className="skeleton" style={{ height: 44, width: 110, borderRadius: 999 }} />
+              <div className="skeleton" style={{ height: 44, width: 120, borderRadius: 999 }} />
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <div className="skeleton" style={{ height: 32, width: 60, borderRadius: 999 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div className="skeleton" style={{ height: 14, width: 70, borderRadius: 6 }} />
+              <div className="skeleton" style={{ height: 32, width: 55, borderRadius: 999 }} />
               <div className="skeleton" style={{ height: 32, width: 85, borderRadius: 999 }} />
               <div className="skeleton" style={{ height: 32, width: 75, borderRadius: 999 }} />
               <div className="skeleton" style={{ height: 32, width: 90, borderRadius: 999 }} />
+              <div className="skeleton" style={{ height: 32, width: 80, borderRadius: 999 }} />
             </div>
           </div>
 
@@ -153,12 +160,16 @@ export function LoadingState({ variant = 'cards', count = 3 }: LoadingStateProps
             ))}
           </div>
 
-          <div className="table-wrap">
-            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div className="skeleton" style={{ height: 20, width: '100%', borderRadius: 6 }} />
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="skeleton" style={{ height: 24, width: '100%', borderRadius: 6 }} />
-              ))}
+          <div>
+            <div className="skeleton" style={{ height: 22, width: 170, borderRadius: 6, marginBottom: 14 }} />
+            <div className="table-wrap">
+              <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="skeleton" style={{ height: 20, width: '100%', borderRadius: 6 }} />
+                {/* the table only ever holds a best-seller row + a totals row */}
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="skeleton" style={{ height: 24, width: '100%', borderRadius: 6 }} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
