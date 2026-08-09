@@ -1,26 +1,29 @@
 import { useState } from 'react'
+import { BookOpen } from 'lucide-react'
 
 interface CourseThumbProps {
   coverImageUrl: string | null
   alt: string
+  className?: string
 }
 
 /**
- * Real cover image when the course has one, the ui5 abstract-shapes
- * placeholder otherwise. Shared by every course card (student/teacher)
- * so the fallback and image treatment never drift between them.
+ * Real cover image when the course has one, or a polished Courseflix
+ * placeholder otherwise. Shared by course cards across the application.
  */
-export function CourseThumb({ coverImageUrl, alt }: CourseThumbProps) {
+export function CourseThumb({ coverImageUrl, alt, className = '' }: CourseThumbProps) {
   const [failed, setFailed] = useState(false)
+
+  const containerClass = `thumb ${className}`.trim()
 
   if (coverImageUrl && !failed) {
     return (
-      <div className="thumb">
+      <div className={containerClass}>
         <img
           src={coverImageUrl}
           alt={alt}
           loading="lazy"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          className="thumb-img"
           onError={() => setFailed(true)}
         />
       </div>
@@ -28,10 +31,15 @@ export function CourseThumb({ coverImageUrl, alt }: CourseThumbProps) {
   }
 
   return (
-    <div className="thumb" aria-hidden="true">
-      <i className="t1" />
-      <i className="t2" />
-      <i className="t3" />
+    <div className={`${containerClass} thumb-placeholder`} aria-hidden="true">
+      <div className="thumb-placeholder-pattern" />
+      <div className="thumb-placeholder-content">
+        <div className="thumb-icon-badge">
+          <BookOpen className="thumb-icon" size={26} strokeWidth={1.8} />
+        </div>
+        <span className="thumb-brand">COURSEFLIX</span>
+      </div>
     </div>
   )
 }
+
