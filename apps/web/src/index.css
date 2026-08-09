@@ -1376,10 +1376,11 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
     visibility: hidden !important;
   }
 }
-/* Native video fullscreen only fullscreens the <video> itself, which would
-   leave the watermark overlay behind — StudentLessonPage bounces fullscreen
-   requests up to this container instead, so size the container (not just
-   the video) to fill the screen while fullscreen. */
+/* Fullscreening the bare <video>/<iframe> would leave the watermark overlay
+   and controls behind — StudentLessonPage's custom fullscreen button (and,
+   for Bunny's un-removable native button, a fullscreenchange redirect)
+   always targets this container instead, so size the container itself (not
+   just the video) to fill the screen while fullscreen. */
 .player:fullscreen,
 .player:-webkit-full-screen {
   aspect-ratio: unset;
@@ -1391,10 +1392,117 @@ table.mtable { width: 100%; border-collapse: collapse; min-width: 760px; }
 .player:-webkit-full-screen video {
   object-fit: contain;
 }
+.player-controls {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 14px 10px;
+  background: linear-gradient(to top, rgba(10, 8, 16, 0.88), rgba(10, 8, 16, 0.5) 65%, transparent);
+}
+.player-controls-seek {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 14px;
+}
+.player-controls-seek-track {
+  position: absolute;
+  inset-inline: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.player-controls-seek-buffered {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: rgba(255, 255, 255, 0.4);
+}
+.player-controls-seek-played {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: var(--primary);
+}
+.player-controls-seek-input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+.player-controls-seek-input::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+}
+.player-controls-seek-input::-moz-range-track {
+  background: transparent;
+  height: 4px;
+}
+.player-controls-seek-input::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.player-controls-seek-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.player-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.player-controls-row .icon-btn {
+  width: 36px;
+  height: 36px;
+  color: #fff;
+}
+.player-controls-row .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.player-controls-time {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+.player-controls-volume {
+  width: 70px;
+  margin-inline-end: 6px;
+  accent-color: var(--primary);
+}
+.player-fullscreen-btn {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-end: 10px;
+  z-index: 4;
+  background: rgba(10, 8, 16, 0.55);
+  color: #fff;
+}
+.player-fullscreen-btn:hover {
+  background: rgba(10, 8, 16, 0.75);
+}
 .player-capture-guard {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 6;
   display: flex;
   flex-direction: column;
   align-items: center;

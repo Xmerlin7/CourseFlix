@@ -4,11 +4,9 @@ export type CaptureBlockReason = 'window-blur' | 'devtools' | 'print-screen' | n
 
 interface UseAntiCaptureOptions {
   enabled: boolean
-  videoRef: React.RefObject<HTMLVideoElement | null>
-  /** Fired alongside the native <video> pause — lets the page also pause an embedded iframe player. */
-  onCapturePause?: () => void
-  /** Fired alongside the native <video> resume — lets the page also resume an embedded iframe player. */
-  onCaptureResume?: () => void
+  isPlaying: boolean
+  onPause: () => void
+  onResume: () => void
 }
 
 interface UseAntiCaptureResult {
@@ -25,21 +23,20 @@ const DEVTOOLS_POLL_MS = 1500
  * a screenshot/devtools shortcut fires, or devtools is heuristically
  * detected — and it pairs with the per-student watermark (see
  * StudentLessonPage) so anything that does get out is traceable back to the
- * account that captured it.
+ * account that captured it. Backend-agnostic: `onPause`/`onResume` are
+ * whatever the active PlayerController (native video / YouTube / Bunny)
+ * provides, so this works the same regardless of video source.
  */
-export function useAntiCapture({
-  enabled,
-  videoRef,
-  onCapturePause,
-  onCaptureResume,
-}: UseAntiCaptureOptions): UseAntiCaptureResult {
+export function useAntiCapture({ enabled, isPlaying, onPause, onResume }: UseAntiCaptureOptions): UseAntiCaptureResult {
   const [blockReason, setBlockReason] = useState<CaptureBlockReason>(null)
   const blockReasonRef = useRef<CaptureBlockReason>(null)
+  const isPlayingRef = useRef(isPlaying)
   const wasPlayingRef = useRef(false)
-  const onCapturePauseRef = useRef(onCapturePause)
-  const onCaptureResumeRef = useRef(onCaptureResume)
-  onCapturePauseRef.current = onCapturePause
-  onCaptureResumeRef.current = onCaptureResume
+  const onPauseRef = useRef(onPause)
+  const onResumeRef = useRef(onResume)
+  isPlayingRef.current = isPlaying
+  onPauseRef.current = onPause
+  onResumeRef.current = onResume
 
   const setReason = useCallback((reason: CaptureBlockReason) => {
     blockReasonRef.current = reason
@@ -47,13 +44,11 @@ export function useAntiCapture({
   }, [])
 
   const pauseVideo = useCallback(() => {
-    const video = videoRef.current
-    if (video && !video.paused) {
+    if (isPlayingRef.current) {
       wasPlayingRef.current = true
-      video.pause()
+      onPauseRef.current()
     }
-    onCapturePauseRef.current?.()
-  }, [videoRef])
+  }, [])
 
   useEffect(() => {
     if (!enabled) {
@@ -67,8 +62,7 @@ export function useAntiCapture({
       }
       if (wasPlayingRef.current && !blockReasonRef.current) {
         wasPlayingRef.current = false
-        videoRef.current?.play().catch(() => {})
-        onCaptureResumeRef.current?.()
+        onResumeRef.current()
       }
     }
 
@@ -132,14 +126,13 @@ export function useAntiCapture({
       document.removeEventListener('keydown', handleKeyDown)
       window.clearInterval(pollId)
     }
-  }, [enabled, videoRef, pauseVideo, setReason])
+  }, [enabled, pauseVideo, setReason])
 
   const resume = useCallback(() => {
     wasPlayingRef.current = false
     setReason(null)
-    videoRef.current?.play().catch(() => {})
-    onCaptureResumeRef.current?.()
-  }, [videoRef, setReason])
+    onResumeRef.current()
+  }, [setReason])
 
   return { blockReason, resume }
 }

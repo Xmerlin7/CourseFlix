@@ -8,10 +8,14 @@ import { formatDuration } from '../../../shared/lib/formatters'
 import { LESSON_PROGRESS_STATUS } from '../../../shared/lib/status-labels'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { VideoQaPanel } from '../../video-qa/components/VideoQaPanel'
+import { VideoControlBar } from '../components/VideoControlBar'
 import type { CaptureBlockReason } from '../hooks/useAntiCapture'
 import { useAntiCapture } from '../hooks/useAntiCapture'
+import { useBunnyController } from '../hooks/useBunnyController'
 import { useLesson } from '../hooks/useLesson'
+import { useNativeVideoController } from '../hooks/useNativeVideoController'
 import { useProgressHeartbeat } from '../hooks/useProgressHeartbeat'
+import { useYoutubeController } from '../hooks/useYoutubeController'
 import type { LessonCourseOutlineLesson, LessonProgressStatus } from '../types/lesson.types'
 
 const CAPTURE_BLOCK_COPY: Record<Exclude<CaptureBlockReason, null>, { icon: string; title: string; body: string }> = {
@@ -91,9 +95,15 @@ function getIframeEmbedUrl(value: string): string | null {
       embedUrl.searchParams.set('modestbranding', '1')
       embedUrl.searchParams.set('iv_load_policy', '3')
       embedUrl.searchParams.set('playsinline', '1')
-      // Required for the postMessage `seekTo` command the video Q&A
-      // assistant uses to jump to a cited timestamp — see handleSeekTo.
+      // Required for the postMessage command/listening API that both the
+      // video Q&A assistant (seekTo — see handleSeekTo) and the custom
+      // Material control bar (see useYoutubeController) drive the player
+      // with.
       embedUrl.searchParams.set('enablejsapi', '1')
+      // YouTube's own chrome is hidden in favor of VideoControlBar — it's
+      // driven entirely through the iframe API above.
+      embedUrl.searchParams.set('controls', '0')
+      embedUrl.searchParams.set('disablekb', '1')
       return embedUrl.toString()
     }
 
@@ -105,9 +115,10 @@ function getIframeEmbedUrl(value: string): string | null {
 
 /**
  * Visual reference: ui5/lesson.html. The mockup's fake play button and
- * client-side progress timer are replaced here by a real <video controls>
- * element and server-reported progress — ui5 was a static prototype with
- * no backend to report to.
+ * client-side progress timer are replaced here by a real <video> element
+ * (or YouTube/Bunny iframe) driven by a custom Material control bar — see
+ * VideoControlBar — plus server-reported progress; ui5 was a static
+ * prototype with no backend to report to.
  */
 export function StudentLessonPage() {
   const { lessonId } = useParams<{ lessonId: string }>()
@@ -125,55 +136,71 @@ export function StudentLessonPage() {
   const progressDurationSeconds =
     data?.video.durationSeconds ?? (iframeEmbedUrl ? EXTERNAL_VIDEO_FALLBACK_DURATION_SECONDS : null)
   const isYoutubeEmbed = iframeEmbedUrl?.includes('youtube-nocookie.com') ?? false
+  const isBunnyEmbed = Boolean(iframeEmbedUrl) && !isYoutubeEmbed
   // Native <video> and YouTube both expose a way to seek programmatically;
-  // Bunny's iframe postMessage protocol isn't wired into this codebase, so
-  // its cited timestamps render as plain text instead of a hacked guess.
+  // Bunny's playback API (see useBunnyController) doesn't cover seeking to
+  // an arbitrary point reliably enough to trust for citation jumps, so its
+  // cited timestamps render as plain text instead of a hacked guess.
   const canSeekVideo = !iframeEmbedUrl || isYoutubeEmbed
+  const mediaKey = data?.video.id ?? ''
+
+  // Every embed gets its own backend-specific controller; only one is ever
+  // actually wired to a live element at a time (native video XOR iframe), so
+  // exactly one of these three no-ops per render — see PlayerController.
+  const nativeVideoController = useNativeVideoController(videoRef, mediaKey)
+  const youtubeController = useYoutubeController(iframeRef, isYoutubeEmbed, mediaKey)
+  const bunnyController = useBunnyController(iframeRef, isBunnyEmbed, mediaKey)
+  const activeController = iframeEmbedUrl
+    ? isYoutubeEmbed
+      ? youtubeController
+      : bunnyController
+    : nativeVideoController
+  // Bunny's embed has no way to hide its own chrome (confirmed against their
+  // docs), so it keeps its native controls and only gets a supplementary
+  // fullscreen button; native <video> and YouTube get the full Material bar.
+  const hasCustomControlBar = !isBunnyEmbed
 
   function handleSeekTo(seconds: number) {
-    if (videoRef.current) {
-      videoRef.current.currentTime = seconds
-      return
-    }
-    if (isYoutubeEmbed) {
-      iframeRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func: 'seekTo', args: [seconds, true] }),
-        '*',
-      )
+    if (canSeekVideo) {
+      activeController.seek(seconds)
     }
   }
 
-  function postYoutubeCommand(func: 'pauseVideo' | 'playVideo') {
-    if (isYoutubeEmbed) {
-      iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {})
+    } else {
+      playerRef.current?.requestFullscreen().catch(() => {})
     }
   }
 
-  // The native fullscreen control (on the <video> element itself, or on an
-  // embedded YouTube/Bunny <iframe> — cross-origin fullscreen still surfaces
-  // the iframe as `document.fullscreenElement` in this top document) only
-  // fullscreens that one element, which strips out the watermark overlay
-  // siblings in `.player` (they only render while `.player` itself is the
-  // fullscreen element). Every time that happens, bounce fullscreen up to
-  // the container instead so the watermark stays on screen.
   useEffect(() => {
     function handleFullscreenChange() {
       const fullscreenElement = document.fullscreenElement
-      const isBareMedia = fullscreenElement === videoRef.current || fullscreenElement === iframeRef.current
-      if (isBareMedia && playerRef.current) {
+      // Bunny's native fullscreen button (the only control we can't remove
+      // or replace) still fullscreens its bare <iframe>, which strips the
+      // watermark overlay siblings out of `.player` — bounce it back up to
+      // the container. Native <video> and YouTube never hit this: their
+      // chrome is fully replaced by VideoControlBar, whose own fullscreen
+      // button always targets `.player` directly.
+      if (isBunnyEmbed && fullscreenElement === iframeRef.current && playerRef.current) {
         document.exitFullscreen().catch(() => {})
         playerRef.current.requestFullscreen?.().catch(() => {})
+        return
       }
+      setIsFullscreen(fullscreenElement === playerRef.current)
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [])
+  }, [isBunnyEmbed])
 
   const { blockReason, resume } = useAntiCapture({
     enabled: viewerRole === 'student' && Boolean(data),
-    videoRef,
-    onCapturePause: () => postYoutubeCommand('pauseVideo'),
-    onCaptureResume: () => postYoutubeCommand('playVideo'),
+    isPlaying: activeController.isPlaying,
+    onPause: activeController.pause,
+    onResume: activeController.play,
   })
 
   useProgressHeartbeat({
@@ -275,12 +302,12 @@ export function StudentLessonPage() {
                 key={data.video.id}
                 ref={videoRef}
                 src={data.video.url}
-                controls
                 controlsList="nodownload noplaybackrate noremoteplayback"
                 disablePictureInPicture
                 disableRemotePlayback
                 onLoadedMetadata={handleLoadedMetadata}
                 onError={() => setVideoError(true)}
+                onClick={() => nativeVideoController.togglePlay()}
               />
             )}
             {studentWatermarkId && (
@@ -294,6 +321,23 @@ export function StudentLessonPage() {
                   ID {studentWatermarkId}
                 </span>
               </>
+            )}
+            {!videoError && hasCustomControlBar && (
+              <VideoControlBar
+                controller={activeController}
+                isFullscreen={isFullscreen}
+                onToggleFullscreen={toggleFullscreen}
+              />
+            )}
+            {!videoError && isBunnyEmbed && (
+              <button
+                type="button"
+                className="icon-btn player-fullscreen-btn"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
+              >
+                <span className="ms">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
+              </button>
             )}
             {blockReason && (
               <div className="player-capture-guard" data-testid="capture-guard" role="alertdialog">
