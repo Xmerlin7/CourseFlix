@@ -21,6 +21,8 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { UpdateUserRoleDto } from '../dto/update-user-role.dto';
 import { UpdateUserStatusDto } from '../dto/update-user-status.dto';
 import { CreateAdminDto } from '../dto/create-admin.dto';
+import { CreateTeacherDto } from '../dto/create-teacher.dto';
+import { CreateAssistantDto } from '../dto/create-assistant.dto';
 
 @Controller('api/v1/admin/users')
 @UseGuards(AuthGuard, AdminRoleGuard)
@@ -36,6 +38,18 @@ export class AdminUsersController {
   @HttpCode(HttpStatus.CREATED)
   createAdmin(@Body() dto: CreateAdminDto) {
     return this.adminUsersService.createAdmin(dto);
+  }
+
+  @Post('teachers')
+  @HttpCode(HttpStatus.CREATED)
+  createTeacher(@Body() dto: CreateTeacherDto) {
+    return this.adminUsersService.createTeacher(dto);
+  }
+
+  @Post('assistants')
+  @HttpCode(HttpStatus.CREATED)
+  createAssistant(@Body() dto: CreateAssistantDto) {
+    return this.adminUsersService.createAssistant(dto);
   }
 
   @Get(':userId')
