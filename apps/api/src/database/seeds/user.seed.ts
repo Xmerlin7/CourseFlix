@@ -3,13 +3,13 @@ import * as argon2 from 'argon2';
 import { UserEntity } from '../../modules/users/entities/user.entity';
 
 export interface SeededUsers {
-  /** The primary demo teacher — a named field because the rest of the
-   *  fixture, and every doc that quotes credentials, points at this
+  /** The one and only demo teacher — a named field because the rest of
+   *  the fixture, and every doc that quotes credentials, points at this
    *  specific account. The platform supports exactly one teacher, so
-   *  this is *the* teacher, not just the first of several. */
+   *  this is *the* teacher, not the first of several. */
   teacher: UserEntity;
-  /** Demo assistant, scoped to `teacher` — shows off the role without
-   *  needing a second teacher account (the platform only allows one). */
+  /** The primary demo assistant — same "named because it's quoted
+   *  elsewhere" reasoning as `teacher`/`student`. */
   assistant: UserEntity;
   /** The primary demo student, same reasoning. */
   student: UserEntity;
@@ -17,14 +17,17 @@ export interface SeededUsers {
    *  inside the admin dashboard, but that flow needs a first admin to
    *  log in with, which only a seed can provide. */
   admin: UserEntity;
-  teachers: UserEntity[];
+  /** Every seeded assistant, all scoped to `teacher` — a teacher can have
+   *  more than one, so the fixture demonstrates that instead of just
+   *  the primary one. Primary assistant first. */
+  assistants: UserEntity[];
   students: UserEntity[];
 }
 
 /**
- * Seeds the demo roster: one teacher, one assistant, an admin and ten
- * students, enough for the dashboards, enrollment lists and notification
- * feeds to look like a real class instead of a single row.
+ * Seeds the demo roster: one teacher, a handful of assistants, an admin
+ * and ten students, enough for the dashboards, enrollment lists and
+ * notification feeds to look like a real class instead of a single row.
  *
  * Safe to run on every reseed: upserts by email instead of inserting
  * duplicates.
@@ -54,6 +57,22 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
     role: 'assistant',
     managedByTeacherId: teacher.id,
   });
+
+  // A teacher can have more than one assistant — two more here so that's
+  // demonstrable in the demo data instead of only ever showing one.
+  const extraAssistantNames = ['يوسف عادل', 'منى سيد'];
+  const extraAssistants: UserEntity[] = [];
+  for (const [index, fullName] of extraAssistantNames.entries()) {
+    extraAssistants.push(
+      await upsertUser(repository, {
+        fullName,
+        email: `assistant${index + 2}@courseflix.local`,
+        password: teacherPassword,
+        role: 'assistant',
+        managedByTeacherId: teacher.id,
+      }),
+    );
+  }
 
   const student = await upsertUser(repository, {
     fullName: 'عبدالله حبسه',
@@ -100,7 +119,7 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
     assistant,
     student,
     admin,
-    teachers: [teacher],
+    assistants: [assistant, ...extraAssistants],
     students: [student, ...extraStudents],
   };
 }

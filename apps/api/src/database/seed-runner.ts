@@ -11,9 +11,9 @@ import { reEmbedDocumentChunks } from './re-embed-chunks';
 import { clearTransactionalDemoState } from './seeds/transactional-reset.seed';
 
 export interface SeedSummary {
-  teacherCount: number;
   primaryTeacherEmail: string;
-  assistantEmail: string;
+  assistantCount: number;
+  primaryAssistantEmail: string;
   studentCount: number;
   primaryStudentEmail: string;
   courseCount: number;
@@ -50,13 +50,12 @@ export async function runSeed(
         agentLogsCleared: 0,
       };
 
-  const { teacher, assistant, student, teachers, students } =
+  const { teacher, assistant, assistants, student, students } =
     await seedUsers(dataSource);
 
   const { course, section, lessons, courses } = await seedCourse(
     dataSource,
     teacher.id,
-    teachers.slice(1).map((t) => t.id),
   );
 
   const enrollment = await seedEnrollment(dataSource, {
@@ -85,7 +84,7 @@ export async function runSeed(
     });
 
   const notificationsCreated = await seedNotifications(dataSource, {
-    teacherIds: teachers.map((t) => t.id),
+    teacherIds: [teacher.id],
     studentIds: students.map((s) => s.id),
   });
 
@@ -94,9 +93,9 @@ export async function runSeed(
   const lessonTotal = await countRows(dataSource, 'lessons');
 
   return {
-    teacherCount: teachers.length,
     primaryTeacherEmail: teacher.email,
-    assistantEmail: assistant.email,
+    assistantCount: assistants.length,
+    primaryAssistantEmail: assistant.email,
     studentCount: students.length,
     primaryStudentEmail: student.email,
     courseCount: courses.length,
@@ -122,10 +121,10 @@ export async function runSeed(
 /** Shared console formatting so `seed.ts` and `reset.ts` print identically, modulo heading. */
 export function printSeedSummary(summary: SeedSummary, heading: string): void {
   console.log(heading);
+  console.log(`  teacher:        ${summary.primaryTeacherEmail}`);
   console.log(
-    `  teachers:       ${summary.teacherCount} (primary: ${summary.primaryTeacherEmail})`,
+    `  assistants:     ${summary.assistantCount} (primary: ${summary.primaryAssistantEmail})`,
   );
-  console.log(`  assistants:     1 (${summary.assistantEmail})`);
   console.log(
     `  students:       ${summary.studentCount} (primary: ${summary.primaryStudentEmail})`,
   );
