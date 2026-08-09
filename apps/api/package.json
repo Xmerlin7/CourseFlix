@@ -24,7 +24,8 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
     "reset": "ts-node -r tsconfig-paths/register src/database/reset.ts",
-    "reset:check": "ts-node -r tsconfig-paths/register src/database/reset-check.ts"
+    "reset:check": "ts-node -r tsconfig-paths/register src/database/reset-check.ts",
+    "backfill:video-transcripts": "ts-node -r tsconfig-paths/register src/database/backfill-video-transcripts.ts"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",
