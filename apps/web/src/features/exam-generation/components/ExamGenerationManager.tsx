@@ -1,8 +1,9 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
-import { EXAM_GENERATION_STATUS } from '../../../shared/lib/status-labels'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { EXAM_GENERATION_STATUS } from '../../../shared/lib/status-labels'
 import { showToast } from '../../../shared/components/Toast'
+import { handleChatInputKeyDown } from '../../../shared/utils/chatInput'
 import type { CourseDetail } from '../../courses/types/course.types'
 import { useExamGenerationRequest } from '../hooks/useExamGenerationRequest'
 import { useExamGenerationRequests } from '../hooks/useExamGenerationRequests'
@@ -398,9 +399,9 @@ function ExamGenerationReviewPanel({
     }
   }
 
-  async function handleFeedback(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!feedbackMessage.trim()) return
+  async function handleFeedback(event?: FormEvent<HTMLFormElement>) {
+    if (event) event.preventDefault()
+    if (!feedbackMessage.trim() || isBusy) return
 
     setIsBusy(true)
     setActionError(null)
@@ -509,6 +510,13 @@ function ExamGenerationReviewPanel({
                   rows={3}
                   value={feedbackMessage}
                   onChange={(event) => setFeedbackMessage(event.target.value)}
+                  onKeyDown={(event) =>
+                    handleChatInputKeyDown(
+                      event,
+                      () => void handleFeedback(),
+                      isBusy || !feedbackMessage.trim(),
+                    )
+                  }
                   placeholder="مثال: ركّز أكتر على الفصل التاني، وسهّل الأسئلة شوية"
                 />
                 <button type="submit" className="btn tonal" disabled={isBusy || !feedbackMessage.trim()}>

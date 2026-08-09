@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { handleChatInputKeyDown } from '../../../shared/utils/chatInput'
 import { useAnalyticsQuestion } from '../hooks/useAnalyticsQuestion'
 
 const EXAMPLES = [
@@ -19,10 +20,10 @@ export function TeacherAnalyticsPage() {
   const [question, setQuestion] = useState('')
   const { data, isLoading, error, ask } = useAnalyticsQuestion()
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const submit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     const q = question.trim()
-    if (q) void ask(q)
+    if (q && !isLoading) void ask(q)
   }
 
   return (
@@ -31,14 +32,21 @@ export function TeacherAnalyticsPage() {
       <p className="subtitle">اسأل عن طلابك ودوراتك والمبيعات والمتابعات</p>
 
       <form onSubmit={submit} className="section" style={{ display: 'flex', gap: 10 }}>
-        <input
-          type="text"
+        <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={(e) =>
+            handleChatInputKeyDown(
+              e,
+              () => submit(),
+              isLoading || !question.trim(),
+            )
+          }
+          rows={1}
           placeholder="اكتب سؤالك هنا..."
           maxLength={500}
           className="field"
-          style={{ flex: 1 }}
+          style={{ flex: 1, resize: 'none' }}
         />
         <button type="submit" className="btn" disabled={!question.trim() || isLoading}>
           <span className="ms">send</span>
