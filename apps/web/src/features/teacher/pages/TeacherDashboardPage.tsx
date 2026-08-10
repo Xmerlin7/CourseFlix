@@ -2,15 +2,15 @@ import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { useTeacherDashboard } from '../hooks/useTeacherDashboard'
+import { TeacherDashboardSkeleton } from '../components/TeacherDashboardSkeleton'
 
 export function TeacherDashboardPage() {
   const { data, isLoading, error } = useTeacherDashboard()
 
-  if (isLoading) return <LoadingState variant="cards" />
+  if (isLoading) return <TeacherDashboardSkeleton />
 
   if (error) {
     if (error.status === 403) return <ForbiddenState />
