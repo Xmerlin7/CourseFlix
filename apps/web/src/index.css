@@ -3238,3 +3238,118 @@ table.mtable {
   background: var(--error-container);
   color: var(--on-error-container);
 }
+
+/* ---------- Settings ---------- */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--outline-variant);
+}
+
+.settings-row .lbl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-row .lbl-group .t {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.settings-row .lbl-group .s {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+}
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 46px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.switch .track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--surface-container-highest);
+  border: 1.5px solid var(--outline);
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.switch .thumb {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--outline);
+  transition: inset-inline-start 0.18s, background 0.18s;
+}
+
+.switch input:checked ~ .track {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.switch input:checked ~ .thumb {
+  inset-inline-start: 23px;
+  background: var(--on-primary);
+}
+
+.switch input:focus-visible ~ .track {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.switch input:disabled {
+  cursor: not-allowed;
+}
+
+.switch input:disabled ~ .track {
+  opacity: 0.5;
+}
+
+.avatar-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-container-high);
+  border: 1.5px solid var(--outline-variant);
+}
+
+.avatar-preview-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--surface-container-high);
+  border: 1.5px solid var(--outline-variant);
+  color: var(--on-surface-variant);
+}
+
+.avatar-preview-fallback .ms {
+  font-size: 34px;
+}

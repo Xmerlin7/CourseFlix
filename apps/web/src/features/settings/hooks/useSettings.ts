@@ -67,9 +67,14 @@ export function useSettings(): UseSettingsResult {
     }
   }
 
+  // Doesn't require `data` to already be loaded — a theme click can land
+  // before the initial GET resolves, and the PATCH shouldn't be dropped
+  // just because there's nothing to optimistically merge onto yet.
   async function setTheme(theme: ThemeMode) {
-    if (!data) return
-    await save({ theme }, { ...data, theme })
+    const optimistic: UserSettings = data
+      ? { ...data, theme }
+      : { theme, notificationPreferences: {} }
+    await save({ theme }, optimistic)
   }
 
   async function setNotificationPreference(type: NotificationType, enabled: boolean) {
