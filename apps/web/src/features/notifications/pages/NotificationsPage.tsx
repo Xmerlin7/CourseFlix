@@ -1,9 +1,9 @@
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { Link } from 'react-router'
 import { NOTIFICATION_TYPE } from '../../../shared/lib/status-labels'
 import { useNotifications } from '../hooks/useNotifications'
+import { NotificationsSkeleton } from '../components/NotificationsSkeleton'
 import type { NotificationType } from '../types/notification.types'
 
 const STATUS_OPTIONS: Array<{ label: string; value: 'all' | 'unread' | 'read' }> = [
@@ -86,7 +86,7 @@ export function NotificationsPage() {
         ))}
       </div>
 
-      {isLoading && <LoadingState variant="list" />}
+      {isLoading && <NotificationsSkeleton />}
 
       {!isLoading && error && <ErrorState onRetry={refetch} />}
 
