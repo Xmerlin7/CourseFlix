@@ -9,6 +9,7 @@ import { AdminLayout } from '../layouts/AdminLayout'
 import { LoadingState } from '../../shared/components/LoadingState'
 import { ErrorState } from '../../shared/components/ErrorState'
 import { StudentLessonSkeleton } from '../../features/lessons/components/StudentLessonSkeleton'
+import { TeacherSalesSkeleton } from '../../features/sales/components/TeacherSalesSkeleton'
 
 // Lazy-loaded page components
 const LoginPage = lazy(() =>
@@ -445,7 +446,7 @@ export const router = createBrowserRouter([
               {
                 path: ROUTE_PATHS.TEACHER.SALES,
                 element: (
-                  <SuspenseWrapper fallback={<LoadingState variant="sales" />}>
+                  <SuspenseWrapper fallback={<TeacherSalesSkeleton />}>
                     <TeacherSalesPage />
                   </SuspenseWrapper>
                 ),

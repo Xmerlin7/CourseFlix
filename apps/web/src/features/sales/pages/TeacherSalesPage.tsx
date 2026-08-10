@@ -3,9 +3,9 @@ import { DatePicker } from '../../../shared/components/DatePicker'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { showToast } from '../../../shared/components/Toast'
 import { useSalesSummary } from '../hooks/useSalesSummary'
+import { TeacherSalesSkeleton } from '../components/TeacherSalesSkeleton'
 
 // NaN-safe: a malformed/partial API response must never render "NaN",
 // "undefined" or "EGP NaN" — fall back to a plain dash instead.
@@ -139,7 +139,7 @@ export function TeacherSalesPage() {
     showToast('تم تصدير تقرير المبيعات بنجاح')
   }
 
-  if (isLoading) return <LoadingState variant="sales" />
+  if (isLoading) return <TeacherSalesSkeleton />
 
   if (error) {
     if (error.status === 403) return <ForbiddenState />
