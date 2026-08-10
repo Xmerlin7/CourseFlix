@@ -10,6 +10,20 @@ import { LoadingState } from '../../shared/components/LoadingState'
 import { ErrorState } from '../../shared/components/ErrorState'
 import { StudentLessonSkeleton } from '../../features/lessons/components/StudentLessonSkeleton'
 import { TeacherSalesSkeleton } from '../../features/sales/components/TeacherSalesSkeleton'
+import { StudentHomeSkeleton } from '../../features/student/components/StudentHomeSkeleton'
+import { StudentBrowseCoursesSkeleton } from '../../features/student/components/StudentBrowseCoursesSkeleton'
+import { StudentCoursesSkeleton } from '../../features/student/components/StudentCoursesSkeleton'
+import { StudentCourseDetailSkeleton } from '../../features/student/components/StudentCourseDetailSkeleton'
+import { StudentQuizSkeleton } from '../../features/quizzes/components/StudentQuizSkeleton'
+import { NotificationsSkeleton } from '../../features/notifications/components/NotificationsSkeleton'
+import { StudentInterventionsSkeleton } from '../../features/interventions/components/StudentInterventionsSkeleton'
+import { TeacherInterventionsSkeleton } from '../../features/interventions/components/TeacherInterventionsSkeleton'
+import { StudentMiniQuizSkeleton } from '../../features/interventions/components/StudentMiniQuizSkeleton'
+import { TeacherDashboardSkeleton } from '../../features/teacher/components/TeacherDashboardSkeleton'
+import { TeacherCoursesSkeleton } from '../../features/teacher/components/TeacherCoursesSkeleton'
+import { TeacherStudentsSkeleton } from '../../features/teacher/components/TeacherStudentsSkeleton'
+import { TeacherCourseDetailSkeleton } from '../../features/teacher/components/TeacherCourseDetailSkeleton'
+import { AgentLogsSkeleton } from '../../features/agent-logs/components/AgentLogsSkeleton'
 
 // Lazy-loaded page components
 const LoginPage = lazy(() =>
@@ -263,7 +277,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.DASHBOARD,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentHomeSkeleton />}>
                 <StudentDashboardPage />
               </SuspenseWrapper>
             ),
@@ -271,7 +285,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.BROWSE,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentBrowseCoursesSkeleton />}>
                 <StudentBrowseCoursesPage />
               </SuspenseWrapper>
             ),
@@ -279,7 +293,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.COURSES,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentCoursesSkeleton />}>
                 <StudentCoursesPage />
               </SuspenseWrapper>
             ),
@@ -287,7 +301,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.COURSE_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentCourseDetailSkeleton />}>
                 <StudentCourseDetailPage />
               </SuspenseWrapper>
             ),
@@ -303,7 +317,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.QUIZ_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentQuizSkeleton />}>
                 <StudentQuizPage />
               </SuspenseWrapper>
             ),
@@ -319,7 +333,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.NOTIFICATIONS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<NotificationsSkeleton />}>
                 <NotificationsPage />
               </SuspenseWrapper>
             ),
@@ -327,7 +341,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.INTERVENTIONS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentInterventionsSkeleton />}>
                 <StudentInterventionsPage />
               </SuspenseWrapper>
             ),
@@ -335,7 +349,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.MINI_QUIZ,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentMiniQuizSkeleton />}>
                 <StudentMiniQuizPage />
               </SuspenseWrapper>
             ),
@@ -369,7 +383,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.DASHBOARD,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherDashboardSkeleton />}>
                 <TeacherDashboardPage />
               </SuspenseWrapper>
             ),
@@ -377,7 +391,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.COURSES,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherCoursesSkeleton />}>
                 <TeacherCoursesPage />
               </SuspenseWrapper>
             ),
@@ -385,7 +399,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.STUDENTS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherStudentsSkeleton />}>
                 <TeacherStudentsPage />
               </SuspenseWrapper>
             ),
@@ -401,7 +415,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.COURSE_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherCourseDetailSkeleton />}>
                 <TeacherCourseDetailPage />
               </SuspenseWrapper>
             ),
@@ -417,7 +431,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.NOTIFICATIONS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<NotificationsSkeleton />}>
                 <NotificationsPage />
               </SuspenseWrapper>
             ),
@@ -430,7 +444,7 @@ export const router = createBrowserRouter([
               {
                 path: ROUTE_PATHS.TEACHER.AGENT_LOGS,
                 element: (
-                  <SuspenseWrapper>
+                  <SuspenseWrapper fallback={<AgentLogsSkeleton />}>
                     <AgentLogsPage />
                   </SuspenseWrapper>
                 ),
@@ -438,7 +452,7 @@ export const router = createBrowserRouter([
               {
                 path: ROUTE_PATHS.TEACHER.INTERVENTIONS,
                 element: (
-                  <SuspenseWrapper>
+                  <SuspenseWrapper fallback={<TeacherInterventionsSkeleton />}>
                     <TeacherInterventionsPage />
                   </SuspenseWrapper>
                 ),
@@ -594,7 +608,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.ADMIN.NOTIFICATIONS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<NotificationsSkeleton />}>
                 <NotificationsPage />
               </SuspenseWrapper>
             ),
