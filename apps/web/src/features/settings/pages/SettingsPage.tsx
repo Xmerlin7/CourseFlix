@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { AppearanceSettingsForm } from '../components/AppearanceSettingsForm'
+import { ExperienceSettingsForm } from '../components/ExperienceSettingsForm'
 import { NotificationSettingsForm } from '../components/NotificationSettingsForm'
 
-type SettingsTab = 'appearance' | 'notifications'
+type SettingsTab = 'appearance' | 'experience' | 'notifications'
 
 const TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
   { value: 'appearance', label: 'المظهر', icon: 'palette' },
+  { value: 'experience', label: 'تجربة الاستخدام', icon: 'tune' },
   { value: 'notifications', label: 'الإشعارات', icon: 'notifications' },
 ]
 
@@ -35,6 +37,7 @@ export function SettingsPage() {
 
         <div className="settings-panel">
           {activeTab === 'appearance' && <AppearanceSettingsForm />}
+          {activeTab === 'experience' && <ExperienceSettingsForm />}
           {activeTab === 'notifications' && <NotificationSettingsForm />}
         </div>
       </div>

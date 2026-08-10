@@ -14,13 +14,13 @@ export function SettingsSkeleton() {
     >
       <div className="settings-shell">
         <div className="settings-nav">
-          {Array.from({ length: 2 }).map((_, i) => (
+          {Array.from({ length: 3 }).map((_, i) => (
             <span key={i} className="skeleton" style={{ height: 44, width: '100%', borderRadius: 999 }} />
           ))}
         </div>
 
         <div className="settings-cards-grid">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="card">
               <span className="skeleton" style={{ height: 16, width: '55%', borderRadius: 6 }} />
               <span className="skeleton" style={{ height: 13, width: '80%', borderRadius: 6 }} />
