@@ -13,6 +13,7 @@ import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { TeacherContentManager } from '../components/TeacherContentManager'
 import { TeacherCourseForm } from '../components/TeacherCourseForm'
+import { TeacherCourseDetailSkeleton } from '../components/TeacherCourseDetailSkeleton'
 
 type CourseDetailTab = 'content' | 'quizzes' | 'ai-exam' | 'files'
 
@@ -23,7 +24,7 @@ export function TeacherCourseDetailPage() {
   const [activeTab, setActiveTab] = useState<CourseDetailTab>('content')
 
   if (isLoading) {
-    return <LoadingState variant="text" />
+    return <TeacherCourseDetailSkeleton />
   }
 
   if (error) {
