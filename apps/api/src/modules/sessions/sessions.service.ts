@@ -41,6 +41,21 @@ export class SessionsService {
     );
   }
 
+  // "Sign out of other devices" — revokes every one of this user's active
+  // sessions except the one making the request, identified by its own
+  // token so the caller isn't logged out of the session they're using.
+  async revokeAllExcept(userId: string, currentToken: string): Promise<void> {
+    const currentTokenHash = this.hashToken(currentToken);
+    await this.sessionsRepository
+      .createQueryBuilder()
+      .update(SessionEntity)
+      .set({ revokedAt: new Date() })
+      .where('user_id = :userId', { userId })
+      .andWhere('token_hash != :currentTokenHash', { currentTokenHash })
+      .andWhere('revoked_at IS NULL')
+      .execute();
+  }
+
   async findActiveSession(token: string): Promise<SessionEntity | null> {
     const tokenHash = this.hashToken(token);
     const session = await this.sessionsRepository.findOne({

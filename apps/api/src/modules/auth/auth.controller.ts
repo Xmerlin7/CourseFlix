@@ -12,6 +12,7 @@ import {
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SessionsService } from '../sessions/sessions.service';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './guards/auth.guard';
@@ -25,7 +26,10 @@ const COOKIE_SAME_SITE = (process.env.COOKIE_SAME_SITE ?? 'lax') as
 
 @Controller('api/v1')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly sessionsService: SessionsService,
+  ) {}
 
   @Post('auth/login')
   @HttpCode(HttpStatus.OK)
@@ -70,6 +74,23 @@ export class AuthController {
   @UseGuards(AuthGuard)
   getMe(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
     return user;
+  }
+
+  // Settings > Security "sign out of other devices" — revokes every
+  // active session for this user except the one making the request.
+  @Post('sessions/revoke-others')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard)
+  async revokeOtherSessions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ): Promise<void> {
+    const token = request.signedCookies?.[SESSION_COOKIE_NAME] as
+      string | undefined;
+    if (!token) {
+      return;
+    }
+    await this.sessionsService.revokeAllExcept(user.id, token);
   }
 
   @Post('auth/register')
