@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { formatDuration } from '../../../shared/lib/formatters'
 import { LESSON_PROGRESS_STATUS } from '../../../shared/lib/status-labels'
@@ -10,6 +9,7 @@ import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { VideoQaPanel } from '../../video-qa/components/VideoQaPanel'
 import { VideoControlBar } from '../components/VideoControlBar'
+import { StudentLessonSkeleton } from '../components/StudentLessonSkeleton'
 import type { CaptureBlockReason } from '../hooks/useAntiCapture'
 import { useAntiCapture } from '../hooks/useAntiCapture'
 import { useBunnyController } from '../hooks/useBunnyController'
@@ -230,7 +230,7 @@ export function StudentLessonPage() {
   })
 
   if (isLoading) {
-    return <LoadingState variant="lesson" />
+    return <StudentLessonSkeleton />
   }
 
   if (error) {

@@ -8,6 +8,7 @@ import { TeacherLayout } from '../layouts/TeacherLayout'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { LoadingState } from '../../shared/components/LoadingState'
 import { ErrorState } from '../../shared/components/ErrorState'
+import { StudentLessonSkeleton } from '../../features/lessons/components/StudentLessonSkeleton'
 
 // Lazy-loaded page components
 const LoginPage = lazy(() =>
@@ -293,7 +294,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.LESSON_DETAIL,
             element: (
-              <SuspenseWrapper fallback={<LoadingState variant="lesson" />}>
+              <SuspenseWrapper fallback={<StudentLessonSkeleton />}>
                 <StudentLessonPage />
               </SuspenseWrapper>
             ),
@@ -407,7 +408,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.LESSON_DETAIL,
             element: (
-              <SuspenseWrapper fallback={<LoadingState variant="lesson" />}>
+              <SuspenseWrapper fallback={<StudentLessonSkeleton />}>
                 <StudentLessonPage />
               </SuspenseWrapper>
             ),
