@@ -3,6 +3,7 @@ export type EnrollmentStatus = 'active' | 'suspended' | 'completed'
 export interface StudentDashboardStats {
   enrolledCoursesCount: number
   activeCoursesCount: number
+  completedCoursesCount: number
 }
 
 export interface StudentDashboardRecentCourse {
@@ -17,26 +18,49 @@ export interface StudentDashboardRecentCourse {
   enrolledAt: string
 }
 
-export interface StudentDashboard {
-  student: {
-    id: string
-    fullName: string
-    email: string
-    avatarUrl: string | null
-  }
-  stats: StudentDashboardStats
-  // Both stay null until progress tracking lands — see the Sprint 1
-  // boundary note in docs/api-conventions.md.
-  overallProgressPercent: null
-  continueLearning: null
-  recentCourses: StudentDashboardRecentCourse[]
-}
-
 export interface StudentCurrentLesson {
   id: string
   title: string
   /** Seconds into the video the student last watched to — the video player seeks here on resume. */
   lastVideoPosition: number
+}
+
+export interface StudentDashboardContinueLearning {
+  courseId: string
+  courseTitle: string | null
+  coverImageUrl: string | null
+  gradeLevel: string | null
+  progressPercent: number
+  completedLessonsCount: number
+  totalLessonsCount: number
+  currentLesson: StudentCurrentLesson
+}
+
+export type StudentActivityType = 'enrolled' | 'lesson_completed'
+
+export interface StudentDashboardActivityItem {
+  type: StudentActivityType
+  courseId: string
+  courseTitle: string | null
+  lessonTitle: string | null
+  occurredAt: string
+}
+
+export interface StudentDashboard {
+  student: {
+    id: string
+    // Nullable: the profile lookup can miss (e.g. a since-deleted user row).
+    fullName: string | null
+    email: string | null
+    avatarUrl: string | null
+  }
+  stats: StudentDashboardStats
+  /** Average progress across courses with trackable lessons; null when none do. */
+  overallProgressPercent: number | null
+  continueLearning: StudentDashboardContinueLearning | null
+  recentCourses: StudentDashboardRecentCourse[]
+  /** Most recent enrollment/lesson-completion events, newest first. */
+  recentActivity: StudentDashboardActivityItem[]
 }
 
 export interface StudentEnrollment {
