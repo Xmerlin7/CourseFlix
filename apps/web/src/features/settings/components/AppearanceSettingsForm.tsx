@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react'
 import { showToast } from '../../../shared/components/Toast'
 import { useAccentColor } from '../../../shared/hooks/useAccentColor'
 import { useCornerStyle, CORNER_STYLES, type CornerStyle } from '../../../shared/hooks/useCornerStyle'
 import { useTheme, type ThemeMode } from '../../../shared/hooks/useTheme'
-import { ACCENT_PRESETS, hexToHue, hueToHex } from '../../../shared/lib/accent-theme'
+import { DEFAULT_ACCENT_HEX, isValidHex } from '../../../shared/lib/accent-theme'
 import { useSettings } from '../hooks/useSettings'
 
 const THEME_OPTIONS: Array<{ value: ThemeMode; label: string; icon: string }> = [
@@ -34,8 +35,16 @@ const CORNER_PREVIEW_RADIUS: Record<CornerStyle, number> = {
 export function AppearanceSettingsForm() {
   const { mode, setMode } = useTheme()
   const { setTheme, isSaving } = useSettings()
-  const { hue, setHue } = useAccentColor()
+  const { hex, setHex } = useAccentColor()
   const { corners, setCorners } = useCornerStyle()
+
+  // Local, freely-typeable copy of the hex text field — it can't just be
+  // controlled by `hex` directly, since an in-progress value like "#65"
+  // isn't valid yet and setHex() would never run, which meant React kept
+  // snapping the field back to the last full value on every keystroke.
+  // Re-synced whenever `hex` changes from elsewhere (the color swatch).
+  const [hexInput, setHexInput] = useState(hex.toUpperCase())
+  useEffect(() => setHexInput(hex.toUpperCase()), [hex])
 
   async function handleThemeSelect(next: ThemeMode) {
     setMode(next)
@@ -44,6 +53,12 @@ export function AppearanceSettingsForm() {
     } catch {
       showToast('اتحفظ المظهر على جهازك، بس حصل خطأ أثناء حفظه في حسابك', 'error')
     }
+  }
+
+  function handleHexInputChange(value: string) {
+    setHexInput(value)
+    const withHash = value.startsWith('#') ? value : `#${value}`
+    if (isValidHex(withHash)) setHex(withHash)
   }
 
   return (
@@ -75,32 +90,35 @@ export function AppearanceSettingsForm() {
           اختار أي لون تحبه — بيتطبق على كل حاجة في التطبيق: الأزرار، الخلفيات، الكروت، والقوائم.
         </p>
 
-        <div className="accent-swatches">
-          {ACCENT_PRESETS.map((preset) => (
-            <button
-              key={preset.name}
-              type="button"
-              className={`accent-swatch${hue === preset.hue ? ' selected' : ''}`}
-              style={{ background: hueToHex(preset.hue) }}
-              onClick={() => setHue(preset.hue)}
-              aria-pressed={hue === preset.hue}
-              aria-label={preset.label}
-              title={preset.label}
-            >
-              {hue === preset.hue && <span className="ms">check</span>}
-            </button>
-          ))}
-
-          <label className="accent-swatch accent-swatch-custom" title="لون مخصص">
+        <div className="color-picker-field">
+          <label className="color-picker-swatch" style={{ background: hex }}>
             <input
               type="color"
-              value={hueToHex(hue)}
-              onChange={(event) => setHue(hexToHue(event.target.value))}
-              aria-label="اختيار لون مخصص"
+              value={hex}
+              onChange={(event) => setHex(event.target.value)}
+              aria-label="اختيار لون التطبيق"
             />
-            <span className="ms">palette</span>
           </label>
+
+          <div className="tf" style={{ flex: 1, margin: 0 }}>
+            <label htmlFor="accent-hex-input">كود اللون</label>
+            <input
+              id="accent-hex-input"
+              type="text"
+              value={hexInput}
+              spellCheck={false}
+              maxLength={7}
+              onChange={(event) => handleHexInputChange(event.target.value)}
+            />
+          </div>
         </div>
+
+        {hex !== DEFAULT_ACCENT_HEX && (
+          <button type="button" className="btn text btn-compact" onClick={() => setHex(DEFAULT_ACCENT_HEX)}>
+            <span className="ms">restart_alt</span>
+            استعادة اللون الافتراضي
+          </button>
+        )}
       </div>
 
       <div className="card">

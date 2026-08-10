@@ -23,7 +23,13 @@ export function useReducedMotion(): UseReducedMotionResult {
   const [reduceMotion, setReduceMotionState] = useState<boolean>(getStored)
 
   useEffect(() => {
-    document.documentElement.toggleAttribute('data-reduce-motion', reduceMotion)
+    // Not toggleAttribute: it sets an empty-string value when true, but
+    // the CSS selector (index.css) matches [data-reduce-motion="1"].
+    if (reduceMotion) {
+      document.documentElement.setAttribute('data-reduce-motion', '1')
+    } else {
+      document.documentElement.removeAttribute('data-reduce-motion')
+    }
     localStorage.setItem(STORAGE_KEY, reduceMotion ? '1' : '0')
   }, [reduceMotion])
 

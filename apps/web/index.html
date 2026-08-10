@@ -25,32 +25,43 @@
       var density=localStorage.getItem('cf-density');
       if(density&&density!=='comfortable')document.documentElement.setAttribute('data-density',density);
 
-      var hue=Number(localStorage.getItem('cf-accent-hue'));
-      if(Number.isFinite(hue)&&hue!==257){
-        function tone(h,s,l){return 'hsl('+h+', '+s+'%, '+l+'%)'}
-        var th=(hue+85)%360;
+      var seed=localStorage.getItem('cf-accent-hex');
+      if(seed&&/^#[0-9a-fA-F]{6}$/.test(seed)&&seed.toLowerCase()!=='#65558f'){
+        function ch(hex,i){return parseInt(hex.slice(1+i*2,3+i*2),16)}
+        function contrastOn(hex){
+          var b=(ch(hex,0)*299+ch(hex,1)*587+ch(hex,2)*114)/1000;
+          return b>=150?'#1D1B20':'#FFFFFF';
+        }
+        function mix(hex,pct,base){
+          var p=pct/100, bv=base==='white'?255:0;
+          function c(i){return Math.max(0,Math.min(255,Math.round(ch(hex,i)*p+bv*(1-p)))).toString(16).padStart(2,'0')}
+          return '#'+c(0)+c(1)+c(2);
+        }
+        function tone(pct,base){return 'color-mix(in srgb, var(--accent-seed) '+pct+'%, '+base+')'}
+        var onPrimaryLight=contrastOn(seed);
+        var onPrimaryDark=contrastOn(mix(seed,55,'white'));
         var css=':root {'
-          +'--primary:'+tone(hue,25,45)+';--on-primary:#FFFFFF;'
-          +'--primary-container:'+tone(hue,100,93)+';--on-primary-container:'+tone(hue,43,38)+';'
-          +'--secondary-container:'+tone(hue,65,92)+';--on-secondary-container:'+tone(hue,13,31)+';'
-          +'--tertiary-container:'+tone(th,100,92)+';--on-tertiary-container:'+tone(th,25,31)+';'
-          +'--bg:'+tone(hue,43,93)+';--surface:'+tone(hue,100,99)+';'
-          +'--surface-container-low:'+tone(hue,47,96)+';--surface-container:'+tone(hue,40,94)+';'
-          +'--surface-container-high:'+tone(hue,33,92)+';--surface-container-highest:'+tone(hue,31,89)+';'
-          +'--on-surface:'+tone(hue,8,12)+';--on-surface-variant:'+tone(hue,13,31)+';'
-          +'--outline:'+tone(hue,4,48)+';--outline-variant:'+tone(hue,20,83)+';'
-          +'--logo:'+tone(hue,52,35)+';--nav-active:'+tone(hue,43,38)+';'
+          +'--accent-seed:'+seed+';--primary:var(--accent-seed);--on-primary:'+onPrimaryLight+';'
+          +'--primary-container:'+tone(20,'white')+';--on-primary-container:'+tone(75,'black')+';'
+          +'--secondary-container:'+tone(13,'white')+';--on-secondary-container:'+tone(58,'black')+';'
+          +'--tertiary-container:'+tone(20,'white')+';--on-tertiary-container:'+tone(75,'black')+';'
+          +'--bg:'+tone(8,'white')+';--surface:'+tone(3,'white')+';'
+          +'--surface-container-low:'+tone(10,'white')+';--surface-container:'+tone(13,'white')+';'
+          +'--surface-container-high:'+tone(16,'white')+';--surface-container-highest:'+tone(19,'white')+';'
+          +'--on-surface:'+tone(9,'black')+';--on-surface-variant:'+tone(48,'black')+';'
+          +'--outline:'+tone(28,'black')+';--outline-variant:'+tone(18,'white')+';'
+          +'--logo:'+tone(78,'black')+';--nav-active:'+tone(70,'black')+';'
           +'}:root.dark,:where(.dark, .dark *) {'
-          +'--primary:'+tone(hue,100,87)+';--on-primary:'+tone(hue,42,26)+';'
-          +'--primary-container:'+tone(hue,43,38)+';--on-primary-container:'+tone(hue,100,93)+';'
-          +'--secondary-container:'+tone(hue,13,31)+';--on-secondary-container:'+tone(hue,65,92)+';'
-          +'--tertiary-container:'+tone(th,25,31)+';--on-tertiary-container:'+tone(th,100,92)+';'
-          +'--bg:'+tone(hue,19,6)+';--surface:'+tone(hue,19,11)+';'
-          +'--surface-container-low:'+tone(hue,14,14)+';--surface-container:'+tone(hue,18,16)+';'
-          +'--surface-container-high:'+tone(hue,15,19)+';--surface-container-highest:'+tone(hue,12,22)+';'
-          +'--on-surface:'+tone(hue,29,91)+';--on-surface-variant:'+tone(hue,19,80)+';'
-          +'--outline:'+tone(hue,8,59)+';--outline-variant:'+tone(hue,7,29)+';'
-          +'--logo:'+tone(hue,100,90)+';--nav-active:'+tone(hue,100,93)+';'
+          +'--accent-seed:'+seed+';--primary:'+tone(55,'white')+';--on-primary:'+onPrimaryDark+';'
+          +'--primary-container:'+tone(38,'black')+';--on-primary-container:'+tone(20,'white')+';'
+          +'--secondary-container:'+tone(24,'black')+';--on-secondary-container:'+tone(16,'white')+';'
+          +'--tertiary-container:'+tone(38,'black')+';--on-tertiary-container:'+tone(20,'white')+';'
+          +'--bg:'+tone(24,'black')+';--surface:'+tone(18,'black')+';'
+          +'--surface-container-low:'+tone(21,'black')+';--surface-container:'+tone(24,'black')+';'
+          +'--surface-container-high:'+tone(27,'black')+';--surface-container-highest:'+tone(31,'black')+';'
+          +'--on-surface:'+tone(12,'white')+';--on-surface-variant:'+tone(28,'white')+';'
+          +'--outline:'+tone(24,'white')+';--outline-variant:'+tone(16,'black')+';'
+          +'--logo:'+tone(65,'white')+';--nav-active:'+tone(20,'white')+';'
           +'}';
         var styleEl=document.createElement('style');
         styleEl.id='cf-accent-style';

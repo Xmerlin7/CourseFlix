@@ -1,126 +1,112 @@
-export interface AccentPreset {
-  name: string
-  label: string
-  hue: number
+export const DEFAULT_ACCENT_HEX = '#65558F'
+
+export function isValidHex(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value)
 }
 
-// 257 is the app's original violet hue — kept as a named preset ("resets"
-// to the default palette, no injected stylesheet — see useAccentColor.ts).
-export const DEFAULT_HUE = 257
+function clamp255(n: number): number {
+  return Math.max(0, Math.min(255, Math.round(n)))
+}
 
-export const ACCENT_PRESETS: AccentPreset[] = [
-  { name: 'violet', label: 'بنفسجي', hue: DEFAULT_HUE },
-  { name: 'blue', label: 'أزرق', hue: 215 },
-  { name: 'teal', label: 'أخضر مائي', hue: 165 },
-  { name: 'amber', label: 'كهرماني', hue: 38 },
-  { name: 'rose', label: 'وردي', hue: 345 },
-]
+// Replicates `color-mix(in srgb, seed P%, white|black)` in JS — plain
+// linear interpolation in gamma (sRGB) space, same as the CSS function.
+// Needed once: to know what the *computed* dark-mode --primary actually
+// looks like, so --on-primary's contrast decision is based on the real
+// rendered color instead of the raw (unmixed) seed.
+function mixHex(hex: string, percent: number, base: 'white' | 'black'): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const baseVal = base === 'white' ? 255 : 0
+  const p = percent / 100
+  const toHex = (channel: number) => clamp255(channel * p + baseVal * (1 - p)).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
 
-function tone(hue: number, saturation: number, lightness: number): string {
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`
+// Standard YIQ-ish perceived-brightness check — decides whether text on
+// top of `hex` should be white or dark.
+export function getContrastOn(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000
+  return brightness >= 150 ? '#1D1B20' : '#FFFFFF'
+}
+
+// Percent of --accent-seed mixed into each token (the rest is white/black,
+// per mode) — reverse-engineered from how far the app's own original
+// violet tokens (--primary #65558F) sit from white/black, then applied as
+// a general ratio to ANY seed color. Unlike an HSL-hue-only approach,
+// color-mix() blends the seed's actual saturation and lightness too, so a
+// muted pastel seed produces a muted result and a vivid seed a vivid one
+// — the whole picked color matters, not just its hue.
+function tone(mixPercent: number, base: 'white' | 'black'): string {
+  return `color-mix(in srgb, var(--accent-seed) ${mixPercent}%, ${base})`
 }
 
 /**
- * Builds the full light+dark CSS block for a given primary hue — any
- * hue, not just the five presets above (the picker also accepts a raw
- * <input type="color">). Every S/L pair here was reverse-engineered from
- * the app's own original violet tokens (hue ~257), so any hue reproduces
- * the same contrast behavior as the already-proven default instead of a
- * hand-picked, unverified combination.
+ * Builds the full light+dark CSS block for a given seed color (any hex).
+ * Deliberately covers backgrounds/surfaces/text/chips too, not just the
+ * primary button color — an earlier version only touched a handful of
+ * tokens (primary/nav-active/logo) and most of the page visibly never
+ * changed. Semantic colors (error/success) and hue-agnostic overlays
+ * (scrim/shadow/hover) are left out on purpose: an error state must stay
+ * recognizably red no matter the accent.
  *
- * Deliberately covers backgrounds/surfaces/text too, not just the primary
- * button color — a prior version only touched a handful of tokens and
- * the accent visibly didn't apply to most of the page. Semantic colors
- * (error/success) and hue-agnostic overlays (scrim/shadow/hover) are left
- * out on purpose: an error state must stay recognizably red no matter the
- * accent.
- *
- * index.html's bootstrap script duplicates this same formula in vanilla
- * JS so the chosen hue applies before first paint — keep both in sync.
+ * index.html's bootstrap script duplicates this same structure (including
+ * the mixHex/getContrastOn math) in vanilla JS so the chosen color
+ * applies before first paint too — keep both in sync.
  */
-export function buildAccentCss(hue: number): string {
-  const tertiaryHue = (hue + 85) % 360
+export function buildAccentCss(seedHex: string): string {
+  const onPrimaryLight = getContrastOn(seedHex)
+  const darkPrimary = mixHex(seedHex, 55, 'white')
+  const onPrimaryDark = getContrastOn(darkPrimary)
 
   return `:root {
-  --primary: ${tone(hue, 25, 45)};
-  --on-primary: #FFFFFF;
-  --primary-container: ${tone(hue, 100, 93)};
-  --on-primary-container: ${tone(hue, 43, 38)};
-  --secondary-container: ${tone(hue, 65, 92)};
-  --on-secondary-container: ${tone(hue, 13, 31)};
-  --tertiary-container: ${tone(tertiaryHue, 100, 92)};
-  --on-tertiary-container: ${tone(tertiaryHue, 25, 31)};
-  --bg: ${tone(hue, 43, 93)};
-  --surface: ${tone(hue, 100, 99)};
-  --surface-container-low: ${tone(hue, 47, 96)};
-  --surface-container: ${tone(hue, 40, 94)};
-  --surface-container-high: ${tone(hue, 33, 92)};
-  --surface-container-highest: ${tone(hue, 31, 89)};
-  --on-surface: ${tone(hue, 8, 12)};
-  --on-surface-variant: ${tone(hue, 13, 31)};
-  --outline: ${tone(hue, 4, 48)};
-  --outline-variant: ${tone(hue, 20, 83)};
-  --logo: ${tone(hue, 52, 35)};
-  --nav-active: ${tone(hue, 43, 38)};
+  --accent-seed: ${seedHex};
+  --primary: var(--accent-seed);
+  --on-primary: ${onPrimaryLight};
+  --primary-container: ${tone(20, 'white')};
+  --on-primary-container: ${tone(75, 'black')};
+  --secondary-container: ${tone(13, 'white')};
+  --on-secondary-container: ${tone(58, 'black')};
+  --tertiary-container: ${tone(20, 'white')};
+  --on-tertiary-container: ${tone(75, 'black')};
+  --bg: ${tone(8, 'white')};
+  --surface: ${tone(3, 'white')};
+  --surface-container-low: ${tone(10, 'white')};
+  --surface-container: ${tone(13, 'white')};
+  --surface-container-high: ${tone(16, 'white')};
+  --surface-container-highest: ${tone(19, 'white')};
+  --on-surface: ${tone(9, 'black')};
+  --on-surface-variant: ${tone(48, 'black')};
+  --outline: ${tone(28, 'black')};
+  --outline-variant: ${tone(18, 'white')};
+  --logo: ${tone(78, 'black')};
+  --nav-active: ${tone(70, 'black')};
 }
 :root.dark,
 :where(.dark, .dark *) {
-  --primary: ${tone(hue, 100, 87)};
-  --on-primary: ${tone(hue, 42, 26)};
-  --primary-container: ${tone(hue, 43, 38)};
-  --on-primary-container: ${tone(hue, 100, 93)};
-  --secondary-container: ${tone(hue, 13, 31)};
-  --on-secondary-container: ${tone(hue, 65, 92)};
-  --tertiary-container: ${tone(tertiaryHue, 25, 31)};
-  --on-tertiary-container: ${tone(tertiaryHue, 100, 92)};
-  --bg: ${tone(hue, 19, 6)};
-  --surface: ${tone(hue, 19, 11)};
-  --surface-container-low: ${tone(hue, 14, 14)};
-  --surface-container: ${tone(hue, 18, 16)};
-  --surface-container-high: ${tone(hue, 15, 19)};
-  --surface-container-highest: ${tone(hue, 12, 22)};
-  --on-surface: ${tone(hue, 29, 91)};
-  --on-surface-variant: ${tone(hue, 19, 80)};
-  --outline: ${tone(hue, 8, 59)};
-  --outline-variant: ${tone(hue, 7, 29)};
-  --logo: ${tone(hue, 100, 90)};
-  --nav-active: ${tone(hue, 100, 93)};
+  --accent-seed: ${seedHex};
+  --primary: ${tone(55, 'white')};
+  --on-primary: ${onPrimaryDark};
+  --primary-container: ${tone(38, 'black')};
+  --on-primary-container: ${tone(20, 'white')};
+  --secondary-container: ${tone(24, 'black')};
+  --on-secondary-container: ${tone(16, 'white')};
+  --tertiary-container: ${tone(38, 'black')};
+  --on-tertiary-container: ${tone(20, 'white')};
+  --bg: ${tone(24, 'black')};
+  --surface: ${tone(18, 'black')};
+  --surface-container-low: ${tone(21, 'black')};
+  --surface-container: ${tone(24, 'black')};
+  --surface-container-high: ${tone(27, 'black')};
+  --surface-container-highest: ${tone(31, 'black')};
+  --on-surface: ${tone(12, 'white')};
+  --on-surface-variant: ${tone(28, 'white')};
+  --outline: ${tone(24, 'white')};
+  --outline-variant: ${tone(16, 'black')};
+  --logo: ${tone(65, 'white')};
+  --nav-active: ${tone(20, 'white')};
 }`
-}
-
-export function hexToHue(hex: string): number {
-  const normalized = hex.replace('#', '')
-  const r = parseInt(normalized.slice(0, 2), 16) / 255
-  const g = parseInt(normalized.slice(2, 4), 16) / 255
-  const b = parseInt(normalized.slice(4, 6), 16) / 255
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const delta = max - min
-
-  if (delta === 0) return 0
-
-  let hue: number
-  if (max === r) {
-    hue = ((g - b) / delta) % 6
-  } else if (max === g) {
-    hue = (b - r) / delta + 2
-  } else {
-    hue = (r - g) / delta + 4
-  }
-
-  hue *= 60
-  return Math.round(hue < 0 ? hue + 360 : hue)
-}
-
-// Inverse of the light-mode --primary tone (hue, 25%, 45%) as hex — used
-// for swatch previews and as the native <input type="color">'s current
-// value, which requires a hex string rather than an hsl() function.
-export function hueToHex(hue: number): string {
-  const s = 0.25
-  const l = 0.45
-  const k = (n: number) => (n + hue / 30) % 12
-  const a = s * Math.min(l, 1 - l)
-  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
-  const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0')
-  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`
 }
