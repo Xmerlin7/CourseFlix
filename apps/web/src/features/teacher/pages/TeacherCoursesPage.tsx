@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
 import { CourseThumb } from '../../courses/components/CourseThumb'
 import { useTeacherCourses } from '../hooks/useTeacherCourses'
+import { TeacherCoursesSkeleton } from '../components/TeacherCoursesSkeleton'
 import type { CourseStatus } from '../../courses/types/course.types'
 
 const STATUS_OPTIONS: Array<{ label: string; value: CourseStatus | '' }> = [
@@ -55,7 +55,7 @@ export function TeacherCoursesPage() {
         ))}
       </div>
 
-      {isLoading && <LoadingState variant="cards" />}
+      {isLoading && <TeacherCoursesSkeleton />}
 
       {!isLoading &&
         error &&
