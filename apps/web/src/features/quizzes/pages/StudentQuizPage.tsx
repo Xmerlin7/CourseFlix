@@ -4,9 +4,9 @@ import { ConfirmModal } from '../../../shared/components/ConfirmModal';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { ErrorState } from '../../../shared/components/ErrorState';
 import { ForbiddenState } from '../../../shared/components/ForbiddenState';
-import { LoadingState } from '../../../shared/components/LoadingState';
 import { NotFoundState } from '../../../shared/components/NotFoundState';
 import { useQuiz } from '../hooks/useQuiz';
+import { StudentQuizSkeleton } from '../components/StudentQuizSkeleton';
 import type { QuizQuestion, QuizResult } from '../types/quiz.types';
 
 interface QuestionNavGridProps {
@@ -60,11 +60,11 @@ export function StudentQuizPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <StudentQuizSkeleton />;
   if (error?.status === 403) return <ForbiddenState />;
   if (error?.status === 404) return <NotFoundState />;
   if (error) return <ErrorState onRetry={refetch} />;
-  if (!quiz) return <LoadingState />;
+  if (!quiz) return <StudentQuizSkeleton />;
 
   const totalQuestions = quiz.questions.length;
   if (totalQuestions === 0) {
