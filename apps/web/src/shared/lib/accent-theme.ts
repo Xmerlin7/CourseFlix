@@ -68,8 +68,8 @@ export function buildAccentCss(seedHex: string): string {
   --on-primary: ${onPrimaryLight};
   --primary-container: ${tone(20, 'white')};
   --on-primary-container: ${tone(75, 'black')};
-  --secondary-container: ${tone(13, 'white')};
-  --on-secondary-container: ${tone(58, 'black')};
+  --secondary-container: ${tone(20, 'white')};
+  --on-secondary-container: ${tone(75, 'black')};
   --tertiary-container: ${tone(20, 'white')};
   --on-tertiary-container: ${tone(75, 'black')};
   --bg: ${tone(8, 'white')};
@@ -92,8 +92,8 @@ export function buildAccentCss(seedHex: string): string {
   --on-primary: ${onPrimaryDark};
   --primary-container: ${tone(38, 'black')};
   --on-primary-container: ${tone(20, 'white')};
-  --secondary-container: ${tone(24, 'black')};
-  --on-secondary-container: ${tone(16, 'white')};
+  --secondary-container: ${tone(38, 'black')};
+  --on-secondary-container: ${tone(20, 'white')};
   --tertiary-container: ${tone(38, 'black')};
   --on-tertiary-container: ${tone(20, 'white')};
   --bg: ${tone(24, 'black')};

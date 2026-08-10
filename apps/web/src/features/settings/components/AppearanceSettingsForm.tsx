@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { showToast } from '../../../shared/components/Toast'
 import { useAccentColor } from '../../../shared/hooks/useAccentColor'
 import { useCornerStyle, CORNER_STYLES, type CornerStyle } from '../../../shared/hooks/useCornerStyle'
+import { useFontFamily, FONT_FAMILIES, type FontFamily } from '../../../shared/hooks/useFontFamily'
 import { useTheme, type ThemeMode } from '../../../shared/hooks/useTheme'
 import { DEFAULT_ACCENT_HEX, isValidHex } from '../../../shared/lib/accent-theme'
 import { useSettings } from '../hooks/useSettings'
@@ -26,6 +27,25 @@ const CORNER_PREVIEW_RADIUS: Record<CornerStyle, number> = {
   round: 20,
 }
 
+const FONT_LABEL: Record<FontFamily, string> = {
+  cairo: 'Cairo',
+  tajawal: 'Tajawal',
+  almarai: 'Almarai',
+  'ibm-plex': 'IBM Plex Sans Arabic',
+  'noto-kufi': 'Noto Kufi Arabic',
+}
+
+// The literal font-family name each option applies — must match the
+// --font-family values in index.css's [data-font="..."] overrides, and
+// the family names loaded by index.html's Google Fonts <link>.
+const FONT_STACK: Record<FontFamily, string> = {
+  cairo: '"Cairo", sans-serif',
+  tajawal: '"Tajawal", sans-serif',
+  almarai: '"Almarai", sans-serif',
+  'ibm-plex': '"IBM Plex Sans Arabic", sans-serif',
+  'noto-kufi': '"Noto Kufi Arabic", sans-serif',
+}
+
 // Theme is applied locally (instant, via useTheme's localStorage + DOM
 // class) independently of the account PATCH — a slow/failed save never
 // blocks the visual change, it just means the choice won't follow you to
@@ -37,6 +57,7 @@ export function AppearanceSettingsForm() {
   const { setTheme, isSaving } = useSettings()
   const { hex, setHex } = useAccentColor()
   const { corners, setCorners } = useCornerStyle()
+  const { font, setFont } = useFontFamily()
 
   // Local, freely-typeable copy of the hex text field — it can't just be
   // controlled by `hex` directly, since an in-progress value like "#65"
@@ -140,6 +161,27 @@ export function AppearanceSettingsForm() {
                 aria-hidden="true"
               />
               {CORNER_LABEL[style]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginBottom: 0 }}>خط الواجهة</h3>
+        <p className="meta">اختار الخط العربي اللي يريحك أكتر في القراءة.</p>
+
+        <div className="font-options">
+          {FONT_FAMILIES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setFont(option)}
+              className={`font-option${font === option ? ' selected' : ''}`}
+              style={{ fontFamily: FONT_STACK[option] }}
+              aria-pressed={font === option}
+            >
+              <span className="font-option-sample">أبجد هوز</span>
+              <span className="font-option-label">{FONT_LABEL[option]}</span>
             </button>
           ))}
         </div>

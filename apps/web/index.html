@@ -7,11 +7,15 @@
     <title>CourseFlix</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap" rel="stylesheet">
-    <!-- Runs before first paint so there's no flash of the wrong theme/accent/corners
-         while React hydrates. Mirrors what useTheme/useAccentColor/useCornerStyle/
-         useReducedMotion apply after mount — keep all of them in sync if the storage
-         keys, value sets, or accent-theme.ts's tone formula ever change. -->
+    <!-- Cairo stays the default (--sans in index.css); the other four are
+         only fetched for users who pick them in Settings > Appearance —
+         see useFontFamily.ts. -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap" rel="stylesheet">
+    <!-- Runs before first paint so there's no flash of the wrong theme/accent/corners/
+         font/scale while React hydrates. Mirrors what useTheme/useAccentColor/
+         useCornerStyle/useReducedMotion/useFontFamily/useUiScale apply after mount —
+         keep all of them in sync if the storage keys, value sets, or accent-theme.ts's
+         tone formula ever change. -->
     <script>(function(){try{
       var theme=localStorage.getItem('cf-theme');
       var isDark=theme==='dark'||((!theme||theme==='system')&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);
@@ -24,6 +28,12 @@
 
       var density=localStorage.getItem('cf-density');
       if(density&&density!=='comfortable')document.documentElement.setAttribute('data-density',density);
+
+      var font=localStorage.getItem('cf-font');
+      if(font&&font!=='cairo')document.documentElement.setAttribute('data-font',font);
+
+      var uiScale=localStorage.getItem('cf-ui-scale');
+      if(uiScale&&uiScale!=='default')document.documentElement.setAttribute('data-ui-scale',uiScale);
 
       var seed=localStorage.getItem('cf-accent-hex');
       if(seed&&/^#[0-9a-fA-F]{6}$/.test(seed)&&seed.toLowerCase()!=='#65558f'){
@@ -43,7 +53,7 @@
         var css=':root {'
           +'--accent-seed:'+seed+';--primary:var(--accent-seed);--on-primary:'+onPrimaryLight+';'
           +'--primary-container:'+tone(20,'white')+';--on-primary-container:'+tone(75,'black')+';'
-          +'--secondary-container:'+tone(13,'white')+';--on-secondary-container:'+tone(58,'black')+';'
+          +'--secondary-container:'+tone(20,'white')+';--on-secondary-container:'+tone(75,'black')+';'
           +'--tertiary-container:'+tone(20,'white')+';--on-tertiary-container:'+tone(75,'black')+';'
           +'--bg:'+tone(8,'white')+';--surface:'+tone(3,'white')+';'
           +'--surface-container-low:'+tone(10,'white')+';--surface-container:'+tone(13,'white')+';'
@@ -54,7 +64,7 @@
           +'}:root.dark,:where(.dark, .dark *) {'
           +'--accent-seed:'+seed+';--primary:'+tone(55,'white')+';--on-primary:'+onPrimaryDark+';'
           +'--primary-container:'+tone(38,'black')+';--on-primary-container:'+tone(20,'white')+';'
-          +'--secondary-container:'+tone(24,'black')+';--on-secondary-container:'+tone(16,'white')+';'
+          +'--secondary-container:'+tone(38,'black')+';--on-secondary-container:'+tone(20,'white')+';'
           +'--tertiary-container:'+tone(38,'black')+';--on-tertiary-container:'+tone(20,'white')+';'
           +'--bg:'+tone(24,'black')+';--surface:'+tone(18,'black')+';'
           +'--surface-container-low:'+tone(21,'black')+';--surface-container:'+tone(24,'black')+';'

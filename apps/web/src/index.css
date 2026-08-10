@@ -54,12 +54,15 @@
   --shadow: 0 1px 3px rgba(30, 20, 50, .12), 0 4px 14px rgba(30, 20, 50, .08);
   --shadow-lg: 0 6px 24px rgba(30, 20, 50, .18);
 
-  /* Cairo carries the whole UI: the product is Arabic-first/RTL, and
-     Rubik (the ui5 mockups' font) has no Arabic coverage — Arabic text
-     silently fell back to a system font, which is what made the pages
-     look inconsistent. Anton stays for the Latin wordmark only. */
-  --sans: "Cairo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --heading: "Cairo", system-ui, "Segoe UI", sans-serif;
+  /* Cairo carries the whole UI by default: the product is Arabic-first/
+     RTL, and Rubik (the ui5 mockups' font) has no Arabic coverage —
+     Arabic text silently fell back to a system font, which is what made
+     the pages look inconsistent. Anton stays for the Latin wordmark
+     only. --font-family is the one knob Settings > Appearance turns —
+     see the data-font overrides below and useFontFamily.ts. */
+  --font-family: "Cairo";
+  --sans: var(--font-family), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --heading: var(--font-family), system-ui, "Segoe UI", sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 15px/1.6 var(--sans);
@@ -67,6 +70,7 @@
   color-scheme: light dark;
   color: var(--on-surface);
   background: var(--bg);
+  zoom: var(--ui-zoom);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -140,6 +144,43 @@
   --radius-scale: 1.5;
 }
 
+/* ---------- Font family (Settings > Appearance) ---------- */
+:root[data-font="tajawal"] {
+  --font-family: "Tajawal";
+}
+
+:root[data-font="almarai"] {
+  --font-family: "Almarai";
+}
+
+:root[data-font="ibm-plex"] {
+  --font-family: "IBM Plex Sans Arabic";
+}
+
+:root[data-font="noto-kufi"] {
+  --font-family: "Noto Kufi Arabic";
+}
+
+/* ---------- UI scale (Settings > Experience) ----------
+   `zoom` (not transform: scale()) — it's a real layout-level scale, the
+   same mechanism as the browser's own Ctrl+scroll zoom, so it resizes
+   fonts *and* every padding/gap/icon together with zero risk of gaps
+   the way mechanically converting individual declarations has (see
+   --radius-scale/--space-scale, which both needed multiple follow-up
+   passes to reach the parts of the app they'd missed). Supported by
+   every browser this app already requires (Tailwind v4's own floor). */
+:root {
+  --ui-zoom: 1;
+}
+
+:root[data-ui-scale="small"] {
+  --ui-zoom: 0.9;
+}
+
+:root[data-ui-scale="large"] {
+  --ui-zoom: 1.15;
+}
+
 /* ---------- Density (Settings > Experience) ----------
    Scales padding on cards/list rows/settings rows/form fields — the
    surfaces people scan through lists of, not fixed-size chrome like
@@ -191,7 +232,7 @@
 
 .sheet {
   background: var(--surface);
-  border-radius: 28px;
+  border-radius: calc(28px * var(--radius-scale));
   height: 100%;
   overflow: hidden;
   padding: 0 clamp(18px, 4vw, 48px);
@@ -327,10 +368,10 @@
 .sidebar.rail .nav-item {
   flex-direction: column;
   gap: 4px;
-  padding: 10px 6px;
+  padding: calc(10px * var(--space-scale)) calc(6px * var(--space-scale));
   font-size: 11.5px;
   text-align: center;
-  border-radius: 18px;
+  border-radius: calc(18px * var(--radius-scale));
 }
 
 .sidebar.rail .side-footer .lbl {
@@ -523,7 +564,7 @@
   height: min(590px, calc(100vh - 116px));
   background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
-  border-radius: 24px;
+  border-radius: calc(24px * var(--radius-scale));
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
@@ -568,7 +609,7 @@
   align-items: flex-start;
   gap: 8px;
   padding: 11px 12px;
-  border-radius: 18px;
+  border-radius: calc(18px * var(--radius-scale));
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -627,7 +668,7 @@
   min-width: 0;
   resize: none;
   border: 1px solid var(--outline-variant);
-  border-radius: 16px;
+  border-radius: calc(16px * var(--radius-scale));
   padding: 10px 12px;
   background: var(--surface);
   color: var(--on-surface);
@@ -794,7 +835,7 @@ code,
 .counter {
   font-family: var(--mono);
   display: inline-flex;
-  border-radius: 4px;
+  border-radius: calc(4px * var(--radius-scale));
   color: var(--on-surface);
 }
 
@@ -817,7 +858,7 @@ code {
   }
 
   .sheet {
-    border-radius: 22px;
+    border-radius: calc(22px * var(--radius-scale));
   }
 
   .sidebar {
@@ -853,7 +894,7 @@ code {
     gap: 3px;
     padding: 7px 12px;
     font-size: 11px;
-    border-radius: 16px;
+    border-radius: calc(16px * var(--radius-scale));
   }
 
   .side-footer {
@@ -905,7 +946,7 @@ code {
 .btn.text {
   background: transparent;
   color: var(--primary);
-  padding: 10px 14px;
+  padding: calc(10px * var(--space-scale)) calc(14px * var(--space-scale));
 }
 
 .btn.text:hover {
@@ -919,7 +960,7 @@ code {
 }
 
 .btn.big {
-  padding: 14px 32px;
+  padding: calc(14px * var(--space-scale)) calc(32px * var(--space-scale));
   font-size: 15px;
 }
 
@@ -1143,7 +1184,7 @@ code {
 
 .quiz-nav-cell {
   aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: calc(12px * var(--radius-scale));
   border: 1.5px solid var(--outline-variant);
   background: var(--surface);
   color: var(--on-surface-variant);
@@ -1202,7 +1243,7 @@ code {
 .quiz-nav-legend .dot {
   width: 12px;
   height: 12px;
-  border-radius: 4px;
+  border-radius: calc(4px * var(--radius-scale));
   border: 1.5px solid var(--outline-variant);
   background: var(--surface);
   flex: none;
@@ -1351,7 +1392,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: calc(12px * var(--radius-scale));
   background: rgba(255, 255, 255, 0.16);
   font-size: 21px;
 }
@@ -2289,7 +2330,7 @@ h1.page-title {
 .tile .lead-ic {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: calc(12px * var(--radius-scale));
   background: var(--secondary-container);
   color: var(--on-secondary-container);
   display: grid;
@@ -2309,7 +2350,7 @@ h1.page-title {
   align-items: center;
   gap: 16px;
   padding: calc(16px * var(--space-scale)) calc(20px * var(--space-scale));
-  border-radius: 18px;
+  border-radius: calc(18px * var(--radius-scale));
   background: var(--surface-container-low);
   transition: background 0.15s;
 }
@@ -2427,7 +2468,7 @@ a.list-item:hover,
   bottom: -1px;
   inset-inline: 16px;
   height: 3px;
-  border-radius: 3px 3px 0 0;
+  border-radius: calc(3px * var(--radius-scale)) calc(3px * var(--radius-scale)) 0 0;
   background: var(--primary);
 }
 
@@ -2543,7 +2584,7 @@ table.mtable {
 
 .player {
   aspect-ratio: 16 / 9;
-  border-radius: 24px;
+  border-radius: calc(24px * var(--radius-scale));
   background: #171321;
   position: relative;
   overflow: hidden;
@@ -2993,7 +3034,7 @@ table.mtable {
   gap: 12px;
   margin-top: 18px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: calc(16px * var(--radius-scale));
   background: var(--surface-container-low);
   color: var(--on-surface);
 }
@@ -3018,7 +3059,7 @@ table.mtable {
   flex-direction: column;
   gap: 14px;
   padding: 16px;
-  border-radius: 16px;
+  border-radius: calc(16px * var(--radius-scale));
   background: var(--surface-container-low);
 }
 
@@ -3038,7 +3079,7 @@ table.mtable {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  border-radius: 16px;
+  border-radius: calc(16px * var(--radius-scale));
   background: var(--secondary-container);
   color: var(--on-secondary-container);
   font-size: 13.5px;
@@ -3097,7 +3138,7 @@ table.mtable {
   }
 
   .player {
-    border-radius: 18px;
+    border-radius: calc(18px * var(--radius-scale));
   }
 }
 
@@ -3255,7 +3296,7 @@ table.mtable {
   align-items: center;
   gap: 10px;
   padding: 14px 22px;
-  border-radius: 16px;
+  border-radius: calc(16px * var(--radius-scale));
   font-size: 14.5px;
   font-weight: 700;
   box-shadow: var(--shadow-lg);
@@ -3322,6 +3363,12 @@ table.mtable {
   color: var(--on-surface-variant);
 }
 
+/* Built entirely in physical (left/right) coordinates, then mirrored as
+   one rigid unit — this app is always dir="rtl" (see index.html), and
+   two rounds of inset-inline-start/-end math both ended up with the
+   thumb in the wrong place. A pill and a circle are symmetric, so
+   flipping the whole widget is visually identical to hand-authoring an
+   RTL version, without any conditional logic to get wrong. */
 .switch {
   position: relative;
   display: inline-flex;
@@ -3329,6 +3376,7 @@ table.mtable {
   width: 52px;
   height: 30px;
   cursor: pointer;
+  transform: scaleX(-1);
 }
 
 .switch input {
@@ -3346,23 +3394,19 @@ table.mtable {
   background: var(--surface-container-highest);
   border: 1.5px solid var(--outline);
   transition: background 0.18s, border-color 0.18s;
+  box-sizing: border-box;
 }
 
-/* Both states use a concrete inset-inline-start length (never `auto` —
-   animating to/from `auto` isn't reliably interpolable, which is what
-   made the thumb land in the wrong spot before). inset-inline-start is
-   direction-aware on its own, so this is RTL-correct without any extra
-   logic: growing it always moves the thumb toward the opposite edge from
-   wherever "start" is. */
 .switch .thumb {
   position: absolute;
   top: 3px;
-  inset-inline-start: 3px;
+  left: 3px;
   width: 22px;
   height: 22px;
   border-radius: 50%;
   background: var(--outline);
-  transition: inset-inline-start 0.18s, background 0.18s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease, background 0.18s;
 }
 
 .switch input:checked ~ .track {
@@ -3371,8 +3415,9 @@ table.mtable {
 }
 
 .switch input:checked ~ .thumb {
-  inset-inline-start: calc(100% - 25px);
+  transform: translateX(24px);
   background: var(--on-primary);
+  box-shadow: none;
 }
 
 .switch input:focus-visible ~ .track {
@@ -3484,4 +3529,48 @@ table.mtable {
   width: 22px;
   height: 22px;
   border: 2px solid currentColor;
+}
+
+/* ---------- Font family options ---------- */
+.font-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.font-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: calc(14px * var(--radius-scale));
+  border: 1.5px solid var(--outline-variant);
+  background: var(--surface-container-high);
+  cursor: pointer;
+  text-align: start;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.font-option:hover {
+  border-color: var(--outline);
+}
+
+.font-option.selected {
+  border-color: var(--primary);
+  background: var(--primary-container);
+}
+
+.font-option-sample {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.font-option.selected .font-option-sample {
+  color: var(--on-primary-container);
+}
+
+.font-option-label {
+  font-size: 12px;
+  color: var(--on-surface-variant);
 }

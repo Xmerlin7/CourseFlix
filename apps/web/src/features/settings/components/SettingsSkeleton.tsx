@@ -20,7 +20,7 @@ export function SettingsSkeleton() {
         </div>
 
         <div className="settings-cards-grid">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="card">
               <span className="skeleton" style={{ height: 16, width: '55%', borderRadius: 6 }} />
               <span className="skeleton" style={{ height: 13, width: '80%', borderRadius: 6 }} />

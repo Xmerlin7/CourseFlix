@@ -2,10 +2,17 @@ import { Switch } from '../../../shared/components/Switch'
 import { useDensity, DENSITIES, type Density } from '../../../shared/hooks/useDensity'
 import { useReducedMotion } from '../../../shared/hooks/useReducedMotion'
 import { useSidebarCollapsed } from '../../../shared/hooks/useSidebarCollapsed'
+import { useUiScale, UI_SCALES, type UiScale } from '../../../shared/hooks/useUiScale'
 
 const DENSITY_LABEL: Record<Density, { label: string; hint: string }> = {
   comfortable: { label: 'مريحة', hint: 'مسافات واسعة وأسهل قراءة' },
   compact: { label: 'مضغوطة', hint: 'مسافات أقل، تشوف محتوى أكتر بدون تمرير' },
+}
+
+const UI_SCALE_LABEL: Record<UiScale, string> = {
+  small: 'صغير',
+  default: 'افتراضي',
+  large: 'كبير',
 }
 
 // All three preferences here are client-side only (localStorage), same
@@ -15,6 +22,7 @@ export function ExperienceSettingsForm() {
   const { isCollapsed, setCollapsed } = useSidebarCollapsed()
   const { reduceMotion, setReduceMotion } = useReducedMotion()
   const { density, setDensity } = useDensity()
+  const { scale, setScale } = useUiScale()
 
   return (
     <div className="settings-cards-grid">
@@ -50,6 +58,26 @@ export function ExperienceSettingsForm() {
             >
               <span className="ms">{option === 'compact' ? 'density_small' : 'density_medium'}</span>
               {DENSITY_LABEL[option].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginBottom: 0 }}>حجم الواجهة</h3>
+        <p className="meta">يكبّر أو يصغّر النصوص والعناصر في كل الواجهة دفعة واحدة.</p>
+
+        <div className="actions section" style={{ marginBottom: 0 }}>
+          {UI_SCALES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setScale(option)}
+              className={`chip clickable outline${scale === option ? ' selected' : ''}`}
+              aria-pressed={scale === option}
+            >
+              <span className="ms">format_size</span>
+              {UI_SCALE_LABEL[option]}
             </button>
           ))}
         </div>
