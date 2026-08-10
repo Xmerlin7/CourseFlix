@@ -34,7 +34,7 @@ describe('StudentBrowseCoursesPage', () => {
     )
 
     renderPage()
-    expect(screen.getByTestId('cards-skeleton')).toBeInTheDocument()
+    expect(screen.getByTestId('browse-courses-skeleton')).toBeInTheDocument()
   })
 
   it('renders error state on API failure', async () => {

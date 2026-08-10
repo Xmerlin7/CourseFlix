@@ -2,9 +2,9 @@ import { Link } from 'react-router'
 import { User } from 'lucide-react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { CourseThumb } from '../../courses/components/CourseThumb'
 import { useCourseCatalog } from '../../courses/hooks/useCourseCatalog'
+import { StudentBrowseCoursesSkeleton } from '../components/StudentBrowseCoursesSkeleton'
 
 function formatMoney(minor: number, currency: string) {
   const amount = (minor / 100).toLocaleString('ar-EG')
@@ -22,7 +22,7 @@ export function StudentBrowseCoursesPage() {
         <p className="subtitle">كل الدورات المتاحة للاشتراك</p>
       </div>
 
-      {isLoading && <LoadingState variant="cards" />}
+      {isLoading && <StudentBrowseCoursesSkeleton />}
 
       {!isLoading && error && (
         <ErrorState
