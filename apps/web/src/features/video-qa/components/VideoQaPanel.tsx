@@ -150,9 +150,9 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
 
               <form
                 onSubmit={(event) => void handleSubmit(event)}
-                style={{ display: 'flex', gap: 8 }}
+                style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}
               >
-                <div className="tf" style={{ flex: 1 }}>
+                <div className="tf" style={{ flex: 1, marginBottom: 0 }}>
                   <label htmlFor={`video-qa-question-${videoId}`}>سؤالك عن الفيديو</label>
                   <textarea
                     id={`video-qa-question-${videoId}`}
@@ -173,7 +173,7 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
                   />
                 </div>
                 <button
-                  className="btn big"
+                  className="icon-btn filled"
                   type="submit"
                   aria-label="إرسال السؤال"
                   disabled={isSending || draft.trim().length === 0}
