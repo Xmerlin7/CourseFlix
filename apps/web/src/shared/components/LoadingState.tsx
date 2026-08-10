@@ -1,7 +1,7 @@
 import './LoadingState.css'
 
 type LoadingStateProps = {
-  variant?: 'cards' | 'list' | 'text' | 'lesson' | 'sales' | 'student-courses'
+  variant?: 'cards' | 'list' | 'text' | 'lesson' | 'sales'
   count?: number
 }
 
@@ -24,31 +24,6 @@ export function LoadingState({ variant = 'cards', count = 3 }: LoadingStateProps
                 <div className="course-card-footer" style={{ marginTop: 'auto', paddingTop: 14 }}>
                   <div className="skeleton skeleton-h-5 skeleton-w-1\/3" />
                   <div className="skeleton skeleton-h-8 skeleton-w-1\/3" style={{ borderRadius: 999 }} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {variant === 'student-courses' && (
-        <div className="grid-3 course-browse-grid loading-grid" data-testid="cards-skeleton">
-          {Array.from({ length: count }).map((_, i) => (
-            <div key={i} className="card loading-card student-course-card-skeleton">
-              <div className="skeleton loading-card-thumb" />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                  <div className="skeleton skeleton-h-5" style={{ width: '60%' }} />
-                  <div className="skeleton skeleton-h-5 skeleton-w-1\/3" style={{ borderRadius: 999 }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div className="skeleton skeleton-h-3 skeleton-w-full" />
-                  <div className="skeleton skeleton-h-3 skeleton-w-2\/3" />
-                </div>
-                <div className="skeleton skeleton-h-3 skeleton-w-1\/2" />
-                <div className="skeleton skeleton-h-3 skeleton-w-1\/3" />
-                <div style={{ marginTop: 'auto', paddingTop: 14 }}>
-                  <div className="skeleton skeleton-h-10 skeleton-w-full" style={{ borderRadius: 999 }} />
                 </div>
               </div>
             </div>

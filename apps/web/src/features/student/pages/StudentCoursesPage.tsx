@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { StudentCourseCard } from '../components/StudentCourseCard'
+import { StudentCoursesSkeleton } from '../components/StudentCoursesSkeleton'
 import { useStudentEnrollments } from '../hooks/useStudentEnrollments'
 import type { EnrollmentStatus, StudentEnrollment } from '../types/student.types'
 
@@ -140,7 +140,7 @@ export function StudentCoursesPage() {
         ))}
       </div>
 
-      {isLoading && <LoadingState variant="student-courses" />}
+      {isLoading && <StudentCoursesSkeleton />}
 
       {!isLoading &&
         error &&
