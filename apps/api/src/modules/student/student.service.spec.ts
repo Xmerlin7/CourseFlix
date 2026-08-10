@@ -89,6 +89,7 @@ describe('StudentService', () => {
       expect(result.stats).toEqual({
         enrolledCoursesCount: 2,
         activeCoursesCount: 1,
+        completedCoursesCount: 1,
       });
       // Sorted by enrolledAt DESC — the more recently enrolled course first.
       expect(result.recentCourses[0]).toEqual({
@@ -111,6 +112,231 @@ describe('StudentService', () => {
 
       expect(result.recentCourses[0].courseTitle).toBeNull();
       expect(result.student.fullName).toBeNull();
+    });
+
+    it('has no overall progress or continue-learning course when no summaries carry lessons', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue(enrollments);
+      coursesService.findByIds.mockResolvedValue([
+        mechanicsCourse,
+        electroCourse,
+      ]);
+      usersService.findById.mockResolvedValue(null);
+      // Default lessonsService mock resolves an empty Map (no summaries).
+
+      const result = await studentService.getDashboard(studentId);
+
+      expect(result.overallProgressPercent).toBeNull();
+      expect(result.continueLearning).toBeNull();
+    });
+
+    it('averages overallProgressPercent across courses that actually have lessons', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue(enrollments);
+      coursesService.findByIds.mockResolvedValue([
+        mechanicsCourse,
+        electroCourse,
+      ]);
+      usersService.findById.mockResolvedValue(null);
+      lessonsService.getCourseProgressSummaries.mockResolvedValue(
+        new Map([
+          [
+            mechanicsCourse.id,
+            {
+              totalLessonsCount: 10,
+              completedLessonsCount: 4,
+              progressPercent: 40,
+              currentLesson: {
+                id: 'l1',
+                title: 'Lesson 1',
+                lastVideoPosition: 0,
+              },
+              lastActivityAt: new Date('2026-08-01T00:00:00.000Z'),
+              lastCompletedLesson: null,
+            },
+          ],
+          [
+            electroCourse.id,
+            {
+              totalLessonsCount: 0,
+              completedLessonsCount: 0,
+              progressPercent: 0,
+              currentLesson: null,
+              lastActivityAt: null,
+              lastCompletedLesson: null,
+            },
+          ],
+        ]),
+      );
+
+      const result = await studentService.getDashboard(studentId);
+
+      // electroCourse has 0 total lessons, so it's excluded from the
+      // average — only mechanicsCourse's 40% counts.
+      expect(result.overallProgressPercent).toBe(40);
+    });
+
+    it('picks the most recently active eligible course as continueLearning', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue([
+        enrollments[0],
+        {
+          id: 'enrollment-3',
+          courseId: 'course-3',
+          status: 'active' as const,
+          enrolledAt: new Date('2026-05-01T00:00:00.000Z'),
+        },
+      ]);
+      const thirdCourse = {
+        id: 'course-3',
+        title: 'الديناميكا الحرارية',
+        coverImageUrl: null,
+        gradeLevel: 'الصف الثاني الثانوي',
+      };
+      coursesService.findByIds.mockResolvedValue([
+        mechanicsCourse,
+        thirdCourse,
+      ]);
+      usersService.findById.mockResolvedValue(null);
+
+      const olderLesson = {
+        id: 'l-old',
+        title: 'Older lesson',
+        lastVideoPosition: 5,
+      };
+      const newerLesson = {
+        id: 'l-new',
+        title: 'Newer lesson',
+        lastVideoPosition: 9,
+      };
+      lessonsService.getCourseProgressSummaries.mockResolvedValue(
+        new Map([
+          [
+            mechanicsCourse.id,
+            {
+              totalLessonsCount: 10,
+              completedLessonsCount: 3,
+              progressPercent: 30,
+              currentLesson: olderLesson,
+              lastActivityAt: new Date('2026-08-01T00:00:00.000Z'),
+              lastCompletedLesson: null,
+            },
+          ],
+          [
+            'course-3',
+            {
+              totalLessonsCount: 10,
+              completedLessonsCount: 5,
+              progressPercent: 50,
+              currentLesson: newerLesson,
+              lastActivityAt: new Date('2026-08-09T00:00:00.000Z'),
+              lastCompletedLesson: null,
+            },
+          ],
+        ]),
+      );
+
+      const result = await studentService.getDashboard(studentId);
+
+      expect(result.continueLearning).toEqual({
+        courseId: 'course-3',
+        courseTitle: thirdCourse.title,
+        coverImageUrl: null,
+        gradeLevel: thirdCourse.gradeLevel,
+        progressPercent: 50,
+        completedLessonsCount: 5,
+        totalLessonsCount: 10,
+        currentLesson: newerLesson,
+      });
+    });
+
+    it('excludes suspended, completed, not-started, and finished courses from continueLearning', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue(enrollments);
+      coursesService.findByIds.mockResolvedValue([
+        mechanicsCourse,
+        electroCourse,
+      ]);
+      usersService.findById.mockResolvedValue(null);
+      lessonsService.getCourseProgressSummaries.mockResolvedValue(
+        new Map([
+          [
+            mechanicsCourse.id,
+            {
+              // active enrollment, but 100% complete — nothing left to resume.
+              totalLessonsCount: 10,
+              completedLessonsCount: 10,
+              progressPercent: 100,
+              currentLesson: null,
+              lastActivityAt: new Date('2026-08-01T00:00:00.000Z'),
+              lastCompletedLesson: {
+                id: 'l1',
+                title: 'Last',
+                lastVideoPosition: 10,
+              },
+            },
+          ],
+          [
+            electroCourse.id,
+            {
+              // enrollment.status is 'completed', even though progress isn't 100.
+              totalLessonsCount: 10,
+              completedLessonsCount: 5,
+              progressPercent: 50,
+              currentLesson: { id: 'l2', title: 'Mid', lastVideoPosition: 5 },
+              lastActivityAt: new Date('2026-08-05T00:00:00.000Z'),
+              lastCompletedLesson: null,
+            },
+          ],
+        ]),
+      );
+
+      const result = await studentService.getDashboard(studentId);
+
+      expect(result.continueLearning).toBeNull();
+    });
+
+    it('builds recentActivity from enrollment and lesson-completion events, newest first', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue(enrollments);
+      coursesService.findByIds.mockResolvedValue([
+        mechanicsCourse,
+        electroCourse,
+      ]);
+      usersService.findById.mockResolvedValue(null);
+      lessonsService.getCourseProgressSummaries.mockResolvedValue(
+        new Map([
+          [
+            mechanicsCourse.id,
+            {
+              totalLessonsCount: 10,
+              completedLessonsCount: 3,
+              progressPercent: 30,
+              currentLesson: {
+                id: 'l1',
+                title: 'Lesson 4',
+                lastVideoPosition: 0,
+              },
+              lastActivityAt: new Date('2026-08-08T00:00:00.000Z'),
+              lastCompletedLesson: {
+                id: 'l-done',
+                title: 'قانون نيوتن الثالث',
+                lastVideoPosition: 400,
+              },
+            },
+          ],
+        ]),
+      );
+
+      const result = await studentService.getDashboard(studentId);
+
+      expect(result.recentActivity[0]).toEqual({
+        type: 'lesson_completed',
+        courseId: mechanicsCourse.id,
+        courseTitle: mechanicsCourse.title,
+        lessonTitle: 'قانون نيوتن الثالث',
+        occurredAt: '2026-08-08T00:00:00.000Z',
+      });
+      // Both enrollments' "enrolled" events should also be present.
+      expect(result.recentActivity.map((event) => event.type)).toEqual(
+        expect.arrayContaining(['enrolled', 'lesson_completed']),
+      );
+      expect(result.recentActivity.length).toBeLessThanOrEqual(5);
     });
   });
 

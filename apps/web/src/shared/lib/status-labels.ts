@@ -3,6 +3,7 @@ import type { EnrollmentStatus } from '../../features/student/types/student.type
 import type { DocumentProcessingStatus } from '../../features/documents/types/document.types'
 import type { LessonProgressStatus } from '../../features/lessons/types/lesson.types'
 import type { ExamGenerationRequestStatus } from '../../features/exam-generation/types/exam-generation.types'
+import type { NotificationType } from '../../features/notifications/types/notification.types'
 
 /**
  * Arabic labels + M3 chip variants for every status the UI renders.
@@ -43,6 +44,18 @@ export const DOCUMENT_STATUS: Record<
   processing: { label: 'قيد المعالجة', chip: 'pink', icon: 'autorenew' },
   completed: { label: 'تمت المعالجة', chip: 'green', icon: 'check_circle' },
   failed: { label: 'فشلت المعالجة', chip: 'red', icon: 'error' },
+}
+
+export const NOTIFICATION_TYPE: Record<
+  NotificationType,
+  { label: string; icon: string; lead: ChipVariant }
+> = {
+  hw_assigned: { label: 'واجب جديد', icon: 'assignment', lead: 'pink' },
+  quiz_ready: { label: 'اختبار جاهز', icon: 'quiz', lead: '' },
+  progress_report: { label: 'تقرير تقدم', icon: 'monitoring', lead: 'green' },
+  announcement: { label: 'إعلان', icon: 'campaign', lead: 'pink' },
+  course_update: { label: 'تحديث دورة', icon: 'menu_book', lead: '' },
+  system: { label: 'إشعار عام', icon: 'info', lead: '' },
 }
 
 export const EXAM_GENERATION_STATUS: Record<

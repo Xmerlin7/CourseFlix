@@ -440,6 +440,7 @@ describe('LessonsService', () => {
           lastVideoPosition: 0,
         },
         lastActivityAt: null,
+        lastCompletedLesson: null,
       });
     });
 
@@ -498,6 +499,11 @@ describe('LessonsService', () => {
           lastVideoPosition: 300,
         },
         lastActivityAt: completedAt,
+        lastCompletedLesson: {
+          id: completedLessonId,
+          title: 'الدرس المكتمل',
+          lastVideoPosition: 300,
+        },
       });
     });
 
@@ -528,6 +534,11 @@ describe('LessonsService', () => {
         completedLessonsCount: 2,
         progressPercent: 100,
         currentLesson: null,
+        lastCompletedLesson: {
+          id: completedLessonId,
+          title: 'الدرس المكتمل',
+          lastVideoPosition: 300,
+        },
       });
     });
 
@@ -547,6 +558,7 @@ describe('LessonsService', () => {
         progressPercent: 0,
         currentLesson: null,
         lastActivityAt: null,
+        lastCompletedLesson: null,
       });
     });
   });

@@ -2183,6 +2183,19 @@ h1.page-title {
   }
 }
 
+/* Home page's "no active course right now" / "all caught up" fallbacks —
+   same slot as .continue-learning-card, lighter weight since there's no
+   progress data to show. */
+.continue-empty-card {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.continue-empty-message {
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
 /* ---------- Stat tiles ---------- */
 .tiles {
   display: grid;
@@ -2197,6 +2210,10 @@ h1.page-title {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.tile[aria-disabled="true"] {
+  opacity: 0.6;
 }
 
 .tile .lbl {
