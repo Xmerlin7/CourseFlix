@@ -24,6 +24,8 @@ import { TeacherCoursesSkeleton } from '../../features/teacher/components/Teache
 import { TeacherStudentsSkeleton } from '../../features/teacher/components/TeacherStudentsSkeleton'
 import { TeacherCourseDetailSkeleton } from '../../features/teacher/components/TeacherCourseDetailSkeleton'
 import { AgentLogsSkeleton } from '../../features/agent-logs/components/AgentLogsSkeleton'
+import { LoginSkeleton } from '../../features/auth/components/LoginSkeleton'
+import { RegisterSkeleton } from '../../features/auth/components/RegisterSkeleton'
 
 // Lazy-loaded page components
 const LoginPage = lazy(() =>
@@ -226,7 +228,7 @@ export const router = createBrowserRouter([
       {
         path: ROUTE_PATHS.LOGIN,
         element: (
-          <SuspenseWrapper>
+          <SuspenseWrapper fallback={<LoginSkeleton />}>
             <LoginPage />
           </SuspenseWrapper>
         ),
@@ -234,7 +236,7 @@ export const router = createBrowserRouter([
       {
         path: ROUTE_PATHS.REGISTER,
         element: (
-          <SuspenseWrapper>
+          <SuspenseWrapper fallback={<RegisterSkeleton />}>
             <RegisterPage />
           </SuspenseWrapper>
         ),
