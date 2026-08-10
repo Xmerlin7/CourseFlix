@@ -118,12 +118,111 @@
   --data-track: #37313F;
 }
 
+/* ---------- Accent color (Settings > Appearance) ----------
+   'violet' is the app's original palette and needs no attribute at all
+   (see useAccentColor.ts). Each other accent reuses violet's own S/L
+   values — converted to HSL — at a rotated hue angle, so every accent
+   gets the same contrast behavior as the already-proven default instead
+   of a hand-picked, unverified combination. */
+:root[data-accent="blue"] {
+  --primary: hsl(215, 24%, 44%);
+  --on-primary: #FFFFFF;
+  --primary-container: hsl(215, 100%, 94%);
+  --on-primary-container: hsl(215, 44%, 37%);
+  --nav-active: hsl(215, 44%, 37%);
+  --logo: hsl(215, 44%, 37%);
+}
+
+:root.dark[data-accent="blue"],
+:where(.dark[data-accent="blue"], .dark[data-accent="blue"] *) {
+  --primary: hsl(215, 100%, 85%);
+  --on-primary: hsl(215, 43%, 25%);
+  --primary-container: hsl(215, 44%, 37%);
+  --on-primary-container: hsl(215, 100%, 94%);
+  --nav-active: hsl(215, 100%, 94%);
+  --logo: hsl(215, 100%, 85%);
+}
+
+:root[data-accent="teal"] {
+  --primary: hsl(165, 24%, 40%);
+  --on-primary: #FFFFFF;
+  --primary-container: hsl(165, 100%, 92%);
+  --on-primary-container: hsl(165, 44%, 33%);
+  --nav-active: hsl(165, 44%, 33%);
+  --logo: hsl(165, 44%, 33%);
+}
+
+:root.dark[data-accent="teal"],
+:where(.dark[data-accent="teal"], .dark[data-accent="teal"] *) {
+  --primary: hsl(165, 60%, 78%);
+  --on-primary: hsl(165, 43%, 22%);
+  --primary-container: hsl(165, 44%, 33%);
+  --on-primary-container: hsl(165, 100%, 92%);
+  --nav-active: hsl(165, 100%, 92%);
+  --logo: hsl(165, 60%, 78%);
+}
+
+:root[data-accent="amber"] {
+  --primary: hsl(35, 45%, 38%);
+  --on-primary: #FFFFFF;
+  --primary-container: hsl(35, 100%, 92%);
+  --on-primary-container: hsl(35, 55%, 30%);
+  --nav-active: hsl(35, 55%, 30%);
+  --logo: hsl(35, 55%, 30%);
+}
+
+:root.dark[data-accent="amber"],
+:where(.dark[data-accent="amber"], .dark[data-accent="amber"] *) {
+  --primary: hsl(38, 85%, 75%);
+  --on-primary: hsl(35, 50%, 22%);
+  --primary-container: hsl(35, 55%, 30%);
+  --on-primary-container: hsl(35, 100%, 92%);
+  --nav-active: hsl(35, 100%, 92%);
+  --logo: hsl(38, 85%, 75%);
+}
+
+:root[data-accent="rose"] {
+  --primary: hsl(345, 40%, 46%);
+  --on-primary: #FFFFFF;
+  --primary-container: hsl(345, 100%, 95%);
+  --on-primary-container: hsl(345, 50%, 38%);
+  --nav-active: hsl(345, 50%, 38%);
+  --logo: hsl(345, 50%, 38%);
+}
+
+:root.dark[data-accent="rose"],
+:where(.dark[data-accent="rose"], .dark[data-accent="rose"] *) {
+  --primary: hsl(345, 90%, 85%);
+  --on-primary: hsl(345, 45%, 27%);
+  --primary-container: hsl(345, 50%, 38%);
+  --on-primary-container: hsl(345, 100%, 95%);
+  --nav-active: hsl(345, 100%, 95%);
+  --logo: hsl(345, 90%, 85%);
+}
+
+/* ---------- Corner style (Settings > Appearance) ----------
+   Only rectangular surfaces (cards, inputs, panels, dialogs) opt into
+   this — pill/circular chrome (buttons, chips, the Switch, avatars) stays
+   at its own fixed radius on purpose: scaling an already-999px radius is
+   a no-op, and un-rounding a toggle switch would break its affordance. */
+:root {
+  --radius-scale: 1;
+}
+
+:root[data-corners="sharp"] {
+  --radius-scale: 0.32;
+}
+
+:root[data-corners="round"] {
+  --radius-scale: 1.5;
+}
+
 /* No `@media (prefers-color-scheme: dark)` token block on purpose.
    The inline script in index.html resolves the OS preference into an
    explicit `.dark` class before first paint, so a media query here would
    be redundant — and worse, it would override an explicit "light" choice
    for anyone whose OS is set to dark. The class is the single source of
-   truth; ThemeToggle owns it. */
+   truth; useTheme owns it. */
 
 /* ===== App Layout ===== */
 .app {
@@ -372,7 +471,7 @@
   width: 380px;
   max-width: calc(100vw - 28px);
   background: var(--surface-container-high);
-  border-radius: 20px;
+  border-radius: calc(20px * var(--radius-scale));
   box-shadow: var(--shadow-lg);
   z-index: 80;
   display: flex;
@@ -900,7 +999,7 @@ code {
 .field {
   background: var(--surface-container-high);
   border: 1.5px solid transparent;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   padding: 13px 16px;
   font-size: 14.5px;
   color: var(--on-surface);
@@ -940,7 +1039,7 @@ code {
 /* ---------- Quiz (ported from ui5/) ---------- */
 .qcard {
   background: var(--surface-container-low);
-  border-radius: 22px;
+  border-radius: calc(22px * var(--radius-scale));
   padding: 26px;
   margin-bottom: 18px;
 }
@@ -963,7 +1062,7 @@ code {
   align-items: center;
   gap: 12px;
   padding: 13px 16px;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   border: 1.5px solid var(--outline-variant);
   margin-bottom: 10px;
   cursor: pointer;
@@ -1002,7 +1101,7 @@ code {
 }
 
 .result-banner {
-  border-radius: 22px;
+  border-radius: calc(22px * var(--radius-scale));
   padding: 30px;
   text-align: center;
   margin-bottom: 22px;
@@ -1076,7 +1175,7 @@ code {
   flex-direction: column;
   gap: 16px;
   background: var(--surface-container-low);
-  border-radius: 22px;
+  border-radius: calc(22px * var(--radius-scale));
   padding: 20px;
 }
 
@@ -1488,7 +1587,7 @@ code {
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   border: 1.5px solid var(--outline-variant);
   cursor: pointer;
   font-size: 13px;
@@ -1646,7 +1745,7 @@ h1.page-title {
 
 .card {
   background: var(--surface-container-low);
-  border-radius: 22px;
+  border-radius: calc(22px * var(--radius-scale));
   padding: 22px;
   display: flex;
   flex-direction: column;
@@ -1677,7 +1776,7 @@ h1.page-title {
 .thumb {
   width: 100%;
   height: 100%;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   background: var(--surface-container-high);
   position: relative;
   overflow: hidden;
@@ -1777,7 +1876,7 @@ h1.page-title {
   flex-direction: column;
   height: 100%;
   padding: 18px;
-  border-radius: 22px;
+  border-radius: calc(22px * var(--radius-scale));
   background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -1797,7 +1896,7 @@ h1.page-title {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -1960,7 +2059,7 @@ h1.page-title {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -2205,7 +2304,7 @@ h1.page-title {
 
 .tile {
   background: var(--surface-container-low);
-  border-radius: 20px;
+  border-radius: calc(20px * var(--radius-scale));
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
@@ -2381,7 +2480,7 @@ a.list-item:hover,
 /* ---------- Table ---------- */
 .table-wrap {
   overflow-x: auto;
-  border-radius: 20px;
+  border-radius: calc(20px * var(--radius-scale));
   background: var(--surface-container-low);
 }
 
@@ -2441,7 +2540,7 @@ table.mtable {
   gap: 8px;
   flex-wrap: wrap;
   padding: 8px 10px;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   background: var(--surface);
 }
 
@@ -2452,7 +2551,7 @@ table.mtable {
 /* ---------- Upload zone ---------- */
 .dropzone {
   border: 2px dashed var(--outline-variant);
-  border-radius: 20px;
+  border-radius: calc(20px * var(--radius-scale));
   padding: 36px;
   display: flex;
   flex-direction: column;
@@ -2824,7 +2923,7 @@ table.mtable {
 
 .lesson-playlist {
   background: var(--surface-container-low);
-  border-radius: 20px;
+  border-radius: calc(20px * var(--radius-scale));
   padding: 16px;
   max-height: calc(100vh - 60px);
   overflow: auto;
@@ -2866,7 +2965,7 @@ table.mtable {
 
 .lesson-nav-item {
   padding: 12px;
-  border-radius: 14px;
+  border-radius: calc(14px * var(--radius-scale));
   background: var(--surface);
 }
 
@@ -3085,7 +3184,7 @@ table.mtable {
   width: 100%;
   height: fit-content;
   max-height: calc(100vh - 32px);
-  border-radius: 28px;
+  border-radius: calc(28px * var(--radius-scale));
   overflow: visible;
 }
 
@@ -3106,7 +3205,7 @@ table.mtable {
 
 .confirm-modal-card {
   background: var(--surface);
-  border-radius: 28px;
+  border-radius: calc(28px * var(--radius-scale));
   padding: 32px 28px 24px;
   box-shadow: var(--shadow-lg);
   display: flex;
@@ -3329,27 +3428,100 @@ table.mtable {
   opacity: 0.5;
 }
 
-.avatar-preview {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--surface-container-high);
-  border: 1.5px solid var(--outline-variant);
+/* ---------- Settings page shell ----------
+   A sticky side nav (reuses .nav-item — same look as the Sidebar's own
+   links) + a wide, centered panel, instead of one narrow column pinned
+   to one edge of the page. */
+.settings-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.avatar-preview-fallback {
+.settings-nav {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--surface-container-high);
-  border: 1.5px solid var(--outline-variant);
-  color: var(--on-surface-variant);
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 26px;
 }
 
-.avatar-preview-fallback .ms {
-  font-size: 34px;
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.settings-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+}
+
+@media (max-width: 860px) {
+  .settings-shell {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .settings-nav {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .settings-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-nav .nav-item {
+    width: auto;
+    white-space: nowrap;
+  }
+}
+
+/* ---------- Accent swatches ---------- */
+.accent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.accent-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  outline-offset: 3px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s, border-color 0.15s;
+  flex: none;
+}
+
+.accent-swatch:hover {
+  transform: scale(1.08);
+}
+
+.accent-swatch.selected {
+  border-color: var(--on-surface);
+}
+
+.accent-swatch .ms {
+  font-size: 20px;
+  color: #fff;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+/* ---------- Corner style preview swatch ---------- */
+.corner-swatch {
+  width: 22px;
+  height: 22px;
+  border: 2px solid currentColor;
 }

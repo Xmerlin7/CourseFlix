@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../features/auth/hooks/useAuth'
@@ -6,13 +5,14 @@ import { useUnreadNotificationsCount } from '../../features/notifications/hooks/
 import { Sidebar } from '../../shared/components/Sidebar'
 import { FloatingAssistant } from '../../shared/components/FloatingAssistant'
 import { Topbar } from '../../shared/components/Topbar'
+import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
 import { ROUTE_PATHS } from '../routes/route-paths'
 
 export function TeacherLayout({ children }: PropsWithChildren) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [isRail, setIsRail] = useState(false)
+  const { isCollapsed: isRail, setCollapsed: setIsRail } = useSidebarCollapsed()
   const unreadCount = useUnreadNotificationsCount()
 
   async function handleLogout() {
@@ -30,7 +30,7 @@ export function TeacherLayout({ children }: PropsWithChildren) {
         activePath={location.pathname}
         onLogout={() => void handleLogout()}
         isRail={isRail}
-        onToggleRail={() => setIsRail((prev) => !prev)}
+        onToggleRail={() => setIsRail(!isRail)}
       />
 
       <div className="main">

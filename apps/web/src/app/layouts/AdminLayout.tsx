@@ -1,10 +1,10 @@
-import { useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { useUnreadNotificationsCount } from '../../features/notifications/hooks/useUnreadNotificationsCount'
 import { Sidebar } from '../../shared/components/Sidebar'
 import { Topbar } from '../../shared/components/Topbar'
+import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
 import { ROUTE_PATHS } from '../routes/route-paths'
 
 // No FloatingAssistant here — the AI course tutor doesn't have a role to
@@ -13,7 +13,7 @@ export function AdminLayout({ children }: PropsWithChildren) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [isRail, setIsRail] = useState(false)
+  const { isCollapsed: isRail, setCollapsed: setIsRail } = useSidebarCollapsed()
   const unreadCount = useUnreadNotificationsCount()
 
   async function handleLogout() {
@@ -29,7 +29,7 @@ export function AdminLayout({ children }: PropsWithChildren) {
         activePath={location.pathname}
         onLogout={() => void handleLogout()}
         isRail={isRail}
-        onToggleRail={() => setIsRail((prev) => !prev)}
+        onToggleRail={() => setIsRail(!isRail)}
       />
 
       <div className="main">

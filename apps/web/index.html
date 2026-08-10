@@ -8,7 +8,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap" rel="stylesheet">
-    <script>(function(){var t=null;try{t=localStorage.getItem('cf-theme')}catch(e){}if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}if(t==='dark')document.documentElement.classList.add('dark')})();</script>
+    <!-- Runs before first paint so there's no flash of the wrong theme/accent/corners
+         while React hydrates. Mirrors what useTheme/useAccentColor/useCornerStyle apply
+         after mount — keep the three in sync if the storage keys or value sets change. -->
+    <script>(function(){try{
+      var theme=localStorage.getItem('cf-theme');
+      var isDark=theme==='dark'||((!theme||theme==='system')&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+      if(isDark)document.documentElement.classList.add('dark');
+      var accent=localStorage.getItem('cf-accent');
+      if(accent&&accent!=='violet')document.documentElement.setAttribute('data-accent',accent);
+      var corners=localStorage.getItem('cf-corners');
+      if(corners&&corners!=='default')document.documentElement.setAttribute('data-corners',corners);
+    }catch(e){}})();</script>
   </head>
   <body class="shell">
     <div id="root"></div>
