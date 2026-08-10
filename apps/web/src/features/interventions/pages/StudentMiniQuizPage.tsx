@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { useMiniQuiz } from '../hooks/useMiniQuiz'
+import { StudentMiniQuizSkeleton } from '../components/StudentMiniQuizSkeleton'
 
 export function StudentMiniQuizPage() {
   const { miniQuizId } = useParams<{ miniQuizId: string }>()
@@ -13,11 +13,11 @@ export function StudentMiniQuizPage() {
   )
   const [answers, setAnswers] = useState<Record<string, string>>({})
 
-  if (isLoading) return <LoadingState />
+  if (isLoading) return <StudentMiniQuizSkeleton />
   if (error?.status === 403) return <ForbiddenState />
   if (error?.status === 404) return <NotFoundState />
   if (error) return <ErrorState />
-  if (!quiz) return <LoadingState />
+  if (!quiz) return <StudentMiniQuizSkeleton />
 
   if (result) {
     const passed = result.score >= Math.ceil(result.total / 2)
