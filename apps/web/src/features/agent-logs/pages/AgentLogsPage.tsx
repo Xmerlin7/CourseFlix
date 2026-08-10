@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { useAgentLogs } from '../hooks/useAgentLogs'
+import { AgentLogsSkeleton } from '../components/AgentLogsSkeleton'
 import type { AgentLogStatus, AgentType } from '../types/agent-log.types'
 
 const AGENT_TYPE_LABEL: Record<AgentType, string> = {
@@ -93,7 +93,7 @@ export function AgentLogsPage() {
         ))}
       </div>
 
-      {isLoading && <LoadingState variant="list" />}
+      {isLoading && <AgentLogsSkeleton />}
 
       {!isLoading &&
         error &&
