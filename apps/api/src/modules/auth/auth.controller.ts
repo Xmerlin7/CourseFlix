@@ -78,7 +78,7 @@ export class AuthController {
 
   // Settings > Security "sign out of other devices" — revokes every
   // active session for this user except the one making the request.
-  @Post('sessions/revoke-others')
+  @Post('auth/sessions/revoke-others')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AuthGuard)
   async revokeOtherSessions(
