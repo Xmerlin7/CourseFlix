@@ -21,9 +21,3 @@ export async function register(payload: RegisterPayload): Promise<AuthUser> {
   const { user } = await httpClient.post<{ user: AuthUser }>('/auth/register', payload)
   return user
 }
-
-// Settings > Security "sign out of other devices" — revokes every active
-// session for the caller except the one making this request.
-export async function revokeOtherSessions(): Promise<void> {
-  return httpClient.post<void>('/auth/sessions/revoke-others')
-}
