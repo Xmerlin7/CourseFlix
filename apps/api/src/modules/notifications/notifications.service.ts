@@ -10,6 +10,7 @@ import type {
   NotificationProducerPort,
   NotifyInput,
 } from '../../common/ports/notification-producer.port';
+import { UserEntity } from '../users/entities/user.entity';
 import {
   NotificationEntity,
   NotificationType,
@@ -100,6 +101,8 @@ export class NotificationsService implements NotificationProducerPort {
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationsRepository: Repository<NotificationEntity>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
   ) {}
 
   // NotificationProducerPort implementation — called by other modules
@@ -107,6 +110,16 @@ export class NotificationsService implements NotificationProducerPort {
   // Not exposed over HTTP: there is no client-facing "create notification"
   // endpoint, only list/count/mark-read.
   async notify(input: NotifyInput): Promise<void> {
+    const recipient = await this.usersRepository.findOne({
+      where: { id: input.userId },
+      select: { id: true, settingsNotificationPreferences: true },
+    });
+    // A type with no explicit key in the map is enabled by default — see
+    // UsersService's KNOWN_NOTIFICATION_TYPES / Settings > Notifications tab.
+    if (recipient?.settingsNotificationPreferences?.[input.type] === false) {
+      return;
+    }
+
     await this.notificationsRepository.save(
       this.notificationsRepository.create({
         userId: input.userId,
