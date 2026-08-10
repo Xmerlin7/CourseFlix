@@ -26,6 +26,27 @@ export interface StudentDashboardRecentCourse {
   enrolledAt: Date;
 }
 
+export interface StudentDashboardContinueLearning {
+  courseId: string;
+  courseTitle: string | null;
+  coverImageUrl: string | null;
+  gradeLevel: string | null;
+  progressPercent: number;
+  completedLessonsCount: number;
+  totalLessonsCount: number;
+  currentLesson: CourseCurrentLesson;
+}
+
+export type StudentActivityType = 'enrolled' | 'lesson_completed';
+
+export interface StudentDashboardActivityItem {
+  type: StudentActivityType;
+  courseId: string;
+  courseTitle: string | null;
+  lessonTitle: string | null;
+  occurredAt: string;
+}
+
 export interface StudentDashboardResponse {
   student: {
     id: string;
@@ -36,10 +57,14 @@ export interface StudentDashboardResponse {
   stats: {
     enrolledCoursesCount: number;
     activeCoursesCount: number;
+    completedCoursesCount: number;
   };
-  overallProgressPercent: null;
-  continueLearning: null;
+  /** Average progressPercent across courses that have trackable lessons; null when none do. */
+  overallProgressPercent: number | null;
+  continueLearning: StudentDashboardContinueLearning | null;
   recentCourses: StudentDashboardRecentCourse[];
+  /** Most recent enrollment/lesson-completion events, newest first, capped to 5. */
+  recentActivity: StudentDashboardActivityItem[];
 }
 
 export interface StudentEnrollmentResponse {
@@ -62,6 +87,7 @@ const EMPTY_PROGRESS_SUMMARY: CourseProgressSummary = {
   progressPercent: 0,
   currentLesson: null,
   lastActivityAt: null,
+  lastCompletedLesson: null,
 };
 
 const VALID_ENROLLMENT_STATUSES: readonly EnrollmentStatus[] = [
@@ -97,17 +123,20 @@ export class StudentService {
     const enrollments =
       await this.enrollmentsService.findStudentEnrollments(studentId);
 
-    const recentEnrollments = [...enrollments]
-      .sort((a, b) => b.enrolledAt.getTime() - a.enrolledAt.getTime())
-      .slice(0, 5);
-
     const courses = await this.coursesService.findByIds(
-      recentEnrollments.map((enrollment) => enrollment.courseId),
+      enrollments.map((enrollment) => enrollment.courseId),
     );
     const courseById = this.indexCoursesById(courses);
 
-    const recentCourses: StudentDashboardRecentCourse[] = recentEnrollments.map(
-      (enrollment) => {
+    const summaries = await this.lessonsService.getCourseProgressSummaries(
+      studentId,
+      enrollments.map((enrollment) => enrollment.courseId),
+    );
+
+    const recentCourses: StudentDashboardRecentCourse[] = [...enrollments]
+      .sort((a, b) => b.enrolledAt.getTime() - a.enrolledAt.getTime())
+      .slice(0, 5)
+      .map((enrollment) => {
         const course = courseById.get(enrollment.courseId);
         return {
           courseId: enrollment.courseId,
@@ -116,8 +145,7 @@ export class StudentService {
           status: enrollment.status,
           enrolledAt: enrollment.enrolledAt,
         };
-      },
-    );
+      });
 
     const profile = await this.usersService.findById(studentId);
 
@@ -132,11 +160,139 @@ export class StudentService {
         enrolledCoursesCount: enrollments.length,
         activeCoursesCount: enrollments.filter((e) => e.status === 'active')
           .length,
+        completedCoursesCount: enrollments.filter(
+          (e) => e.status === 'completed',
+        ).length,
       },
-      overallProgressPercent: null,
-      continueLearning: null,
+      overallProgressPercent: this.computeOverallProgressPercent(summaries),
+      continueLearning: this.pickContinueLearning(
+        enrollments,
+        courseById,
+        summaries,
+      ),
       recentCourses,
+      recentActivity: this.buildRecentActivity(
+        enrollments,
+        courseById,
+        summaries,
+      ),
     };
+  }
+
+  private computeOverallProgressPercent(
+    summaries: Map<string, CourseProgressSummary>,
+  ): number | null {
+    const trackable = [...summaries.values()].filter(
+      (summary) => summary.totalLessonsCount > 0,
+    );
+    if (trackable.length === 0) {
+      return null;
+    }
+
+    const total = trackable.reduce(
+      (sum, summary) => sum + summary.progressPercent,
+      0,
+    );
+    return Math.round(total / trackable.length);
+  }
+
+  // Same eligibility/recency rule the "دوراتي" page uses client-side to pick
+  // its "تتعلم الآن" course, applied here server-side against the same
+  // per-course summaries — one selection rule, one data source.
+  private pickContinueLearning(
+    enrollments: EnrollmentEntity[],
+    courseById: Map<string, CourseEntity>,
+    summaries: Map<string, CourseProgressSummary>,
+  ): StudentDashboardContinueLearning | null {
+    let best: {
+      enrollment: EnrollmentEntity;
+      summary: CourseProgressSummary;
+    } | null = null;
+
+    for (const enrollment of enrollments) {
+      const summary =
+        summaries.get(enrollment.courseId) ?? EMPTY_PROGRESS_SUMMARY;
+      const eligible =
+        enrollment.status === 'active' &&
+        summary.progressPercent > 0 &&
+        summary.progressPercent < 100 &&
+        summary.currentLesson !== null;
+      if (!eligible) {
+        continue;
+      }
+
+      if (!best) {
+        best = { enrollment, summary };
+        continue;
+      }
+
+      const bestTime = (
+        best.summary.lastActivityAt ?? best.enrollment.enrolledAt
+      ).getTime();
+      const candidateTime = (
+        summary.lastActivityAt ?? enrollment.enrolledAt
+      ).getTime();
+      if (candidateTime > bestTime) {
+        best = { enrollment, summary };
+      }
+    }
+
+    if (!best) {
+      return null;
+    }
+
+    const course = courseById.get(best.enrollment.courseId);
+    return {
+      courseId: best.enrollment.courseId,
+      courseTitle: course?.title ?? null,
+      coverImageUrl: course?.coverImageUrl ?? null,
+      gradeLevel: course?.gradeLevel ?? null,
+      progressPercent: best.summary.progressPercent,
+      completedLessonsCount: best.summary.completedLessonsCount,
+      totalLessonsCount: best.summary.totalLessonsCount,
+      // `eligible` above guarantees currentLesson is non-null here.
+      currentLesson: best.summary.currentLesson!,
+    };
+  }
+
+  // Built from data already loaded for this same request (enrollments +
+  // progress summaries) — no dedicated activity-log table or service.
+  private buildRecentActivity(
+    enrollments: EnrollmentEntity[],
+    courseById: Map<string, CourseEntity>,
+    summaries: Map<string, CourseProgressSummary>,
+  ): StudentDashboardActivityItem[] {
+    const events: StudentDashboardActivityItem[] = [];
+
+    for (const enrollment of enrollments) {
+      const courseTitle = courseById.get(enrollment.courseId)?.title ?? null;
+
+      events.push({
+        type: 'enrolled',
+        courseId: enrollment.courseId,
+        courseTitle,
+        lessonTitle: null,
+        occurredAt: enrollment.enrolledAt.toISOString(),
+      });
+
+      const summary = summaries.get(enrollment.courseId);
+      if (summary?.lastCompletedLesson && summary.lastActivityAt) {
+        events.push({
+          type: 'lesson_completed',
+          courseId: enrollment.courseId,
+          courseTitle,
+          lessonTitle: summary.lastCompletedLesson.title,
+          occurredAt: summary.lastActivityAt.toISOString(),
+        });
+      }
+    }
+
+    return events
+      .sort(
+        (a, b) =>
+          new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+      )
+      .slice(0, 5);
   }
 
   async getEnrollments(

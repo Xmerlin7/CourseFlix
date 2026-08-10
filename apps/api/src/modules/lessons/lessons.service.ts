@@ -59,6 +59,13 @@ export interface CourseProgressSummary {
   currentLesson: CourseCurrentLesson | null;
   /** Most recent `completedAt` among this course's progress rows, if any. */
   lastActivityAt: Date | null;
+  /**
+   * The lesson `lastActivityAt` refers to. Distinct from `currentLesson`:
+   * once a student moves on to the next lesson, `currentLesson` tracks the
+   * new in-progress one while this still names what was last *finished* —
+   * that's what a "completed a lesson" activity entry needs to say.
+   */
+  lastCompletedLesson: CourseCurrentLesson | null;
 }
 
 @Injectable()
@@ -268,6 +275,7 @@ export class LessonsService {
             : 0,
         currentLesson,
         lastActivityAt: lastCompletedAt,
+        lastCompletedLesson,
       });
     }
 
