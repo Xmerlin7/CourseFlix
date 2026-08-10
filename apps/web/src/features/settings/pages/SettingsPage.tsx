@@ -2,45 +2,41 @@ import { useState } from 'react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { AppearanceSettingsForm } from '../components/AppearanceSettingsForm'
 import { NotificationSettingsForm } from '../components/NotificationSettingsForm'
-import { ProfileSettingsForm } from '../components/ProfileSettingsForm'
-import { SecuritySettingsForm } from '../components/SecuritySettingsForm'
 
-type SettingsTab = 'profile' | 'security' | 'appearance' | 'notifications'
+type SettingsTab = 'appearance' | 'notifications'
 
-const TABS: Array<{ value: SettingsTab; label: string }> = [
-  { value: 'profile', label: 'الملف الشخصي' },
-  { value: 'security', label: 'الأمان' },
-  { value: 'appearance', label: 'المظهر' },
-  { value: 'notifications', label: 'الإشعارات' },
+const TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
+  { value: 'appearance', label: 'المظهر', icon: 'palette' },
+  { value: 'notifications', label: 'الإشعارات', icon: 'notifications' },
 ]
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
+  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
 
   return (
     <>
-      <PageHeader title="الإعدادات" description="تحكّم في ملفك الشخصي وتفضيلات حسابك" />
+      <PageHeader title="الإعدادات" description="خصّص شكل التطبيق وتفضيلات الإشعارات اللي تناسبك" />
 
-      <div className="tabs" role="tablist">
-        {TABS.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={`tab${activeTab === tab.value ? ' active' : ''}`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="settings-shell">
+        <nav className="settings-nav" aria-label="أقسام الإعدادات">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setActiveTab(tab.value)}
+              className={`nav-item${activeTab === tab.value ? ' active' : ''}`}
+              aria-current={activeTab === tab.value ? 'page' : undefined}
+            >
+              <span className={`ms${activeTab === tab.value ? ' fill' : ''}`}>{tab.icon}</span>
+              <span className="lbl">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 640 }}>
-        {activeTab === 'profile' && <ProfileSettingsForm />}
-        {activeTab === 'security' && <SecuritySettingsForm />}
-        {activeTab === 'appearance' && <AppearanceSettingsForm />}
-        {activeTab === 'notifications' && <NotificationSettingsForm />}
+        <div className="settings-panel">
+          {activeTab === 'appearance' && <AppearanceSettingsForm />}
+          {activeTab === 'notifications' && <NotificationSettingsForm />}
+        </div>
       </div>
     </>
   )
