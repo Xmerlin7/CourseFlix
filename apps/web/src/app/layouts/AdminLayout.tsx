@@ -37,7 +37,7 @@ export function AdminLayout({ children }: PropsWithChildren) {
           <Topbar
             notificationCount={unreadCount}
             notificationsPath={ROUTE_PATHS.ADMIN.NOTIFICATIONS}
-            onSettingsClick={() => {}}
+            onSettingsClick={() => navigate(ROUTE_PATHS.ADMIN.SETTINGS)}
             onLogoClick={() => navigate(ROUTE_PATHS.ADMIN.DASHBOARD)}
           />
 

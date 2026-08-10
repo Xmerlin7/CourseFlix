@@ -36,7 +36,7 @@ export function StudentLayout({ children }: PropsWithChildren) {
           <Topbar
             notificationCount={unreadCount}
             notificationsPath={ROUTE_PATHS.STUDENT.NOTIFICATIONS}
-            onSettingsClick={() => {}}
+            onSettingsClick={() => navigate(ROUTE_PATHS.STUDENT.SETTINGS)}
             onLogoClick={() => navigate(ROUTE_PATHS.STUDENT.DASHBOARD)}
           />
 
