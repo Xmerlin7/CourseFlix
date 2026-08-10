@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { handleChatInputKeyDown } from '../../../shared/utils/chatInput'
 import { useAnalyticsQuestion } from '../hooks/useAnalyticsQuestion'
+import { TeacherAnalyticsResultSkeleton } from '../components/TeacherAnalyticsResultSkeleton'
 
 const EXAMPLES = [
   'عندي كام طالب؟',
@@ -72,7 +73,7 @@ export function TeacherAnalyticsPage() {
 
       {error && <ErrorState onRetry={() => question && void ask(question)} />}
 
-      {isLoading && <p className="subtitle">جاري المعالجة...</p>}
+      {isLoading && <TeacherAnalyticsResultSkeleton />}
 
       {data?.status === 'direct' && (
         <div className="card section">
