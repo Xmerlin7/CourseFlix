@@ -9,6 +9,10 @@ export interface AuthContextValue {
   login: (payload: LoginPayload) => Promise<AuthUser>
   logout: () => Promise<void>
   register: (payload: RegisterPayload) => Promise<AuthUser>
+  // Re-pulls GET /me and updates the shared user — called after Settings >
+  // Profile saves a name/avatar change so the sidebar/topbar pick it up
+  // immediately instead of waiting for the next full reload.
+  refreshUser: () => Promise<void>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- context object is not a component; useAuth.ts needs it from this same module.
@@ -62,8 +66,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return user
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    const currentUser = await getCurrentUser()
+    setUser(currentUser)
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )
