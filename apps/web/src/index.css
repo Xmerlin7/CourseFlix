@@ -119,86 +119,14 @@
 }
 
 /* ---------- Accent color (Settings > Appearance) ----------
-   'violet' is the app's original palette and needs no attribute at all
-   (see useAccentColor.ts). Each other accent reuses violet's own S/L
-   values — converted to HSL — at a rotated hue angle, so every accent
-   gets the same contrast behavior as the already-proven default instead
-   of a hand-picked, unverified combination. */
-:root[data-accent="blue"] {
-  --primary: hsl(215, 24%, 44%);
-  --on-primary: #FFFFFF;
-  --primary-container: hsl(215, 100%, 94%);
-  --on-primary-container: hsl(215, 44%, 37%);
-  --nav-active: hsl(215, 44%, 37%);
-  --logo: hsl(215, 44%, 37%);
-}
-
-:root.dark[data-accent="blue"],
-:where(.dark[data-accent="blue"], .dark[data-accent="blue"] *) {
-  --primary: hsl(215, 100%, 85%);
-  --on-primary: hsl(215, 43%, 25%);
-  --primary-container: hsl(215, 44%, 37%);
-  --on-primary-container: hsl(215, 100%, 94%);
-  --nav-active: hsl(215, 100%, 94%);
-  --logo: hsl(215, 100%, 85%);
-}
-
-:root[data-accent="teal"] {
-  --primary: hsl(165, 24%, 40%);
-  --on-primary: #FFFFFF;
-  --primary-container: hsl(165, 100%, 92%);
-  --on-primary-container: hsl(165, 44%, 33%);
-  --nav-active: hsl(165, 44%, 33%);
-  --logo: hsl(165, 44%, 33%);
-}
-
-:root.dark[data-accent="teal"],
-:where(.dark[data-accent="teal"], .dark[data-accent="teal"] *) {
-  --primary: hsl(165, 60%, 78%);
-  --on-primary: hsl(165, 43%, 22%);
-  --primary-container: hsl(165, 44%, 33%);
-  --on-primary-container: hsl(165, 100%, 92%);
-  --nav-active: hsl(165, 100%, 92%);
-  --logo: hsl(165, 60%, 78%);
-}
-
-:root[data-accent="amber"] {
-  --primary: hsl(35, 45%, 38%);
-  --on-primary: #FFFFFF;
-  --primary-container: hsl(35, 100%, 92%);
-  --on-primary-container: hsl(35, 55%, 30%);
-  --nav-active: hsl(35, 55%, 30%);
-  --logo: hsl(35, 55%, 30%);
-}
-
-:root.dark[data-accent="amber"],
-:where(.dark[data-accent="amber"], .dark[data-accent="amber"] *) {
-  --primary: hsl(38, 85%, 75%);
-  --on-primary: hsl(35, 50%, 22%);
-  --primary-container: hsl(35, 55%, 30%);
-  --on-primary-container: hsl(35, 100%, 92%);
-  --nav-active: hsl(35, 100%, 92%);
-  --logo: hsl(38, 85%, 75%);
-}
-
-:root[data-accent="rose"] {
-  --primary: hsl(345, 40%, 46%);
-  --on-primary: #FFFFFF;
-  --primary-container: hsl(345, 100%, 95%);
-  --on-primary-container: hsl(345, 50%, 38%);
-  --nav-active: hsl(345, 50%, 38%);
-  --logo: hsl(345, 50%, 38%);
-}
-
-:root.dark[data-accent="rose"],
-:where(.dark[data-accent="rose"], .dark[data-accent="rose"] *) {
-  --primary: hsl(345, 90%, 85%);
-  --on-primary: hsl(345, 45%, 27%);
-  --primary-container: hsl(345, 50%, 38%);
-  --on-primary-container: hsl(345, 100%, 95%);
-  --nav-active: hsl(345, 100%, 95%);
-  --logo: hsl(345, 90%, 85%);
-}
+   Unlike corner-style below, accent color isn't a fixed set of presets —
+   the user can pick any hue, so there's no static CSS block for it here.
+   accent-theme.ts generates the --primary/--on-primary/--primary-
+   container/--on-primary-container/--secondary-container/--on-secondary-
+   container/--tertiary-container/--on-tertiary-container/--bg/--surface*/
+   --on-surface*/--outline*/--logo/--nav-active pair (light + dark) for
+   the chosen hue and injects it as a <style> tag — see useAccentColor.ts
+   and index.html's bootstrap script (which does the same, pre-paint). */
 
 /* ---------- Corner style (Settings > Appearance) ----------
    Only rectangular surfaces (cards, inputs, panels, dialogs) opt into
@@ -210,11 +138,39 @@
 }
 
 :root[data-corners="sharp"] {
-  --radius-scale: 0.32;
+  --radius-scale: 0;
 }
 
 :root[data-corners="round"] {
   --radius-scale: 1.5;
+}
+
+/* ---------- Density (Settings > Experience) ----------
+   Scales padding on cards/list rows/settings rows/form fields — the
+   surfaces people scan through lists of, not fixed-size chrome like
+   buttons/icon buttons, where shrinking padding risks a touch target
+   that's too small rather than just "denser". */
+:root {
+  --space-scale: 1;
+}
+
+:root[data-density="compact"] {
+  --space-scale: 0.7;
+}
+
+/* ---------- Reduced motion (Settings > Experience) ----------
+   Same technique browsers use for `prefers-reduced-motion: reduce`, as
+   an explicit, persisted choice rather than only following the OS
+   setting. `!important` is deliberate — this has to win over every
+   component's own transition/animation declaration, not just the ones
+   already in this file. */
+:root[data-reduce-motion="1"] *,
+:root[data-reduce-motion="1"] *::before,
+:root[data-reduce-motion="1"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* No `@media (prefers-color-scheme: dark)` token block on purpose.
@@ -1000,7 +956,7 @@ code {
   background: var(--surface-container-high);
   border: 1.5px solid transparent;
   border-radius: calc(14px * var(--radius-scale));
-  padding: 13px 16px;
+  padding: calc(13px * var(--space-scale)) calc(16px * var(--space-scale));
   font-size: 14.5px;
   color: var(--on-surface);
   width: 100%;
@@ -1746,7 +1702,7 @@ h1.page-title {
 .card {
   background: var(--surface-container-low);
   border-radius: calc(22px * var(--radius-scale));
-  padding: 22px;
+  padding: calc(22px * var(--space-scale));
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -2354,7 +2310,7 @@ h1.page-title {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 20px;
+  padding: calc(16px * var(--space-scale)) calc(20px * var(--space-scale));
   border-radius: 18px;
   background: var(--surface-container-low);
   transition: background 0.15s;
@@ -3344,7 +3300,7 @@ table.mtable {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 4px;
+  padding: calc(14px * var(--space-scale)) 4px;
 }
 
 .settings-row + .settings-row {
@@ -3372,8 +3328,8 @@ table.mtable {
   position: relative;
   display: inline-flex;
   flex-shrink: 0;
-  width: 46px;
-  height: 26px;
+  width: 52px;
+  height: 30px;
   cursor: pointer;
 }
 
@@ -3394,15 +3350,20 @@ table.mtable {
   transition: background 0.18s, border-color 0.18s;
 }
 
+/* Rests flush against the start edge via inset-inline-start; checked
+   below switches to inset-inline-end instead of growing this value —
+   growing inset-inline-start numerically doesn't reach the far edge (it
+   did the opposite in RTL), where flipping the anchor edge always lands
+   flush with the same 3px padding regardless of document direction. */
 .switch .thumb {
   position: absolute;
   top: 3px;
   inset-inline-start: 3px;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--outline);
-  transition: inset-inline-start 0.18s, background 0.18s;
+  transition: inset-inline-start 0.18s, inset-inline-end 0.18s, background 0.18s;
 }
 
 .switch input:checked ~ .track {
@@ -3411,7 +3372,8 @@ table.mtable {
 }
 
 .switch input:checked ~ .thumb {
-  inset-inline-start: 23px;
+  inset-inline-start: auto;
+  inset-inline-end: 3px;
   background: var(--on-primary);
 }
 
@@ -3517,6 +3479,31 @@ table.mtable {
   font-size: 20px;
   color: #fff;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+/* Wraps a real <input type="color"> — the "unlimited" option next to the
+   five presets. The input itself is invisible and fills the swatch so a
+   click anywhere on the circle opens the native color picker; the
+   rainbow ring is just a visual cue that this one isn't a fixed color. */
+.accent-swatch-custom {
+  position: relative;
+  overflow: hidden;
+  background: conic-gradient(from 90deg, #f43f5e, #f59e0b, #22c55e, #06b6d4, #6366f1, #ec4899, #f43f5e);
+}
+
+.accent-swatch-custom input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.accent-swatch-custom .ms {
+  pointer-events: none;
 }
 
 /* ---------- Corner style preview swatch ---------- */

@@ -9,16 +9,54 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap" rel="stylesheet">
     <!-- Runs before first paint so there's no flash of the wrong theme/accent/corners
-         while React hydrates. Mirrors what useTheme/useAccentColor/useCornerStyle apply
-         after mount — keep the three in sync if the storage keys or value sets change. -->
+         while React hydrates. Mirrors what useTheme/useAccentColor/useCornerStyle/
+         useReducedMotion apply after mount — keep all of them in sync if the storage
+         keys, value sets, or accent-theme.ts's tone formula ever change. -->
     <script>(function(){try{
       var theme=localStorage.getItem('cf-theme');
       var isDark=theme==='dark'||((!theme||theme==='system')&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);
       if(isDark)document.documentElement.classList.add('dark');
-      var accent=localStorage.getItem('cf-accent');
-      if(accent&&accent!=='violet')document.documentElement.setAttribute('data-accent',accent);
+
       var corners=localStorage.getItem('cf-corners');
       if(corners&&corners!=='default')document.documentElement.setAttribute('data-corners',corners);
+
+      if(localStorage.getItem('cf-reduce-motion')==='1')document.documentElement.setAttribute('data-reduce-motion','1');
+
+      var density=localStorage.getItem('cf-density');
+      if(density&&density!=='comfortable')document.documentElement.setAttribute('data-density',density);
+
+      var hue=Number(localStorage.getItem('cf-accent-hue'));
+      if(Number.isFinite(hue)&&hue!==257){
+        function tone(h,s,l){return 'hsl('+h+', '+s+'%, '+l+'%)'}
+        var th=(hue+85)%360;
+        var css=':root {'
+          +'--primary:'+tone(hue,25,45)+';--on-primary:#FFFFFF;'
+          +'--primary-container:'+tone(hue,100,93)+';--on-primary-container:'+tone(hue,43,38)+';'
+          +'--secondary-container:'+tone(hue,65,92)+';--on-secondary-container:'+tone(hue,13,31)+';'
+          +'--tertiary-container:'+tone(th,100,92)+';--on-tertiary-container:'+tone(th,25,31)+';'
+          +'--bg:'+tone(hue,43,93)+';--surface:'+tone(hue,100,99)+';'
+          +'--surface-container-low:'+tone(hue,47,96)+';--surface-container:'+tone(hue,40,94)+';'
+          +'--surface-container-high:'+tone(hue,33,92)+';--surface-container-highest:'+tone(hue,31,89)+';'
+          +'--on-surface:'+tone(hue,8,12)+';--on-surface-variant:'+tone(hue,13,31)+';'
+          +'--outline:'+tone(hue,4,48)+';--outline-variant:'+tone(hue,20,83)+';'
+          +'--logo:'+tone(hue,52,35)+';--nav-active:'+tone(hue,43,38)+';'
+          +'}:root.dark,:where(.dark, .dark *) {'
+          +'--primary:'+tone(hue,100,87)+';--on-primary:'+tone(hue,42,26)+';'
+          +'--primary-container:'+tone(hue,43,38)+';--on-primary-container:'+tone(hue,100,93)+';'
+          +'--secondary-container:'+tone(hue,13,31)+';--on-secondary-container:'+tone(hue,65,92)+';'
+          +'--tertiary-container:'+tone(th,25,31)+';--on-tertiary-container:'+tone(th,100,92)+';'
+          +'--bg:'+tone(hue,19,6)+';--surface:'+tone(hue,19,11)+';'
+          +'--surface-container-low:'+tone(hue,14,14)+';--surface-container:'+tone(hue,18,16)+';'
+          +'--surface-container-high:'+tone(hue,15,19)+';--surface-container-highest:'+tone(hue,12,22)+';'
+          +'--on-surface:'+tone(hue,29,91)+';--on-surface-variant:'+tone(hue,19,80)+';'
+          +'--outline:'+tone(hue,8,59)+';--outline-variant:'+tone(hue,7,29)+';'
+          +'--logo:'+tone(hue,100,90)+';--nav-active:'+tone(hue,100,93)+';'
+          +'}';
+        var styleEl=document.createElement('style');
+        styleEl.id='cf-accent-style';
+        styleEl.textContent=css;
+        document.head.appendChild(styleEl);
+      }
     }catch(e){}})();</script>
   </head>
   <body class="shell">

@@ -1,46 +1,53 @@
 import { useCallback, useEffect, useState } from 'react'
+import { buildAccentCss, DEFAULT_HUE } from '../lib/accent-theme'
 
-export const ACCENT_COLORS = ['violet', 'blue', 'teal', 'amber', 'rose'] as const
-export type AccentColor = (typeof ACCENT_COLORS)[number]
+const STORAGE_KEY = 'cf-accent-hue'
+const STYLE_ELEMENT_ID = 'cf-accent-style'
 
-const STORAGE_KEY = 'cf-accent'
-const DEFAULT_ACCENT: AccentColor = 'violet'
-
-function isAccentColor(value: string | null): value is AccentColor {
-  return !!value && (ACCENT_COLORS as readonly string[]).includes(value)
+function getStoredHue(): number {
+  if (typeof window === 'undefined') return DEFAULT_HUE
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (raw === null) return DEFAULT_HUE
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : DEFAULT_HUE
 }
 
-function getStoredAccent(): AccentColor {
-  if (typeof window === 'undefined') return DEFAULT_ACCENT
-  const stored = localStorage.getItem(STORAGE_KEY)
-  return isAccentColor(stored) ? stored : DEFAULT_ACCENT
+function applyHue(hue: number) {
+  const existing = document.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null
+
+  if (hue === DEFAULT_HUE) {
+    existing?.remove()
+    return
+  }
+
+  const styleEl = existing ?? document.createElement('style')
+  styleEl.id = STYLE_ELEMENT_ID
+  styleEl.textContent = buildAccentCss(hue)
+  if (!existing) document.head.appendChild(styleEl)
 }
 
 interface UseAccentColorResult {
-  accent: AccentColor
-  setAccent: (accent: AccentColor) => void
+  hue: number
+  setHue: (hue: number) => void
 }
 
 /**
- * Applies a `data-accent` attribute on <html> that a matching CSS block
- * (see index.css) uses to swap --primary/--on-primary/--primary-container/
- * --on-primary-container/--nav-active/--logo. 'violet' is the app's
- * original palette and needs no attribute at all — see index.html's
- * bootstrap script for the pre-paint equivalent of this effect.
+ * Unlimited accent color — any hue, not a fixed palette. Injects a
+ * generated <style> tag (see accent-theme.ts) rather than toggling a
+ * data-attribute against pre-written CSS, since the color space here is
+ * open-ended rather than a handful of known presets. index.html's
+ * bootstrap script builds the same stylesheet before first paint so
+ * there's no flash back to the default hue on load.
  */
 export function useAccentColor(): UseAccentColorResult {
-  const [accent, setAccentState] = useState<AccentColor>(getStoredAccent)
+  const [hue, setHueState] = useState<number>(getStoredHue)
 
   useEffect(() => {
-    if (accent === DEFAULT_ACCENT) {
-      document.documentElement.removeAttribute('data-accent')
-    } else {
-      document.documentElement.setAttribute('data-accent', accent)
-    }
-    localStorage.setItem(STORAGE_KEY, accent)
-  }, [accent])
+    applyHue(hue)
+    localStorage.setItem(STORAGE_KEY, String(hue))
+  }, [hue])
 
-  const setAccent = useCallback((next: AccentColor) => setAccentState(next), [])
+  const setHue = useCallback((next: number) => setHueState(((next % 360) + 360) % 360), [])
 
-  return { accent, setAccent }
+  return { hue, setHue }
 }

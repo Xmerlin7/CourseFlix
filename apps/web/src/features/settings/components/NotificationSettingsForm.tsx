@@ -16,7 +16,7 @@ export function NotificationSettingsForm() {
         {ALL_TYPES.map((type) => (
           <div key={type} className="settings-row">
             <span className="skeleton" style={{ height: 15, width: '40%', borderRadius: 6 }} />
-            <span className="skeleton" style={{ height: 26, width: 46, borderRadius: 999 }} />
+            <span className="skeleton" style={{ height: 30, width: 52, borderRadius: 999 }} />
           </div>
         ))}
       </div>
