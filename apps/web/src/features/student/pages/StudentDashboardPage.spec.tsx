@@ -74,7 +74,7 @@ describe('StudentDashboardPage', () => {
     mockDashboard({})
     renderPage()
 
-    expect(await screen.findByText('👋 أهلاً عبدالله')).toBeInTheDocument()
+    expect(await screen.findByText('أهلاً عبدالله')).toBeInTheDocument()
   })
 
   it('shows the welcome empty state for a student with zero courses, and nothing else', async () => {

@@ -58,7 +58,7 @@ export function StudentDashboardPage() {
 
   return (
     <>
-      <h1 className="page-title">👋 أهلاً{firstName ? ` ${firstName}` : ''}</h1>
+      <h1 className="page-title">أهلاً{firstName ? ` ${firstName}` : ''}</h1>
       <p className="subtitle">جاهز تكمل رحلتك التعليمية؟</p>
 
       {!hasCourses && (
