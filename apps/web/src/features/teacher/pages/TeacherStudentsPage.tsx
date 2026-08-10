@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { showToast } from '../../../shared/components/Toast'
 import { COURSE_STATUS, ENROLLMENT_STATUS } from '../../../shared/lib/status-labels'
 import { updateStudentEnrollmentStatus } from '../api/teacher.api'
 import { useTeacherStudents } from '../hooks/useTeacherStudents'
+import { TeacherStudentsSkeleton } from '../components/TeacherStudentsSkeleton'
 
 type Filter = 'all' | 'subscribed' | 'unsubscribed'
 
@@ -57,7 +57,7 @@ export function TeacherStudentsPage() {
     return data.students
   }, [data, filter])
 
-  if (isLoading) return <LoadingState variant="cards" />
+  if (isLoading) return <TeacherStudentsSkeleton />
 
   if (error) {
     return (
