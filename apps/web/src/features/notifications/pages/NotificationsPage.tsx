@@ -2,17 +2,9 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { Link } from 'react-router'
+import { NOTIFICATION_TYPE } from '../../../shared/lib/status-labels'
 import { useNotifications } from '../hooks/useNotifications'
 import type { NotificationType } from '../types/notification.types'
-
-const TYPE_META: Record<NotificationType, { label: string; icon: string; lead: string }> = {
-  hw_assigned: { label: 'واجب جديد', icon: 'assignment', lead: 'pink' },
-  quiz_ready: { label: 'اختبار جاهز', icon: 'quiz', lead: '' },
-  progress_report: { label: 'تقرير تقدم', icon: 'monitoring', lead: 'green' },
-  announcement: { label: 'إعلان', icon: 'campaign', lead: 'pink' },
-  course_update: { label: 'تحديث دورة', icon: 'menu_book', lead: '' },
-  system: { label: 'إشعار عام', icon: 'info', lead: '' },
-}
 
 const STATUS_OPTIONS: Array<{ label: string; value: 'all' | 'unread' | 'read' }> = [
   { label: 'الكل', value: 'all' },
@@ -22,9 +14,11 @@ const STATUS_OPTIONS: Array<{ label: string; value: 'all' | 'unread' | 'read' }>
 
 const TYPE_OPTIONS: Array<{ label: string; value: 'all' | NotificationType }> = [
   { label: 'كل الأنواع', value: 'all' },
-  ...(Object.entries(TYPE_META) as Array<[NotificationType, (typeof TYPE_META)[NotificationType]]>).map(
-    ([type, meta]) => ({ label: meta.label, value: type }),
-  ),
+  ...(
+    Object.entries(NOTIFICATION_TYPE) as Array<
+      [NotificationType, (typeof NOTIFICATION_TYPE)[NotificationType]]
+    >
+  ).map(([type, meta]) => ({ label: meta.label, value: type })),
 ]
 
 export function NotificationsPage() {
@@ -107,7 +101,7 @@ export function NotificationsPage() {
       {!isLoading && !error && data.length > 0 && (
         <div className="list">
           {data.map((notification) => {
-            const meta = TYPE_META[notification.type]
+            const meta = NOTIFICATION_TYPE[notification.type]
             const miniQuizPath =
               notification.relatedEntityType === 'mini_quiz' && notification.relatedEntityId
                 ? `/student/mini-quizzes/${notification.relatedEntityId}`
