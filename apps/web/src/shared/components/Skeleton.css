@@ -1,0 +1,46 @@
+/* ── Shared skeleton primitives ──────────────────────────────────────
+   Base building blocks reused by every page-specific *Skeleton
+   component. Page composition (which blocks, in what layout) lives in
+   each dedicated component — this file only owns the visual primitive:
+   a pulsing, theme-aware gray bar. */
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Driven by the M3 token, so it follows the explicit `.dark` class that
+   ThemeToggle owns rather than prefers-color-scheme. */
+.skeleton {
+  border-radius: 6px;
+  background-color: var(--surface-container-highest);
+}
+
+.skeleton-h-32 { height: 128px; }
+.skeleton-h-10 { height: 40px; }
+.skeleton-h-8  { height: 36px; }
+.skeleton-h-5  { height: 20px; }
+.skeleton-h-4  { height: 16px; }
+.skeleton-h-3  { height: 12px; }
+
+.skeleton-w-full { width: 100%; }
+.skeleton-w-3\/4 { width: 75%; }
+.skeleton-w-2\/3 { width: 66.666%; }
+.skeleton-w-1\/2 { width: 50%; }
+.skeleton-w-1\/3 { width: 33.333%; }
+
+.skeleton-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

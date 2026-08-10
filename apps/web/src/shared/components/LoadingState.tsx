@@ -1,7 +1,7 @@
 import './LoadingState.css'
 
 type LoadingStateProps = {
-  variant?: 'cards' | 'list' | 'text' | 'lesson' | 'sales' | 'student-courses' | 'student-home'
+  variant?: 'cards' | 'list' | 'text' | 'lesson' | 'sales' | 'student-courses'
   count?: number
 }
 
@@ -53,77 +53,6 @@ export function LoadingState({ variant = 'cards', count = 3 }: LoadingStateProps
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {variant === 'student-home' && (
-        <div data-testid="student-home-skeleton">
-          <div className="skeleton" style={{ height: 28, width: 220, borderRadius: 8, marginBottom: 8 }} />
-          <div className="skeleton" style={{ height: 16, width: 260, borderRadius: 6, marginBottom: 28 }} />
-
-          <div
-            className="card"
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 24,
-              marginBottom: 36,
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 220, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div className="skeleton" style={{ height: 20, width: 140, borderRadius: 999 }} />
-              <div className="skeleton" style={{ height: 24, width: 220, borderRadius: 6 }} />
-              <div className="skeleton" style={{ height: 14, width: 180, borderRadius: 6 }} />
-              <div className="skeleton" style={{ height: 8, width: '100%', maxWidth: 260, borderRadius: 999 }} />
-            </div>
-            <div className="skeleton" style={{ height: 48, width: 160, borderRadius: 999 }} />
-          </div>
-
-          <div className="tiles section">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="tile" style={{ gap: 10 }}>
-                <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 12 }} />
-                <div className="skeleton" style={{ height: 14, width: 70, borderRadius: 6 }} />
-                <div className="skeleton" style={{ height: 28, width: 50, borderRadius: 8 }} />
-              </div>
-            ))}
-          </div>
-
-          {[0, 1].map((section) => (
-            <div key={section} className="section">
-              <div className="skeleton" style={{ height: 22, width: 140, borderRadius: 6, marginBottom: 16 }} />
-              <div className="list">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="list-item">
-                    <div className="skeleton" style={{ width: 46, height: 46, borderRadius: '50%', flex: 'none' }} />
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <div className="skeleton" style={{ height: 15, width: '60%', borderRadius: 6 }} />
-                      <div className="skeleton" style={{ height: 12, width: '35%', borderRadius: 6 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 36, width: 110, borderRadius: 999 }} />
-            ))}
-          </div>
-          <div className="list">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="list-item">
-                <div className="skeleton" style={{ width: 46, height: 46, borderRadius: '50%', flex: 'none' }} />
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div className="skeleton" style={{ height: 15, width: '50%', borderRadius: 6 }} />
-                  <div className="skeleton" style={{ height: 12, width: '30%', borderRadius: 6 }} />
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

@@ -2,10 +2,10 @@ import { Link, useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { ENROLLMENT_STATUS, NOTIFICATION_TYPE } from '../../../shared/lib/status-labels'
 import { useNotifications } from '../../notifications/hooks/useNotifications'
 import { useStudentDashboard } from '../hooks/useStudentDashboard'
+import { StudentHomeSkeleton } from '../components/StudentHomeSkeleton'
 import type { StudentDashboardActivityItem } from '../types/student.types'
 
 const QUICK_ACCESS_ITEMS = [
@@ -38,7 +38,7 @@ export function StudentDashboardPage() {
   const { data, isLoading, error, refetch } = useStudentDashboard()
   const notifications = useNotifications()
 
-  if (isLoading) return <LoadingState variant="student-home" />
+  if (isLoading) return <StudentHomeSkeleton />
 
   if (error) {
     if (error.status === 403) return <ForbiddenState />
