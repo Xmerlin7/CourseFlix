@@ -18,27 +18,27 @@ type NavItem = { path: string; label: string; icon: string }
 // version linked to /student/progress, /student/assistant, /teacher/students
 // and /teacher/quizzes — none of which are routed, so every one of them
 // dropped the user on the 404 page. They come back as each owner's slice
-// ships, not before. /settings now exists (SettingsPage) and is listed
-// for every role.
+// ships, not before.
+//
+// Settings and Notifications are deliberately NOT linked here even
+// though both routes/pages still exist and work fine — just no sidebar
+// entry point for now. Remove this comment and re-add their NavItem
+// entries below to bring them back.
 const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.STUDENT.BROWSE, label: 'استكشف الدورات', icon: 'explore' },
   { path: ROUTE_PATHS.STUDENT.COURSES, label: 'دوراتي', icon: 'menu_book' },
-  { path: ROUTE_PATHS.STUDENT.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
   { path: ROUTE_PATHS.STUDENT.INTERVENTIONS, label: 'نقاط تحتاج مراجعة', icon: 'monitoring' },
-  { path: ROUTE_PATHS.STUDENT.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 const teacherNavItems: NavItem[] = [
   { path: ROUTE_PATHS.TEACHER.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.TEACHER.COURSES, label: 'دوراتي', icon: 'menu_book' },
   { path: ROUTE_PATHS.TEACHER.STUDENTS, label: 'الطلاب', icon: 'groups' },
-  { path: ROUTE_PATHS.TEACHER.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
   { path: ROUTE_PATHS.TEACHER.AGENT_LOGS, label: 'سجل الوكيل', icon: 'smart_toy' },
   { path: ROUTE_PATHS.TEACHER.INTERVENTIONS, label: 'تقارير المتابعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.TEACHER.SALES, label: 'المبيعات', icon: 'payments' },
   { path: ROUTE_PATHS.TEACHER.ANALYTICS, label: 'مساعد التحليلات', icon: 'insights' },
-  { path: ROUTE_PATHS.TEACHER.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 // Assistants share the teacher's course/student surface but not
@@ -65,10 +65,8 @@ const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.QUIZZES, label: 'الاختبارات', icon: 'quiz' },
   { path: ROUTE_PATHS.ADMIN.DOCUMENTS, label: 'المستندات', icon: 'description' },
   { path: ROUTE_PATHS.ADMIN.INTERVENTIONS, label: 'تنبيهات المتابعة', icon: 'monitoring' },
-  { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG, label: 'سجل الإشعارات', icon: 'history' },
   { path: ROUTE_PATHS.ADMIN.AGENT_LOGS, label: 'سجل الوكلاء', icon: 'smart_toy' },
-  { path: ROUTE_PATHS.ADMIN.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {
@@ -123,8 +121,8 @@ export function Sidebar({
       </nav>
 
       <div className="side-footer">
-        {/* Plain identity row, not a link to Settings — Settings already
-            has its own nav item above, this just shows who is signed in. */}
+        {/* Plain identity row, not a link anywhere — just shows who is
+            signed in. */}
         <div className="nav-item profile-item" title={userName}>
           <span className="avatar">
             <span className="ms">person</span>
