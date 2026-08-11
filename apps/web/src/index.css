@@ -80,8 +80,20 @@
   }
 }
 
-:root.dark,
-:where(.dark, .dark *) {
+/* Tokens are declared on the root element ONLY — never on `.dark *` too.
+   Descendants already inherit every custom property from :root, so
+   matching them as well was redundant; worse, it broke the accent color
+   in dark mode. The accent engine sets its computed tokens as an inline
+   style on <html>, and a custom property declared *directly* on an
+   element always beats the one it would inherit from its parent —
+   `!important` doesn't help, since it only arbitrates between
+   declarations on the same element. So `.dark *` re-declared the default
+   violet on every descendant and silently shadowed the user's accent
+   everywhere except <html> itself. Light mode was fine precisely because
+   `:root` matches only <html>. (The `dark:` Tailwind variant at the top
+   of this file legitimately needs the `.dark *` form — that's a
+   different job: styling descendants, not declaring inherited tokens.) */
+:root.dark {
   --primary: #CFBCFF;
   --on-primary: #36265D;
   --primary-container: #4F378B;
