@@ -15,7 +15,8 @@
          font/scale while React hydrates. Mirrors what useTheme/useAccentColor/
          useCornerStyle/useReducedMotion/useFontFamily/useUiScale apply after mount —
          keep all of them in sync if the storage keys, value sets, or accent-theme.ts's
-         tone formula ever change. -->
+         tone formula ever change. data-ui-scale here only sets the attribute; the
+         actual zoom is a CSS rule scoped to .sheet/.sidebar in index.css, not :root. -->
     <script>(function(){try{
       var theme=localStorage.getItem('cf-theme');
       var isDark=theme==='dark'||((!theme||theme==='system')&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);
@@ -35,7 +36,6 @@
       var uiScale=localStorage.getItem('cf-ui-scale');
       if(uiScale==='small'||uiScale==='large'){
         document.documentElement.setAttribute('data-ui-scale',uiScale);
-        document.documentElement.style.zoom=(uiScale==='small'?'0.9':'1.15');
       }
 
       var seed=localStorage.getItem('cf-accent-hex');
@@ -51,30 +51,38 @@
           return '#'+c(0)+c(1)+c(2);
         }
         function tone(pct,base){return 'color-mix(in srgb, var(--accent-seed) '+pct+'%, '+base+')'}
+        // !important on every declaration — the definitive fix, not just
+        // a specificity trick. index.css's own default :root/:root.dark
+        // blocks are unlayered author CSS too, so a plain specificity/
+        // DOM-order edge (whichever <style> tag lands later in <head>)
+        // was enough to make the accent silently lose after a refresh,
+        // and made light/dark values leak into the wrong mode depending
+        // on load timing. See accent-theme.ts's buildAccentCss.
+        function d(name,value){return '--'+name+':'+value+' !important;'}
         var onPrimaryLight=contrastOn(seed);
         var onPrimaryDark=contrastOn(mix(seed,55,'white'));
         var css=':root {'
-          +'--accent-seed:'+seed+';--primary:var(--accent-seed);--on-primary:'+onPrimaryLight+';'
-          +'--primary-container:'+tone(20,'white')+';--on-primary-container:'+tone(75,'black')+';'
-          +'--secondary-container:'+tone(20,'white')+';--on-secondary-container:'+tone(75,'black')+';'
-          +'--tertiary-container:'+tone(20,'white')+';--on-tertiary-container:'+tone(75,'black')+';'
-          +'--bg:'+tone(8,'white')+';--surface:'+tone(3,'white')+';'
-          +'--surface-container-low:'+tone(10,'white')+';--surface-container:'+tone(13,'white')+';'
-          +'--surface-container-high:'+tone(16,'white')+';--surface-container-highest:'+tone(19,'white')+';'
-          +'--on-surface:'+tone(9,'black')+';--on-surface-variant:'+tone(48,'black')+';'
-          +'--outline:'+tone(28,'black')+';--outline-variant:'+tone(18,'white')+';'
-          +'--logo:'+tone(78,'black')+';--nav-active:'+tone(70,'black')+';'
-          +'}:root.dark,:where(.dark, .dark *) {'
-          +'--accent-seed:'+seed+';--primary:'+tone(55,'white')+';--on-primary:'+onPrimaryDark+';'
-          +'--primary-container:'+tone(38,'black')+';--on-primary-container:'+tone(20,'white')+';'
-          +'--secondary-container:'+tone(38,'black')+';--on-secondary-container:'+tone(20,'white')+';'
-          +'--tertiary-container:'+tone(38,'black')+';--on-tertiary-container:'+tone(20,'white')+';'
-          +'--bg:'+tone(24,'black')+';--surface:'+tone(18,'black')+';'
-          +'--surface-container-low:'+tone(21,'black')+';--surface-container:'+tone(24,'black')+';'
-          +'--surface-container-high:'+tone(27,'black')+';--surface-container-highest:'+tone(31,'black')+';'
-          +'--on-surface:'+tone(12,'white')+';--on-surface-variant:'+tone(28,'white')+';'
-          +'--outline:'+tone(24,'white')+';--outline-variant:'+tone(16,'black')+';'
-          +'--logo:'+tone(65,'white')+';--nav-active:'+tone(20,'white')+';'
+          +d('accent-seed',seed)+d('primary','var(--accent-seed)')+d('on-primary',onPrimaryLight)
+          +d('primary-container',tone(20,'white'))+d('on-primary-container',tone(75,'black'))
+          +d('secondary-container',tone(20,'white'))+d('on-secondary-container',tone(75,'black'))
+          +d('tertiary-container',tone(20,'white'))+d('on-tertiary-container',tone(75,'black'))
+          +d('bg',tone(8,'white'))+d('surface',tone(3,'white'))
+          +d('surface-container-low',tone(10,'white'))+d('surface-container',tone(13,'white'))
+          +d('surface-container-high',tone(16,'white'))+d('surface-container-highest',tone(19,'white'))
+          +d('on-surface',tone(9,'black'))+d('on-surface-variant',tone(48,'black'))
+          +d('outline',tone(28,'black'))+d('outline-variant',tone(18,'white'))
+          +d('logo',tone(78,'black'))+d('nav-active',tone(70,'black'))
+          +'}:root.dark {'
+          +d('accent-seed',seed)+d('primary',tone(55,'white'))+d('on-primary',onPrimaryDark)
+          +d('primary-container',tone(38,'black'))+d('on-primary-container',tone(20,'white'))
+          +d('secondary-container',tone(38,'black'))+d('on-secondary-container',tone(20,'white'))
+          +d('tertiary-container',tone(38,'black'))+d('on-tertiary-container',tone(20,'white'))
+          +d('bg',tone(24,'black'))+d('surface',tone(18,'black'))
+          +d('surface-container-low',tone(21,'black'))+d('surface-container',tone(24,'black'))
+          +d('surface-container-high',tone(27,'black'))+d('surface-container-highest',tone(31,'black'))
+          +d('on-surface',tone(12,'white'))+d('on-surface-variant',tone(28,'white'))
+          +d('outline',tone(24,'white'))+d('outline-variant',tone(16,'black'))
+          +d('logo',tone(65,'white'))+d('nav-active',tone(20,'white'))
           +'}';
         var styleEl=document.createElement('style');
         styleEl.id='cf-accent-style';

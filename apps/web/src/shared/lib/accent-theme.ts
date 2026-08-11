@@ -44,6 +44,21 @@ function tone(mixPercent: number, base: 'white' | 'black'): string {
   return `color-mix(in srgb, var(--accent-seed) ${mixPercent}%, ${base})`
 }
 
+// `!important` on every declaration — not just a specificity trick.
+// index.css's own default :root/:root.dark blocks are unlayered author
+// CSS too (same "layer" as this injected stylesheet), so a plain
+// specificity/DOM-order tie (whichever <style> tag happened to land
+// later in <head>) was enough to make the accent silently lose after a
+// refresh, and made light-mode values leak into dark mode (or vice
+// versa) depending on load timing. !important declarations sort into
+// their own higher-priority bucket ahead of every non-important rule,
+// regardless of specificity or source order — nothing else in this app
+// declares these custom properties with !important, so nothing can win
+// the tie back.
+function decl(name: string, value: string): string {
+  return `--${name}: ${value} !important;`
+}
+
 /**
  * Builds the full light+dark CSS block for a given seed color (any hex).
  * Deliberately covers backgrounds/surfaces/text/chips too, not just the
@@ -63,50 +78,49 @@ export function buildAccentCss(seedHex: string): string {
   const onPrimaryDark = getContrastOn(darkPrimary)
 
   return `:root {
-  --accent-seed: ${seedHex};
-  --primary: var(--accent-seed);
-  --on-primary: ${onPrimaryLight};
-  --primary-container: ${tone(20, 'white')};
-  --on-primary-container: ${tone(75, 'black')};
-  --secondary-container: ${tone(20, 'white')};
-  --on-secondary-container: ${tone(75, 'black')};
-  --tertiary-container: ${tone(20, 'white')};
-  --on-tertiary-container: ${tone(75, 'black')};
-  --bg: ${tone(8, 'white')};
-  --surface: ${tone(3, 'white')};
-  --surface-container-low: ${tone(10, 'white')};
-  --surface-container: ${tone(13, 'white')};
-  --surface-container-high: ${tone(16, 'white')};
-  --surface-container-highest: ${tone(19, 'white')};
-  --on-surface: ${tone(9, 'black')};
-  --on-surface-variant: ${tone(48, 'black')};
-  --outline: ${tone(28, 'black')};
-  --outline-variant: ${tone(18, 'white')};
-  --logo: ${tone(78, 'black')};
-  --nav-active: ${tone(70, 'black')};
+  ${decl('accent-seed', seedHex)}
+  ${decl('primary', 'var(--accent-seed)')}
+  ${decl('on-primary', onPrimaryLight)}
+  ${decl('primary-container', tone(20, 'white'))}
+  ${decl('on-primary-container', tone(75, 'black'))}
+  ${decl('secondary-container', tone(20, 'white'))}
+  ${decl('on-secondary-container', tone(75, 'black'))}
+  ${decl('tertiary-container', tone(20, 'white'))}
+  ${decl('on-tertiary-container', tone(75, 'black'))}
+  ${decl('bg', tone(8, 'white'))}
+  ${decl('surface', tone(3, 'white'))}
+  ${decl('surface-container-low', tone(10, 'white'))}
+  ${decl('surface-container', tone(13, 'white'))}
+  ${decl('surface-container-high', tone(16, 'white'))}
+  ${decl('surface-container-highest', tone(19, 'white'))}
+  ${decl('on-surface', tone(9, 'black'))}
+  ${decl('on-surface-variant', tone(48, 'black'))}
+  ${decl('outline', tone(28, 'black'))}
+  ${decl('outline-variant', tone(18, 'white'))}
+  ${decl('logo', tone(78, 'black'))}
+  ${decl('nav-active', tone(70, 'black'))}
 }
-:root.dark,
-:where(.dark, .dark *) {
-  --accent-seed: ${seedHex};
-  --primary: ${tone(55, 'white')};
-  --on-primary: ${onPrimaryDark};
-  --primary-container: ${tone(38, 'black')};
-  --on-primary-container: ${tone(20, 'white')};
-  --secondary-container: ${tone(38, 'black')};
-  --on-secondary-container: ${tone(20, 'white')};
-  --tertiary-container: ${tone(38, 'black')};
-  --on-tertiary-container: ${tone(20, 'white')};
-  --bg: ${tone(24, 'black')};
-  --surface: ${tone(18, 'black')};
-  --surface-container-low: ${tone(21, 'black')};
-  --surface-container: ${tone(24, 'black')};
-  --surface-container-high: ${tone(27, 'black')};
-  --surface-container-highest: ${tone(31, 'black')};
-  --on-surface: ${tone(12, 'white')};
-  --on-surface-variant: ${tone(28, 'white')};
-  --outline: ${tone(24, 'white')};
-  --outline-variant: ${tone(16, 'black')};
-  --logo: ${tone(65, 'white')};
-  --nav-active: ${tone(20, 'white')};
+:root.dark {
+  ${decl('accent-seed', seedHex)}
+  ${decl('primary', tone(55, 'white'))}
+  ${decl('on-primary', onPrimaryDark)}
+  ${decl('primary-container', tone(38, 'black'))}
+  ${decl('on-primary-container', tone(20, 'white'))}
+  ${decl('secondary-container', tone(38, 'black'))}
+  ${decl('on-secondary-container', tone(20, 'white'))}
+  ${decl('tertiary-container', tone(38, 'black'))}
+  ${decl('on-tertiary-container', tone(20, 'white'))}
+  ${decl('bg', tone(24, 'black'))}
+  ${decl('surface', tone(18, 'black'))}
+  ${decl('surface-container-low', tone(21, 'black'))}
+  ${decl('surface-container', tone(24, 'black'))}
+  ${decl('surface-container-high', tone(27, 'black'))}
+  ${decl('surface-container-highest', tone(31, 'black'))}
+  ${decl('on-surface', tone(12, 'white'))}
+  ${decl('on-surface-variant', tone(28, 'white'))}
+  ${decl('outline', tone(24, 'white'))}
+  ${decl('outline-variant', tone(16, 'black'))}
+  ${decl('logo', tone(65, 'white'))}
+  ${decl('nav-active', tone(20, 'white'))}
 }`
 }

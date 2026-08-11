@@ -65,7 +65,7 @@ export function ExperienceSettingsForm() {
 
       <div className="card">
         <h3 style={{ marginBottom: 0 }}>حجم الواجهة</h3>
-        <p className="meta">يكبّر أو يصغّر النصوص والعناصر في كل الواجهة دفعة واحدة.</p>
+        <p className="meta">يكبّر أو يصغّر محتوى الصفحة والشريط الجانبي معًا — التنبيهات والنوافذ المنبثقة بتفضل بنفس الحجم.</p>
 
         <div className="actions section" style={{ marginBottom: 0 }}>
           {UI_SCALES.map((option) => (

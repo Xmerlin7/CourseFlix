@@ -70,7 +70,6 @@
   color-scheme: light dark;
   color: var(--on-surface);
   background: var(--bg);
-  zoom: var(--ui-zoom);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -163,13 +162,20 @@
 }
 
 /* ---------- UI scale (Settings > Experience) ----------
-   `zoom` (not transform: scale()) — it's a real layout-level scale, the
-   same mechanism as the browser's own Ctrl+scroll zoom, so it resizes
-   fonts *and* every padding/gap/icon together with zero risk of gaps
-   the way mechanically converting individual declarations has (see
+   `zoom` (not transform: scale()) — it's a real layout-level scale, so it
+   resizes fonts *and* every padding/gap/icon together with zero risk of
+   gaps the way mechanically converting individual declarations has (see
    --radius-scale/--space-scale, which both needed multiple follow-up
    passes to reach the parts of the app they'd missed). Supported by
-   every browser this app already requires (Tailwind v4's own floor). */
+   every browser this app already requires (Tailwind v4's own floor).
+   --ui-zoom itself is only *read* on .sidebar/.sheet, not here — zooming
+   :root also scaled position:fixed overlays (toasts, the floating
+   assistant) against a viewport whose own size hadn't moved, which is
+   what made things overflow/vanish at 115%. .sidebar/.sheet stay
+   contained (each sized against an already-100vh ancestor, with
+   overflow handling of their own), so only what's actually inside them
+   grows/shrinks — fixed overlays are untouched since they're siblings,
+   not descendants, of either. */
 :root {
   --ui-zoom: 1;
 }
@@ -239,6 +245,12 @@
   padding: 0 clamp(18px, 4vw, 48px);
   display: flex;
   flex-direction: column;
+  /* UI scale (Settings > Experience) zooms .sheet and .sidebar
+     individually, not :root. .sheet keeps a fixed outer box
+     (height:100%, overflow:hidden) so its own size never moves; only
+     what's rendered inside it grows/shrinks, and .page already scrolls
+     internally if zoomed content runs long. */
+  zoom: var(--ui-zoom);
 }
 
 .page {
@@ -286,12 +298,21 @@
   flex: none;
   position: sticky;
   top: 0;
-  height: 100vh;
+  /* 100% of .app's own 100vh, not 100vh directly — an element that
+     specifies its own height in vh AND is itself zoomed double-counts:
+     100vh at 1.15 zoom tries to render at 115% of the real viewport
+     height, which is what made content overflow/vanish when zoom lived
+     on :root. Same fix as .sheet (height: 100% of an already-vh-sized
+     ancestor), plus overflow-y so a zoomed nav list scrolls internally
+     instead of spilling past the viewport with no way to reach it. */
+  height: 100%;
   display: flex;
   flex-direction: column;
   padding: 18px 14px;
   gap: 8px;
   background: var(--bg);
+  overflow-y: auto;
+  zoom: var(--ui-zoom);
 }
 
 .sidebar .rail-toggle {

@@ -6,12 +6,6 @@ export type UiScale = (typeof UI_SCALES)[number]
 const STORAGE_KEY = 'cf-ui-scale'
 const DEFAULT_SCALE: UiScale = 'default'
 
-const ZOOM_BY_SCALE: Record<UiScale, string> = {
-  small: '0.9',
-  default: '1',
-  large: '1.15',
-}
-
 function isUiScale(value: string | null): value is UiScale {
   return !!value && (UI_SCALES as readonly string[]).includes(value)
 }
@@ -28,14 +22,18 @@ interface UseUiScaleResult {
 }
 
 /**
- * Applies a `data-ui-scale` attribute on <html> (which index.css's
- * [data-ui-scale] rules read to set --ui-zoom) AND sets the same zoom
- * directly as an inline style — belt and suspenders. `zoom` is a real
- * layout-level scale (same mechanism as the browser's own Ctrl+scroll),
- * but it's less common than the other properties this app depends on, so
- * this doesn't rely solely on the value surviving the CSS build pipeline
- * inside a stylesheet — style.zoom is set straight on the element via
- * the CSSOM, independent of any stylesheet processing.
+ * Applies a `data-ui-scale` attribute on <html>, which index.css's
+ * [data-ui-scale] rules read to set --ui-zoom — consumed by `.sidebar`
+ * and `.sheet`'s own `zoom: var(--ui-zoom)`, not by :root. Zooming the
+ * whole page (as an earlier version did) scaled everything at once —
+ * including position:fixed overlays (toasts, the floating assistant)
+ * sized against a real viewport whose own dimensions hadn't moved,
+ * which is what made elements overflow/vanish at 115%. Scoping the zoom
+ * to the sidebar and content sheet individually keeps their own boxes a
+ * stable size (each already contained: height:100% of an already-100vh
+ * ancestor, plus overflow handling of their own) while what's rendered
+ * inside them grows/shrinks — see the comments on `.sidebar`/`.sheet`
+ * in index.css.
  */
 export function useUiScale(): UseUiScaleResult {
   const [scale, setScaleState] = useState<UiScale>(getStoredScale)
@@ -46,9 +44,6 @@ export function useUiScale(): UseUiScaleResult {
     } else {
       document.documentElement.setAttribute('data-ui-scale', scale)
     }
-    // `zoom` isn't in the standard CSSStyleDeclaration TS types yet.
-    ;(document.documentElement.style as CSSStyleDeclaration & { zoom: string }).zoom =
-      ZOOM_BY_SCALE[scale]
     localStorage.setItem(STORAGE_KEY, scale)
   }, [scale])
 
