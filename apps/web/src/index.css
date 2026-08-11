@@ -122,10 +122,11 @@
    the user can pick any hue, so there's no static CSS block for it here.
    accent-theme.ts generates the --primary/--on-primary/--primary-
    container/--on-primary-container/--secondary-container/--on-secondary-
-   container/--tertiary-container/--on-tertiary-container/--bg/--surface*/
-   --on-surface*/--outline*/--logo/--nav-active pair (light + dark) for
-   the chosen hue and injects it as a <style> tag — see useAccentColor.ts
-   and index.html's bootstrap script (which does the same, pre-paint). */
+   container/--tertiary-container/--on-tertiary-container/--bg/--surface
+   (and its container variants)/--on-surface (and variant)/--outline (and
+   variant)/--logo/--nav-active pair (light + dark) for the chosen hue and
+   injects it as a style tag — see useAccentColor.ts and index.html's
+   bootstrap script (which does the same, pre-paint). */
 
 /* ---------- Corner style (Settings > Appearance) ----------
    Only rectangular surfaces (cards, inputs, panels, dialogs) opt into
