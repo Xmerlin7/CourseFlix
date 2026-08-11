@@ -1,14 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="أفاتار بشمس">
-  <circle cx="64" cy="64" r="64" fill="#E0762F"/>
-  <circle cx="64" cy="64" r="18" fill="#FFFFFF"/>
-  <g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round">
-    <line x1="64" y1="26" x2="64" y2="14"/>
-    <line x1="64" y1="102" x2="64" y2="114"/>
-    <line x1="26" y1="64" x2="14" y2="64"/>
-    <line x1="102" y1="64" x2="114" y2="64"/>
-    <line x1="38" y1="38" x2="30" y2="30"/>
-    <line x1="90" y1="90" x2="98" y2="98"/>
-    <line x1="90" y1="38" x2="98" y2="30"/>
-    <line x1="38" y1="90" x2="30" y2="98"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="صورة رمزية بشعر برتقالي قصير">
+  <circle cx="64" cy="64" r="64" fill="#FDE7DA"/>
+  <circle cx="64" cy="52" r="34" fill="#D9682F"/>
+  <ellipse cx="64" cy="72" rx="27" ry="31" fill="#F4C9A3"/>
+  <path d="M38 58c-1-15 11-25 26-25s27 10 26 25c-2-8-4-15-26-15s-24 7-26 15z" fill="#D9682F"/>
+  <ellipse cx="54" cy="74" rx="3.2" ry="4" fill="#3D2313"/>
+  <ellipse cx="76" cy="74" rx="3.2" ry="4" fill="#3D2313"/>
+  <path d="M54 92q10 8 20 0" stroke="#A85F36" stroke-width="3" fill="none" stroke-linecap="round"/>
 </svg>

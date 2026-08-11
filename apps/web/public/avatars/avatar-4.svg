@@ -1,4 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="أفاتار ببرق">
-  <circle cx="64" cy="64" r="64" fill="#F0A93B"/>
-  <path d="M70 30L44 70h18l-6 28 34-44H72z" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="صورة رمزية بشعر أخضر مجعد">
+  <circle cx="64" cy="64" r="64" fill="#E1F3E7"/>
+  <circle cx="46" cy="42" r="13" fill="#2F8F5B"/>
+  <circle cx="64" cy="34" r="15" fill="#2F8F5B"/>
+  <circle cx="82" cy="42" r="13" fill="#2F8F5B"/>
+  <circle cx="36" cy="58" r="11" fill="#2F8F5B"/>
+  <circle cx="92" cy="58" r="11" fill="#2F8F5B"/>
+  <ellipse cx="64" cy="76" rx="27" ry="31" fill="#8A5A3B"/>
+  <ellipse cx="54" cy="78" rx="3.2" ry="4" fill="#2B1B10"/>
+  <ellipse cx="76" cy="78" rx="3.2" ry="4" fill="#2B1B10"/>
+  <path d="M54 96q10 8 20 0" stroke="#4A2C18" stroke-width="3" fill="none" stroke-linecap="round"/>
 </svg>
