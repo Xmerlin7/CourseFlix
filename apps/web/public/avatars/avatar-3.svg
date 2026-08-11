@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="أفاتار بورقة">
+  <circle cx="64" cy="64" r="64" fill="#3DA35D"/>
+  <path d="M40 88C40 55 62 36 92 36c0 30-19 52-52 52-3 0-6 0-6 0z" fill="#FFFFFF"/>
+  <path d="M40 88C58 70 74 54 90 38" stroke="#3DA35D" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>
