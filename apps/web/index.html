@@ -7,8 +7,128 @@
     <title>CourseFlix</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap" rel="stylesheet">
-    <script>(function(){var t=null;try{t=localStorage.getItem('cf-theme')}catch(e){}if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}if(t==='dark')document.documentElement.classList.add('dark')})();</script>
+    <!-- Cairo stays the default (--sans in index.css); the other four are
+         only fetched for users who pick them in Settings > Appearance —
+         see useFontFamily.ts. -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap" rel="stylesheet">
+    <!-- Runs before first paint so there's no flash of the wrong theme/accent/corners/
+         font/scale while React hydrates. Mirrors what useTheme/useAccentColor/
+         useCornerStyle/useReducedMotion/useFontFamily/useUiScale apply after mount —
+         keep all of them in sync if the storage keys, value sets, or accent-theme.ts's
+         tone formula ever change. data-ui-scale here only sets the attribute; the
+         actual zoom is a CSS rule scoped to .sheet/.sidebar in index.css, not :root. -->
+    <script>(function(){try{
+      var theme=localStorage.getItem('cf-theme');
+      var isDark=theme==='dark'||((!theme||theme==='system')&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+      if(isDark)document.documentElement.classList.add('dark');
+
+      var corners=localStorage.getItem('cf-corners');
+      if(corners&&corners!=='default')document.documentElement.setAttribute('data-corners',corners);
+
+      if(localStorage.getItem('cf-reduce-motion')==='1')document.documentElement.setAttribute('data-reduce-motion','1');
+
+      var density=localStorage.getItem('cf-density');
+      if(density&&density!=='comfortable')document.documentElement.setAttribute('data-density',density);
+
+      var font=localStorage.getItem('cf-font');
+      if(font&&font!=='cairo')document.documentElement.setAttribute('data-font',font);
+
+      var uiScale=localStorage.getItem('cf-ui-scale');
+      if(uiScale==='small'||uiScale==='large'){
+        document.documentElement.setAttribute('data-ui-scale',uiScale);
+      }
+
+      var seed=localStorage.getItem('cf-accent-hex');
+      if(seed&&/^#[0-9a-fA-F]{6}$/.test(seed)&&seed.toLowerCase()!=='#65558f'){
+        function ch(hex,i){return parseInt(hex.slice(1+i*2,3+i*2),16)}
+        function contrastOn(hex){
+          var b=(ch(hex,0)*299+ch(hex,1)*587+ch(hex,2)*114)/1000;
+          return b>=150?'#1D1B20':'#FFFFFF';
+        }
+        function mix(hex,pct,base){
+          var p=pct/100, bv=base==='white'?255:0;
+          function c(i){return Math.max(0,Math.min(255,Math.round(ch(hex,i)*p+bv*(1-p)))).toString(16).padStart(2,'0')}
+          return '#'+c(0)+c(1)+c(2);
+        }
+        // Applied via style.setProperty(..., 'important') directly on
+        // <html>, not a <style> tag — an inline style has no selector,
+        // so there's no specificity/layer/DOM-order contest to lose
+        // against index.css's own default :root/:root.dark blocks (a
+        // <style> tag's :root/:root.dark selectors turned into a
+        // genuinely fragile fight across several rounds). See
+        // accent-theme.ts's buildAccentVars — same math, kept in sync.
+        var vars;
+        if(isDark){
+          // Dark lays the seed's hue/saturation over a FIXED perceptual
+          // lightness ramp instead of mixing toward black. Mixing toward
+          // black keeps saturation at 100% and ties every surface's
+          // lightness to the seed's own, which drenched the page in the
+          // accent and flattened the ramp — see accent-theme.ts's
+          // DARK_TONES comment for the full reasoning and measurements.
+          function toHsl(hex){
+            var r=ch(hex,0)/255,g=ch(hex,1)/255,b=ch(hex,2)/255;
+            var mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,l=(mx+mn)/2,h=0;
+            if(!d)return{h:0,s:0};
+            if(mx===r)h=60*(((g-b)/d)%6);else if(mx===g)h=60*((b-r)/d+2);else h=60*((r-g)/d+4);
+            return{h:h<0?h+360:h,s:d/(1-Math.abs(2*l-1))*100};
+          }
+          function hsl(h,s,l){
+            s/=100;l/=100;
+            var c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs(((h/60)%2)-1)),m=l-c/2,t;
+            if(h>=300)t=[c,0,x];else if(h>=240)t=[x,0,c];else if(h>=180)t=[0,x,c];
+            else if(h>=120)t=[0,c,x];else if(h>=60)t=[x,c,0];else t=[c,x,0];
+            function q(i){return Math.max(0,Math.min(255,Math.round((t[i]+m)*255))).toString(16).padStart(2,'0')}
+            return '#'+q(0)+q(1)+q(2);
+          }
+          function lumi(hex){
+            function f(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}
+            return 0.2126*f(ch(hex,0))+0.7152*f(ch(hex,1))+0.0722*f(ch(hex,2));
+          }
+          function lstar(hex){var y=lumi(hex);return y<=216/24389?y*24389/27:Math.cbrt(y)*116-16}
+          function ratio(a,b){var x=lumi(a),y=lumi(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)}
+          var hs=toHsl(seed);
+          function tone(targetL,mul,cap){
+            var s=Math.min(hs.s*mul,cap),lo=0,hi=100;
+            for(var i=0;i<18;i++){var mid=(lo+hi)/2;if(lstar(hsl(hs.h,s,mid))<targetL)lo=mid;else hi=mid}
+            return hsl(hs.h,s,(lo+hi)/2);
+          }
+          function onColor(bg){
+            var lt=tone(92,1.5,90),dk=tone(12,1.5,60);
+            return ratio(lt,bg)>=ratio(dk,bg)?lt:dk;
+          }
+          var pri=tone(80,1.35,95),priC=tone(30,1.5,65),
+              secC=tone(30,0.6,40),terC=tone(30,0.7,45),hi2=tone(92,1.5,90);
+          vars={
+            'accent-seed':seed,'primary':pri,'on-primary':onColor(pri),
+            'primary-container':priC,'on-primary-container':onColor(priC),
+            'secondary-container':secC,'on-secondary-container':onColor(secC),
+            'tertiary-container':terC,'on-tertiary-container':onColor(terC),
+            'bg':tone(3.9,0.7,20),'surface':tone(8.1,0.7,20),
+            'surface-container-low':tone(12.1,0.65,18),'surface-container':tone(14.4,0.65,18),
+            'surface-container-high':tone(17.7,0.6,16),'surface-container-highest':tone(21.5,0.55,16),
+            'on-surface':tone(90,0.8,30),'on-surface-variant':tone(80,0.7,25),
+            'outline':tone(60,0.35,14),'outline-variant':tone(30,0.35,14),
+            'logo':tone(85,1.6,90),'nav-active':hi2
+          };
+        }else{
+          vars={
+            'accent-seed':seed,'primary':seed,'on-primary':contrastOn(seed),
+            'primary-container':mix(seed,20,'white'),'on-primary-container':mix(seed,75,'black'),
+            'secondary-container':mix(seed,20,'white'),'on-secondary-container':mix(seed,75,'black'),
+            'tertiary-container':mix(seed,20,'white'),'on-tertiary-container':mix(seed,75,'black'),
+            'bg':mix(seed,8,'white'),'surface':mix(seed,3,'white'),
+            'surface-container-low':mix(seed,10,'white'),'surface-container':mix(seed,13,'white'),
+            'surface-container-high':mix(seed,16,'white'),'surface-container-highest':mix(seed,19,'white'),
+            'on-surface':mix(seed,9,'black'),'on-surface-variant':mix(seed,48,'black'),
+            'outline':mix(seed,28,'black'),'outline-variant':mix(seed,18,'white'),
+            'logo':mix(seed,78,'black'),'nav-active':mix(seed,70,'black')
+          };
+        }
+        for(var k in vars){
+          document.documentElement.style.setProperty('--'+k, vars[k], 'important');
+        }
+      }
+    }catch(e){}})();</script>
   </head>
   <body class="shell">
     <div id="root"></div>

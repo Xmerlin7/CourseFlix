@@ -24,6 +24,7 @@ import { TeacherCoursesSkeleton } from '../../features/teacher/components/Teache
 import { TeacherStudentsSkeleton } from '../../features/teacher/components/TeacherStudentsSkeleton'
 import { TeacherCourseDetailSkeleton } from '../../features/teacher/components/TeacherCourseDetailSkeleton'
 import { AgentLogsSkeleton } from '../../features/agent-logs/components/AgentLogsSkeleton'
+import { SettingsSkeleton } from '../../features/settings/components/SettingsSkeleton'
 import { LoginSkeleton } from '../../features/auth/components/LoginSkeleton'
 import { RegisterSkeleton } from '../../features/auth/components/RegisterSkeleton'
 
@@ -78,6 +79,9 @@ const TeacherCourseDetailPage = lazy(() =>
 )
 const NotificationsPage = lazy(() =>
   import('../../features/notifications/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage }))
+)
+const SettingsPage = lazy(() =>
+  import('../../features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
 const AgentLogsPage = lazy(() =>
   import('../../features/agent-logs/pages/AgentLogsPage').then((m) => ({ default: m.AgentLogsPage }))
@@ -364,6 +368,14 @@ export const router = createBrowserRouter([
               </SuspenseWrapper>
             ),
           },
+          {
+            path: ROUTE_PATHS.STUDENT.SETTINGS,
+            element: (
+              <SuspenseWrapper fallback={<SettingsSkeleton />}>
+                <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
         ],
       },
     ],
@@ -435,6 +447,15 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<NotificationsSkeleton />}>
                 <NotificationsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            // Not teacher-only — assistants manage their own account too.
+            path: ROUTE_PATHS.TEACHER.SETTINGS,
+            element: (
+              <SuspenseWrapper fallback={<SettingsSkeleton />}>
+                <SettingsPage />
               </SuspenseWrapper>
             ),
           },
@@ -628,6 +649,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper>
                 <AdminAgentLogsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.SETTINGS,
+            element: (
+              <SuspenseWrapper fallback={<SettingsSkeleton />}>
+                <SettingsPage />
               </SuspenseWrapper>
             ),
           },

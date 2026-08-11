@@ -53,6 +53,27 @@ export class UserEntity {
   @Column({ name: 'last_login_at', type: 'timestamptz', nullable: true })
   lastLoginAt!: Date | null;
 
+  // Mirrors schemaV2.sql's settings_theme — client applies 'system' by
+  // resolving prefers-color-scheme itself, the server just stores the
+  // user's choice. settings_language/settings_email_notifications from
+  // the same schema block are deferred: there's no i18n layer and no
+  // email delivery channel yet for either to actually do anything.
+  @Column({
+    name: 'settings_theme',
+    type: 'text',
+    default: 'system',
+  })
+  settingsTheme!: 'light' | 'dark' | 'system';
+
+  // Per-notification-type opt-out, e.g. {"hw_assigned": false}. A type
+  // with no key here is treated as enabled — see NotificationsService.notify().
+  @Column({
+    name: 'settings_notification_preferences',
+    type: 'jsonb',
+    default: {},
+  })
+  settingsNotificationPreferences!: Record<string, boolean>;
+
   // Soft delete — every read query elsewhere in the app must filter
   // `deletedAt IS NULL`. Never hard-delete a user row.
   @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })

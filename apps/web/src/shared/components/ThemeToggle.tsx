@@ -1,48 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useTheme } from '../hooks/useTheme'
 
-const STORAGE_KEY = 'cf-theme'
-
-function getInitialTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light'
-
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') return stored
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
-}
-
+// Quick binary flip for the topbar — always sets an explicit light/dark
+// override (even starting from 'system'), matching what users expect from
+// a single-click toggle. The 3-way picker (including 'system' as a
+// selectable, persistent choice) lives in Settings > Appearance.
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(getInitialTheme)
-
-  useEffect(() => {
-    const isDark = theme === 'dark'
-    document.documentElement.classList.toggle('dark', isDark)
-    localStorage.setItem(STORAGE_KEY, theme)
-  }, [theme])
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        setTheme(e.matches ? 'dark' : 'light')
-      }
-    }
-
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
-  }
-
-  const isDark = theme === 'dark'
+  const { resolvedTheme, setMode } = useTheme()
+  const isDark = resolvedTheme === 'dark'
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={() => setMode(isDark ? 'light' : 'dark')}
       className="icon-btn"
       aria-label="تبديل المظهر"
       title={isDark ? 'التحويل إلى الوضع الفاتح' : 'التحويل إلى الوضع الداكن'}

@@ -24,6 +24,7 @@ export const ROUTE_PATHS = {
     INTERVENTIONS: '/student/interventions',
     MINI_QUIZ: '/student/mini-quizzes/:miniQuizId',
     CHECKOUT: '/student/checkout/:courseId',
+    SETTINGS: '/student/settings',
   },
 
   TEACHER: {
@@ -39,6 +40,7 @@ export const ROUTE_PATHS = {
     INTERVENTIONS: '/teacher/interventions',
     SALES: '/teacher/sales',
     ANALYTICS: '/teacher/analytics',
+    SETTINGS: '/teacher/settings',
   },
 
   ADMIN: {
@@ -60,6 +62,7 @@ export const ROUTE_PATHS = {
     NOTIFICATIONS: '/admin/notifications',
     NOTIFICATIONS_LOG: '/admin/notifications-log',
     AGENT_LOGS: '/admin/agent-logs',
+    SETTINGS: '/admin/settings',
   },
 } as const
 

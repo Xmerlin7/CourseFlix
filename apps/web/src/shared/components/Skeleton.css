@@ -14,7 +14,7 @@
 }
 
 /* Driven by the M3 token, so it follows the explicit `.dark` class that
-   ThemeToggle owns rather than prefers-color-scheme. */
+   useTheme owns rather than prefers-color-scheme. */
 .skeleton {
   border-radius: 6px;
   background-color: var(--surface-container-highest);

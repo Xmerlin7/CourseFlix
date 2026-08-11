@@ -7,6 +7,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { NotificationsService } from './notifications.service';
 import { NotificationEntity } from './entities/notification.entity';
+import { UserEntity } from '../users/entities/user.entity';
 
 describe('NotificationsService', () => {
   let notificationsService: NotificationsService;
@@ -18,6 +19,7 @@ describe('NotificationsService', () => {
     save: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
+  let usersRepository: { findOne: jest.Mock };
   let updateQueryBuilder: {
     update: jest.Mock;
     set: jest.Mock;
@@ -50,12 +52,22 @@ describe('NotificationsService', () => {
       createQueryBuilder: jest.fn(() => updateQueryBuilder),
     };
 
+    // Default: recipient has no stored preferences, so every type stays
+    // enabled — matches a fresh account's settings_notification_preferences: {}.
+    usersRepository = {
+      findOne: jest.fn().mockResolvedValue(null),
+    };
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         NotificationsService,
         {
           provide: getRepositoryToken(NotificationEntity),
           useValue: notificationsRepository,
+        },
+        {
+          provide: getRepositoryToken(UserEntity),
+          useValue: usersRepository,
         },
       ],
     }).compile();
@@ -82,6 +94,39 @@ describe('NotificationsService', () => {
           relatedEntityId: null,
         }),
       );
+    });
+
+    it('skips writing the row when the recipient opted out of that type', async () => {
+      usersRepository.findOne.mockResolvedValue({
+        id: userA,
+        settingsNotificationPreferences: { course_update: false },
+      });
+
+      await notificationsService.notify({
+        userId: userA,
+        type: 'course_update',
+        title: 'عنوان',
+        message: 'رسالة',
+      });
+
+      expect(notificationsRepository.create).not.toHaveBeenCalled();
+      expect(notificationsRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('still writes other types the recipient did not opt out of', async () => {
+      usersRepository.findOne.mockResolvedValue({
+        id: userA,
+        settingsNotificationPreferences: { course_update: false },
+      });
+
+      await notificationsService.notify({
+        userId: userA,
+        type: 'quiz_ready',
+        title: 'عنوان',
+        message: 'رسالة',
+      });
+
+      expect(notificationsRepository.create).toHaveBeenCalled();
     });
   });
 
