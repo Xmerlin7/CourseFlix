@@ -33,7 +33,10 @@
       if(font&&font!=='cairo')document.documentElement.setAttribute('data-font',font);
 
       var uiScale=localStorage.getItem('cf-ui-scale');
-      if(uiScale&&uiScale!=='default')document.documentElement.setAttribute('data-ui-scale',uiScale);
+      if(uiScale==='small'||uiScale==='large'){
+        document.documentElement.setAttribute('data-ui-scale',uiScale);
+        document.documentElement.style.zoom=(uiScale==='small'?'0.9':'1.15');
+      }
 
       var seed=localStorage.getItem('cf-accent-hex');
       if(seed&&/^#[0-9a-fA-F]{6}$/.test(seed)&&seed.toLowerCase()!=='#65558f'){

@@ -6,6 +6,12 @@ export type UiScale = (typeof UI_SCALES)[number]
 const STORAGE_KEY = 'cf-ui-scale'
 const DEFAULT_SCALE: UiScale = 'default'
 
+const ZOOM_BY_SCALE: Record<UiScale, string> = {
+  small: '0.9',
+  default: '1',
+  large: '1.15',
+}
+
 function isUiScale(value: string | null): value is UiScale {
   return !!value && (UI_SCALES as readonly string[]).includes(value)
 }
@@ -22,11 +28,14 @@ interface UseUiScaleResult {
 }
 
 /**
- * Applies a `data-ui-scale` attribute on <html> that sets --ui-zoom (see
- * index.css), consumed via the CSS `zoom` property on :root — a real
- * layout-level zoom (same mechanism as the browser's own Ctrl+scroll),
- * not a mechanical per-declaration conversion, so it resizes text and
- * spacing together everywhere with no risk of missed spots.
+ * Applies a `data-ui-scale` attribute on <html> (which index.css's
+ * [data-ui-scale] rules read to set --ui-zoom) AND sets the same zoom
+ * directly as an inline style — belt and suspenders. `zoom` is a real
+ * layout-level scale (same mechanism as the browser's own Ctrl+scroll),
+ * but it's less common than the other properties this app depends on, so
+ * this doesn't rely solely on the value surviving the CSS build pipeline
+ * inside a stylesheet — style.zoom is set straight on the element via
+ * the CSSOM, independent of any stylesheet processing.
  */
 export function useUiScale(): UseUiScaleResult {
   const [scale, setScaleState] = useState<UiScale>(getStoredScale)
@@ -37,6 +46,9 @@ export function useUiScale(): UseUiScaleResult {
     } else {
       document.documentElement.setAttribute('data-ui-scale', scale)
     }
+    // `zoom` isn't in the standard CSSStyleDeclaration TS types yet.
+    ;(document.documentElement.style as CSSStyleDeclaration & { zoom: string }).zoom =
+      ZOOM_BY_SCALE[scale]
     localStorage.setItem(STORAGE_KEY, scale)
   }, [scale])
 
