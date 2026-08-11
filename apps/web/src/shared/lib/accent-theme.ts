@@ -1,5 +1,7 @@
 export const DEFAULT_ACCENT_HEX = '#65558F'
 
+export type AccentMode = 'light' | 'dark'
+
 export function isValidHex(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value)
 }
@@ -8,11 +10,13 @@ function clamp255(n: number): number {
   return Math.max(0, Math.min(255, Math.round(n)))
 }
 
-// Replicates `color-mix(in srgb, seed P%, white|black)` in JS — plain
-// linear interpolation in gamma (sRGB) space, same as the CSS function.
-// Needed once: to know what the *computed* dark-mode --primary actually
-// looks like, so --on-primary's contrast decision is based on the real
-// rendered color instead of the raw (unmixed) seed.
+// Plain linear interpolation in gamma (sRGB) space — replicates what
+// `color-mix(in srgb, seed P%, white|black)` computes, but as a real
+// hex string rather than a CSS function. Used directly (not just for
+// contrast math) so the whole accent engine can apply as literal
+// computed values via inline style/style.setProperty, instead of a
+// <style> tag whose selectors have to out-cascade index.css's own
+// default tokens — see buildAccentVars below for why that mattered.
 function mixHex(hex: string, percent: number, base: 'white' | 'black'): string {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
@@ -33,94 +37,154 @@ export function getContrastOn(hex: string): string {
   return brightness >= 150 ? '#1D1B20' : '#FFFFFF'
 }
 
-// Percent of --accent-seed mixed into each token (the rest is white/black,
+// Percent of the seed mixed into each token (the rest is white/black,
 // per mode) — reverse-engineered from how far the app's own original
-// violet tokens (--primary #65558F) sit from white/black, then applied as
-// a general ratio to ANY seed color. Unlike an HSL-hue-only approach,
-// color-mix() blends the seed's actual saturation and lightness too, so a
-// muted pastel seed produces a muted result and a vivid seed a vivid one
-// — the whole picked color matters, not just its hue.
-function tone(mixPercent: number, base: 'white' | 'black'): string {
-  return `color-mix(in srgb, var(--accent-seed) ${mixPercent}%, ${base})`
-}
+// violet tokens (--primary #65558F) sit from white/black, then applied
+// as a general ratio to ANY seed color. Blends the seed's actual
+// saturation and lightness, not just its hue — a muted pastel seed
+// produces a muted result, a vivid seed a vivid one.
+const RATIOS = {
+  primaryContainer: 20,
+  onPrimaryContainer: 75,
+  secondaryContainer: 20,
+  onSecondaryContainer: 75,
+  tertiaryContainer: 20,
+  onTertiaryContainer: 75,
+  bg: 8,
+  surface: 3,
+  surfaceContainerLow: 10,
+  surfaceContainer: 13,
+  surfaceContainerHigh: 16,
+  surfaceContainerHighest: 19,
+  onSurface: 9,
+  onSurfaceVariant: 48,
+  outline: 28,
+  outlineVariant: 18,
+  logo: 78,
+  navActive: 70,
+} as const
 
-// `!important` on every declaration — not just a specificity trick.
-// index.css's own default :root/:root.dark blocks are unlayered author
-// CSS too (same "layer" as this injected stylesheet), so a plain
-// specificity/DOM-order tie (whichever <style> tag happened to land
-// later in <head>) was enough to make the accent silently lose after a
-// refresh, and made light-mode values leak into dark mode (or vice
-// versa) depending on load timing. !important declarations sort into
-// their own higher-priority bucket ahead of every non-important rule,
-// regardless of specificity or source order — nothing else in this app
-// declares these custom properties with !important, so nothing can win
-// the tie back.
-function decl(name: string, value: string): string {
-  return `--${name}: ${value} !important;`
-}
+const DARK_RATIOS = {
+  primaryContainer: 38,
+  onPrimaryContainer: 20,
+  secondaryContainer: 38,
+  onSecondaryContainer: 20,
+  tertiaryContainer: 38,
+  onTertiaryContainer: 20,
+  bg: 24,
+  surface: 18,
+  surfaceContainerLow: 21,
+  surfaceContainer: 24,
+  surfaceContainerHigh: 27,
+  surfaceContainerHighest: 31,
+  onSurface: 12,
+  onSurfaceVariant: 28,
+  outline: 24,
+  outlineVariant: 16,
+  logo: 65,
+  navActive: 20,
+} as const
+
+// Every custom property this engine ever sets — used both to build the
+// var map and to know exactly what to clean up when resetting to
+// default (see clearAccentVars in useAccentColor.ts).
+export const ACCENT_VAR_NAMES = [
+  'accent-seed',
+  'primary',
+  'on-primary',
+  'primary-container',
+  'on-primary-container',
+  'secondary-container',
+  'on-secondary-container',
+  'tertiary-container',
+  'on-tertiary-container',
+  'bg',
+  'surface',
+  'surface-container-low',
+  'surface-container',
+  'surface-container-high',
+  'surface-container-highest',
+  'on-surface',
+  'on-surface-variant',
+  'outline',
+  'outline-variant',
+  'logo',
+  'nav-active',
+] as const
 
 /**
- * Builds the full light+dark CSS block for a given seed color (any hex).
- * Deliberately covers backgrounds/surfaces/text/chips too, not just the
- * primary button color — an earlier version only touched a handful of
- * tokens (primary/nav-active/logo) and most of the page visibly never
+ * Computes the literal (hex) value for every token, for one mode, from
+ * a seed color. Deliberately covers backgrounds/surfaces/text/chips
+ * too, not just the primary button color — an earlier version only
+ * touched a handful of tokens and most of the page visibly never
  * changed. Semantic colors (error/success) and hue-agnostic overlays
- * (scrim/shadow/hover) are left out on purpose: an error state must stay
- * recognizably red no matter the accent.
+ * (scrim/shadow/hover) are left out on purpose: an error state must
+ * stay recognizably red no matter the accent.
  *
- * index.html's bootstrap script duplicates this same structure (including
- * the mixHex/getContrastOn math) in vanilla JS so the chosen color
- * applies before first paint too — keep both in sync.
+ * Returns literal values (not `color-mix()` CSS text) so callers can
+ * apply them via `style.setProperty(...)` directly on the root element.
+ * That's the whole point: a <style> tag's selectors (`:root`/
+ * `:root.dark`) have to out-cascade index.css's own default `:root`/
+ * `:root.dark` blocks, which turned into a genuinely fragile fight over
+ * specificity/!important/layer ordering across several rounds. An
+ * inline style has no selector to lose a specificity contest with — it
+ * always wins over any stylesheet rule in the same origin, full stop.
+ *
+ * index.html's bootstrap script duplicates this same math in vanilla JS
+ * so the chosen color applies before first paint too — keep both in
+ * sync.
  */
-export function buildAccentCss(seedHex: string): string {
-  const onPrimaryLight = getContrastOn(seedHex)
+export function buildAccentVars(seedHex: string, mode: AccentMode): Record<string, string> {
+  if (mode === 'light') {
+    const onPrimary = getContrastOn(seedHex)
+    return {
+      'accent-seed': seedHex,
+      primary: seedHex,
+      'on-primary': onPrimary,
+      'primary-container': mixHex(seedHex, RATIOS.primaryContainer, 'white'),
+      'on-primary-container': mixHex(seedHex, RATIOS.onPrimaryContainer, 'black'),
+      'secondary-container': mixHex(seedHex, RATIOS.secondaryContainer, 'white'),
+      'on-secondary-container': mixHex(seedHex, RATIOS.onSecondaryContainer, 'black'),
+      'tertiary-container': mixHex(seedHex, RATIOS.tertiaryContainer, 'white'),
+      'on-tertiary-container': mixHex(seedHex, RATIOS.onTertiaryContainer, 'black'),
+      bg: mixHex(seedHex, RATIOS.bg, 'white'),
+      surface: mixHex(seedHex, RATIOS.surface, 'white'),
+      'surface-container-low': mixHex(seedHex, RATIOS.surfaceContainerLow, 'white'),
+      'surface-container': mixHex(seedHex, RATIOS.surfaceContainer, 'white'),
+      'surface-container-high': mixHex(seedHex, RATIOS.surfaceContainerHigh, 'white'),
+      'surface-container-highest': mixHex(seedHex, RATIOS.surfaceContainerHighest, 'white'),
+      'on-surface': mixHex(seedHex, RATIOS.onSurface, 'black'),
+      'on-surface-variant': mixHex(seedHex, RATIOS.onSurfaceVariant, 'black'),
+      outline: mixHex(seedHex, RATIOS.outline, 'black'),
+      'outline-variant': mixHex(seedHex, RATIOS.outlineVariant, 'white'),
+      logo: mixHex(seedHex, RATIOS.logo, 'black'),
+      'nav-active': mixHex(seedHex, RATIOS.navActive, 'black'),
+    }
+  }
+
   const darkPrimary = mixHex(seedHex, 55, 'white')
   const onPrimaryDark = getContrastOn(darkPrimary)
-
-  return `:root {
-  ${decl('accent-seed', seedHex)}
-  ${decl('primary', 'var(--accent-seed)')}
-  ${decl('on-primary', onPrimaryLight)}
-  ${decl('primary-container', tone(20, 'white'))}
-  ${decl('on-primary-container', tone(75, 'black'))}
-  ${decl('secondary-container', tone(20, 'white'))}
-  ${decl('on-secondary-container', tone(75, 'black'))}
-  ${decl('tertiary-container', tone(20, 'white'))}
-  ${decl('on-tertiary-container', tone(75, 'black'))}
-  ${decl('bg', tone(8, 'white'))}
-  ${decl('surface', tone(3, 'white'))}
-  ${decl('surface-container-low', tone(10, 'white'))}
-  ${decl('surface-container', tone(13, 'white'))}
-  ${decl('surface-container-high', tone(16, 'white'))}
-  ${decl('surface-container-highest', tone(19, 'white'))}
-  ${decl('on-surface', tone(9, 'black'))}
-  ${decl('on-surface-variant', tone(48, 'black'))}
-  ${decl('outline', tone(28, 'black'))}
-  ${decl('outline-variant', tone(18, 'white'))}
-  ${decl('logo', tone(78, 'black'))}
-  ${decl('nav-active', tone(70, 'black'))}
-}
-:root.dark {
-  ${decl('accent-seed', seedHex)}
-  ${decl('primary', tone(55, 'white'))}
-  ${decl('on-primary', onPrimaryDark)}
-  ${decl('primary-container', tone(38, 'black'))}
-  ${decl('on-primary-container', tone(20, 'white'))}
-  ${decl('secondary-container', tone(38, 'black'))}
-  ${decl('on-secondary-container', tone(20, 'white'))}
-  ${decl('tertiary-container', tone(38, 'black'))}
-  ${decl('on-tertiary-container', tone(20, 'white'))}
-  ${decl('bg', tone(24, 'black'))}
-  ${decl('surface', tone(18, 'black'))}
-  ${decl('surface-container-low', tone(21, 'black'))}
-  ${decl('surface-container', tone(24, 'black'))}
-  ${decl('surface-container-high', tone(27, 'black'))}
-  ${decl('surface-container-highest', tone(31, 'black'))}
-  ${decl('on-surface', tone(12, 'white'))}
-  ${decl('on-surface-variant', tone(28, 'white'))}
-  ${decl('outline', tone(24, 'white'))}
-  ${decl('outline-variant', tone(16, 'black'))}
-  ${decl('logo', tone(65, 'white'))}
-  ${decl('nav-active', tone(20, 'white'))}
-}`
+  return {
+    'accent-seed': seedHex,
+    primary: darkPrimary,
+    'on-primary': onPrimaryDark,
+    'primary-container': mixHex(seedHex, DARK_RATIOS.primaryContainer, 'black'),
+    'on-primary-container': mixHex(seedHex, DARK_RATIOS.onPrimaryContainer, 'white'),
+    'secondary-container': mixHex(seedHex, DARK_RATIOS.secondaryContainer, 'black'),
+    'on-secondary-container': mixHex(seedHex, DARK_RATIOS.onSecondaryContainer, 'white'),
+    'tertiary-container': mixHex(seedHex, DARK_RATIOS.tertiaryContainer, 'black'),
+    'on-tertiary-container': mixHex(seedHex, DARK_RATIOS.onTertiaryContainer, 'white'),
+    bg: mixHex(seedHex, DARK_RATIOS.bg, 'black'),
+    surface: mixHex(seedHex, DARK_RATIOS.surface, 'black'),
+    'surface-container-low': mixHex(seedHex, DARK_RATIOS.surfaceContainerLow, 'black'),
+    'surface-container': mixHex(seedHex, DARK_RATIOS.surfaceContainer, 'black'),
+    'surface-container-high': mixHex(seedHex, DARK_RATIOS.surfaceContainerHigh, 'black'),
+    'surface-container-highest': mixHex(seedHex, DARK_RATIOS.surfaceContainerHighest, 'black'),
+    'on-surface': mixHex(seedHex, DARK_RATIOS.onSurface, 'white'),
+    'on-surface-variant': mixHex(seedHex, DARK_RATIOS.onSurfaceVariant, 'white'),
+    outline: mixHex(seedHex, DARK_RATIOS.outline, 'white'),
+    'outline-variant': mixHex(seedHex, DARK_RATIOS.outlineVariant, 'black'),
+    logo: mixHex(seedHex, DARK_RATIOS.logo, 'white'),
+    'nav-active': mixHex(seedHex, DARK_RATIOS.navActive, 'white'),
+  }
 }
