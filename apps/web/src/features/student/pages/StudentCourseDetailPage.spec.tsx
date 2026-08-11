@@ -26,6 +26,7 @@ function renderPage() {
         login: vi.fn(),
         logout: vi.fn(),
         register: vi.fn(),
+        updateUser: vi.fn(),
       },
     },
   )

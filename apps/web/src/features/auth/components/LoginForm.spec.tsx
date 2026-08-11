@@ -22,6 +22,7 @@ describe('LoginForm', () => {
         login,
         logout: vi.fn(),
         register: vi.fn(),
+        updateUser: vi.fn(),
       },
     })
 
