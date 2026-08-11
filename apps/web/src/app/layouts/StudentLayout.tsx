@@ -29,6 +29,7 @@ export function StudentLayout({ children }: PropsWithChildren) {
         onLogout={() => void handleLogout()}
         isRail={isRail}
         onToggleRail={() => setIsRail(!isRail)}
+        profilePath={ROUTE_PATHS.STUDENT.PROFILE}
       />
 
       <div className="main">

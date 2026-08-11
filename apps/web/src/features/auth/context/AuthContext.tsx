@@ -9,6 +9,10 @@ export interface AuthContextValue {
   login: (payload: LoginPayload) => Promise<AuthUser>
   logout: () => Promise<void>
   register: (payload: RegisterPayload) => Promise<AuthUser>
+  // Merges a partial profile update (e.g. after a successful PATCH
+  // /users/me/profile) into the signed-in user so the sidebar/topbar
+  // stay in sync without a full re-fetch. No-op while signed out.
+  updateUser: (patch: Partial<AuthUser>) => void
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- context object is not a component; useAuth.ts needs it from this same module.
@@ -62,8 +66,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return user
   }, [])
 
+  const updateUser = useCallback((patch: Partial<AuthUser>) => {
+    setUser((current) => (current ? { ...current, ...patch } : current))
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

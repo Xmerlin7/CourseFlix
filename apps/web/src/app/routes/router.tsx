@@ -25,6 +25,7 @@ import { TeacherStudentsSkeleton } from '../../features/teacher/components/Teach
 import { TeacherCourseDetailSkeleton } from '../../features/teacher/components/TeacherCourseDetailSkeleton'
 import { AgentLogsSkeleton } from '../../features/agent-logs/components/AgentLogsSkeleton'
 import { SettingsSkeleton } from '../../features/settings/components/SettingsSkeleton'
+import { StudentProfileSkeleton } from '../../features/profile/components/StudentProfileSkeleton'
 import { LoginSkeleton } from '../../features/auth/components/LoginSkeleton'
 import { RegisterSkeleton } from '../../features/auth/components/RegisterSkeleton'
 
@@ -82,6 +83,9 @@ const NotificationsPage = lazy(() =>
 )
 const SettingsPage = lazy(() =>
   import('../../features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+)
+const StudentProfilePage = lazy(() =>
+  import('../../features/profile/pages/StudentProfilePage').then((m) => ({ default: m.StudentProfilePage }))
 )
 const AgentLogsPage = lazy(() =>
   import('../../features/agent-logs/pages/AgentLogsPage').then((m) => ({ default: m.AgentLogsPage }))
@@ -373,6 +377,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<SettingsSkeleton />}>
                 <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.PROFILE,
+            element: (
+              <SuspenseWrapper fallback={<StudentProfileSkeleton />}>
+                <StudentProfilePage />
               </SuspenseWrapper>
             ),
           },
