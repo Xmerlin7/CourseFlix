@@ -21,7 +21,7 @@ export function SettingsSkeleton() {
 
         <div className="settings-cards-grid">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="card">
+            <div key={i} className="card settings-card">
               <span className="skeleton" style={{ height: 16, width: '55%', borderRadius: 6 }} />
               <span className="skeleton" style={{ height: 13, width: '80%', borderRadius: 6 }} />
               <span className="skeleton" style={{ height: 40, width: '100%', borderRadius: 14 }} />

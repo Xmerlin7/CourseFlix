@@ -36,7 +36,7 @@ export function NotificationSettingsForm() {
   }
 
   return (
-    <div className="card">
+    <div className="card settings-card">
       <h3 style={{ marginBottom: 0 }}>إشعارات داخل التطبيق</h3>
       <p className="meta">تحكّم في نوع الإشعارات اللي عايز تستقبلها.</p>
 

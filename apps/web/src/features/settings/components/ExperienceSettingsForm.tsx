@@ -26,7 +26,7 @@ export function ExperienceSettingsForm() {
 
   return (
     <div className="settings-cards-grid">
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>الشريط الجانبي</h3>
         <p className="meta">ابدأ بشريط جانبي مطوي (أيقونات فقط) بدل ما يكون مفتوح بالكامل.</p>
 
@@ -42,7 +42,7 @@ export function ExperienceSettingsForm() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>كثافة العرض</h3>
         <p className="meta">تحكّم في المسافات بين عناصر القوائم والكروت وصناديق الإدخال.</p>
 
@@ -63,7 +63,7 @@ export function ExperienceSettingsForm() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>حجم الواجهة</h3>
         <p className="meta">يكبّر أو يصغّر محتوى الصفحة والشريط الجانبي معًا — التنبيهات والنوافذ المنبثقة بتفضل بنفس الحجم.</p>
 
@@ -83,7 +83,7 @@ export function ExperienceSettingsForm() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>الحركة والتأثيرات</h3>
         <p className="meta">قلّل الحركة والانتقالات في كل الواجهة — مفيد لو الحركة بتضايقك أو بتبطّئ جهازك.</p>
 

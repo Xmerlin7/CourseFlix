@@ -84,7 +84,7 @@ export function AppearanceSettingsForm() {
 
   return (
     <div className="settings-cards-grid">
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>وضع المظهر</h3>
         <p className="meta">فاتح، داكن، أو بيتابع نظام تشغيلك تلقائيًا.</p>
 
@@ -105,7 +105,7 @@ export function AppearanceSettingsForm() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>لون التطبيق</h3>
         <p className="meta">
           اختار أي لون تحبه — بيتطبق على كل حاجة في التطبيق: الأزرار، الخلفيات، الكروت، والقوائم.
@@ -142,7 +142,7 @@ export function AppearanceSettingsForm() {
         )}
       </div>
 
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>استدارة الحواف</h3>
         <p className="meta">شكل زوايا الكروت وصناديق الإدخال والنوافذ المنبثقة.</p>
 
@@ -166,7 +166,7 @@ export function AppearanceSettingsForm() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card settings-card">
         <h3 style={{ marginBottom: 0 }}>خط الواجهة</h3>
         <p className="meta">اختار الخط العربي اللي يريحك أكتر في القراءة.</p>
 
