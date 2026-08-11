@@ -71,7 +71,7 @@ const DARK_RATIOS = {
   onSecondaryContainer: 20,
   tertiaryContainer: 38,
   onTertiaryContainer: 20,
-  bg: 24,
+  bg: 15,
   surface: 18,
   surfaceContainerLow: 21,
   surfaceContainer: 24,
