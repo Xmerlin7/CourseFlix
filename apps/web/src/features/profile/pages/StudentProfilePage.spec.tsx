@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
@@ -126,6 +126,56 @@ describe('StudentProfilePage', () => {
 
     expect(await screen.findByText('اتحفظت الصورة الرمزية')).toBeInTheDocument()
     await waitFor(() => expect(updateUser).toHaveBeenCalled())
+  })
+
+  it('uploads a custom photo via the "+" tile through POST /users/me/avatar', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.post(`${env.apiBaseUrl}/users/me/avatar`, () =>
+        HttpResponse.json({
+          id: 'student-1',
+          email: 'student@example.com',
+          fullName: 'عبدالله حبسه',
+          role: 'student',
+          avatarUrl: 'https://res.cloudinary.com/demo/image/upload/v1/courseflix/avatars/x.png',
+        }),
+      ),
+    )
+
+    const { updateUser } = renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'تغيير الصورة الرمزية' }))
+    const uploadInput: HTMLInputElement = screen.getByLabelText('رفع صورة من جهازك', { selector: 'input' })
+    const file = new File(['x'], 'photo.png', { type: 'image/png' })
+    Object.defineProperty(uploadInput, 'files', { value: [file] })
+    fireEvent.change(uploadInput)
+
+    expect(await screen.findByText('اتحفظت الصورة الرمزية')).toBeInTheDocument()
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({ avatarUrl: expect.stringContaining('cloudinary') }),
+    ))
+  })
+
+  it('rejects a non-image file client-side without calling the API', async () => {
+    const user = userEvent.setup()
+    let apiCalled = false
+    server.use(
+      http.post(`${env.apiBaseUrl}/users/me/avatar`, () => {
+        apiCalled = true
+        return HttpResponse.json({}, { status: 400 })
+      }),
+    )
+
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'تغيير الصورة الرمزية' }))
+    const uploadInput: HTMLInputElement = screen.getByLabelText('رفع صورة من جهازك', { selector: 'input' })
+    const file = new File(['x'], 'doc.pdf', { type: 'application/pdf' })
+    Object.defineProperty(uploadInput, 'files', { value: [file] })
+    fireEvent.change(uploadInput)
+
+    expect(await screen.findByText(/الصور المسموح بها/)).toBeInTheDocument()
+    expect(apiCalled).toBe(false)
   })
 
   it('renders working links for the real nav targets and disabled rows for the ones with no backing page', () => {

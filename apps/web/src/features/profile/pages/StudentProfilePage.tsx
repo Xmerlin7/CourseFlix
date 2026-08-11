@@ -6,7 +6,7 @@ import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { showToast } from '../../../shared/components/Toast'
 import { APP_VERSION } from '../../../shared/lib/app-version'
 import { useAuth } from '../../auth/hooks/useAuth'
-import { updateProfile } from '../api/profile.api'
+import { updateProfile, uploadAvatar } from '../api/profile.api'
 import { AvatarPickerModal } from '../components/AvatarPickerModal'
 
 export function StudentProfilePage() {
@@ -65,6 +65,16 @@ export function StudentProfilePage() {
     } finally {
       setIsSavingAvatar(false)
     }
+  }
+
+  // Upload has its own success/failure path (server-side, Cloudinary-
+  // backed) — errors are re-thrown so AvatarPickerModal can show them
+  // inline next to the "+" tile instead of a generic toast.
+  async function handleUploadAvatar(file: File) {
+    const updated = await uploadAvatar(file)
+    updateUser(updated)
+    showToast('اتحفظت الصورة الرمزية', 'success')
+    setIsAvatarPickerOpen(false)
   }
 
   async function handleLogout() {
@@ -250,6 +260,7 @@ export function StudentProfilePage() {
         selectedUrl={currentUser.avatarUrl}
         isSaving={isSavingAvatar}
         onSelect={(url) => void handleSelectAvatar(url)}
+        onUpload={handleUploadAvatar}
         onClose={() => setIsAvatarPickerOpen(false)}
       />
 

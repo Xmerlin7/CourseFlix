@@ -3899,6 +3899,31 @@ table.mtable {
   font-size: 13px;
 }
 
+.avatar-picker-upload {
+  border: 2px dashed var(--outline);
+  background: var(--surface-container-high);
+  display: grid;
+  place-items: center;
+  color: var(--on-surface-variant);
+}
+
+.avatar-picker-upload:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.avatar-picker-upload .ms {
+  font-size: 26px;
+}
+
+.avatar-picker-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
 @media (max-width: 480px) {
   .avatar-picker-grid {
     grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
