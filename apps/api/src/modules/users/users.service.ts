@@ -1,9 +1,12 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
+  PayloadTooLargeException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as argon2 from 'argon2';
 import { IsNull, Repository } from 'typeorm';
@@ -11,11 +14,31 @@ import { UserEntity } from './entities/user.entity';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import type { UpdateSettingsDto } from './dto/update-settings.dto';
 import type { UserRole } from '../auth/interfaces/authenticated-user.interface';
+import { uploadImageToCloudinary } from './lib/cloudinary-upload';
 
 export interface UserSettingsResponse {
   theme: 'light' | 'dark' | 'system';
   notificationPreferences: Record<string, boolean>;
 }
+
+export interface UploadedAvatarFile {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+}
+
+const MAX_AVATAR_BYTES = 5_242_880; // 5 MiB — a profile photo, not a document.
+
+// Declared mimetype alone is never trusted (same discipline as
+// documents.service.ts's PDF magic-byte check) — each entry's magic
+// bytes are checked against the start of the actual buffer.
+const IMAGE_MAGIC_BYTES: Array<{ mimetype: string; magicBytes: number[] }> = [
+  { mimetype: 'image/png', magicBytes: [0x89, 0x50, 0x4e, 0x47] },
+  { mimetype: 'image/jpeg', magicBytes: [0xff, 0xd8, 0xff] },
+  { mimetype: 'image/gif', magicBytes: [0x47, 0x49, 0x46, 0x38] },
+  { mimetype: 'image/webp', magicBytes: [0x52, 0x49, 0x46, 0x46] },
+];
 
 // Kept as a local literal list, same trade-off as notifications.service.ts's
 // own VALID_TYPE_FILTERS — importing the real NotificationType enum here
@@ -35,6 +58,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    private readonly configService: ConfigService,
   ) {}
 
   // Includes passwordHash — only ever call this on the login path.
@@ -94,6 +118,68 @@ export class UsersService {
     const saved = await this.usersRepository.save(user);
     const { passwordHash: _passwordHash, ...safeUser } = saved;
     return safeUser;
+  }
+
+  async uploadAvatar(
+    userId: string,
+    file: UploadedAvatarFile,
+  ): Promise<Omit<UserEntity, 'passwordHash'>> {
+    this.assertNonEmptyAvatar(file.size);
+    this.assertWithinAvatarSizeLimit(file.size);
+    this.assertValidImage(file);
+
+    const cloudName = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
+    const apiKey = this.configService.get<string>('CLOUDINARY_API_KEY');
+    const apiSecret = this.configService.get<string>('CLOUDINARY_API_SECRET');
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new InternalServerErrorException(
+        'رفع الصور الشخصية غير مُفعّل حاليًا.',
+      );
+    }
+
+    const { secureUrl } = await uploadImageToCloudinary(
+      file.buffer,
+      file.originalname,
+      { cloudName, apiKey, apiSecret },
+    );
+
+    return this.updateOwnProfile(userId, { avatarUrl: secureUrl });
+  }
+
+  private assertNonEmptyAvatar(sizeBytes: number): void {
+    if (sizeBytes <= 0) {
+      throw new BadRequestException('لا يمكن رفع صورة فارغة.');
+    }
+  }
+
+  private assertWithinAvatarSizeLimit(sizeBytes: number): void {
+    if (sizeBytes > MAX_AVATAR_BYTES) {
+      throw new PayloadTooLargeException(
+        'حجم الصورة يتجاوز الحد الأقصى المسموح به (5 ميجابايت).',
+      );
+    }
+  }
+
+  // Never trust the declared Content-Type alone: it must match one of
+  // the known image mimetypes *and* the buffer must actually start with
+  // that format's magic bytes.
+  private assertValidImage(file: UploadedAvatarFile): void {
+    const match = IMAGE_MAGIC_BYTES.find(
+      (candidate) => candidate.mimetype === file.mimetype,
+    );
+
+    const hasMatchingMagicBytes =
+      match !== undefined &&
+      file.buffer
+        .subarray(0, match.magicBytes.length)
+        .equals(Buffer.from(match.magicBytes));
+
+    if (!match || !hasMatchingMagicBytes) {
+      throw new BadRequestException(
+        'الصورة يجب أن تكون بصيغة PNG أو JPEG أو GIF أو WEBP.',
+      );
+    }
   }
 
   async getSettings(userId: string): Promise<UserSettingsResponse> {
