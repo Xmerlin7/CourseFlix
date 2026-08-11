@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="صورة رمزية بشعر وردي">
-  <circle cx="64" cy="64" r="64" fill="#FCE4F1"/>
-  <path d="M25 70c-4-32 16-52 39-52s43 20 39 52c-6 10-10 4-10-2 3-24-10-38-29-38s-32 14-29 38c0 6-4 12-10 2z" fill="#C6559A"/>
-  <ellipse cx="64" cy="76" rx="27" ry="31" fill="#F8D2B4"/>
-  <path d="M38 64c-1-16 12-27 26-27s27 11 26 27c-2-9-4-16-26-16s-24 7-26 16z" fill="#C6559A"/>
-  <ellipse cx="54" cy="78" rx="3.2" ry="4" fill="#5C2C4A"/>
-  <ellipse cx="76" cy="78" rx="3.2" ry="4" fill="#5C2C4A"/>
-  <path d="M55 96q9 6 18 0" stroke="#C88B5E" stroke-width="3" fill="none" stroke-linecap="round"/>
-</svg>
