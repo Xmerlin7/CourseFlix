@@ -13,6 +13,10 @@ import { applyAccentHex, getStoredAccentHex } from './useAccentColor'
 export function useAccentThemeSync(): void {
   useEffect(() => {
     const reapply = () => applyAccentHex(getStoredAccentHex())
+    // Once immediately on mount too — belt and suspenders against any
+    // drift between index.html's pre-paint script and the mounted app
+    // (e.g. in dev, where HMR can leave the two out of step).
+    reapply()
     const observer = new MutationObserver(reapply)
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     return () => observer.disconnect()
