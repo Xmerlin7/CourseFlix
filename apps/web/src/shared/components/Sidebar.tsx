@@ -10,6 +10,10 @@ export type SidebarProps = {
   isRail?: boolean
   onToggle?: () => void
   onToggleRail?: () => void
+  // Only StudentLayout passes this today (the only role with a Profile
+  // page so far) — omitted, the identity row stays the plain, non-
+  // interactive display it's always been for teacher/admin/assistant.
+  profilePath?: string
 }
 
 type NavItem = { path: string; label: string; icon: string }
@@ -84,6 +88,7 @@ export function Sidebar({
   isRail = false,
   onToggle,
   onToggleRail,
+  profilePath,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
 
@@ -121,14 +126,28 @@ export function Sidebar({
       </nav>
 
       <div className="side-footer">
-        {/* Plain identity row, not a link anywhere — just shows who is
-            signed in. */}
-        <div className="nav-item profile-item" title={userName}>
-          <span className="avatar">
-            <span className="ms">person</span>
-          </span>
-          <span className="lbl">{userName}</span>
-        </div>
+        {/* Links to the Profile page when one exists for this role
+            (student only, for now) — otherwise stays the plain,
+            non-interactive identity display it's always been. */}
+        {profilePath ? (
+          <NavLink
+            to={profilePath}
+            title={userName}
+            className={({ isActive }) => `nav-item profile-item${isActive ? ' active' : ''}`}
+          >
+            <span className="avatar">
+              <span className="ms">person</span>
+            </span>
+            <span className="lbl">{userName}</span>
+          </NavLink>
+        ) : (
+          <div className="nav-item profile-item" title={userName}>
+            <span className="avatar">
+              <span className="ms">person</span>
+            </span>
+            <span className="lbl">{userName}</span>
+          </div>
+        )}
 
         <button onClick={onLogout} className="nav-item logout" type="button">
           <span className="ms">logout</span>
