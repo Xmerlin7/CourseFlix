@@ -3456,14 +3456,17 @@ table.mtable {
 }
 
 /* ---------- Settings page shell ----------
-   A sticky side nav — its own bordered panel (not bare pills sitting on
-   the page background) topped with a thin accent-color bar, next to a
-   wide, centered panel of cards. No shadows, no icon badges — depth and
-   personality come from the accent-color bar, a left indicator on the
-   active link, and generous, deliberate spacing instead. */
+   A sticky side nav + a wide, centered panel of cards. Deliberately no
+   borders, no shadows, no one-off decoration — .settings-nav reuses the
+   exact same plain-background-panel look as .sidebar itself (no border
+   there either), and .nav-item/.chip are untouched, so this reads as
+   the same product as every other page instead of a bolted-on skin.
+   The generous gap/max-width/padding are the whole "premium" lever
+   here — restraint and consistency with the rest of the app, not
+   added chrome. */
 .settings-shell {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
   gap: 44px;
   align-items: start;
   max-width: 1080px;
@@ -3477,31 +3480,8 @@ table.mtable {
   position: sticky;
   top: 26px;
   background: var(--surface-container-low);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(24px * var(--radius-scale));
+  border-radius: calc(20px * var(--radius-scale));
   padding: 10px;
-  overflow: hidden;
-}
-
-.settings-nav::before {
-  content: '';
-  display: block;
-  height: 3px;
-  margin: -10px -10px 10px;
-  background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 15%, transparent));
-}
-
-.settings-nav .nav-item {
-  gap: 12px;
-  padding: calc(12px * var(--space-scale)) calc(14px * var(--space-scale));
-  border-radius: calc(14px * var(--radius-scale));
-  border-inline-start: 3px solid transparent;
-}
-
-.settings-nav .nav-item.active {
-  background: var(--primary-container);
-  color: var(--on-primary-container);
-  border-inline-start-color: var(--primary);
 }
 
 .settings-panel {
@@ -3530,10 +3510,6 @@ table.mtable {
     scrollbar-width: none;
   }
 
-  .settings-nav::before {
-    display: none;
-  }
-
   .settings-nav::-webkit-scrollbar {
     display: none;
   }
@@ -3541,42 +3517,18 @@ table.mtable {
   .settings-nav .nav-item {
     width: auto;
     white-space: nowrap;
-    border-inline-start: none;
-    border-bottom: 3px solid transparent;
-  }
-
-  .settings-nav .nav-item.active {
-    border-bottom-color: var(--primary);
   }
 }
 
 /* ---------- Settings cards ----------
    A modifier layered on top of .card (not a replacement — every other
-   page's .card is untouched): more generous padding/radius and a
-   confident title so each card reads as a deliberate surface. */
+   page's .card is untouched): more generous padding for breathing room.
+   No border/shadow of its own — same flat, background-only surface as
+   .card everywhere else in the app. */
 .settings-card {
-  border: 1px solid var(--outline-variant);
   border-radius: calc(24px * var(--radius-scale));
   padding: calc(28px * var(--space-scale));
   gap: 16px;
-}
-
-.settings-card h3 {
-  font-size: 19px;
-  letter-spacing: -0.2px;
-}
-
-.settings-card .meta {
-  line-height: 1.6;
-}
-
-/* Selected chips inside Settings get a solid, confident fill instead of
-   the muted secondary-container the rest of the app uses for chips —
-   scoped to .settings-card so it doesn't change chip styling anywhere
-   else. */
-.settings-card .chip.clickable.selected {
-  background: var(--primary);
-  color: var(--on-primary);
 }
 
 /* ---------- Accent color picker ---------- */
@@ -3632,7 +3584,10 @@ table.mtable {
   gap: 6px;
   padding: calc(16px * var(--space-scale));
   border-radius: calc(16px * var(--radius-scale));
-  border: 1.5px solid var(--outline-variant);
+  /* Transparent by default, same convention as .tf input — the solid
+     background carries the boundary; a visible border only shows up to
+     signal hover/selected state, not sit there permanently. */
+  border: 1.5px solid transparent;
   background: var(--surface-container-high);
   cursor: pointer;
   text-align: start;
