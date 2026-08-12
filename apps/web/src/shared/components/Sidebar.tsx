@@ -14,6 +14,10 @@ export type SidebarProps = {
   // page so far) — omitted, the identity row stays the plain, non-
   // interactive display it's always been for teacher/admin/assistant.
   profilePath?: string
+  // Unread activity indicators — student-only for now. A small dot
+  // appears next to the nav item when the flag is true.
+  communityHasUnread?: boolean
+  supportHasUnread?: boolean
 }
 
 type NavItem = { path: string; label: string; icon: string }
@@ -34,6 +38,7 @@ const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.COURSES, label: 'دوراتي', icon: 'menu_book' },
   { path: ROUTE_PATHS.STUDENT.INTERVENTIONS, label: 'نقاط تحتاج مراجعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.STUDENT.SUPPORT, label: 'الدعم الفني', icon: 'support_agent' },
+  { path: ROUTE_PATHS.STUDENT.COMMUNITY, label: 'المجتمع', icon: 'groups' },
 ]
 
 const teacherNavItems: NavItem[] = [
@@ -85,6 +90,10 @@ const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {
   assistant: assistantNavItems,
 }
 
+// Paths that have a per-item unread dot for the student role.
+const SUPPORT_PATH = ROUTE_PATHS.STUDENT.SUPPORT
+const COMMUNITY_PATH = ROUTE_PATHS.STUDENT.COMMUNITY
+
 export function Sidebar({
   role,
   userName,
@@ -94,10 +103,19 @@ export function Sidebar({
   onToggle,
   onToggleRail,
   profilePath,
+  communityHasUnread = false,
+  supportHasUnread = false,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
 
   if (!isOpen) return null
+
+  function getUnreadDot(itemPath: string): boolean {
+    if (role !== 'student') return false
+    if (itemPath === SUPPORT_PATH) return supportHasUnread
+    if (itemPath === COMMUNITY_PATH) return communityHasUnread
+    return false
+  }
 
   return (
     <aside className={`sidebar${isRail ? ' rail' : ''}`}>
@@ -111,23 +129,33 @@ export function Sidebar({
       </button>
 
       <nav>
-        {navItems.map((item) => (
-          // NavLink, not <a href>: an anchor did a full document load on
-          // every nav click, remounting the app and flashing the login
-          // screen before the session re-resolved.
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-          >
-            {({ isActive }) => (
-              <>
-                <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
-                <span className="lbl">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+        {navItems.map((item) => {
+          const hasUnread = getUnreadDot(item.path)
+          return (
+            // NavLink, not <a href>: an anchor did a full document load on
+            // every nav click, remounting the app and flashing the login
+            // screen before the session re-resolved.
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              {({ isActive }) => (
+                <>
+                  <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
+                  <span className="lbl">{item.label}</span>
+                  {hasUnread && (
+                    <span
+                      className="nav-unread-dot"
+                      aria-label="يوجد نشاط جديد"
+                      role="status"
+                    />
+                  )}
+                </>
+              )}
+            </NavLink>
+          )
+        })}
       </nav>
 
       <div className="side-footer">
