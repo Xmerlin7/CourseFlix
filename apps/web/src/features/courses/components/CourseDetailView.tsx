@@ -111,40 +111,58 @@ export function CourseDetailView({
 
   return (
     <>
-      <div className="section-head">
-        <div>
-          <h1 className="page-title">{course.title}</h1>
-          <p className="subtitle" style={{ marginBottom: 0 }}>
-            {[course.gradeLevel, course.teacher.fullName, `${lessonCount} درسًا`]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
+      <div className="card course-detail-header-card">
+        <div className="course-detail-header-top">
+          <div className="course-detail-title-group">
+            <h1 className="page-title">{course.title}</h1>
+            <div className="course-detail-meta-list">
+              {course.gradeLevel && (
+                <span className="course-detail-meta-item">
+                  <span className="ms sm" aria-hidden="true">school</span>
+                  {course.gradeLevel}
+                </span>
+              )}
+              {course.teacher.fullName && (
+                <span className="course-detail-meta-item">
+                  <span className="ms sm" aria-hidden="true">person</span>
+                  المدرس: {course.teacher.fullName}
+                </span>
+              )}
+              <span className="course-detail-meta-item">
+                <span className="ms sm" aria-hidden="true">play_circle</span>
+                {lessonCount} {lessonCount === 1 ? 'درس' : 'دروس'}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {!course.canEdit && (
+              <Link to={`/student/courses/${course.id}/assistant`} className="btn tonal">
+                <span className="ms" aria-hidden="true">smart_toy</span>
+                اسأل المساعد
+              </Link>
+            )}
+            {course.canEdit && <span className={`chip ${status.chip}`}>{status.label}</span>}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          {!course.canEdit && (
-            <Link to={`/student/courses/${course.id}/assistant`} className="btn tonal">
-              <span className="ms">smart_toy</span>
-              اسأل المساعد
-            </Link>
-          )}
-          {course.canEdit && <span className={`chip ${status.chip}`}>{status.label}</span>}
-        </div>
-      </div>
 
-      {course.description && <p className="subtitle">{course.description}</p>}
+        {course.description && (
+          <p className="course-detail-description">{course.description}</p>
+        )}
+      </div>
 
       {course.canEdit ? (
         videosSection
       ) : (
         <>
-          <div className="tabs" role="tablist">
+          <div className="course-detail-tabs" role="tablist" aria-label="أقسام الدورة">
             <button
               type="button"
               role="tab"
               aria-selected={activeMediaTab === 'videos'}
               onClick={() => setActiveMediaTab('videos')}
-              className={`tab${activeMediaTab === 'videos' ? ' active' : ''}`}
+              className={`course-detail-tab-btn${activeMediaTab === 'videos' ? ' active' : ''}`}
             >
+              <span className="ms sm" aria-hidden="true">video_library</span>
               فيديوهات
             </button>
             <button
@@ -152,8 +170,9 @@ export function CourseDetailView({
               role="tab"
               aria-selected={activeMediaTab === 'files'}
               onClick={() => setActiveMediaTab('files')}
-              className={`tab${activeMediaTab === 'files' ? ' active' : ''}`}
+              className={`course-detail-tab-btn${activeMediaTab === 'files' ? ' active' : ''}`}
             >
+              <span className="ms sm" aria-hidden="true">folder</span>
               ملفات
             </button>
             <button
@@ -161,8 +180,9 @@ export function CourseDetailView({
               role="tab"
               aria-selected={activeMediaTab === 'community'}
               onClick={() => setActiveMediaTab('community')}
-              className={`tab${activeMediaTab === 'community' ? ' active' : ''}`}
+              className={`course-detail-tab-btn${activeMediaTab === 'community' ? ' active' : ''}`}
             >
+              <span className="ms sm" aria-hidden="true">forum</span>
               المجتمع
             </button>
           </div>
@@ -188,9 +208,14 @@ export function CourseDetailView({
       )}
 
       {courseLevelQuizzes.length > 0 && (
-        <section className="section">
+        <section className="section" style={{ marginTop: 24 }}>
           <div className="section-head">
-            <h2>اختبارات عامة على الدورة</h2>
+            <h2>
+              <span className="ms" style={{ verticalAlign: 'middle', marginInlineEnd: 6 }}>
+                quiz
+              </span>
+              اختبارات الدورة
+            </h2>
           </div>
           <div className="list">
             {courseLevelQuizzes.map((quiz) => (
@@ -202,6 +227,7 @@ export function CourseDetailView({
     </>
   )
 }
+
 
 function QuizListItem({
   quiz,
