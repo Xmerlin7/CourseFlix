@@ -1,5 +1,6 @@
 import { httpClient } from '../../../shared/api/http-client'
 import type {
+  StudentCommunitySummaryItem,
   StudentDashboard,
   StudentEnrollment,
   StudentEnrollmentFilters,
@@ -15,4 +16,8 @@ export async function getStudentEnrollments(
   return httpClient.get<StudentEnrollment[]>('/student/enrollments', {
     searchParams: filters,
   })
+}
+
+export async function getStudentCommunitySummary(): Promise<StudentCommunitySummaryItem[]> {
+  return httpClient.get<StudentCommunitySummaryItem[]>('/student/community/summary')
 }

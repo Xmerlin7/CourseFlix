@@ -3,6 +3,7 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { ENROLLMENT_STATUS, NOTIFICATION_TYPE } from '../../../shared/lib/status-labels'
+import { useAnnouncements } from '../../community/hooks/useAnnouncements'
 import { useNotifications } from '../../notifications/hooks/useNotifications'
 import { useStudentDashboard } from '../hooks/useStudentDashboard'
 import { StudentHomeSkeleton } from '../components/StudentHomeSkeleton'
@@ -249,6 +250,13 @@ export function StudentDashboardPage() {
             </section>
           )}
 
+          {data.recentCourses.length > 0 && (
+            <StudentHomeAnnouncements
+              courseId={data.recentCourses[0].courseId}
+              courseTitle={data.recentCourses[0].courseTitle ?? 'الدورة'}
+            />
+          )}
+
           <section className="section">
             <div className="actions section" role="group" aria-label="الوصول السريع">
               {QUICK_ACCESS_ITEMS.map((item) => (
@@ -301,3 +309,57 @@ export function StudentDashboardPage() {
     </>
   )
 }
+
+function StudentHomeAnnouncements({ courseId, courseTitle }: { courseId: string; courseTitle: string }) {
+  const { data: announcements, isLoading } = useAnnouncements(courseId)
+
+  if (isLoading) return null
+
+  const latestAnnouncements = announcements.slice(0, 3)
+
+  return (
+    <section className="section" aria-label="آخر الإعلانات">
+      <div className="section-head">
+        <h2>آخر الإعلانات</h2>
+        <Link to={`/student/courses/${courseId}`} className="see-all">
+          عرض كل الإعلانات
+          <span className="ms" aria-hidden="true">chevron_left</span>
+        </Link>
+      </div>
+
+      {latestAnnouncements.length === 0 ? (
+        <EmptyState
+          title="لا توجد إعلانات بعد"
+          message="ستظهر إعلانات المدرس هنا عند نشرها"
+        />
+      ) : (
+        <div className="list">
+          {latestAnnouncements.map((announcement) => (
+            <Link
+              key={announcement.id}
+              to={`/student/courses/${courseId}`}
+              className="list-item"
+            >
+              <span className="lead green">
+                <span className="ms" aria-hidden="true">campaign</span>
+              </span>
+              <span className="body">
+                <span className="t" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {announcement.content.slice(0, 80)}
+                  {announcement.isPinned && <span className="chip sm primary">جديد</span>}
+                </span>
+                <span className="s">
+                  {courseTitle} · {formatDate(announcement.createdAt)}
+                </span>
+              </span>
+              <span className="end">
+                <span className="ms" aria-hidden="true">chevron_left</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+

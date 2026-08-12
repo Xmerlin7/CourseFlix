@@ -31,18 +31,21 @@ export function useNativeVideoController(
       return
     }
 
+    // Non-null assertions below: `video` is narrowed non-null by the
+    // early return above, but TS doesn't carry that narrowing into these
+    // nested function declarations' closures.
     function handleLoadedMetadata() {
-      setDuration(video.duration || 0)
-      setVolumeState(video.volume)
-      setMuted(video.muted)
+      setDuration(video!.duration || 0)
+      setVolumeState(video!.volume)
+      setMuted(video!.muted)
       setIsReady(true)
     }
     function handleTimeUpdate() {
-      setCurrentTime(video.currentTime)
+      setCurrentTime(video!.currentTime)
     }
     function handleProgress() {
-      if (video.buffered.length > 0 && video.duration > 0) {
-        setBufferedFraction(video.buffered.end(video.buffered.length - 1) / video.duration)
+      if (video!.buffered.length > 0 && video!.duration > 0) {
+        setBufferedFraction(video!.buffered.end(video!.buffered.length - 1) / video!.duration)
       }
     }
     function handlePlay() {
@@ -52,11 +55,11 @@ export function useNativeVideoController(
       setIsPlaying(false)
     }
     function handleVolumeChange() {
-      setVolumeState(video.volume)
-      setMuted(video.muted)
+      setVolumeState(video!.volume)
+      setMuted(video!.muted)
     }
     function handleDurationChange() {
-      setDuration(video.duration || 0)
+      setDuration(video!.duration || 0)
     }
 
     video.addEventListener('loadedmetadata', handleLoadedMetadata)

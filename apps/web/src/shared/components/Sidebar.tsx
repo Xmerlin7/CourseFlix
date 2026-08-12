@@ -14,6 +14,10 @@ export type SidebarProps = {
   // page so far) — omitted, the identity row stays the plain, non-
   // interactive display it's always been for teacher/admin/assistant.
   profilePath?: string
+  // Unread activity indicators — student-only for now. A small dot
+  // appears next to the nav item when the flag is true.
+  communityHasUnread?: boolean
+  supportHasUnread?: boolean
 }
 
 type NavItem = { path: string; label: string; icon: string }
@@ -33,6 +37,8 @@ const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.BROWSE, label: 'استكشف الدورات', icon: 'explore' },
   { path: ROUTE_PATHS.STUDENT.COURSES, label: 'دوراتي', icon: 'menu_book' },
   { path: ROUTE_PATHS.STUDENT.INTERVENTIONS, label: 'نقاط تحتاج مراجعة', icon: 'monitoring' },
+  { path: ROUTE_PATHS.STUDENT.SUPPORT, label: 'الدعم الفني', icon: 'support_agent' },
+  { path: ROUTE_PATHS.STUDENT.COMMUNITY, label: 'المجتمع', icon: 'groups' },
 ]
 
 const teacherNavItems: NavItem[] = [
@@ -43,20 +49,23 @@ const teacherNavItems: NavItem[] = [
   { path: ROUTE_PATHS.TEACHER.INTERVENTIONS, label: 'تقارير المتابعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.TEACHER.SALES, label: 'المبيعات', icon: 'payments' },
   { path: ROUTE_PATHS.TEACHER.ANALYTICS, label: 'مساعد التحليلات', icon: 'insights' },
+  // Deliberately NOT in the assistant-exclusion list below — assistants
+  // are meant to help triage support tickets too, see SupportStaffRoleGuard.
+  { path: ROUTE_PATHS.TEACHER.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
 ]
 
 // Assistants share the teacher's course/student surface but not
 // anything payment- or analytics-adjacent — mirrors the API's
 // TeacherRoleGuard-only controllers and the router's nested
 // RequireRole("teacher") around those same four routes.
+const TEACHER_ONLY_PATHS: string[] = [
+  ROUTE_PATHS.TEACHER.AGENT_LOGS,
+  ROUTE_PATHS.TEACHER.INTERVENTIONS,
+  ROUTE_PATHS.TEACHER.SALES,
+  ROUTE_PATHS.TEACHER.ANALYTICS,
+]
 const assistantNavItems: NavItem[] = teacherNavItems.filter(
-  (item) =>
-    ![
-      ROUTE_PATHS.TEACHER.AGENT_LOGS,
-      ROUTE_PATHS.TEACHER.INTERVENTIONS,
-      ROUTE_PATHS.TEACHER.SALES,
-      ROUTE_PATHS.TEACHER.ANALYTICS,
-    ].includes(item.path),
+  (item) => !TEACHER_ONLY_PATHS.includes(item.path),
 )
 
 // Grows alongside the admin route surface — only nav items whose route
@@ -71,6 +80,7 @@ const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.INTERVENTIONS, label: 'تنبيهات المتابعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG, label: 'سجل الإشعارات', icon: 'history' },
   { path: ROUTE_PATHS.ADMIN.AGENT_LOGS, label: 'سجل الوكلاء', icon: 'smart_toy' },
+  { path: ROUTE_PATHS.ADMIN.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
 ]
 
 const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {
@@ -79,6 +89,10 @@ const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {
   admin: adminNavItems,
   assistant: assistantNavItems,
 }
+
+// Paths that have a per-item unread dot for the student role.
+const SUPPORT_PATH = ROUTE_PATHS.STUDENT.SUPPORT
+const COMMUNITY_PATH = ROUTE_PATHS.STUDENT.COMMUNITY
 
 export function Sidebar({
   role,
@@ -89,10 +103,19 @@ export function Sidebar({
   onToggle,
   onToggleRail,
   profilePath,
+  communityHasUnread = false,
+  supportHasUnread = false,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
 
   if (!isOpen) return null
+
+  function getUnreadDot(itemPath: string): boolean {
+    if (role !== 'student') return false
+    if (itemPath === SUPPORT_PATH) return supportHasUnread
+    if (itemPath === COMMUNITY_PATH) return communityHasUnread
+    return false
+  }
 
   return (
     <aside className={`sidebar${isRail ? ' rail' : ''}`}>
@@ -106,23 +129,33 @@ export function Sidebar({
       </button>
 
       <nav>
-        {navItems.map((item) => (
-          // NavLink, not <a href>: an anchor did a full document load on
-          // every nav click, remounting the app and flashing the login
-          // screen before the session re-resolved.
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-          >
-            {({ isActive }) => (
-              <>
-                <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
-                <span className="lbl">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+        {navItems.map((item) => {
+          const hasUnread = getUnreadDot(item.path)
+          return (
+            // NavLink, not <a href>: an anchor did a full document load on
+            // every nav click, remounting the app and flashing the login
+            // screen before the session re-resolved.
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              {({ isActive }) => (
+                <>
+                  <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
+                  <span className="lbl">{item.label}</span>
+                  {hasUnread && (
+                    <span
+                      className="nav-unread-dot"
+                      aria-label="يوجد نشاط جديد"
+                      role="status"
+                    />
+                  )}
+                </>
+              )}
+            </NavLink>
+          )
+        })}
       </nav>
 
       <div className="side-footer">

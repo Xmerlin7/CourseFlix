@@ -13,6 +13,9 @@ type EmptyStateProps = {
   // compact size used when it's one section among several (e.g. a
   // dashboard's "recent courses" panel below other content).
   fullPage?: boolean
+  // Set when rendered inside inline sections (e.g. course announcements)
+  // to avoid consuming excessive vertical space.
+  compact?: boolean
 }
 
 const variantIllustrations: Record<string, string> = {
@@ -28,18 +31,22 @@ export function EmptyState({
   onAction,
   variant = 'default',
   fullPage = false,
+  compact = false,
 }: EmptyStateProps) {
   const illustrationSrc = variantIllustrations[variant]
   const isNotifications = variant === 'notifications'
 
   return (
-    <div className={`empty-state${fullPage ? ' empty-state--full-page' : ''}`} role="status">
+    <div
+      className={`empty-state${fullPage ? ' empty-state--full-page' : ''}${compact ? ' empty-state--compact' : ''}`}
+      role="status"
+    >
       {/* Illustration or icon inside circular container */}
       <div className={`empty-state__blob${isNotifications ? ' empty-state__blob--icon' : ''}`}>
         {isNotifications ? (
           <div className="empty-state__icon-wrap">
             <BellOff
-              size={58}
+              size={isNotifications && compact ? 36 : 58}
               strokeWidth={1.5}
               aria-hidden="true"
               className="empty-state__icon"
@@ -82,6 +89,24 @@ export function EmptyState({
           gap: 20px;
           padding: 48px 24px 56px;
           text-align: center;
+        }
+
+        .empty-state--compact {
+          padding: 24px 16px 28px;
+          gap: 12px;
+        }
+
+        .empty-state--compact .empty-state__blob {
+          width: 100px;
+          height: 100px;
+        }
+
+        .empty-state--compact .empty-state__title {
+          font-size: 1.05rem;
+        }
+
+        .empty-state--compact .empty-state__message {
+          font-size: 0.85rem;
         }
 
         /* Fill the page, not just the width its own content needs — same
@@ -231,3 +256,4 @@ export function EmptyState({
     </div>
   )
 }
+

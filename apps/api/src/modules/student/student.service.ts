@@ -4,8 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AnnouncementsService } from '../announcements/announcements.service';
 import { CoursesService } from '../courses/courses.service';
 import type { CourseEntity } from '../courses/entities/course.entity';
+import { DiscussionsService } from '../discussions/discussions.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import type {
   EnrollmentEntity,
@@ -16,6 +18,7 @@ import type {
   CourseCurrentLesson,
   CourseProgressSummary,
 } from '../lessons/lessons.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 
 export interface StudentDashboardRecentCourse {
@@ -81,6 +84,15 @@ export interface StudentEnrollmentResponse {
   lastActivityAt: string;
 }
 
+export interface StudentCommunitySummaryItem {
+  courseId: string;
+  /** A single human-readable line ("Ahmed: <question title>" / "إعلان: …"), or null if the course has no discussion/announcement activity yet. */
+  preview: string | null;
+  lastActivityAt: string | null;
+  /** Unread discussion_reply/discussion_accepted notifications addressed to this student, grouped by course. */
+  unreadCount: number;
+}
+
 const EMPTY_PROGRESS_SUMMARY: CourseProgressSummary = {
   totalLessonsCount: 0,
   completedLessonsCount: 0,
@@ -117,6 +129,9 @@ export class StudentService {
     private readonly coursesService: CoursesService,
     private readonly usersService: UsersService,
     private readonly lessonsService: LessonsService,
+    private readonly discussionsService: DiscussionsService,
+    private readonly announcementsService: AnnouncementsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getDashboard(studentId: string): Promise<StudentDashboardResponse> {
@@ -331,6 +346,91 @@ export class StudentService {
         summaries.get(enrollment.courseId),
       ),
     );
+  }
+
+  /**
+   * Powers the Community landing list: one row per active/completed
+   * enrollment, each with a real (never fabricated) last-activity preview
+   * and an unread count. "Latest activity" is the newer of that course's
+   * newest discussion thread or newest announcement — replies aren't
+   * factored in, to keep this to two bulk queries instead of three.
+   * "Unread" only reflects notifications actually addressed to this
+   * student (their own thread got a reply / their answer got accepted) —
+   * there is no general per-course read-tracking in the domain.
+   */
+  async getCommunitySummary(
+    studentId: string,
+  ): Promise<StudentCommunitySummaryItem[]> {
+    const enrollments =
+      await this.enrollmentsService.findStudentEnrollments(studentId);
+    const courseIds = enrollments
+      .filter((e) => e.status === 'active' || e.status === 'completed')
+      .map((e) => e.courseId);
+
+    if (courseIds.length === 0) return [];
+
+    const [latestThreads, latestPosts, unreadNotifications] = await Promise.all(
+      [
+        this.discussionsService.getLatestThreadsByCourseIds(courseIds),
+        this.announcementsService.getLatestPostsByCourseIds(courseIds),
+        this.notificationsService.listForUser(studentId, { status: 'unread' }),
+      ],
+    );
+
+    const communityNotifications = unreadNotifications.filter(
+      (n) => n.type === 'discussion_reply' || n.type === 'discussion_accepted',
+    );
+    const threadIds = Array.from(
+      new Set(
+        communityNotifications
+          .filter(
+            (n) =>
+              n.relatedEntityType === 'discussion_thread' && n.relatedEntityId,
+          )
+          .map((n) => n.relatedEntityId as string),
+      ),
+    );
+    const threadCourseIds =
+      await this.discussionsService.getCourseIdsForThreadIds(threadIds);
+
+    const unreadCountByCourse = new Map<string, number>();
+    for (const notification of communityNotifications) {
+      const courseId = notification.relatedEntityId
+        ? threadCourseIds.get(notification.relatedEntityId)
+        : undefined;
+      if (!courseId) continue;
+      unreadCountByCourse.set(
+        courseId,
+        (unreadCountByCourse.get(courseId) ?? 0) + 1,
+      );
+    }
+
+    return courseIds.map((courseId) => {
+      const thread = latestThreads.get(courseId);
+      const post = latestPosts.get(courseId);
+
+      let preview: string | null = null;
+      let lastActivityAt: Date | null = null;
+
+      if (thread && (!post || thread.createdAt >= post.createdAt)) {
+        preview = `${thread.authorName}: ${thread.title}`;
+        lastActivityAt = thread.createdAt;
+      } else if (post) {
+        const content =
+          post.content.length > 60
+            ? `${post.content.slice(0, 60)}…`
+            : post.content;
+        preview = `إعلان: ${content}`;
+        lastActivityAt = post.createdAt;
+      }
+
+      return {
+        courseId,
+        preview,
+        lastActivityAt: lastActivityAt ? lastActivityAt.toISOString() : null,
+        unreadCount: unreadCountByCourse.get(courseId) ?? 0,
+      };
+    });
   }
 
   async enroll(

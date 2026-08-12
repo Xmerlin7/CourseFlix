@@ -26,6 +26,11 @@ export const ROUTE_PATHS = {
     CHECKOUT: '/student/checkout/:courseId',
     SETTINGS: '/student/settings',
     PROFILE: '/student/profile',
+    DISCUSSION_DETAIL: '/student/discussions/:threadId',
+    SUPPORT: '/student/support',
+    SUPPORT_DETAIL: '/student/support/:ticketId',
+    COMMUNITY: '/student/community',
+    COMMUNITY_COURSE: '/student/community/:courseId',
   },
 
   TEACHER: {
@@ -42,6 +47,9 @@ export const ROUTE_PATHS = {
     SALES: '/teacher/sales',
     ANALYTICS: '/teacher/analytics',
     SETTINGS: '/teacher/settings',
+    DISCUSSION_DETAIL: '/teacher/discussions/:threadId',
+    SUPPORT: '/teacher/support',
+    SUPPORT_DETAIL: '/teacher/support/:ticketId',
   },
 
   ADMIN: {
@@ -64,6 +72,8 @@ export const ROUTE_PATHS = {
     NOTIFICATIONS_LOG: '/admin/notifications-log',
     AGENT_LOGS: '/admin/agent-logs',
     SETTINGS: '/admin/settings',
+    SUPPORT: '/admin/support',
+    SUPPORT_DETAIL: '/admin/support/:ticketId',
   },
 } as const
 

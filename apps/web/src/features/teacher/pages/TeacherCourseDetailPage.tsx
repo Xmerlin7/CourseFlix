@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useParams } from 'react-router'
 import { CourseDetailView } from '../../courses/components/CourseDetailView'
 import { useCourseDetail } from '../../courses/hooks/useCourseDetail'
+import { CommunityPanelSkeleton } from '../../community/components/CommunityPanelSkeleton'
 import { DocumentStatusList } from '../../documents/components/DocumentStatusList'
 import { DocumentUploader } from '../../documents/components/DocumentUploader'
 import { useCourseDocuments } from '../../documents/hooks/useCourseDocuments'
@@ -15,7 +16,11 @@ import { TeacherContentManager } from '../components/TeacherContentManager'
 import { TeacherCourseForm } from '../components/TeacherCourseForm'
 import { TeacherCourseDetailSkeleton } from '../components/TeacherCourseDetailSkeleton'
 
-type CourseDetailTab = 'content' | 'quizzes' | 'ai-exam' | 'files'
+const CourseCommunityPanel = lazy(() =>
+  import('../../community/components/CourseCommunityPanel').then((m) => ({ default: m.CourseCommunityPanel })),
+)
+
+type CourseDetailTab = 'content' | 'quizzes' | 'ai-exam' | 'files' | 'community'
 
 export function TeacherCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -80,6 +85,15 @@ export function TeacherCourseDetailPage() {
         >
           الملفات
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'community'}
+          onClick={() => setActiveTab('community')}
+          className={`tab${activeTab === 'community' ? ' active' : ''}`}
+        >
+          المجتمع
+        </button>
       </div>
 
       {activeTab === 'content' && (
@@ -122,6 +136,12 @@ export function TeacherCourseDetailPage() {
             )}
           </div>
         </section>
+      )}
+
+      {activeTab === 'community' && (
+        <Suspense fallback={<CommunityPanelSkeleton />}>
+          <CourseCommunityPanel courseId={data.id} />
+        </Suspense>
       )}
     </>
   )
