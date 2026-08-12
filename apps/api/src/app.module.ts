@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AdminModule } from './modules/admin/admin.module';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
@@ -78,6 +79,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     DocumentsModule,
     AttachmentsModule,
     DiscussionsModule,
+    AnnouncementsModule,
     NotificationsModule,
     PaymobModule,
     QuizzesModule,
