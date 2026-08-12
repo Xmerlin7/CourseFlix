@@ -59,43 +59,60 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
 
   return (
     <section className="section" aria-label="مناقشات الدورة">
-      <div className="section-head" style={{ flexWrap: 'wrap', gap: 10 }}>
-        <h2>المناقشات</h2>
+      <div className="support-page-head" style={{ marginBottom: 16 }}>
+        <div className="support-page-title-group">
+          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>المناقشات</h2>
+          <p className="support-page-subtitle" style={{ margin: 0 }}>
+            اتناقش مع زملائك واسأل المدرس عن أي حاجة تخص الدورة
+          </p>
+        </div>
         {isStudent && (
           <button type="button" className="btn primary" onClick={() => setIsAsking(true)}>
-            <span className="ms">add_circle</span>
+            <span className="ms" aria-hidden="true">add_circle</span>
             اسأل سؤال
           </button>
         )}
       </div>
 
-      <form onSubmit={handleSearchSubmit} className="flex" style={{ gap: 8, marginBottom: 14 }}>
-        <div className="tf" style={{ flex: 1, marginBottom: 0 }}>
+      <div className="support-controls-section" style={{ marginBottom: 20 }}>
+        <form onSubmit={handleSearchSubmit} className="support-search-field" style={{ margin: 0 }}>
+          <span className="ms search-icon" aria-hidden="true">search</span>
           <input
+            type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="ابحث في المناقشات..."
             aria-label="ابحث في المناقشات"
           />
-        </div>
-        <button type="submit" className="btn outline">
-          <span className="ms">search</span>
-        </button>
-      </form>
+          {searchInput && (
+            <button
+              type="button"
+              className="icon-btn clear-search-btn"
+              onClick={clearSearch}
+              aria-label="مسح البحث"
+            >
+              <span className="ms">close</span>
+            </button>
+          )}
+        </form>
 
-      <div className="tabs" role="tablist" style={{ marginBottom: 16 }}>
-        {STATUS_FILTERS.map((filter) => (
-          <button
-            key={filter.value}
-            type="button"
-            role="tab"
-            aria-selected={status === filter.value}
-            onClick={() => setStatus(filter.value)}
-            className={`tab${status === filter.value ? ' active' : ''}`}
-          >
-            {filter.label}
-          </button>
-        ))}
+        <div className="support-status-filters" role="tablist" aria-label="تصفية المناقشات">
+          {STATUS_FILTERS.map((filter) => {
+            const isActive = status === filter.value
+            return (
+              <button
+                key={filter.value}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setStatus(filter.value)}
+                className={`support-filter-chip${isActive ? ' active' : ''}`}
+              >
+                <span>{filter.label}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {isLoading ? (
@@ -105,6 +122,7 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
       ) : data.length === 0 ? (
         search ? (
           <EmptyState
+            compact
             variant="search"
             title="لم نجد أي مناقشات مطابقة لبحثك"
             actionLabel="مسح البحث"
@@ -112,6 +130,7 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
           />
         ) : (
           <EmptyState
+            compact
             title="لا يوجد أسئلة بعد"
             message="كن أول من يسأل في هذه الدورة"
             actionLabel={isStudent ? 'اسأل أول سؤال' : undefined}
@@ -119,7 +138,7 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
           />
         )
       ) : (
-        <div className="list">
+        <div className="support-tickets-list">
           {data.map((thread) => (
             <DiscussionCard key={thread.id} thread={thread} to={`${detailPathPrefix}/${thread.id}`} />
           ))}
@@ -135,3 +154,4 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
     </section>
   )
 }
+

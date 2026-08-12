@@ -89,7 +89,7 @@ describe('DiscussionsSection', () => {
     await user.keyboard('{Enter}')
 
     expect(await screen.findByText('لم نجد أي مناقشات مطابقة لبحثك')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'مسح البحث' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'مسح البحث' })[0]).toBeInTheDocument()
   })
 
   it('lets a student ask a question and posts it as multipart form data', async () => {

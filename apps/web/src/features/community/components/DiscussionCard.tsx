@@ -11,59 +11,70 @@ interface DiscussionCardProps {
 }
 
 export function DiscussionCard({ thread, to }: DiscussionCardProps) {
+  const isTeacher = thread.author.role === 'teacher' || thread.author.role === 'assistant'
+
   return (
-    <Link to={to} className="list-item discussion-card">
-      <span className="lead">
-        <span className="ms">{thread.isAnswered ? 'check_circle' : 'help'}</span>
-      </span>
-      <span className="body">
-        <span className="t" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+    <Link to={to} className="card support-ticket-card lift discussion-card">
+      <div className="support-card-top">
+        <div className="support-card-meta">
+          <span className={`chip ${thread.isAnswered ? 'green' : 'outline'} sm`}>
+            <span className="ms sm" aria-hidden="true">
+              {thread.isAnswered ? 'check_circle' : 'help'}
+            </span>
+            {thread.isAnswered ? 'تمت الإجابة' : 'بدون إجابة'}
+          </span>
           {thread.isPinned && (
-            <span className="ms" style={{ fontSize: 16 }} aria-label="مثبت">
-              push_pin
+            <span className="chip outline sm">
+              <span className="ms sm" style={{ color: 'var(--primary)' }} aria-hidden="true">
+                push_pin
+              </span>
+              مثبت
             </span>
           )}
-          {thread.title}
-        </span>
-        <span className="s">
-          {thread.author.fullName}
-          {thread.author.role === 'teacher' || thread.author.role === 'assistant' ? (
-            <span className="chip" style={{ marginInlineStart: 6, fontSize: 11, padding: '2px 8px' }}>
-              المدرس
+        </div>
+        <div className="discussion-author-badge">
+          <span className="ms sm" aria-hidden="true">
+            {isTeacher ? 'verified_user' : 'account_circle'}
+          </span>
+          <span>{thread.author.fullName}</span>
+          {isTeacher && <span className="chip sm primary">المدرس</span>}
+        </div>
+      </div>
+
+      <h3 className="support-card-title">{thread.title}</h3>
+
+      {thread.tags.length > 0 && (
+        <div className="discussion-card-tags" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {thread.tags.map((tag) => (
+            <span key={tag} className="chip outline sm">
+              #{tag}
             </span>
-          ) : null}
-          {' · '}
-          {formatDate(thread.createdAt)}
-        </span>
-        {thread.tags.length > 0 && (
-          <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-            {thread.tags.map((tag) => (
-              <span key={tag} className="chip outline" style={{ fontSize: 11, padding: '2px 8px' }}>
-                #{tag}
-              </span>
-            ))}
+          ))}
+        </div>
+      )}
+
+      <div className="support-card-footer">
+        <div className="support-card-info">
+          <span className="support-card-info-item">
+            <span className="ms sm" aria-hidden="true">forum</span>
+            {thread.replyCount} {thread.replyCount === 1 ? 'رد' : 'ردود'}
           </span>
-        )}
-      </span>
-      <span className="end" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-        <span className={`chip${thread.isAnswered ? ' green' : ''}`}>
-          {thread.isAnswered ? 'تمت الإجابة' : 'بدون إجابة'}
-        </span>
-        <span className="meta" style={{ display: 'flex', gap: 10 }}>
-          <span>
-            <span className="ms" style={{ fontSize: 14, verticalAlign: 'middle' }}>
-              forum
-            </span>{' '}
-            {thread.replyCount}
+          {thread.helpfulCount > 0 && (
+            <span className="support-card-info-item">
+              <span className="ms sm" aria-hidden="true">thumb_up</span>
+              {thread.helpfulCount} مفيد
+            </span>
+          )}
+          <span className="support-card-info-item">
+            <span className="ms sm" aria-hidden="true">schedule</span>
+            {formatDate(thread.createdAt)}
           </span>
-          <span>
-            <span className="ms" style={{ fontSize: 14, verticalAlign: 'middle' }}>
-              thumb_up
-            </span>{' '}
-            {thread.helpfulCount}
-          </span>
+        </div>
+        <span className="ms support-card-arrow" aria-hidden="true">
+          arrow_forward
         </span>
-      </span>
+      </div>
     </Link>
   )
 }
+

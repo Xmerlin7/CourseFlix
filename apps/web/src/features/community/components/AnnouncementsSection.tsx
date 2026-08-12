@@ -153,7 +153,11 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
       )}
 
       {data.length === 0 ? (
-        <EmptyState title="لا يوجد إعلانات بعد" message="إعلانات المدرس المهمة هتظهر هنا" />
+        <EmptyState
+          compact
+          title="لا توجد إعلانات بعد"
+          message="ستظهر إعلانات المدرس هنا عند نشرها"
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
           {data.map((announcement) => (
