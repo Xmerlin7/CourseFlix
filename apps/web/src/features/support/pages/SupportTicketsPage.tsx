@@ -61,28 +61,14 @@ function getEmptyStateProps(status?: SupportTicketStatus) {
 
 export function SupportTicketsPage() {
   const [selectedStatus, setSelectedStatus] = useState<SupportTicketStatus | undefined>(undefined)
-  const [searchQuery, setSearchQuery] = useState('')
   const { data: allTickets, isLoading, error, refetch } = useMyTickets(undefined)
   const [isCreating, setIsCreating] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const filteredTickets = useMemo(() => {
-    let list = allTickets
-    if (selectedStatus) {
-      list = list.filter((t) => t.status === selectedStatus)
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      list = list.filter(
-        (t) =>
-          t.subject.toLowerCase().includes(q) ||
-          (t.courseTitle && t.courseTitle.toLowerCase().includes(q)) ||
-          t.id.toLowerCase().includes(q) ||
-          SUPPORT_TICKET_CATEGORY_LABELS[t.category]?.toLowerCase().includes(q),
-      )
-    }
-    return list
-  }, [allTickets, selectedStatus, searchQuery])
+    if (!selectedStatus) return allTickets
+    return allTickets.filter((t) => t.status === selectedStatus)
+  }, [allTickets, selectedStatus])
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -131,67 +117,35 @@ export function SupportTicketsPage() {
         </button>
       </div>
 
-      <div className="support-controls-section">
-        <div className="support-search-field">
-          <span className="ms search-icon" aria-hidden="true">search</span>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ابحث في طلبات الدعم..."
-            aria-label="ابحث في طلبات الدعم"
-          />
-          {searchQuery && (
+      <div className="support-status-filters" role="tablist" aria-label="تصفية طلبات الدعم">
+        {STATUS_FILTERS.map((filter) => {
+          const isActive = selectedStatus === filter.value
+          const count = statusCounts[filter.countKey] ?? 0
+          return (
             <button
+              key={filter.label}
               type="button"
-              className="icon-btn clear-search-btn"
-              onClick={() => setSearchQuery('')}
-              aria-label="مسح البحث"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setSelectedStatus(filter.value)}
+              className={`support-filter-chip${isActive ? ' active' : ''}`}
             >
-              <span className="ms">close</span>
+              <span>{filter.label}</span>
+              <span className="support-filter-count">{count}</span>
             </button>
-          )}
-        </div>
-
-        <div className="support-status-filters" role="tablist" aria-label="تصفية طلبات الدعم">
-          {STATUS_FILTERS.map((filter) => {
-            const isActive = selectedStatus === filter.value
-            const count = statusCounts[filter.countKey] ?? 0
-            return (
-              <button
-                key={filter.label}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setSelectedStatus(filter.value)}
-                className={`support-filter-chip${isActive ? ' active' : ''}`}
-              >
-                <span>{filter.label}</span>
-                <span className="support-filter-count">{count}</span>
-              </button>
-            )
-          })}
-        </div>
+          )
+        })}
       </div>
 
       {error ? (
         <ErrorState onRetry={refetch} />
       ) : filteredTickets.length === 0 ? (
-        searchQuery ? (
-          <EmptyState
-            title="لا توجد نتائج بحث"
-            message={`لم نجد أي طلبات تتطابق مع "${searchQuery}"`}
-            actionLabel="مسح البحث"
-            onAction={() => setSearchQuery('')}
-          />
-        ) : (
-          <EmptyState
-            title={emptyProps.title}
-            message={emptyProps.message}
-            actionLabel="طلب دعم جديد"
-            onAction={() => setIsCreating(true)}
-          />
-        )
+        <EmptyState
+          title={emptyProps.title}
+          message={emptyProps.message}
+          actionLabel="طلب دعم جديد"
+          onAction={() => setIsCreating(true)}
+        />
       ) : (
         <div className="support-tickets-list">
           {filteredTickets.map((ticket) => (
@@ -233,6 +187,7 @@ export function SupportTicketsPage() {
           ))}
         </div>
       )}
+
 
 
       <CreateTicketDialog

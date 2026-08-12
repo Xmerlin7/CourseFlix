@@ -63,37 +63,6 @@ describe('SupportTicketsPage', () => {
     expect(within(card).getByText('مفتوح')).toBeInTheDocument()
   })
 
-  it('filters tickets based on search query input', async () => {
-    server.use(
-      http.get(`${env.apiBaseUrl}/support/tickets`, () =>
-        HttpResponse.json([
-          sampleTicket,
-          {
-            id: 'ticket-2',
-            category: 'payment',
-            subject: 'مشكلة في الدفع فوري',
-            status: 'resolved',
-            courseTitle: null,
-            studentName: 'محمد',
-            createdAt: '2026-01-02T10:00:00Z',
-            updatedAt: '2026-01-02T10:00:00Z',
-          },
-        ]),
-      ),
-    )
-
-    const user = userEvent.setup()
-    renderPage()
-
-    await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')
-    expect(screen.getByText('مشكلة في الدفع فوري')).toBeInTheDocument()
-
-    const searchInput = screen.getByPlaceholderText('ابحث في طلبات الدعم...')
-    await user.type(searchInput, 'الدفع')
-
-    expect(screen.getByText('مشكلة في الدفع فوري')).toBeInTheDocument()
-    expect(screen.queryByText('الفيديو بيتوقف عند الدقيقة 15')).not.toBeInTheDocument()
-  })
 
 
   it('shows an empty state with a create-ticket action when there are no tickets', async () => {
