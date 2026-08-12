@@ -28,6 +28,9 @@ export const handlers = [
 
   http.post(apiUrl("/auth/logout"), () => HttpResponse.json({ success: true })),
 
+  http.get(apiUrl("/courses/:courseId/announcements"), () => HttpResponse.json([])),
+  http.get(apiUrl("/courses/:courseId/discussions"), () => HttpResponse.json([])),
+
   http.post(apiUrl("/auth/register"), () =>
     HttpResponse.json(
       {
