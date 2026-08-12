@@ -25,6 +25,7 @@ function renderPage(overrides: Partial<Parameters<typeof renderWithProviders>[1]
       login: vi.fn(),
       logout,
       register: vi.fn(),
+      verifyOtp: vi.fn(),
       updateUser,
     },
     ...overrides,
