@@ -21,6 +21,7 @@ const studentAuth: AuthContextValue = {
   login: vi.fn(),
   logout: vi.fn(),
   register: vi.fn(),
+  verifyOtp: vi.fn(),
   updateUser: vi.fn(),
 }
 

@@ -122,17 +122,22 @@ describe('CourseDetailView', () => {
     ).toBeDefined()
   })
 
-  it('switches between Community and Announcements tabs cleanly', async () => {
+  it('switches between Quizzes, Community, and Announcements tabs cleanly', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/courses/${course.id}/discussions`, () => HttpResponse.json([])),
       http.get(`${env.apiBaseUrl}/courses/${course.id}/announcements`, () => HttpResponse.json([])),
     )
 
     const user = userEvent.setup()
-    renderWithProviders(<CourseDetailView course={course} />)
+    renderWithProviders(<CourseDetailView course={course} courseQuizzes={quizzes} />)
 
+    const quizzesTab = screen.getByRole('tab', { name: /اختبارات/ })
     const communityTab = screen.getByRole('tab', { name: 'المجتمع' })
     const announcementsTab = screen.getByRole('tab', { name: 'الإعلانات' })
+
+    await user.click(quizzesTab)
+    expect(quizzesTab).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByText('اختبارات الدورة (1)')).toBeInTheDocument()
 
     await user.click(communityTab)
     expect(communityTab).toHaveAttribute('aria-selected', 'true')
@@ -143,4 +148,5 @@ describe('CourseDetailView', () => {
     expect(await screen.findByText('لا توجد إعلانات بعد')).toBeInTheDocument()
   })
 })
+
 

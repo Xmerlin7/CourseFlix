@@ -27,14 +27,13 @@ export function CourseDetailView({
   areQuizzesLoading = false,
   quizzesError = false,
 }: CourseDetailViewProps) {
-  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'files' | 'community' | 'announcements'>('videos')
+  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'quizzes' | 'files' | 'community' | 'announcements'>('videos')
   const lessonCount = course.sections.reduce(
     (total, section) => total + section.lessons.length,
     0,
   )
   const status = COURSE_STATUS[course.status]
   const visibleQuizzes = course.canEdit ? [] : courseQuizzes
-  const courseLevelQuizzes = visibleQuizzes.filter((quiz) => !quiz.sectionId && !quiz.lessonId)
 
   function quizzesForLesson(lessonId: string): QuizSummary[] {
     return visibleQuizzes.filter((quiz) => quiz.lessonId === lessonId)
@@ -106,6 +105,40 @@ export function CourseDetailView({
       ))
     )
 
+  const quizzesTabContent = (
+    <>
+      {areQuizzesLoading && <p className="subtitle">جارٍ تحميل اختبارات الدورة...</p>}
+      {quizzesError && (
+        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 700 }}>
+          تعذر تحميل اختبارات الدورة
+        </p>
+      )}
+      {!areQuizzesLoading && !quizzesError && visibleQuizzes.length === 0 && (
+        <EmptyState
+          title="لا توجد اختبارات في هذه الدورة بعد"
+          message="ستظهر الاختبارات والتقييمات هنا فور إضافتها من المدرس"
+        />
+      )}
+      {!areQuizzesLoading && !quizzesError && visibleQuizzes.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>اختبارات الدورة ({visibleQuizzes.length})</h2>
+          </div>
+          <div className="list">
+            {visibleQuizzes.map((quiz) => {
+              const label = quiz.lessonId
+                ? 'اختبار بعد الدرس'
+                : quiz.sectionId
+                  ? 'اختبار القسم'
+                  : 'اختبار الدورة'
+              return <QuizListItem key={quiz.id} quiz={quiz} contextLabel={label} />
+            })}
+          </div>
+        </section>
+      )}
+    </>
+  )
+
   return (
     <>
       <div className="card course-detail-header-card">
@@ -165,6 +198,21 @@ export function CourseDetailView({
             <button
               type="button"
               role="tab"
+              aria-selected={activeMediaTab === 'quizzes'}
+              onClick={() => setActiveMediaTab('quizzes')}
+              className={`course-detail-tab-btn${activeMediaTab === 'quizzes' ? ' active' : ''}`}
+            >
+              <span className="ms sm" aria-hidden="true">quiz</span>
+              اختبارات
+              {visibleQuizzes.length > 0 && (
+                <span style={{ fontSize: 11, background: 'rgba(255,255,255,0.2)', padding: '1px 6px', borderRadius: 99, marginInlineStart: 4 }}>
+                  {visibleQuizzes.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={activeMediaTab === 'files'}
               onClick={() => setActiveMediaTab('files')}
               className={`course-detail-tab-btn${activeMediaTab === 'files' ? ' active' : ''}`}
@@ -195,41 +243,13 @@ export function CourseDetailView({
           </div>
 
           {activeMediaTab === 'videos' && videosSection}
+          {activeMediaTab === 'quizzes' && quizzesTabContent}
           {activeMediaTab === 'files' && <StudentDocumentsList courseId={course.id} />}
           {activeMediaTab === 'community' && <DiscussionsSection courseId={course.id} />}
           {activeMediaTab === 'announcements' && (
             <AnnouncementsSection courseId={course.id} canManage={course.canEdit} />
           )}
         </>
-      )}
-
-
-      {!course.canEdit && areQuizzesLoading && (
-        <p className="subtitle">جارٍ تحميل اختبارات الدورة...</p>
-      )}
-
-      {!course.canEdit && quizzesError && (
-        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 700 }}>
-          تعذر تحميل اختبارات الدورة
-        </p>
-      )}
-
-      {courseLevelQuizzes.length > 0 && (
-        <section className="section" style={{ marginTop: 24 }}>
-          <div className="section-head">
-            <h2>
-              <span className="ms" style={{ verticalAlign: 'middle', marginInlineEnd: 6 }}>
-                quiz
-              </span>
-              اختبارات الدورة
-            </h2>
-          </div>
-          <div className="list">
-            {courseLevelQuizzes.map((quiz) => (
-              <QuizListItem key={quiz.id} quiz={quiz} contextLabel="اختبار الدورة" />
-            ))}
-          </div>
-        </section>
       )}
     </>
   )

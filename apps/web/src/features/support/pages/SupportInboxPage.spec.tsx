@@ -8,18 +8,13 @@ import { renderWithProviders } from '../../../testing/renderWithProviders'
 import type { AuthContextValue } from '../../auth/context/AuthContext'
 import { SupportInboxPage } from './SupportInboxPage'
 
-const teacherAuth: AuthContextValue = {
-  user: {
-    id: 'teacher-1',
-    email: 'teacher@example.com',
-    fullName: 'أحمد معلم',
-    role: 'teacher',
-    avatarUrl: null,
-  },
+const staffAuth: AuthContextValue = {
+  user: { id: 'teacher-1', email: 'teacher@example.com', fullName: 'أ. سارة', role: 'teacher', avatarUrl: null },
   isLoading: false,
   login: vi.fn(),
   logout: vi.fn(),
   register: vi.fn(),
+  verifyOtp: vi.fn(),
   updateUser: vi.fn(),
 }
 
@@ -28,7 +23,7 @@ function renderPage() {
     <Routes>
       <Route path="/teacher/support" element={<SupportInboxPage />} />
     </Routes>,
-    { initialEntries: ['/teacher/support'], auth: teacherAuth },
+    { initialEntries: ['/teacher/support'], auth: staffAuth },
   )
 }
 
