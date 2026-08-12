@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
@@ -6,11 +6,16 @@ import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { addTicketMessage, updateTicketStatus } from '../api/support.api'
+import { AttachmentCard } from '../components/AttachmentCard'
+import { MessageBubble, type MessagePendingStatus } from '../components/MessageBubble'
+import { MessageComposer } from '../components/MessageComposer'
+import '../components/SupportChat.css'
 import { SupportTicketDetailSkeleton } from '../components/SupportTicketDetailSkeleton'
 import { TicketStatusBadge } from '../components/TicketStatusBadge'
+import { TypingIndicator } from '../components/TypingIndicator'
 import { useTicket } from '../hooks/useTicket'
 import { SUPPORT_TICKET_CATEGORY_LABELS } from '../lib/support-status-labels'
-import type { SupportTicketStatus } from '../types/support.types'
+import type { SupportMessage, SupportTicketStatus } from '../types/support.types'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
@@ -24,6 +29,39 @@ const STATUS_OPTIONS: { value: SupportTicketStatus; label: string }[] = [
   { value: 'closed', label: 'مغلق' },
 ]
 
+const CATEGORY_ICONS: Record<string, string> = {
+  technical: 'build',
+  course: 'school',
+  payment: 'payments',
+  account: 'account_circle',
+  other: 'more_horiz',
+}
+
+interface PendingMessage {
+  localId: string
+  authorName: string
+  isStaffReply: boolean
+  body: string
+  createdAt: string
+  status: MessagePendingStatus
+}
+
+interface RenderableMessage {
+  key: string
+  authorName: string
+  isStaffReply: boolean
+  body: string
+  createdAt: string
+  pendingStatus?: MessagePendingStatus
+}
+
+function shouldShowHeader(list: RenderableMessage[], index: number): boolean {
+  if (index === 0) return true
+  const prev = list[index - 1]
+  const current = list[index]
+  return prev.authorName !== current.authorName || prev.isStaffReply !== current.isStaffReply
+}
+
 export function SupportTicketDetailPage() {
   const { ticketId } = useParams<{ ticketId: string }>()
   const { user } = useAuth()
@@ -32,8 +70,45 @@ export function SupportTicketDetailPage() {
 
   const { data, isLoading, error, refetch } = useTicket(ticketId ?? '')
   const [messageBody, setMessageBody] = useState('')
-  const [isSending, setIsSending] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [confirmedExtra, setConfirmedExtra] = useState<SupportMessage[]>([])
+  const [pending, setPending] = useState<PendingMessage | null>(null)
+  const messagesRef = useRef<HTMLDivElement>(null)
+
+  const renderList: RenderableMessage[] = [
+    ...(data?.messages ?? []).map((message) => ({
+      key: message.id,
+      authorName: message.authorName,
+      isStaffReply: message.isStaffReply,
+      body: message.body,
+      createdAt: message.createdAt,
+    })),
+    ...confirmedExtra.map((message) => ({
+      key: message.id,
+      authorName: message.authorName,
+      isStaffReply: message.isStaffReply,
+      body: message.body,
+      createdAt: message.createdAt,
+    })),
+    ...(pending
+      ? [
+          {
+            key: pending.localId,
+            authorName: pending.authorName,
+            isStaffReply: pending.isStaffReply,
+            body: pending.body,
+            createdAt: pending.createdAt,
+            pendingStatus: pending.status,
+          },
+        ]
+      : []),
+  ]
+
+  useEffect(() => {
+    if (messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight
+    }
+  }, [renderList.length, pending?.status])
 
   if (isLoading) return <SupportTicketDetailSkeleton />
 
@@ -45,19 +120,40 @@ export function SupportTicketDetailPage() {
 
   if (!data) return <NotFoundState />
 
-  async function handleSendMessage(event: React.FormEvent) {
-    event.preventDefault()
-    if (!messageBody.trim() || !ticketId) return
-    setIsSending(true)
+  async function trySend(ticketIdValue: string, body: string) {
     try {
-      await addTicketMessage(ticketId, messageBody.trim())
-      setMessageBody('')
-      refetch()
+      const created = await addTicketMessage(ticketIdValue, body)
+      setConfirmedExtra((current) => [...current, created])
+      setPending(null)
     } catch {
+      setPending((current) => (current ? { ...current, status: 'failed' } : current))
       showToast('تعذر إرسال الرد', 'error')
-    } finally {
-      setIsSending(false)
     }
+  }
+
+  function handleComposerSubmit() {
+    const body = messageBody.trim()
+    if (!body || pending || !ticketId) return
+    setMessageBody('')
+    setPending({
+      localId: `pending-${Date.now()}`,
+      authorName: user?.fullName ?? (isStaff ? 'فريق الدعم' : 'أنت'),
+      isStaffReply: isStaff,
+      body,
+      createdAt: new Date().toISOString(),
+      status: 'sending',
+    })
+    void trySend(ticketId, body)
+  }
+
+  function handleRetry() {
+    if (!pending || !ticketId) return
+    setPending({ ...pending, status: 'sending' })
+    void trySend(ticketId, pending.body)
+  }
+
+  function handleDismissFailed() {
+    setPending(null)
   }
 
   async function handleStatusChange(status: SupportTicketStatus) {
@@ -74,6 +170,8 @@ export function SupportTicketDetailPage() {
     }
   }
 
+  const isClosed = data.status === 'closed'
+
   return (
     <div>
       <Link to={backPath} className="meta-link">
@@ -81,14 +179,39 @@ export function SupportTicketDetailPage() {
         الرجوع لطلبات الدعم
       </Link>
 
-      <div className="card" style={{ gap: 10, marginTop: 14, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+      <div className="card support-ticket-header">
+        <div className="support-ticket-header-top">
           <div>
-            <span className="meta">طلب دعم #{data.id.slice(0, 8)}</span>
-            <h1 className="page-title" style={{ margin: '4px 0' }}>
+            <span className="support-ticket-id">طلب دعم #{data.id.slice(0, 8)}</span>
+            <h1 className="page-title" style={{ margin: '4px 0 10px', fontSize: 21 }}>
               {data.subject}
             </h1>
+            <div className="support-ticket-chips">
+              <span className="chip outline">
+                <span className="ms" aria-hidden="true">
+                  {CATEGORY_ICONS[data.category] ?? 'label'}
+                </span>
+                {SUPPORT_TICKET_CATEGORY_LABELS[data.category]}
+              </span>
+              {data.courseTitle && (
+                <span className="chip outline">
+                  <span className="ms" aria-hidden="true">school</span>
+                  {data.courseTitle}
+                </span>
+              )}
+              <span className="chip outline">
+                <span className="ms" aria-hidden="true">schedule</span>
+                {formatDate(data.createdAt)}
+              </span>
+              {isStaff && (
+                <span className="chip outline">
+                  <span className="ms" aria-hidden="true">person</span>
+                  {data.studentName}
+                </span>
+              )}
+            </div>
           </div>
+
           {isStaff ? (
             <div className="tf" style={{ marginBottom: 0, minWidth: 180 }}>
               <label htmlFor="ticket-status">الحالة</label>
@@ -110,78 +233,58 @@ export function SupportTicketDetailPage() {
           )}
         </div>
 
-        <span className="meta">
-          {SUPPORT_TICKET_CATEGORY_LABELS[data.category]}
-          {data.courseTitle ? ` · ${data.courseTitle}` : ''} · {formatDate(data.createdAt)}
-        </span>
-        {isStaff && <span className="meta">الطالب: {data.studentName}</span>}
-
-        <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{data.description}</p>
+        {data.description && <p className="support-ticket-description">{data.description}</p>}
 
         {data.attachments.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div className="support-ticket-attachments">
             {data.attachments.map((file) => (
-              <span key={file.id} className="chip outline">
-                <span className="ms" style={{ fontSize: 14 }}>
-                  attach_file
-                </span>
-                {file.fileName}
-              </span>
+              <AttachmentCard key={file.id} attachment={file} />
             ))}
           </div>
         )}
       </div>
 
-      <h2>المحادثة</h2>
-
-      {data.messages.length === 0 ? (
-        <p className="subtitle">لا يوجد ردود بعد.</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-          {data.messages.map((message) => (
-            <div
-              key={message.id}
-              className={`card${message.isStaffReply ? ' announcement-pinned' : ''}`}
-              style={{ gap: 4 }}
-            >
-              <span className="meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {message.authorName}
-                {message.isStaffReply && (
-                  <span className="chip" style={{ fontSize: 11, padding: '2px 8px' }}>
-                    فريق الدعم
-                  </span>
-                )}
-                {' · '}
-                {formatDate(message.createdAt)}
-              </span>
-              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{message.body}</p>
+      <div className="support-chat-panel">
+        <div className="support-chat-messages" ref={messagesRef}>
+          {renderList.length === 0 ? (
+            <div className="support-chat-empty">
+              <strong>أهلاً بيك 👋</strong>
+              <p>اكتب رسالتك وهيساعدك فريق الدعم في حل المشكلة.</p>
             </div>
-          ))}
-        </div>
-      )}
+          ) : (
+            renderList.map((message, index) => (
+              <MessageBubble
+                key={message.key}
+                authorName={message.authorName}
+                isStaffReply={message.isStaffReply}
+                body={message.body}
+                createdAt={message.createdAt}
+                showHeader={shouldShowHeader(renderList, index)}
+                pendingStatus={message.pendingStatus}
+                onRetry={message.pendingStatus === 'failed' ? handleRetry : undefined}
+                onDismiss={message.pendingStatus === 'failed' ? handleDismissFailed : undefined}
+              />
+            ))
+          )}
 
-      {data.status !== 'closed' && (
-        <form onSubmit={handleSendMessage} className="card" style={{ gap: 10 }}>
-          <div className="tf" style={{ marginBottom: 0 }}>
-            <label htmlFor="ticket-reply">اكتب ردًا</label>
-            <textarea
-              id="ticket-reply"
-              value={messageBody}
-              onChange={(event) => setMessageBody(event.target.value)}
-              rows={3}
-              maxLength={10000}
-              disabled={isSending}
-              required
-            />
+          {pending?.status === 'sending' && <TypingIndicator variant={isStaff ? 'student' : 'support'} />}
+        </div>
+
+        {isClosed ? (
+          <div className="support-chat-closed-notice">
+            <span className="ms" aria-hidden="true">lock</span>
+            تم إغلاق هذا الطلب، ولا يمكن إرسال ردود جديدة.
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button type="submit" className="btn primary" disabled={isSending}>
-              {isSending && <span className="ms spin">progress_activity</span>}
-              {isSending ? 'جارٍ الإرسال...' : 'إرسال'}
-            </button>
-          </div>
-        </form>
-      )}
+        ) : (
+          <MessageComposer
+            value={messageBody}
+            onChange={setMessageBody}
+            onSubmit={handleComposerSubmit}
+            disabled={pending !== null}
+            isSending={pending?.status === 'sending'}
+          />
+        )}
+      </div>
     </div>
   )
 }
