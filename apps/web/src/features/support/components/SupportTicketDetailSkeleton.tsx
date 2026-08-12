@@ -11,7 +11,7 @@ export function SupportTicketDetailSkeleton() {
           <div style={{ flex: 1 }}>
             <div className="skeleton" style={{ height: 11, width: 90, borderRadius: 6, marginBottom: 8 }} />
             <div className="skeleton" style={{ height: 20, width: '55%', borderRadius: 8, marginBottom: 10 }} />
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <div className="skeleton" style={{ height: 24, width: 92, borderRadius: 999 }} />
               <div className="skeleton" style={{ height: 24, width: 110, borderRadius: 999 }} />
               <div className="skeleton" style={{ height: 24, width: 80, borderRadius: 999 }} />
@@ -19,48 +19,52 @@ export function SupportTicketDetailSkeleton() {
           </div>
           <div className="skeleton" style={{ height: 28, width: 96, borderRadius: 999 }} />
         </div>
-        <div className="skeleton" style={{ height: 12, width: '85%', borderRadius: 6 }} />
-        <div className="skeleton" style={{ height: 12, width: '60%', borderRadius: 6 }} />
+        <div className="skeleton" style={{ height: 12, width: '85%', borderRadius: 6, marginTop: 12 }} />
+        <div className="skeleton" style={{ height: 12, width: '60%', borderRadius: 6, marginTop: 6 }} />
       </div>
 
       <div className="support-chat-panel">
         <div className="support-chat-messages">
           {/* Support message skeleton → left */}
           <div className="chat-msg-group from-support is-new-group">
-            <span className="chat-msg-group-label">
-              <span className="skeleton" style={{ height: 10, width: 70, borderRadius: 6 }} />
-            </span>
-            <div className="skeleton" style={{ height: 40, width: 220, borderRadius: 16 }} />
+            <div className="chat-msg-group-label" style={{ flexDirection: 'row-reverse' }}>
+              <div className="skeleton" style={{ width: 22, height: 22, borderRadius: '50%' }} />
+              <div className="skeleton" style={{ height: 10, width: 70, borderRadius: 6 }} />
+            </div>
+            <div className="skeleton" style={{ height: 42, width: 240, borderRadius: 18 }} />
           </div>
 
           {/* Student message skeleton → right */}
           <div className="chat-msg-group from-student is-new-group">
-            <span className="chat-msg-group-label">
-              <span className="skeleton" style={{ height: 10, width: 60, borderRadius: 6 }} />
-            </span>
-            <div className="skeleton" style={{ height: 32, width: 180, borderRadius: 16 }} />
+            <div className="chat-msg-group-label">
+              <div className="skeleton" style={{ width: 22, height: 22, borderRadius: '50%' }} />
+              <div className="skeleton" style={{ height: 10, width: 60, borderRadius: 6 }} />
+            </div>
+            <div className="skeleton" style={{ height: 34, width: 190, borderRadius: 18 }} />
           </div>
 
           {/* Support message skeleton → left */}
           <div className="chat-msg-group from-support is-new-group">
-            <span className="chat-msg-group-label">
-              <span className="skeleton" style={{ height: 10, width: 70, borderRadius: 6 }} />
-            </span>
-            <div className="skeleton" style={{ height: 52, width: 260, borderRadius: 16 }} />
+            <div className="chat-msg-group-label" style={{ flexDirection: 'row-reverse' }}>
+              <div className="skeleton" style={{ width: 22, height: 22, borderRadius: '50%' }} />
+              <div className="skeleton" style={{ height: 10, width: 70, borderRadius: 6 }} />
+            </div>
+            <div className="skeleton" style={{ height: 56, width: 280, borderRadius: 18 }} />
           </div>
 
           {/* Student message skeleton → right */}
           <div className="chat-msg-group from-student is-new-group">
-            <span className="chat-msg-group-label">
-              <span className="skeleton" style={{ height: 10, width: 60, borderRadius: 6 }} />
-            </span>
-            <div className="skeleton" style={{ height: 40, width: 200, borderRadius: 16 }} />
+            <div className="chat-msg-group-label">
+              <div className="skeleton" style={{ width: 22, height: 22, borderRadius: '50%' }} />
+              <div className="skeleton" style={{ height: 10, width: 60, borderRadius: 6 }} />
+            </div>
+            <div className="skeleton" style={{ height: 42, width: 210, borderRadius: 18 }} />
           </div>
         </div>
 
         <div className="chat-composer">
-          <div className="skeleton" style={{ flex: 1, height: 42, borderRadius: 20 }} />
-          <div className="skeleton" style={{ width: 42, height: 42, borderRadius: 999 }} />
+          <div className="skeleton" style={{ flex: 1, height: 44, borderRadius: 22 }} />
+          <div className="skeleton" style={{ width: 44, height: 44, borderRadius: '50%' }} />
         </div>
       </div>
 
@@ -68,3 +72,4 @@ export function SupportTicketDetailSkeleton() {
     </div>
   )
 }
+
