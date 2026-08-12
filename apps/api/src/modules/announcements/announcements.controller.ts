@@ -40,6 +40,19 @@ export class AnnouncementsController {
     return this.announcementsService.listAnnouncements(courseId, user);
   }
 
+function decodeOriginalName(filename: string | undefined): string {
+  if (!filename) return '';
+  try {
+    const decoded = Buffer.from(filename, 'latin1').toString('utf8');
+    if (/[\u0600-\u06FF]/.test(decoded)) {
+      return decoded;
+    }
+  } catch {
+    // fallback
+  }
+  return filename;
+}
+
   @Post('courses/:courseId/announcements')
   @UseInterceptors(FileInterceptor('attachment'))
   createAnnouncement(
@@ -53,7 +66,7 @@ export class AnnouncementsController {
       attachment: attachment
         ? {
             buffer: attachment.buffer,
-            originalName: attachment.originalname,
+            originalName: decodeOriginalName(attachment.originalname),
             mimeType: attachment.mimetype,
             sizeBytes: attachment.size,
           }

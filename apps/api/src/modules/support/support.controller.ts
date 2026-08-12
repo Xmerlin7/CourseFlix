@@ -47,6 +47,19 @@ const TICKET_CATEGORIES: readonly SupportTicketCategory[] = [
   'other',
 ];
 
+function decodeOriginalName(filename: string | undefined): string {
+  if (!filename) return '';
+  try {
+    const decoded = Buffer.from(filename, 'latin1').toString('utf8');
+    if (/[\u0600-\u06FF]/.test(decoded)) {
+      return decoded;
+    }
+  } catch {
+    // fallback
+  }
+  return filename;
+}
+
 @Controller('api/v1/support')
 @UseGuards(AuthGuard)
 export class SupportController {
@@ -57,7 +70,7 @@ export class SupportController {
   @UseInterceptors(FileInterceptor('attachment'))
   createTicket(
     @CurrentUser() user: AuthenticatedUser,
-    @Body('category') category: string,
+    @Body('category') category: SupportTicketCategory,
     @Body('subject') subject: string,
     @Body('description') description: string,
     @Body('courseId') courseId: string | undefined,
@@ -71,7 +84,7 @@ export class SupportController {
       attachment: attachment
         ? {
             buffer: attachment.buffer,
-            originalName: attachment.originalname,
+            originalName: decodeOriginalName(attachment.originalname),
             mimeType: attachment.mimetype,
             sizeBytes: attachment.size,
           }
