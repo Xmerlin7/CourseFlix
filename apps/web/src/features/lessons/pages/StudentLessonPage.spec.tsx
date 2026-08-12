@@ -36,6 +36,7 @@ describe('StudentLessonPage', () => {
     logout: vi.fn(),
     register: vi.fn(),
     updateUser: vi.fn(),
+    verifyOtp: vi.fn(),
   }
 
   it('renders YouTube lesson URLs as an embedded player', async () => {
@@ -348,6 +349,7 @@ describe('StudentLessonPage', () => {
       logout: vi.fn(),
       register: vi.fn(),
       updateUser: vi.fn(),
+      verifyOtp: vi.fn(),
     })
 
     expect(await screen.findByRole('heading', { name: 'فيزياء' })).toBeInTheDocument()
