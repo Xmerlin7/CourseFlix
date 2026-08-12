@@ -63,7 +63,7 @@ describe('DiscussionDetailPage', () => {
     renderPage()
 
     expect(await screen.findByText('قانون كولوم بيوصف القوة بين شحنتين...')).toBeInTheDocument()
-    expect(screen.getByText('المدرس')).toBeInTheDocument()
+    expect(screen.getAllByText('المدرس').length).toBeGreaterThan(0)
   })
 
   it('lets the question author accept a reply as the answer, marking the thread answered', async () => {
@@ -109,4 +109,38 @@ describe('DiscussionDetailPage', () => {
     await screen.findByText('قانون كولوم بيوصف القوة بين شحنتين...')
     expect(screen.queryByRole('button', { name: 'اعتماد كإجابة' })).not.toBeInTheDocument()
   })
+
+  it('renders decoded Arabic attachment names correctly', async () => {
+    const arabicBytes = [
+      0xd8, 0xa7, 0xd9, 0x84, 0xd9, 0x83, 0xd9, 0x8a, 0xd9, 0x85, 0xd9, 0x8a, 0xd8, 0xa7, 0xd8, 0xa1,
+    ]
+    const mojibakeFilename = String.fromCharCode(...arabicBytes) + '.pdf'
+
+    server.use(
+      http.get(`${env.apiBaseUrl}/discussions/thread-1`, () =>
+        HttpResponse.json({
+          ...threadDetail,
+          attachments: [{ id: 'att-1', fileName: mojibakeFilename, fileUrl: 'https://example.com/att.pdf' }],
+        }),
+      ),
+    )
+
+    renderPage()
+
+    expect(await screen.findByText('الكيمياء.pdf')).toBeInTheDocument()
+  })
+
+  it('renders a compact empty state when there are no replies', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/discussions/thread-1`, () =>
+        HttpResponse.json({ ...threadDetail, replies: [] }),
+      ),
+    )
+
+    renderPage()
+
+    expect(await screen.findByText('لا توجد ردود بعد')).toBeInTheDocument()
+    expect(screen.getByText('كن أول من يجيب على هذا السؤال.')).toBeInTheDocument()
+  })
 })
+
