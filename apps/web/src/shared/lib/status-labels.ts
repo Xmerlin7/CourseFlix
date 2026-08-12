@@ -56,6 +56,9 @@ export const NOTIFICATION_TYPE: Record<
   announcement: { label: 'إعلان', icon: 'campaign', lead: 'pink' },
   course_update: { label: 'تحديث دورة', icon: 'menu_book', lead: '' },
   system: { label: 'إشعار عام', icon: 'info', lead: '' },
+  discussion_reply: { label: 'رد في المجتمع', icon: 'forum', lead: '' },
+  discussion_accepted: { label: 'إجابة مقبولة', icon: 'check_circle', lead: 'green' },
+  support_ticket_update: { label: 'تحديث طلب دعم', icon: 'support_agent', lead: 'pink' },
 }
 
 export const EXAM_GENERATION_STATUS: Record<

@@ -14,6 +14,9 @@ const TYPE_META: Record<NotificationType, { icon: string; lead: string }> = {
   announcement: { icon: 'campaign', lead: 'pink' },
   course_update: { icon: 'menu_book', lead: '' },
   system: { icon: 'info', lead: '' },
+  discussion_reply: { icon: 'forum', lead: '' },
+  discussion_accepted: { icon: 'check_circle', lead: 'green' },
+  support_ticket_update: { icon: 'support_agent', lead: 'pink' },
 }
 
 // Panel only shows a recent slice — the full filterable list already
