@@ -20,6 +20,13 @@ const AppDataSource = new DataSource({
   entities: ['src/**/*.entity.ts'],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,
+  // Each migration commits in its own transaction. The default ('all') runs
+  // every pending migration in a single transaction, which breaks
+  // `ALTER TYPE ... ADD VALUE` migrations: Postgres forbids referencing a
+  // freshly added enum value until the transaction that added it commits
+  // (error 55P04), so the ADD VALUE must be committed before a later
+  // migration can read the new value.
+  migrationsTransactionMode: 'each',
   logging: process.env.NODE_ENV === 'development',
 });
 

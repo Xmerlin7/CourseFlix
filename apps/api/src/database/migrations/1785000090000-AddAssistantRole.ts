@@ -3,8 +3,16 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Single-teacher platform pivot. Adds `assistant` as a fourth value of the
  * existing `user_role` enum (see 1785000072000-AddAdminRole for why this
- * has to be a standalone migration — `ALTER TYPE ... ADD VALUE` cannot run
- * in the same transaction as a statement that *reads* the new value).
+ * has to be a standalone migration — Postgres refuses to *reference* a
+ * newly added enum value until the transaction that added it commits, so
+ * the ADD VALUE must be in a different transaction from any DDL that reads
+ * `'assistant'` (error 55P04, "unsafe use of new value").
+ *
+ * The data-source runs migrations with `migrationsTransactionMode: 'each'`,
+ * so each migration commits on its own — this one only adds the value, and
+ * 1785000091000-AddManagedByTeacherIdAndSingleTeacherConstraint (which
+ * references it in a CHECK constraint) runs in a later, committed
+ * transaction.
  *
  * Also adds `managed_by_teacher_id`, which only assistants populate (an
  * assistant is scoped to exactly one teacher's courses/students), and a

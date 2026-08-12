@@ -64,6 +64,7 @@ describe('CommerceService', () => {
       findOne: jest.fn(),
       create: jest.fn((input: Partial<EnrollmentEntity>) => input),
       save: jest.fn(),
+      update: jest.fn(),
     };
     return {
       getRepository: jest.fn((entity: unknown) => {
@@ -291,12 +292,67 @@ describe('CommerceService', () => {
           priceMinor: 50000,
         },
       ]);
-      manager.enrollmentRepo.findOne.mockResolvedValue({ id: 'existing' });
+      manager.enrollmentRepo.findOne.mockResolvedValue({
+        id: 'existing',
+        status: 'active',
+        deletedAt: null,
+      });
 
       await commerceService.confirmOrder(studentId, orderId, {
         simulate: 'success',
       });
 
+      expect(manager.enrollmentRepo.save).not.toHaveBeenCalled();
+      expect(manager.enrollmentRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('reactivates a previously completed enrollment instead of duplicating', async () => {
+      const manager = mockManager();
+      const transaction = jest.fn(
+        async <T>(
+          fn: (manager: ReturnType<typeof mockManager>) => Promise<T>,
+        ): Promise<T> => fn(manager),
+      );
+      const dataSource = { transaction };
+      (commerceService as unknown as { dataSource: unknown }).dataSource =
+        dataSource;
+
+      manager.orderRepo.findOne.mockResolvedValue({
+        id: orderId,
+        studentId,
+        status: 'pending',
+        paymentStatus: 'pending',
+        currency: 'EGP',
+        totalMinor: 50000,
+        paidAt: null,
+        createdAt: new Date(),
+      });
+      manager.orderRepo.save.mockImplementation(
+        (order: Partial<OrderEntity>) => order,
+      );
+      orderItemsRepository.find.mockResolvedValue([
+        {
+          id: 'item-1',
+          orderId,
+          courseId,
+          titleSnapshot: publishedCourse.title,
+          priceMinor: 50000,
+        },
+      ]);
+      manager.enrollmentRepo.findOne.mockResolvedValue({
+        id: 'existing',
+        status: 'completed',
+        deletedAt: null,
+      });
+
+      await commerceService.confirmOrder(studentId, orderId, {
+        simulate: 'success',
+      });
+
+      expect(manager.enrollmentRepo.update).toHaveBeenCalledWith(
+        { id: 'existing' },
+        { status: 'active', deletedAt: null },
+      );
       expect(manager.enrollmentRepo.save).not.toHaveBeenCalled();
     });
 

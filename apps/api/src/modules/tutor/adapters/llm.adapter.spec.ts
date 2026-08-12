@@ -6,7 +6,7 @@ describe('OpenAILlmProvider', () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
-    global.fetch = fetchMock as unknown as typeof fetch;
+    global.fetch = fetchMock;
   });
 
   it('calls the Responses API and keeps only citations from retrieved chunks', async () => {

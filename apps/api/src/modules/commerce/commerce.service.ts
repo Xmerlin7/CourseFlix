@@ -379,9 +379,19 @@ export class CommerceService {
   ): Promise<void> {
     const repository = manager.getRepository(EnrollmentEntity);
     const existing = await repository.findOne({
-      where: { studentId, courseId, status: 'active', deletedAt: IsNull() },
+      where: { studentId, courseId },
+      lock: { mode: 'pessimistic_write' },
     });
     if (existing) {
+      // A prior enrollment may be 'completed', 'suspended', or soft-deleted;
+      // the unique index (student_id, course_id) forbids a second row, so
+      // re-activate instead of inserting.
+      if (existing.status !== 'active' || existing.deletedAt !== null) {
+        await repository.update(
+          { id: existing.id },
+          { status: 'active', deletedAt: null },
+        );
+      }
       return;
     }
     await repository.save(

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { pushDataLayerEvent } from '../../../shared/analytics/dataLayer'
+import { uuid } from '../../../shared/lib/uuid'
 import {
   confirmOrder,
   createOrder,
@@ -25,7 +26,7 @@ interface UseCheckoutResult {
 // re-mount or an accidental double submit returns the existing draft
 // order instead of creating a second one — see docs/api/sprint3-commerce.md.
 function makeIdempotencyKey(courseId: string): string {
-  return `checkout-${courseId}-${crypto.randomUUID()}`
+  return `checkout-${courseId}-${uuid()}`
 }
 
 export function useCheckout(courseId: string): UseCheckoutResult {
