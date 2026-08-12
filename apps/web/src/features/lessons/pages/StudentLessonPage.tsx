@@ -217,6 +217,8 @@ export function StudentLessonPage() {
     videoRef,
     enabled: !isTeacher && Boolean(data),
     externalTracking: Boolean(iframeEmbedUrl),
+    externalIsPlaying: activeController.isPlaying,
+    externalCurrentTimeSeconds: activeController.currentTime,
     fallbackDurationSeconds: progressDurationSeconds,
     initialPositionSeconds: data?.progress.lastPositionSeconds ?? 0,
     initialWatchedPercentage: data?.progress.watchedPercentage ?? 0,

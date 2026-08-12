@@ -169,8 +169,13 @@ describe('StudentLessonPage', () => {
     )
   })
 
-  it('sends progress heartbeats for embedded YouTube and Bunny players', async () => {
-    let progressPayload: unknown
+  it('does not report any watch progress for an embedded player that never started playing', async () => {
+    // Regression test for a bug where a paused/not-yet-started YouTube or
+    // Bunny embed still "watched itself": the heartbeat used to run on a
+    // plain interval that assumed 15s of playback per tick regardless of
+    // the player's actual play state. See useProgressHeartbeat.spec.ts for
+    // the detailed coverage of the fixed, play-state-gated behavior.
+    let progressRequestCount = 0
     const setIntervalSpy = vi
       .spyOn(globalThis, 'setInterval')
       .mockImplementation((handler: TimerHandler) => {
@@ -210,8 +215,8 @@ describe('StudentLessonPage', () => {
           },
         }),
       ),
-      http.post(`${env.apiBaseUrl}/lessons/lesson-1/progress`, async ({ request }) => {
-        progressPayload = await request.json()
+      http.post(`${env.apiBaseUrl}/lessons/lesson-1/progress`, async () => {
+        progressRequestCount += 1
         return HttpResponse.json({
           watchedPercentage: 2.5,
           status: 'in_progress',
@@ -224,14 +229,12 @@ describe('StudentLessonPage', () => {
       renderPage()
       expect(await screen.findByTitle('درس Bunny')).toBeInTheDocument()
 
-      await waitFor(() => {
-        expect(progressPayload).toEqual({
-          positionSeconds: 15,
-          watchedSeconds: 15,
-          durationSeconds: 600,
-        })
-      })
-      expect(screen.getByText('3%')).toBeInTheDocument()
+      // player.js never loads/reports "playing" in this test environment,
+      // so even with the interval mocked to fire immediately, no heartbeat
+      // should ever be sent.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      expect(progressRequestCount).toBe(0)
+      expect(screen.getByText('0%')).toBeInTheDocument()
     } finally {
       setIntervalSpy.mockRestore()
     }
