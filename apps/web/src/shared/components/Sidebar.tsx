@@ -53,14 +53,14 @@ const teacherNavItems: NavItem[] = [
 // anything payment- or analytics-adjacent — mirrors the API's
 // TeacherRoleGuard-only controllers and the router's nested
 // RequireRole("teacher") around those same four routes.
+const TEACHER_ONLY_PATHS: string[] = [
+  ROUTE_PATHS.TEACHER.AGENT_LOGS,
+  ROUTE_PATHS.TEACHER.INTERVENTIONS,
+  ROUTE_PATHS.TEACHER.SALES,
+  ROUTE_PATHS.TEACHER.ANALYTICS,
+]
 const assistantNavItems: NavItem[] = teacherNavItems.filter(
-  (item) =>
-    ![
-      ROUTE_PATHS.TEACHER.AGENT_LOGS,
-      ROUTE_PATHS.TEACHER.INTERVENTIONS,
-      ROUTE_PATHS.TEACHER.SALES,
-      ROUTE_PATHS.TEACHER.ANALYTICS,
-    ].includes(item.path),
+  (item) => !TEACHER_ONLY_PATHS.includes(item.path),
 )
 
 // Grows alongside the admin route surface — only nav items whose route
