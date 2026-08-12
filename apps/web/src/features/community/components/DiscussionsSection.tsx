@@ -122,7 +122,6 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
       ) : data.length === 0 ? (
         search ? (
           <EmptyState
-            compact
             variant="search"
             title="لم نجد أي مناقشات مطابقة لبحثك"
             actionLabel="مسح البحث"
@@ -130,7 +129,6 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
           />
         ) : (
           <EmptyState
-            compact
             title="لا يوجد أسئلة بعد"
             message="كن أول من يسأل في هذه الدورة"
             actionLabel={isStudent ? 'اسأل أول سؤال' : undefined}

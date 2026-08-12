@@ -329,7 +329,6 @@ function StudentHomeAnnouncements({ courseId, courseTitle }: { courseId: string;
 
       {latestAnnouncements.length === 0 ? (
         <EmptyState
-          compact
           title="لا توجد إعلانات بعد"
           message="ستظهر إعلانات المدرس هنا عند نشرها"
         />

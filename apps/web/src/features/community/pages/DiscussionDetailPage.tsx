@@ -213,7 +213,6 @@ export function DiscussionDetailPage() {
 
       {data.replies.length === 0 ? (
         <EmptyState
-          compact
           title="لا توجد ردود بعد"
           message="كن أول من يجيب على هذا السؤال."
         />
