@@ -6,6 +6,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface ResetStep {
   email: string
+  devCode?: string
 }
 
 interface ForgotPasswordFormProps {
@@ -37,7 +38,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
     setIsSubmitting(true)
     try {
       const response = await requestPasswordReset(trimmedEmail)
-      setResetStep({ email: response.email })
+      setResetStep({ email: response.email, devCode: response.devCode })
     } catch (caughtError) {
       setError(resolveError(caughtError))
     } finally {
@@ -91,6 +92,19 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
   if (resetStep) {
     return (
       <form onSubmit={(event) => void handleReset(event)} noValidate>
+        {resetStep.devCode && (
+          <p className="otp-dev-hint" role="note">
+            <span className="ms sm" aria-hidden="true">code</span>
+            وضع التطوير: إرسال الإيميل مش متظبط، الكود هو{' '}
+            <button
+              type="button"
+              className="otp-dev-hint-code"
+              onClick={() => setCode(resetStep.devCode ?? '')}
+            >
+              {resetStep.devCode}
+            </button>
+          </p>
+        )}
         <div className="tf">
           <label htmlFor="reset-code">رمز التحقق</label>
           <input

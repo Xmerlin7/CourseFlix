@@ -14,6 +14,10 @@ interface VerifyCodeFormProps {
   // code was actually issued (e.g. register-resume: accountStatus 'active'
   // means the account is already verified, not pending verification).
   onResendResult?: (response: OtpResponse) => void
+  // Only ever set when the API isn't configured to actually send email
+  // (local/dev) — the backend echoes the code back in the response instead
+  // of mailing it. Never present in production.
+  devCode?: string
 }
 
 // Shared code-entry step for the register-verification and passwordless-login
@@ -25,12 +29,14 @@ export function VerifyCodeForm({
   onResend,
   onVerified,
   onResendResult,
+  devCode,
 }: VerifyCodeFormProps) {
   const { verifyOtp } = useAuth()
   const [code, setCode] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [currentDevCode, setCurrentDevCode] = useState(devCode)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -58,6 +64,7 @@ export function VerifyCodeForm({
     setIsResending(true)
     try {
       const response = await onResend(email)
+      setCurrentDevCode(response.devCode)
       onResendResult?.(response)
     } catch (caughtError) {
       setError(resolveVerifyError(caughtError))
@@ -68,6 +75,15 @@ export function VerifyCodeForm({
 
   return (
     <form onSubmit={(event) => void handleSubmit(event)} noValidate>
+      {currentDevCode && (
+        <p className="otp-dev-hint" role="note">
+          <span className="ms sm" aria-hidden="true">code</span>
+          وضع التطوير: إرسال الإيميل مش متظبط، الكود هو{' '}
+          <button type="button" className="otp-dev-hint-code" onClick={() => setCode(currentDevCode)}>
+            {currentDevCode}
+          </button>
+        </p>
+      )}
       <div className="tf">
         <label htmlFor="otpCode">رمز التحقق</label>
         <input

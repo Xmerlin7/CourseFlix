@@ -55,6 +55,7 @@ function resolveApiError(error: unknown): string {
 
 interface OtpStep {
   email: string
+  devCode?: string
 }
 
 // Standard login, now in two steps: correct email + password first, then a
@@ -85,7 +86,7 @@ export function LoginForm() {
       if ('role' in result) {
         navigate(getRoleHomePath(result.role), { replace: true })
       } else {
-        setOtpStep({ email: result.email })
+        setOtpStep({ email: result.email, devCode: result.devCode })
       }
     } catch (caughtError) {
       setError(resolveApiError(caughtError))
@@ -104,6 +105,7 @@ export function LoginForm() {
         <VerifyCodeForm
           email={otpStep.email}
           purpose="login"
+          devCode={otpStep.devCode}
           onResend={(email) => requestOtp({ email, purpose: 'login' })}
           onVerified={(user) => navigate(getRoleHomePath(user.role), { replace: true })}
         />
