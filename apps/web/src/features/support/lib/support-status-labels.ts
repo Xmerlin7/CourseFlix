@@ -13,7 +13,7 @@ export const TICKET_STATUS_META: Record<
   { label: string; icon: string; chipClass: string }
 > = {
   open: { label: 'مفتوح', icon: 'radio_button_unchecked', chipClass: '' },
-  in_progress: { label: 'قيد المعالجة', icon: 'sync', chipClass: '' },
+  in_progress: { label: 'قيد المعالجة', icon: 'sync', chipClass: 'primary' },
   waiting_for_student: { label: 'بانتظار ردك', icon: 'hourglass_top', chipClass: 'pink' },
   resolved: { label: 'تم الحل', icon: 'check_circle', chipClass: 'green' },
   closed: { label: 'مغلق', icon: 'cancel', chipClass: 'outline' },
