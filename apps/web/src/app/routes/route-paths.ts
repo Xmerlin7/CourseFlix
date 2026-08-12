@@ -29,6 +29,8 @@ export const ROUTE_PATHS = {
     DISCUSSION_DETAIL: '/student/discussions/:threadId',
     SUPPORT: '/student/support',
     SUPPORT_DETAIL: '/student/support/:ticketId',
+    COMMUNITY: '/student/community',
+    COMMUNITY_COURSE: '/student/community/:courseId',
   },
 
   TEACHER: {
