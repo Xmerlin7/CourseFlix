@@ -3,9 +3,9 @@ import { CourseDetailView } from '../../courses/components/CourseDetailView'
 import { useCourseDetail } from '../../courses/hooks/useCourseDetail'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { useCourseQuizzes } from '../../quizzes/hooks/useCourseQuizzes'
+import { StudentCourseDetailSkeleton } from '../components/StudentCourseDetailSkeleton'
 
 export function StudentCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -13,7 +13,7 @@ export function StudentCourseDetailPage() {
   const quizzes = useCourseQuizzes(courseId ?? '')
 
   if (isLoading) {
-    return <LoadingState variant="text" />
+    return <StudentCourseDetailSkeleton />
   }
 
   if (error) {

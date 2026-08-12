@@ -3,6 +3,8 @@ import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { ApiError } from '../../../shared/api/api-error'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import { deleteTeacherCourse, updateTeacherCourse } from '../api/teacher.api'
 import type { TeacherCourse } from '../types/teacher.types'
 
@@ -14,6 +16,7 @@ interface TeacherCourseFormProps {
 export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
   const navigate = useNavigate()
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [title, setTitle] = useState(course.title)
   const [description, setDescription] = useState(course.description ?? '')
@@ -52,113 +55,131 @@ export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
     }
   }
 
-  async function handleDelete() {
-    if (!window.confirm('حذف الدورة نهائيًا مع كل الأقسام والدروس. متأكد؟')) return
+  async function handleDeleteConfirm() {
+    if (isDeleting) return
 
     setIsDeleting(true)
     setDeleteError(null)
     try {
       await deleteTeacherCourse(course.id)
+      setShowDeleteModal(false)
+      showToast('تم حذف الدورة بنجاح', 'success')
       navigate(ROUTE_PATHS.TEACHER.COURSES, { replace: true })
     } catch {
+      setShowDeleteModal(false)
       setDeleteError('تعذر حذف الدورة، حاول مرة أخرى')
+      showToast('حدث خطأ أثناء حذف الدورة. حاول مرة أخرى.', 'error')
       setIsDeleting(false)
     }
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} className="card">
-      <h3>تعديل بيانات الدورة</h3>
+    <>
+      <form onSubmit={(event) => void handleSubmit(event)} className="card">
+        <h3>تعديل بيانات الدورة</h3>
 
-      <div className="tf">
-        <label htmlFor="course-title">العنوان</label>
-        <input
-          id="course-title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          minLength={3}
-          maxLength={150}
-          required
-        />
-      </div>
+        <div className="tf">
+          <label htmlFor="course-title">العنوان</label>
+          <input
+            id="course-title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            minLength={3}
+            maxLength={150}
+            required
+          />
+        </div>
 
-      <div className="tf">
-        <label htmlFor="course-description">الوصف</label>
-        <textarea
-          id="course-description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          maxLength={5000}
-          rows={4}
-        />
-      </div>
+        <div className="tf">
+          <label htmlFor="course-description">الوصف</label>
+          <textarea
+            id="course-description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            maxLength={5000}
+            rows={4}
+          />
+        </div>
 
-      <div className="tf">
-        <label htmlFor="course-cover">رابط صورة الغلاف</label>
-        <input
-          id="course-cover"
-          value={coverImageUrl}
-          onChange={(event) => setCoverImageUrl(event.target.value)}
-          type="url"
-          placeholder="https://..."
-        />
-      </div>
+        <div className="tf">
+          <label htmlFor="course-cover">رابط صورة الغلاف</label>
+          <input
+            id="course-cover"
+            value={coverImageUrl}
+            onChange={(event) => setCoverImageUrl(event.target.value)}
+            type="url"
+            placeholder="https://..."
+          />
+        </div>
 
-      <div className="tf">
-        <label htmlFor="course-grade">الصف الدراسي</label>
-        <input
-          id="course-grade"
-          value={gradeLevel}
-          onChange={(event) => setGradeLevel(event.target.value)}
-          maxLength={100}
-        />
-      </div>
+        <div className="tf">
+          <label htmlFor="course-grade">الصف الدراسي</label>
+          <input
+            id="course-grade"
+            value={gradeLevel}
+            onChange={(event) => setGradeLevel(event.target.value)}
+            maxLength={100}
+          />
+        </div>
 
-      <div className="tf">
-        <label htmlFor="course-status">الحالة</label>
-        <select
-          id="course-status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as 'draft' | 'published')}
-        >
-          <option value="draft">مسودة</option>
-          <option value="published">منشورة</option>
-        </select>
-      </div>
+        <div className="tf">
+          <label htmlFor="course-status">الحالة</label>
+          <select
+            id="course-status"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as 'draft' | 'published')}
+          >
+            <option value="draft">مسودة</option>
+            <option value="published">منشورة</option>
+          </select>
+        </div>
 
-      {error && (
-        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
-          {error}
-        </p>
-      )}
+        {error && (
+          <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
+            {error}
+          </p>
+        )}
 
-      {savedAt && !error && (
-        <p role="status" style={{ color: 'var(--on-success-container)', fontSize: 13.5, fontWeight: 600 }}>
-          تم حفظ التعديلات بنجاح
-        </p>
-      )}
+        {savedAt && !error && (
+          <p role="status" style={{ color: 'var(--on-success-container)', fontSize: 13.5, fontWeight: 600 }}>
+            تم حفظ التعديلات بنجاح
+          </p>
+        )}
 
-      {deleteError && (
-        <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
-          {deleteError}
-        </p>
-      )}
+        {deleteError && (
+          <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600 }}>
+            {deleteError}
+          </p>
+        )}
 
-      <div className="actions">
-        <button type="submit" disabled={isSaving} className="btn">
-          {isSaving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
-        </button>
-        <button
-          type="button"
-          disabled={isDeleting}
-          onClick={() => void handleDelete()}
-          className="btn text"
-          style={{ color: 'var(--error)' }}
-        >
-          <span className="ms sm">delete</span>
-          {isDeleting ? 'جارٍ الحذف...' : 'حذف الدورة'}
-        </button>
-      </div>
-    </form>
+        <div className="actions">
+          <button type="submit" disabled={isSaving} className="btn">
+            {isSaving ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
+          </button>
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={() => setShowDeleteModal(true)}
+            className="btn text"
+            style={{ color: 'var(--error)' }}
+          >
+            <span className="ms sm">delete</span>
+            {isDeleting ? 'جارٍ الحذف...' : 'حذف الدورة'}
+          </button>
+        </div>
+      </form>
+
+      <ConfirmModal
+        open={showDeleteModal}
+        title="حذف الدورة"
+        message="هل أنت متأكد من حذف هذه الدورة نهائيًا مع كل الأقسام والدروس؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="حذف الدورة"
+        cancelLabel="إلغاء"
+        isLoading={isDeleting}
+        variant="danger"
+        onConfirm={() => void handleDeleteConfirm()}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+    </>
   )
 }

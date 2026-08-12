@@ -22,6 +22,8 @@ describe('LoginForm', () => {
         login,
         logout: vi.fn(),
         register: vi.fn(),
+        updateUser: vi.fn(),
+        verifyOtp: vi.fn(),
       },
     })
 
@@ -32,6 +34,7 @@ describe('LoginForm', () => {
     expect(login).toHaveBeenCalledWith({
       email: 'student@example.com',
       password: 'password123',
+      requireOtp: true,
     })
   })
 })

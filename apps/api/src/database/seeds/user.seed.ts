@@ -3,20 +3,31 @@ import * as argon2 from 'argon2';
 import { UserEntity } from '../../modules/users/entities/user.entity';
 
 export interface SeededUsers {
-  /** The primary demo teacher — a named field because the rest of the
-   *  fixture, and every doc that quotes credentials, points at this
-   *  specific account. */
+  /** The one and only demo teacher — a named field because the rest of
+   *  the fixture, and every doc that quotes credentials, points at this
+   *  specific account. The platform supports exactly one teacher, so
+   *  this is *the* teacher, not the first of several. */
   teacher: UserEntity;
+  /** The primary demo assistant — same "named because it's quoted
+   *  elsewhere" reasoning as `teacher`/`student`. */
+  assistant: UserEntity;
   /** The primary demo student, same reasoning. */
   student: UserEntity;
-  teachers: UserEntity[];
+  /** The bootstrap admin account — every other admin is created from
+   *  inside the admin dashboard, but that flow needs a first admin to
+   *  log in with, which only a seed can provide. */
+  admin: UserEntity;
+  /** Every seeded assistant, all scoped to `teacher` — a teacher can have
+   *  more than one, so the fixture demonstrates that instead of just
+   *  the primary one. Primary assistant first. */
+  assistants: UserEntity[];
   students: UserEntity[];
 }
 
 /**
- * Seeds the demo roster: two teachers and ten students, enough for the
- * dashboards, enrollment lists and notification feeds to look like a real
- * class instead of a single row.
+ * Seeds the demo roster: one teacher, a handful of assistants, an admin
+ * and ten students, enough for the dashboards, enrollment lists and
+ * notification feeds to look like a real class instead of a single row.
  *
  * Safe to run on every reseed: upserts by email instead of inserting
  * duplicates.
@@ -39,18 +50,42 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
     role: 'teacher',
   });
 
-  const secondTeacher = await upsertUser(repository, {
+  const assistant = await upsertUser(repository, {
     fullName: 'سارة إبراهيم',
-    email: 'sara.teacher@courseflix.local',
+    email: 'sara.assistant@courseflix.local',
     password: teacherPassword,
-    role: 'teacher',
+    role: 'assistant',
+    managedByTeacherId: teacher.id,
   });
+
+  // A teacher can have more than one assistant — two more here so that's
+  // demonstrable in the demo data instead of only ever showing one.
+  const extraAssistantNames = ['يوسف عادل', 'منى سيد'];
+  const extraAssistants: UserEntity[] = [];
+  for (const [index, fullName] of extraAssistantNames.entries()) {
+    extraAssistants.push(
+      await upsertUser(repository, {
+        fullName,
+        email: `assistant${index + 2}@courseflix.local`,
+        password: teacherPassword,
+        role: 'assistant',
+        managedByTeacherId: teacher.id,
+      }),
+    );
+  }
 
   const student = await upsertUser(repository, {
     fullName: 'عبدالله حبسه',
     email: requireEnv('SEED_STUDENT_EMAIL'),
     password: studentPassword,
     role: 'student',
+  });
+
+  const admin = await upsertUser(repository, {
+    fullName: 'Platform Admin',
+    email: requireEnv('SEED_ADMIN_EMAIL'),
+    password: requireEnv('SEED_ADMIN_PASSWORD'),
+    role: 'admin',
   });
 
   const extraStudentNames = [
@@ -81,8 +116,10 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
 
   return {
     teacher,
+    assistant,
     student,
-    teachers: [teacher, secondTeacher],
+    admin,
+    assistants: [assistant, ...extraAssistants],
     students: [student, ...extraStudents],
   };
 }
@@ -93,13 +130,21 @@ async function upsertUser(
     fullName: string;
     email: string;
     password: string;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'admin' | 'assistant';
     status?: 'active' | 'suspended' | 'inactive';
+    managedByTeacherId?: string;
   },
 ): Promise<UserEntity> {
   const email = input.email.trim().toLowerCase();
   const existing = await repository.findOne({ where: { email } });
   if (existing) {
+    // Seeded accounts are admin-created, so their email is trusted — stamp
+    // email_verified_at so the post-registration-verification invariant
+    // ("active accounts are verified") holds for demo data too.
+    if (!existing.emailVerifiedAt) {
+      existing.emailVerifiedAt = new Date();
+      await repository.save(existing);
+    }
     return existing;
   }
 
@@ -111,6 +156,8 @@ async function upsertUser(
       passwordHash,
       role: input.role,
       status: input.status ?? 'active',
+      managedByTeacherId: input.managedByTeacherId ?? null,
+      emailVerifiedAt: new Date(),
     }),
   );
 }

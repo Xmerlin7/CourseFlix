@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react'
+import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { showToast } from '../../../shared/components/Toast'
 import {
   createLesson,
   createSection,
@@ -41,6 +43,11 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
 
   const [busyEntityId, setBusyEntityId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'section' | 'lesson'
+    id: string
+  } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   function draftFor(sectionId: string): LessonDraft {
     return lessonDrafts[sectionId] ?? EMPTY_LESSON_DRAFT
@@ -98,17 +105,42 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
     }
   }
 
-  async function handleDeleteSection(sectionId: string) {
-    if (!window.confirm('حذف القسم هيحذف كل الدروس اللي جواه. متأكد؟')) return
 
-    setBusyEntityId(sectionId)
+  async function handleDeleteSection(sectionId: string) {
+    setDeleteTarget({ type: 'section', id: sectionId })
+  }
+
+  async function handleDeleteLesson(lessonId: string) {
+    setDeleteTarget({ type: 'lesson', id: lessonId })
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget || isDeleting) return
+
+    setIsDeleting(true)
+    setBusyEntityId(deleteTarget.id)
     setActionError(null)
+
     try {
-      await deleteSection(sectionId)
+      if (deleteTarget.type === 'section') {
+        await deleteSection(deleteTarget.id)
+        showToast('تم حذف القسم بنجاح', 'success')
+      } else {
+        await deleteLesson(deleteTarget.id)
+        showToast('تم حذف الدرس بنجاح', 'success')
+      }
+      setDeleteTarget(null)
       onChange()
     } catch {
-      setActionError('تعذر حذف القسم')
+      showToast(
+        deleteTarget.type === 'section'
+          ? 'حدث خطأ أثناء حذف القسم. حاول مرة أخرى.'
+          : 'حدث خطأ أثناء حذف الدرس. حاول مرة أخرى.',
+        'error',
+      )
+      setActionError(deleteTarget.type === 'section' ? 'تعذر حذف القسم' : 'تعذر حذف الدرس')
     } finally {
+      setIsDeleting(false)
       setBusyEntityId(null)
     }
   }
@@ -158,21 +190,6 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
       onChange()
     } catch {
       setActionError('تعذر تحديث حالة الدرس')
-    } finally {
-      setBusyEntityId(null)
-    }
-  }
-
-  async function handleDeleteLesson(lessonId: string) {
-    if (!window.confirm('حذف الدرس نهائيًا. متأكد؟')) return
-
-    setBusyEntityId(lessonId)
-    setActionError(null)
-    try {
-      await deleteLesson(lessonId)
-      onChange()
-    } catch {
-      setActionError('تعذر حذف الدرس')
     } finally {
       setBusyEntityId(null)
     }
@@ -401,6 +418,22 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
           </div>
         )
       })}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title={deleteTarget?.type === 'section' ? 'حذف القسم' : 'حذف الدرس'}
+        message={
+          deleteTarget?.type === 'section'
+            ? 'حذف القسم سيؤدي إلى حذف كل الدروس الموجودة بداخله. هل أنت متأكد؟'
+            : 'هل أنت متأكد من حذف هذا الدرس نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.'
+        }
+        confirmLabel={deleteTarget?.type === 'section' ? 'حذف القسم' : 'حذف الدرس'}
+        cancelLabel="إلغاء"
+        isLoading={isDeleting}
+        variant="danger"
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </section>
   )
 }

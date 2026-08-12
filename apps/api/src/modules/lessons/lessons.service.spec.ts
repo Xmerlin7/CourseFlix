@@ -11,7 +11,7 @@ import { LessonsService } from './lessons.service';
 
 describe('LessonsService', () => {
   let lessonsService: LessonsService;
-  let lessonsRepository: { findOne: jest.Mock };
+  let lessonsRepository: { findOne: jest.Mock; createQueryBuilder: jest.Mock };
   let coursesRepository: {
     createQueryBuilder: jest.Mock;
   };
@@ -78,7 +78,17 @@ describe('LessonsService', () => {
   } as VideoEntity;
 
   beforeEach(async () => {
-    lessonsRepository = { findOne: jest.fn().mockResolvedValue(lesson) };
+    lessonsRepository = {
+      findOne: jest.fn().mockResolvedValue(lesson),
+      createQueryBuilder: jest.fn(() => ({
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      })),
+    };
     coursesRepository = {
       createQueryBuilder: jest.fn(() => ({
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -374,6 +384,181 @@ describe('LessonsService', () => {
         videoId,
         watchedSeconds: 280,
         watchedPercentage: 70,
+      });
+    });
+  });
+
+  describe('getCourseProgressSummaries', () => {
+    function mockCourseLessons(lessons: LessonEntity[]) {
+      lessonsRepository.createQueryBuilder = jest.fn(() => ({
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(lessons),
+      }));
+    }
+
+    const courseLessons = [
+      { id: lessonId, courseId, title: 'الدرس الأول', sortOrder: 1 },
+      {
+        id: completedLessonId,
+        courseId,
+        title: 'الدرس المكتمل',
+        sortOrder: 2,
+      },
+    ] as LessonEntity[];
+
+    it('returns an empty map without querying when no course ids are given', async () => {
+      const result = await lessonsService.getCourseProgressSummaries(
+        studentId,
+        [],
+      );
+
+      expect(result.size).toBe(0);
+      expect(lessonsRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('a never-started course resumes from its first lesson', async () => {
+      mockCourseLessons(courseLessons);
+      videosRepository.find.mockResolvedValue([video, completedVideo]);
+      progressRepository.find.mockResolvedValue([]);
+
+      const result = await lessonsService.getCourseProgressSummaries(
+        studentId,
+        [courseId],
+      );
+
+      expect(result.get(courseId)).toEqual({
+        totalLessonsCount: 2,
+        completedLessonsCount: 0,
+        progressPercent: 0,
+        currentLesson: {
+          id: lessonId,
+          title: 'الدرس الأول',
+          lastVideoPosition: 0,
+        },
+        lastActivityAt: null,
+        lastCompletedLesson: null,
+      });
+    });
+
+    it('an in-progress lesson takes priority as the resume target', async () => {
+      mockCourseLessons(courseLessons);
+      videosRepository.find.mockResolvedValue([video, completedVideo]);
+      progressRepository.find.mockResolvedValue([
+        {
+          videoId,
+          status: 'in_progress',
+          lastVideoPosition: 42,
+          completedAt: null,
+        },
+      ]);
+
+      const result = await lessonsService.getCourseProgressSummaries(
+        studentId,
+        [courseId],
+      );
+
+      expect(result.get(courseId)).toMatchObject({
+        progressPercent: 0,
+        currentLesson: {
+          id: lessonId,
+          title: 'الدرس الأول',
+          lastVideoPosition: 42,
+        },
+      });
+    });
+
+    it('falls back to the last completed lesson when nothing is in progress', async () => {
+      mockCourseLessons(courseLessons);
+      videosRepository.find.mockResolvedValue([video, completedVideo]);
+      const completedAt = new Date('2026-08-01T00:00:00.000Z');
+      progressRepository.find.mockResolvedValue([
+        {
+          videoId: completedVideoId,
+          status: 'completed',
+          lastVideoPosition: 300,
+          completedAt,
+        },
+      ]);
+
+      const result = await lessonsService.getCourseProgressSummaries(
+        studentId,
+        [courseId],
+      );
+
+      expect(result.get(courseId)).toEqual({
+        totalLessonsCount: 2,
+        completedLessonsCount: 1,
+        progressPercent: 50,
+        currentLesson: {
+          id: completedLessonId,
+          title: 'الدرس المكتمل',
+          lastVideoPosition: 300,
+        },
+        lastActivityAt: completedAt,
+        lastCompletedLesson: {
+          id: completedLessonId,
+          title: 'الدرس المكتمل',
+          lastVideoPosition: 300,
+        },
+      });
+    });
+
+    it('a fully completed course has no resume target', async () => {
+      mockCourseLessons(courseLessons);
+      videosRepository.find.mockResolvedValue([video, completedVideo]);
+      progressRepository.find.mockResolvedValue([
+        {
+          videoId,
+          status: 'completed',
+          lastVideoPosition: 400,
+          completedAt: new Date('2026-08-01T00:00:00.000Z'),
+        },
+        {
+          videoId: completedVideoId,
+          status: 'completed',
+          lastVideoPosition: 300,
+          completedAt: new Date('2026-08-02T00:00:00.000Z'),
+        },
+      ]);
+
+      const result = await lessonsService.getCourseProgressSummaries(
+        studentId,
+        [courseId],
+      );
+
+      expect(result.get(courseId)).toMatchObject({
+        completedLessonsCount: 2,
+        progressPercent: 100,
+        currentLesson: null,
+        lastCompletedLesson: {
+          id: completedLessonId,
+          title: 'الدرس المكتمل',
+          lastVideoPosition: 300,
+        },
+      });
+    });
+
+    it('a course with no lessons yet gets a zeroed-out summary, not a missing entry', async () => {
+      mockCourseLessons([]);
+      videosRepository.find.mockResolvedValue([]);
+      progressRepository.find.mockResolvedValue([]);
+
+      const result = await lessonsService.getCourseProgressSummaries(
+        studentId,
+        [courseId],
+      );
+
+      expect(result.get(courseId)).toEqual({
+        totalLessonsCount: 0,
+        completedLessonsCount: 0,
+        progressPercent: 0,
+        currentLesson: null,
+        lastActivityAt: null,
+        lastCompletedLesson: null,
       });
     });
   });

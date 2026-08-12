@@ -3,6 +3,7 @@ export type EnrollmentStatus = 'active' | 'suspended' | 'completed'
 export interface StudentDashboardStats {
   enrolledCoursesCount: number
   activeCoursesCount: number
+  completedCoursesCount: number
 }
 
 export interface StudentDashboardRecentCourse {
@@ -17,19 +18,49 @@ export interface StudentDashboardRecentCourse {
   enrolledAt: string
 }
 
+export interface StudentCurrentLesson {
+  id: string
+  title: string
+  /** Seconds into the video the student last watched to — the video player seeks here on resume. */
+  lastVideoPosition: number
+}
+
+export interface StudentDashboardContinueLearning {
+  courseId: string
+  courseTitle: string | null
+  coverImageUrl: string | null
+  gradeLevel: string | null
+  progressPercent: number
+  completedLessonsCount: number
+  totalLessonsCount: number
+  currentLesson: StudentCurrentLesson
+}
+
+export type StudentActivityType = 'enrolled' | 'lesson_completed'
+
+export interface StudentDashboardActivityItem {
+  type: StudentActivityType
+  courseId: string
+  courseTitle: string | null
+  lessonTitle: string | null
+  occurredAt: string
+}
+
 export interface StudentDashboard {
   student: {
     id: string
-    fullName: string
-    email: string
+    // Nullable: the profile lookup can miss (e.g. a since-deleted user row).
+    fullName: string | null
+    email: string | null
     avatarUrl: string | null
   }
   stats: StudentDashboardStats
-  // Both stay null until progress tracking lands — see the Sprint 1
-  // boundary note in docs/api-conventions.md.
-  overallProgressPercent: null
-  continueLearning: null
+  /** Average progress across courses with trackable lessons; null when none do. */
+  overallProgressPercent: number | null
+  continueLearning: StudentDashboardContinueLearning | null
   recentCourses: StudentDashboardRecentCourse[]
+  /** Most recent enrollment/lesson-completion events, newest first. */
+  recentActivity: StudentDashboardActivityItem[]
 }
 
 export interface StudentEnrollment {
@@ -42,9 +73,25 @@ export interface StudentEnrollment {
   coverImageUrl: string | null
   gradeLevel?: string
   status: EnrollmentStatus
+  /** 0-100, derived from completedLessonsCount/totalLessonsCount server-side. */
+  progressPercent: number
+  completedLessonsCount: number
+  totalLessonsCount: number
+  /** The lesson to resume into; null once every lesson is completed or the course has no lessons yet. */
+  currentLesson: StudentCurrentLesson | null
+  lastActivityAt: string
 }
 
 export interface StudentEnrollmentFilters {
   status?: EnrollmentStatus
   gradeLevel?: string
+}
+
+export interface StudentCommunitySummaryItem {
+  courseId: string
+  /** A single line — latest discussion thread or announcement — or null when the course has no community activity yet. */
+  preview: string | null
+  lastActivityAt: string | null
+  /** Unread discussion_reply/discussion_accepted notifications addressed to this student for this course. */
+  unreadCount: number
 }

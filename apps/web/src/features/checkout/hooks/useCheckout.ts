@@ -1,16 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { pushDataLayerEvent } from '../../../shared/analytics/dataLayer'
-import { confirmOrder, createOrder } from '../api/checkout.api'
+import { uuid } from '../../../shared/lib/uuid'
+import {
+  confirmOrder,
+  createOrder,
+  initiatePaymob,
+} from '../api/checkout.api'
 import type { Order, PaymentSimulation } from '../types/checkout.types'
 
 interface UseCheckoutResult {
   order: Order | null
   isCreating: boolean
   isConfirming: boolean
+  isInitiatingPaymob: boolean
   createError: ApiError | null
   confirmError: ApiError | null
+  paymobError: ApiError | null
   pay: (simulate?: PaymentSimulation) => Promise<void>
+  payWithPaymob: () => Promise<void>
   retryCreate: () => void
 }
 
@@ -18,15 +26,17 @@ interface UseCheckoutResult {
 // re-mount or an accidental double submit returns the existing draft
 // order instead of creating a second one — see docs/api/sprint3-commerce.md.
 function makeIdempotencyKey(courseId: string): string {
-  return `checkout-${courseId}-${crypto.randomUUID()}`
+  return `checkout-${courseId}-${uuid()}`
 }
 
 export function useCheckout(courseId: string): UseCheckoutResult {
   const [order, setOrder] = useState<Order | null>(null)
   const [isCreating, setIsCreating] = useState(true)
   const [isConfirming, setIsConfirming] = useState(false)
+  const [isInitiatingPaymob, setIsInitiatingPaymob] = useState(false)
   const [createError, setCreateError] = useState<ApiError | null>(null)
   const [confirmError, setConfirmError] = useState<ApiError | null>(null)
+  const [paymobError, setPaymobError] = useState<ApiError | null>(null)
   const [attempt, setAttempt] = useState(0)
   // Dedupes the purchase event: `order` can re-render with the same paid
   // order (e.g. a retried confirm returning the same authoritative state)
@@ -112,9 +122,48 @@ export function useCheckout(courseId: string): UseCheckoutResult {
     [order],
   )
 
+  const payWithPaymob = useCallback(async () => {
+    if (!order) return
+
+    setIsInitiatingPaymob(true)
+    setPaymobError(null)
+    try {
+      const { paymentUrl } = await initiatePaymob(order.orderReference)
+      pushDataLayerEvent('checkout_redirect', {
+        courseId,
+        orderReference: order.orderReference,
+      })
+      // Full-page navigation to Paymob's hosted iframe page. On completion
+      // Paymob redirects the browser back to the API's GET webhook, which
+      // routes to the paid course page (success) or /student/courses (decline).
+      window.location.href = paymentUrl
+    } catch (err) {
+      const apiError = err instanceof ApiError ? err : new ApiError('Unknown error', 0)
+      setPaymobError(apiError)
+      pushDataLayerEvent('checkout_error', {
+        courseId,
+        stage: 'paymob_init',
+        statusCode: apiError.status,
+      })
+    } finally {
+      setIsInitiatingPaymob(false)
+    }
+  }, [order, courseId])
+
   const retryCreate = useCallback(() => {
     setAttempt((value) => value + 1)
   }, [])
 
-  return { order, isCreating, isConfirming, createError, confirmError, pay, retryCreate }
+  return {
+    order,
+    isCreating,
+    isConfirming,
+    isInitiatingPaymob,
+    createError,
+    confirmError,
+    paymobError,
+    pay,
+    payWithPaymob,
+    retryCreate,
+  }
 }

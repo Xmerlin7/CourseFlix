@@ -5,8 +5,34 @@ import { RequireRole } from './RequireRole'
 import { AuthLayout } from '../layouts/AuthLayout'
 import { StudentLayout } from '../layouts/StudentLayout'
 import { TeacherLayout } from '../layouts/TeacherLayout'
+import { AdminLayout } from '../layouts/AdminLayout'
 import { LoadingState } from '../../shared/components/LoadingState'
 import { ErrorState } from '../../shared/components/ErrorState'
+import { StudentLessonSkeleton } from '../../features/lessons/components/StudentLessonSkeleton'
+import { TeacherSalesSkeleton } from '../../features/sales/components/TeacherSalesSkeleton'
+import { StudentHomeSkeleton } from '../../features/student/components/StudentHomeSkeleton'
+import { StudentBrowseCoursesSkeleton } from '../../features/student/components/StudentBrowseCoursesSkeleton'
+import { StudentCoursesSkeleton } from '../../features/student/components/StudentCoursesSkeleton'
+import { StudentCourseDetailSkeleton } from '../../features/student/components/StudentCourseDetailSkeleton'
+import { StudentQuizSkeleton } from '../../features/quizzes/components/StudentQuizSkeleton'
+import { NotificationsSkeleton } from '../../features/notifications/components/NotificationsSkeleton'
+import { StudentInterventionsSkeleton } from '../../features/interventions/components/StudentInterventionsSkeleton'
+import { TeacherInterventionsSkeleton } from '../../features/interventions/components/TeacherInterventionsSkeleton'
+import { StudentMiniQuizSkeleton } from '../../features/interventions/components/StudentMiniQuizSkeleton'
+import { TeacherDashboardSkeleton } from '../../features/teacher/components/TeacherDashboardSkeleton'
+import { TeacherCoursesSkeleton } from '../../features/teacher/components/TeacherCoursesSkeleton'
+import { TeacherStudentsSkeleton } from '../../features/teacher/components/TeacherStudentsSkeleton'
+import { TeacherCourseDetailSkeleton } from '../../features/teacher/components/TeacherCourseDetailSkeleton'
+import { AgentLogsSkeleton } from '../../features/agent-logs/components/AgentLogsSkeleton'
+import { SettingsSkeleton } from '../../features/settings/components/SettingsSkeleton'
+import { StudentProfileSkeleton } from '../../features/profile/components/StudentProfileSkeleton'
+import { LoginSkeleton } from '../../features/auth/components/LoginSkeleton'
+import { RegisterSkeleton } from '../../features/auth/components/RegisterSkeleton'
+import { DiscussionDetailSkeleton } from '../../features/community/components/DiscussionDetailSkeleton'
+import { StudentCommunitySkeleton } from '../../features/community/components/StudentCommunitySkeleton'
+import { SupportTicketsPageSkeleton } from '../../features/support/components/SupportTicketsPageSkeleton'
+import { SupportTicketDetailSkeleton } from '../../features/support/components/SupportTicketDetailSkeleton'
+import { SupportInboxSkeleton } from '../../features/support/components/SupportInboxSkeleton'
 
 // Lazy-loaded page components
 const LoginPage = lazy(() =>
@@ -14,6 +40,12 @@ const LoginPage = lazy(() =>
 )
 const RegisterPage = lazy(() =>
   import('../../features/auth/pages/RegisterPage').then((m) => ({ default: m.RegisterPage }))
+)
+const TermsPage = lazy(() =>
+  import('../../features/auth/pages/TermsPage').then((m) => ({ default: m.TermsPage }))
+)
+const PrivacyPage = lazy(() =>
+  import('../../features/auth/pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage }))
 )
 const StudentDashboardPage = lazy(() =>
   import('../../features/student/pages/StudentDashboardPage').then((m) => ({ default: m.StudentDashboardPage }))
@@ -54,6 +86,30 @@ const TeacherCourseDetailPage = lazy(() =>
 const NotificationsPage = lazy(() =>
   import('../../features/notifications/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage }))
 )
+const SettingsPage = lazy(() =>
+  import('../../features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+)
+const StudentProfilePage = lazy(() =>
+  import('../../features/profile/pages/StudentProfilePage').then((m) => ({ default: m.StudentProfilePage }))
+)
+const DiscussionDetailPage = lazy(() =>
+  import('../../features/community/pages/DiscussionDetailPage').then((m) => ({ default: m.DiscussionDetailPage }))
+)
+const StudentCommunityPage = lazy(() =>
+  import('../../features/community/pages/StudentCommunityPage').then((m) => ({ default: m.StudentCommunityPage }))
+)
+const StudentCourseCommunityPage = lazy(() =>
+  import('../../features/community/pages/StudentCourseCommunityPage').then((m) => ({ default: m.StudentCourseCommunityPage }))
+)
+const SupportTicketsPage = lazy(() =>
+  import('../../features/support/pages/SupportTicketsPage').then((m) => ({ default: m.SupportTicketsPage }))
+)
+const SupportTicketDetailPage = lazy(() =>
+  import('../../features/support/pages/SupportTicketDetailPage').then((m) => ({ default: m.SupportTicketDetailPage }))
+)
+const SupportInboxPage = lazy(() =>
+  import('../../features/support/pages/SupportInboxPage').then((m) => ({ default: m.SupportInboxPage }))
+)
 const AgentLogsPage = lazy(() =>
   import('../../features/agent-logs/pages/AgentLogsPage').then((m) => ({ default: m.AgentLogsPage }))
 )
@@ -87,6 +143,78 @@ const CheckoutPage = lazy(() =>
     default: m.CheckoutPage,
   }))
 )
+const AdminDashboardPage = lazy(() =>
+  import('../../features/admin/pages/AdminDashboardPage').then((m) => ({
+    default: m.AdminDashboardPage,
+  }))
+)
+const AdminUsersPage = lazy(() =>
+  import('../../features/admin/pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage }))
+)
+const AdminUserDetailPage = lazy(() =>
+  import('../../features/admin/pages/AdminUserDetailPage').then((m) => ({
+    default: m.AdminUserDetailPage,
+  }))
+)
+const AdminCreateAdminPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateAdminPage').then((m) => ({
+    default: m.AdminCreateAdminPage,
+  }))
+)
+const AdminCreateTeacherPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateTeacherPage').then((m) => ({
+    default: m.AdminCreateTeacherPage,
+  }))
+)
+const AdminCreateAssistantPage = lazy(() =>
+  import('../../features/admin/pages/AdminCreateAssistantPage').then((m) => ({
+    default: m.AdminCreateAssistantPage,
+  }))
+)
+const AdminCoursesPage = lazy(() =>
+  import('../../features/admin/pages/AdminCoursesPage').then((m) => ({ default: m.AdminCoursesPage }))
+)
+const AdminCourseDetailPage = lazy(() =>
+  import('../../features/admin/pages/AdminCourseDetailPage').then((m) => ({
+    default: m.AdminCourseDetailPage,
+  }))
+)
+const AdminOrdersPage = lazy(() =>
+  import('../../features/admin/pages/AdminOrdersPage').then((m) => ({ default: m.AdminOrdersPage }))
+)
+const AdminOrderDetailPage = lazy(() =>
+  import('../../features/admin/pages/AdminOrderDetailPage').then((m) => ({
+    default: m.AdminOrderDetailPage,
+  }))
+)
+const AdminQuizzesPage = lazy(() =>
+  import('../../features/admin/pages/AdminQuizzesPage').then((m) => ({ default: m.AdminQuizzesPage }))
+)
+const AdminQuizDetailPage = lazy(() =>
+  import('../../features/admin/pages/AdminQuizDetailPage').then((m) => ({
+    default: m.AdminQuizDetailPage,
+  }))
+)
+const AdminDocumentsPage = lazy(() =>
+  import('../../features/admin/pages/AdminDocumentsPage').then((m) => ({
+    default: m.AdminDocumentsPage,
+  }))
+)
+const AdminInterventionsPage = lazy(() =>
+  import('../../features/admin/pages/AdminInterventionsPage').then((m) => ({
+    default: m.AdminInterventionsPage,
+  }))
+)
+const AdminNotificationsLogPage = lazy(() =>
+  import('../../features/admin/pages/AdminNotificationsLogPage').then((m) => ({
+    default: m.AdminNotificationsLogPage,
+  }))
+)
+const AdminAgentLogsPage = lazy(() =>
+  import('../../features/admin/pages/AdminAgentLogsPage').then((m) => ({
+    default: m.AdminAgentLogsPage,
+  }))
+)
 
 // Lazy-loaded status pages
 const ForbiddenStatePage = lazy(() =>
@@ -108,8 +236,8 @@ export function RouteErrorBoundary() {
 }
 
 // Suspense helper for lazy-loaded route elements
-function SuspenseWrapper({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<LoadingState />}>{children}</Suspense>
+function SuspenseWrapper({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  return <Suspense fallback={fallback ?? <LoadingState />}>{children}</Suspense>
 }
 
 /**
@@ -131,7 +259,7 @@ export const router = createBrowserRouter([
       {
         path: ROUTE_PATHS.LOGIN,
         element: (
-          <SuspenseWrapper>
+          <SuspenseWrapper fallback={<LoginSkeleton />}>
             <LoginPage />
           </SuspenseWrapper>
         ),
@@ -139,12 +267,34 @@ export const router = createBrowserRouter([
       {
         path: ROUTE_PATHS.REGISTER,
         element: (
-          <SuspenseWrapper>
+          <SuspenseWrapper fallback={<RegisterSkeleton />}>
             <RegisterPage />
           </SuspenseWrapper>
         ),
       },
     ],
+  },
+
+  /* Public legal pages — own standalone shell (not AuthLayout's split
+     form screen), reachable while logged out (linked from the register
+     wizard) or logged in. */
+  {
+    path: ROUTE_PATHS.TERMS,
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <SuspenseWrapper>
+        <TermsPage />
+      </SuspenseWrapper>
+    ),
+  },
+  {
+    path: ROUTE_PATHS.PRIVACY,
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <SuspenseWrapper>
+        <PrivacyPage />
+      </SuspenseWrapper>
+    ),
   },
 
   /* Student Routes — gated behind RequireRole("student"): unauthenticated
@@ -160,7 +310,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.DASHBOARD,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentHomeSkeleton />}>
                 <StudentDashboardPage />
               </SuspenseWrapper>
             ),
@@ -168,7 +318,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.BROWSE,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentBrowseCoursesSkeleton />}>
                 <StudentBrowseCoursesPage />
               </SuspenseWrapper>
             ),
@@ -176,7 +326,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.COURSES,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentCoursesSkeleton />}>
                 <StudentCoursesPage />
               </SuspenseWrapper>
             ),
@@ -184,7 +334,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.COURSE_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentCourseDetailSkeleton />}>
                 <StudentCourseDetailPage />
               </SuspenseWrapper>
             ),
@@ -192,7 +342,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.LESSON_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentLessonSkeleton />}>
                 <StudentLessonPage />
               </SuspenseWrapper>
             ),
@@ -200,7 +350,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.QUIZ_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentQuizSkeleton />}>
                 <StudentQuizPage />
               </SuspenseWrapper>
             ),
@@ -216,7 +366,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.NOTIFICATIONS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<NotificationsSkeleton />}>
                 <NotificationsPage />
               </SuspenseWrapper>
             ),
@@ -224,7 +374,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.INTERVENTIONS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentInterventionsSkeleton />}>
                 <StudentInterventionsPage />
               </SuspenseWrapper>
             ),
@@ -232,7 +382,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.STUDENT.MINI_QUIZ,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentMiniQuizSkeleton />}>
                 <StudentMiniQuizPage />
               </SuspenseWrapper>
             ),
@@ -245,14 +395,74 @@ export const router = createBrowserRouter([
               </SuspenseWrapper>
             ),
           },
+          {
+            path: ROUTE_PATHS.STUDENT.SETTINGS,
+            element: (
+              <SuspenseWrapper fallback={<SettingsSkeleton />}>
+                <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.PROFILE,
+            element: (
+              <SuspenseWrapper fallback={<StudentProfileSkeleton />}>
+                <StudentProfilePage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.DISCUSSION_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<DiscussionDetailSkeleton />}>
+                <DiscussionDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.SUPPORT,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketsPageSkeleton />}>
+                <SupportTicketsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.SUPPORT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketDetailSkeleton />}>
+                <SupportTicketDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COMMUNITY,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <StudentCommunityPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COMMUNITY_COURSE,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <StudentCourseCommunityPage />
+              </SuspenseWrapper>
+            ),
+          },
         ],
       },
     ],
   },
 
-  /* Teacher Routes — gated behind RequireRole("teacher"). */
+  /* Teacher Routes — gated behind RequireRole(["teacher", "assistant"]).
+     Assistants share the teacher's course/student surface; anything
+     payment- or analytics-adjacent (sales, analytics, agent logs,
+     intervention reports) is nested under its own RequireRole("teacher")
+     below, mirroring the API's TeacherRoleGuard-only controllers. */
   {
-    element: <RequireRole role="teacher" />,
+    element: <RequireRole role={['teacher', 'assistant']} />,
     errorElement: <RouteErrorBoundary />,
     children: [
       {
@@ -262,7 +472,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.DASHBOARD,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherDashboardSkeleton />}>
                 <TeacherDashboardPage />
               </SuspenseWrapper>
             ),
@@ -270,7 +480,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.COURSES,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherCoursesSkeleton />}>
                 <TeacherCoursesPage />
               </SuspenseWrapper>
             ),
@@ -278,7 +488,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.STUDENTS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherStudentsSkeleton />}>
                 <TeacherStudentsPage />
               </SuspenseWrapper>
             ),
@@ -294,7 +504,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.COURSE_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<TeacherCourseDetailSkeleton />}>
                 <TeacherCourseDetailPage />
               </SuspenseWrapper>
             ),
@@ -302,7 +512,7 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.LESSON_DETAIL,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<StudentLessonSkeleton />}>
                 <StudentLessonPage />
               </SuspenseWrapper>
             ),
@@ -310,40 +520,262 @@ export const router = createBrowserRouter([
           {
             path: ROUTE_PATHS.TEACHER.NOTIFICATIONS,
             element: (
-              <SuspenseWrapper>
+              <SuspenseWrapper fallback={<NotificationsSkeleton />}>
                 <NotificationsPage />
               </SuspenseWrapper>
             ),
           },
           {
-            path: ROUTE_PATHS.TEACHER.AGENT_LOGS,
+            // Not teacher-only — assistants manage their own account too.
+            path: ROUTE_PATHS.TEACHER.SETTINGS,
             element: (
-              <SuspenseWrapper>
-                <AgentLogsPage />
+              <SuspenseWrapper fallback={<SettingsSkeleton />}>
+                <SettingsPage />
               </SuspenseWrapper>
             ),
           },
           {
-            path: ROUTE_PATHS.TEACHER.INTERVENTIONS,
+            path: ROUTE_PATHS.TEACHER.DISCUSSION_DETAIL,
             element: (
-              <SuspenseWrapper>
-                <TeacherInterventionsPage />
+              <SuspenseWrapper fallback={<DiscussionDetailSkeleton />}>
+                <DiscussionDetailPage />
               </SuspenseWrapper>
             ),
           },
           {
-            path: ROUTE_PATHS.TEACHER.SALES,
+            // Support staff is served by teacher/assistant/admin, not a new
+            // role — see SupportStaffRoleGuard on the API. Shared with
+            // assistants on purpose, so the teacher isn't the only one who
+            // can triage tickets.
+            path: ROUTE_PATHS.TEACHER.SUPPORT,
             element: (
-              <SuspenseWrapper>
-                <TeacherSalesPage />
+              <SuspenseWrapper fallback={<SupportInboxSkeleton />}>
+                <SupportInboxPage />
               </SuspenseWrapper>
             ),
           },
           {
-            path: ROUTE_PATHS.TEACHER.ANALYTICS,
+            path: ROUTE_PATHS.TEACHER.SUPPORT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketDetailSkeleton />}>
+                <SupportTicketDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            // Teacher-only: assistants get redirected to /403 here, same
+            // as hitting the equivalent API route.
+            element: <RequireRole role="teacher" />,
+            children: [
+              {
+                path: ROUTE_PATHS.TEACHER.AGENT_LOGS,
+                element: (
+                  <SuspenseWrapper fallback={<AgentLogsSkeleton />}>
+                    <AgentLogsPage />
+                  </SuspenseWrapper>
+                ),
+              },
+              {
+                path: ROUTE_PATHS.TEACHER.INTERVENTIONS,
+                element: (
+                  <SuspenseWrapper fallback={<TeacherInterventionsSkeleton />}>
+                    <TeacherInterventionsPage />
+                  </SuspenseWrapper>
+                ),
+              },
+              {
+                path: ROUTE_PATHS.TEACHER.SALES,
+                element: (
+                  <SuspenseWrapper fallback={<TeacherSalesSkeleton />}>
+                    <TeacherSalesPage />
+                  </SuspenseWrapper>
+                ),
+              },
+              {
+                path: ROUTE_PATHS.TEACHER.ANALYTICS,
+                element: (
+                  <SuspenseWrapper>
+                    <TeacherAnalyticsPage />
+                  </SuspenseWrapper>
+                ),
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  /* Admin Routes — gated behind RequireRole("admin"). */
+  {
+    element: <RequireRole role="admin" />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      {
+        path: ROUTE_PATHS.ADMIN.ROOT,
+        element: <AdminLayout />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to={ROUTE_PATHS.ADMIN.DASHBOARD} replace />,
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.DASHBOARD,
             element: (
               <SuspenseWrapper>
-                <TeacherAnalyticsPage />
+                <AdminDashboardPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.USERS,
+            element: (
+              <SuspenseWrapper>
+                <AdminUsersPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_ADMIN,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateAdminPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_TEACHER,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateTeacherPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.CREATE_ASSISTANT,
+            element: (
+              <SuspenseWrapper>
+                <AdminCreateAssistantPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.USER_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <AdminUserDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.COURSES,
+            element: (
+              <SuspenseWrapper>
+                <AdminCoursesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.COURSE_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <AdminCourseDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.ORDERS,
+            element: (
+              <SuspenseWrapper>
+                <AdminOrdersPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.ORDER_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <AdminOrderDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.QUIZZES,
+            element: (
+              <SuspenseWrapper>
+                <AdminQuizzesPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.QUIZ_DETAIL,
+            element: (
+              <SuspenseWrapper>
+                <AdminQuizDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.DOCUMENTS,
+            element: (
+              <SuspenseWrapper>
+                <AdminDocumentsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.INTERVENTIONS,
+            element: (
+              <SuspenseWrapper>
+                <AdminInterventionsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.NOTIFICATIONS,
+            element: (
+              <SuspenseWrapper fallback={<NotificationsSkeleton />}>
+                <NotificationsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG,
+            element: (
+              <SuspenseWrapper>
+                <AdminNotificationsLogPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.AGENT_LOGS,
+            element: (
+              <SuspenseWrapper>
+                <AdminAgentLogsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.SETTINGS,
+            element: (
+              <SuspenseWrapper fallback={<SettingsSkeleton />}>
+                <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.SUPPORT,
+            element: (
+              <SuspenseWrapper fallback={<SupportInboxSkeleton />}>
+                <SupportInboxPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.SUPPORT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketDetailSkeleton />}>
+                <SupportTicketDetailPage />
               </SuspenseWrapper>
             ),
           },

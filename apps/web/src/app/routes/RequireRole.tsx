@@ -1,11 +1,10 @@
 import { Navigate, Outlet } from 'react-router'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import type { UserRole } from '../../features/auth/types/auth.types'
-import { LoadingState } from '../../shared/components/LoadingState'
 import { ROUTE_PATHS } from './route-paths'
 
 interface RequireRoleProps {
-  role: UserRole
+  role: UserRole | UserRole[]
 }
 
 /**
@@ -17,15 +16,21 @@ interface RequireRoleProps {
 export function RequireRole({ role }: RequireRoleProps) {
   const { user, isLoading } = useAuth()
 
+  // This gate runs before the role is known, so there's no real page
+  // shell (topbar/sidebar) yet to build a matching skeleton for —
+  // rendering the generic LoadingState here just floated three unrelated
+  // gray bars over an otherwise blank screen for the brief GET /me
+  // round-trip. Nothing beats that for something this short.
   if (isLoading) {
-    return <LoadingState variant="text" />
+    return null
   }
 
   if (!user) {
     return <Navigate to={ROUTE_PATHS.LOGIN} replace />
   }
 
-  if (user.role !== role) {
+  const allowedRoles = Array.isArray(role) ? role : [role]
+  if (!allowedRoles.includes(user.role)) {
     return <Navigate to={ROUTE_PATHS.FORBIDDEN} replace />
   }
 

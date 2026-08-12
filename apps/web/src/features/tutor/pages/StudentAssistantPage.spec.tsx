@@ -114,4 +114,25 @@ describe("StudentAssistantPage", () => {
       screen.getByRole("button", { name: /إعادة المحاولة/ }),
     ).toBeInTheDocument();
   });
+
+  it("sends a message when pressing Enter", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const input = await waitForQuestionInput();
+    await user.type(input, "اشرح قانون نيوتن الثالث{Enter}");
+
+    expect(await screen.findByText(/حسب المادة المرفوعة/)).toBeInTheDocument();
+  });
+
+  it("inserts a newline when pressing Shift+Enter instead of sending", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const input = await waitForQuestionInput();
+    await user.type(input, "السطر الأول{Shift>}{Enter}{/Shift}السطر الثاني");
+
+    expect(input).toHaveValue("السطر الأول\nالسطر الثاني");
+    expect(screen.queryByText("المساعد بيجهز الرد...")).not.toBeInTheDocument();
+  });
 });

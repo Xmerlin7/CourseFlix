@@ -28,33 +28,73 @@ export const handlers = [
 
   http.post(apiUrl("/auth/logout"), () => HttpResponse.json({ success: true })),
 
+  http.get(apiUrl("/courses/:courseId/announcements"), () => HttpResponse.json([])),
+  http.get(apiUrl("/courses/:courseId/discussions"), () => HttpResponse.json([])),
+
   http.post(apiUrl("/auth/register"), () =>
     HttpResponse.json(
       {
-        user: {
-          id: "student-2",
-          email: "new@example.com",
-          fullName: "طالب جديد",
-          role: "student",
-          avatarUrl: null,
-        },
+        message: "Registration successful. Check your email for your verification code.",
+        email: "new@example.com",
+        devCode: "123456",
       },
       { status: 201 },
     ),
   ),
 
+  http.post(apiUrl("/auth/otp/request"), () =>
+    HttpResponse.json({
+      message: "Check your email for your login code.",
+      email: "student@example.com",
+      devCode: "123456",
+    }),
+  ),
+
+  http.post(apiUrl("/auth/otp/verify"), () =>
+    HttpResponse.json({
+      user: {
+        id: "student-1",
+        email: "student@example.com",
+        fullName: "طالب تجريبي",
+        role: "student",
+        avatarUrl: null,
+      },
+    }),
+  ),
+
+  http.post(apiUrl("/auth/password/request"), () =>
+    HttpResponse.json({
+      message: "Check your email for your password reset code.",
+      email: "student@example.com",
+      devCode: "123456",
+    }),
+  ),
+
+  http.post(apiUrl("/auth/password/reset"), () =>
+    HttpResponse.json({ success: true }),
+  ),
+
   http.get(apiUrl("/student/dashboard"), () =>
     HttpResponse.json({
-      student: { id: "student-1", fullName: "طالب تجريبي" },
-      stats: { enrolledCoursesCount: 1, activeCoursesCount: 1 },
+      student: {
+        id: "student-1",
+        fullName: "طالب تجريبي",
+        email: "student@example.com",
+        avatarUrl: null,
+      },
+      stats: { enrolledCoursesCount: 1, activeCoursesCount: 1, completedCoursesCount: 0 },
+      overallProgressPercent: null,
+      continueLearning: null,
       recentCourses: [
         {
           courseId: "course-1",
           courseTitle: "فيزياء",
+          coverImageUrl: null,
           status: "active",
           enrolledAt: "2026-07-27T08:00:00.000Z",
         },
       ],
+      recentActivity: [],
     }),
   ),
 
@@ -112,6 +152,10 @@ export const handlers = [
         status: "not_started",
       },
     }),
+  ),
+
+  http.get(apiUrl("/student/videos/:videoId/qa-status"), () =>
+    HttpResponse.json({ status: "not_available" }),
   ),
 
   http.get(apiUrl("/teacher/lessons/:lessonId/player"), ({ params }) =>
@@ -196,9 +240,14 @@ export const handlers = [
         sectionId: "section-1",
         lessonId: "lesson-1",
         questionCount: 2,
+        dueAt: null,
         submission: null,
       },
     ]),
+  ),
+
+  http.get(apiUrl("/student/courses/:courseId/documents"), () =>
+    HttpResponse.json([]),
   ),
 
   http.get(apiUrl("/teacher/courses/:courseId/quizzes"), () =>
@@ -335,4 +384,26 @@ export const handlers = [
       ],
     }),
   ),
+
+  http.get(apiUrl("/admin/users/:userId"), ({ params }) =>
+    HttpResponse.json({
+      id: params.userId,
+      fullName: "طالب تجريبي",
+      email: "student@example.com",
+      role: "student",
+      status: "active",
+      avatarUrl: null,
+      lastLoginAt: null,
+      createdAt: "2026-08-01T10:00:00.000Z",
+      updatedAt: "2026-08-01T10:00:00.000Z",
+      dependentRecordCounts: {
+        coursesTaught: 0,
+        enrollments: 0,
+        orders: 0,
+      },
+    }),
+  ),
+
+  http.delete(apiUrl("/admin/users/:userId"), () => new HttpResponse(null, { status: 204 })),
+  http.delete(apiUrl("/admin/users/:userId/hard"), () => new HttpResponse(null, { status: 204 })),
 ];

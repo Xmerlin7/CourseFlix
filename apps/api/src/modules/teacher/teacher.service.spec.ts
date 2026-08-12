@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { NOTIFICATION_PRODUCER_PORT } from '../../common/ports/notification-producer.port';
 import { OrderEntity } from '../commerce/entities/order.entity';
 import { CoursesService } from '../courses/courses.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
@@ -17,9 +18,21 @@ describe('TeacherService', () => {
   };
   let enrollmentsService: { countActiveStudentsByCourseIds: jest.Mock };
   let lessonsService: { getTeacherLessonDetail: jest.Mock };
-  let usersRepository: { find: jest.Mock };
-  let teacherEnrollmentsRepository: { find: jest.Mock };
+  let usersRepository: { createQueryBuilder: jest.Mock };
+  let usersQueryBuilder: {
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    orderBy: jest.Mock;
+    addOrderBy: jest.Mock;
+    getMany: jest.Mock;
+  };
+  let teacherEnrollmentsRepository: {
+    find: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+  };
   let teacherOrdersRepository: { createQueryBuilder: jest.Mock };
+  let notificationPort: { notify: jest.Mock };
 
   const teacherId = 'teacher-1';
 
@@ -49,9 +62,23 @@ describe('TeacherService', () => {
     };
     enrollmentsService = { countActiveStudentsByCourseIds: jest.fn() };
     lessonsService = { getTeacherLessonDetail: jest.fn() };
-    usersRepository = { find: jest.fn() };
-    teacherEnrollmentsRepository = { find: jest.fn() };
+    usersQueryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
+    usersRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(usersQueryBuilder),
+    };
+    teacherEnrollmentsRepository = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
     teacherOrdersRepository = { createQueryBuilder: jest.fn() };
+    notificationPort = { notify: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -68,6 +95,7 @@ describe('TeacherService', () => {
           provide: getRepositoryToken(OrderEntity),
           useValue: teacherOrdersRepository,
         },
+        { provide: NOTIFICATION_PRODUCER_PORT, useValue: notificationPort },
       ],
     }).compile();
 
@@ -128,7 +156,7 @@ describe('TeacherService', () => {
   describe('getStudents', () => {
     it('lists all platform students with their teacher-course subscriptions and revenue', async () => {
       coursesService.findOwnedCourses.mockResolvedValue(courses);
-      usersRepository.find.mockResolvedValue([
+      usersQueryBuilder.getMany.mockResolvedValue([
         {
           id: 'student-1',
           fullName: 'طالب مشترك',
@@ -175,10 +203,14 @@ describe('TeacherService', () => {
 
       const result = await teacherService.getStudents(teacherId);
 
-      expect(usersRepository.find).toHaveBeenCalledWith({
-        where: { role: 'student', deletedAt: expect.anything() },
-        order: { fullName: 'ASC', createdAt: 'ASC' },
-      });
+      expect(usersRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(usersQueryBuilder.where).toHaveBeenCalledWith(
+        'user.role = :role',
+        { role: 'student' },
+      );
+      expect(usersQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.deleted_at IS NULL',
+      );
       expect(teacherEnrollmentsRepository.find).toHaveBeenCalled();
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'item.course_id IN (:...courseIds)',
@@ -209,6 +241,35 @@ describe('TeacherService', () => {
         totalRevenueMinor: 0,
         courses: [],
       });
+    });
+
+    it('filters by the video-watermark ID (or full UUID) when studentId is given', async () => {
+      coursesService.findOwnedCourses.mockResolvedValue([]);
+      teacherOrdersRepository.createQueryBuilder.mockReturnValue({
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        addGroupBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([]),
+      });
+
+      await teacherService.getStudents(teacherId, '183C1F78A6');
+
+      expect(usersQueryBuilder.andWhere).toHaveBeenCalledWith(
+        expect.any(Object),
+      );
+    });
+
+    it('does not add an ID filter when no studentId is given', async () => {
+      coursesService.findOwnedCourses.mockResolvedValue([]);
+
+      await teacherService.getStudents(teacherId);
+
+      // Only the deleted_at filter — no second andWhere for an ID search.
+      expect(usersQueryBuilder.andWhere).toHaveBeenCalledTimes(1);
     });
   });
 

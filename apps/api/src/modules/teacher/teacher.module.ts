@@ -6,6 +6,7 @@ import { CoursesModule } from '../courses/courses.module';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { EnrollmentEntity } from '../enrollments/entities/enrollment.entity';
 import { LessonsModule } from '../lessons/lessons.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { UserEntity } from '../users/entities/user.entity';
 import { TeacherController } from './teacher.controller';
@@ -25,6 +26,7 @@ import { TeacherService } from './teacher.service';
     CoursesModule,
     EnrollmentsModule,
     LessonsModule,
+    NotificationsModule,
     SessionsModule,
   ],
   controllers: [TeacherController],

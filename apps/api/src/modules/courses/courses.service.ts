@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,6 +19,7 @@ import { CourseEntity, CourseStatus } from './entities/course.entity';
 import { SectionEntity, SectionStatus } from './entities/section.entity';
 import { LessonEntity, LessonStatus } from './entities/lesson.entity';
 import { VideoEntity } from '../lessons/entities/video.entity';
+import { VideoIngestionService } from '../video-ingestion/video-ingestion.service';
 
 export interface UpdateCourseFields {
   title?: string;
@@ -38,7 +40,9 @@ function slugify(title: string): string {
 }
 
 function extractIframeSrc(input: string): string | null {
-  const match = input.match(/<iframe\b[^>]*\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i);
+  const match = input.match(
+    /<iframe\b[^>]*\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i,
+  );
   return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
 }
 
@@ -48,7 +52,9 @@ function isBunnyStreamPlayerHost(hostname: string): boolean {
   );
 }
 
-function normalizeLessonVideoUrl(input: string | null | undefined): string | null {
+function normalizeLessonVideoUrl(
+  input: string | null | undefined,
+): string | null {
   const raw = input?.trim();
   if (!raw) {
     return null;
@@ -56,7 +62,9 @@ function normalizeLessonVideoUrl(input: string | null | undefined): string | nul
 
   const candidate = raw.includes('<iframe') ? extractIframeSrc(raw) : raw;
   if (!candidate) {
-    throw new BadRequestException('Video embed code must contain an iframe src.');
+    throw new BadRequestException(
+      'Video embed code must contain an iframe src.',
+    );
   }
 
   const normalizedCandidate = candidate.replaceAll('&amp;', '&').trim();
@@ -73,7 +81,9 @@ function normalizeLessonVideoUrl(input: string | null | undefined): string | nul
 
   if (raw.includes('<iframe')) {
     if (!isBunnyStreamPlayerHost(parsed.hostname)) {
-      throw new BadRequestException('Only Bunny Stream player embeds are supported.');
+      throw new BadRequestException(
+        'Only Bunny Stream player embeds are supported.',
+      );
     }
   }
 
@@ -82,6 +92,8 @@ function normalizeLessonVideoUrl(input: string | null | undefined): string | nul
 
 @Injectable()
 export class CoursesService {
+  private readonly logger = new Logger(CoursesService.name);
+
   constructor(
     @InjectRepository(CourseEntity)
     private readonly coursesRepository: Repository<CourseEntity>,
@@ -92,13 +104,21 @@ export class CoursesService {
     @InjectRepository(VideoEntity)
     private readonly videosRepository: Repository<VideoEntity>,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly videoIngestionService: VideoIngestionService,
   ) {}
 
   async getCourseDetail(
     courseId: string,
     viewer: AuthenticatedUser,
   ): Promise<CourseDetailResponseDto> {
-    const course = await this.loadCourseWithSectionsAndLessons(courseId);
+    // Non-teacher viewers (students) never see draft lessons here, same
+    // as loadCourseOutline in lessons.service.ts — otherwise a draft
+    // sitting between two published lessons shows up in the student's
+    // own outline as a lesson they can never complete.
+    const course = await this.loadCourseWithSectionsAndLessons(
+      courseId,
+      viewer.role !== 'teacher',
+    );
     if (!course) {
       throw new NotFoundException('Course not found.');
     }
@@ -120,7 +140,9 @@ export class CoursesService {
   // the only way a student can discover a course to buy in the first
   // place, so it stays lightweight (no sections/lessons/videoUrl) and
   // published-only rather than reusing toDetailDto.
-  async listCatalog(viewer: AuthenticatedUser): Promise<CourseCatalogItemDto[]> {
+  async listCatalog(
+    viewer: AuthenticatedUser,
+  ): Promise<CourseCatalogItemDto[]> {
     const courses = await this.coursesRepository.find({
       where: { status: 'published' },
       relations: { teacher: true },
@@ -147,6 +169,19 @@ export class CoursesService {
       currency: DEFAULT_CURRENCY,
       isEnrolled: enrolledCourseIds.has(course.id),
     }));
+  }
+
+  // Admin-only: platform-wide detail view, bypasses the ownership/
+  // enrollment gating in getCourseDetail() since an admin is neither the
+  // owning teacher nor necessarily enrolled. canEdit is always true here.
+  async getCourseDetailForAdmin(
+    courseId: string,
+  ): Promise<CourseDetailResponseDto> {
+    const course = await this.loadCourseWithSectionsAndLessons(courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+    return this.toDetailDto(course, true);
   }
 
   async findOwnedCourses(
@@ -457,7 +492,18 @@ export class CoursesService {
           durationSeconds: null,
         });
 
-    await this.videosRepository.save(video);
+    const savedVideo = await this.videosRepository.save(video);
+
+    // Fire-and-forget: caption ingestion must never block saving the
+    // lesson. A provider fetch failure lands on the video_transcripts
+    // row, not here.
+    this.videoIngestionService
+      .enqueueForVideo(savedVideo)
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Video ingestion enqueue failed for video=${savedVideo.id}: ${String(error)}`,
+        );
+      });
   }
 
   private async syncLessonVideoMetadata(lesson: LessonEntity): Promise<void> {
@@ -495,6 +541,7 @@ export class CoursesService {
 
   private async loadCourseWithSectionsAndLessons(
     courseId: string,
+    publishedOnly = false,
   ): Promise<CourseEntity | null> {
     return this.coursesRepository
       .createQueryBuilder('course')
@@ -507,7 +554,9 @@ export class CoursesService {
       .leftJoinAndSelect(
         'section.lessons',
         'lesson',
-        'lesson.deleted_at IS NULL',
+        publishedOnly
+          ? "lesson.deleted_at IS NULL AND lesson.status = 'published'"
+          : 'lesson.deleted_at IS NULL',
       )
       .where('course.id = :courseId', { courseId })
       .andWhere('course.deleted_at IS NULL')

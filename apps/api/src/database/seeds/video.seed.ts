@@ -25,7 +25,7 @@ interface VideoSource {
  * attendance threshold and completion state reachable in a manual QA
  * pass in seconds instead of minutes.
  */
-const VIDEO_SOURCES: VideoSource[] = [
+export const VIDEO_SOURCES: VideoSource[] = [
   {
     url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     durationSeconds: 5,

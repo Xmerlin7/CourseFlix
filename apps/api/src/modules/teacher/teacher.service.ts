@@ -1,6 +1,20 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { Brackets, In, IsNull, Repository } from 'typeorm';
+import {
+  looksLikeUuid,
+  watermarkSqlExpression,
+} from '../../common/utils/watermark-id.util';
+import {
+  NOTIFICATION_PRODUCER_PORT,
+  type NotificationProducerPort,
+} from '../../common/ports/notification-producer.port';
 import { OrderItemEntity } from '../commerce/entities/order-item.entity';
 import { OrderEntity } from '../commerce/entities/order.entity';
 import { CoursesService } from '../courses/courses.service';
@@ -13,7 +27,10 @@ import {
   EnrollmentEntity,
   EnrollmentStatus,
 } from '../enrollments/entities/enrollment.entity';
-import { LessonsService, type LessonDetailResponse } from '../lessons/lessons.service';
+import {
+  LessonsService,
+  type LessonDetailResponse,
+} from '../lessons/lessons.service';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CreateCourseDto } from '../courses/dto/create-course.dto';
 import { CreateSectionDto } from '../courses/dto/create-section.dto';
@@ -111,6 +128,8 @@ export class TeacherService {
     private readonly teacherEnrollmentsRepository: Repository<EnrollmentEntity>,
     @InjectRepository(OrderEntity)
     private readonly teacherOrdersRepository: Repository<OrderEntity>,
+    @Inject(NOTIFICATION_PRODUCER_PORT)
+    private readonly notificationPort: NotificationProducerPort,
   ) {}
 
   async getDashboard(teacherId: string): Promise<TeacherDashboardResponse> {
@@ -148,13 +167,13 @@ export class TeacherService {
     return courses.map((course) => this.toListItem(course));
   }
 
-  async getStudents(teacherId: string): Promise<TeacherStudentsResponse> {
+  async getStudents(
+    teacherId: string,
+    studentIdSearch?: string,
+  ): Promise<TeacherStudentsResponse> {
     const [courses, students] = await Promise.all([
       this.coursesService.findOwnedCourses(teacherId),
-      this.usersRepository.find({
-        where: { role: 'student', deletedAt: IsNull() },
-        order: { fullName: 'ASC', createdAt: 'ASC' },
-      }),
+      this.findStudents(studentIdSearch),
     ]);
 
     const courseIds = courses.map((course) => course.id);
@@ -244,6 +263,55 @@ export class TeacherService {
       },
       students: items,
     };
+  }
+
+  async setStudentEnrollmentStatus(
+    teacherId: string,
+    studentId: string,
+    courseId: string,
+    status: 'active' | 'suspended',
+    reason?: string,
+  ): Promise<{ courseId: string; enrollmentStatus: EnrollmentStatus }> {
+    const course = await this.coursesService.findCourseById(courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+    if (course.teacherId !== teacherId) {
+      throw new ForbiddenException('You do not own this course.');
+    }
+
+    const enrollment = await this.teacherEnrollmentsRepository.findOne({
+      where: { studentId, courseId, deletedAt: IsNull() },
+    });
+    if (!enrollment) {
+      throw new NotFoundException(
+        'This student is not enrolled in this course.',
+      );
+    }
+
+    enrollment.status = status;
+    enrollment.statusChangedBy = 'teacher';
+    enrollment.suspendedAt = status === 'suspended' ? new Date() : null;
+    enrollment.suspendedReason =
+      status === 'suspended' ? (reason ?? null) : null;
+    await this.teacherEnrollmentsRepository.save(enrollment);
+
+    await this.notificationPort.notify({
+      userId: studentId,
+      type: 'course_update',
+      title:
+        status === 'suspended'
+          ? 'تم إيقاف اشتراكك في الدورة'
+          : 'تم إعادة تفعيل اشتراكك في الدورة',
+      message:
+        status === 'suspended'
+          ? `تم إيقاف اشتراكك في "${course.title}"${reason ? `: ${reason}` : '.'}`
+          : `تم إعادة تفعيل اشتراكك في "${course.title}".`,
+      relatedEntityType: 'course',
+      relatedEntityId: courseId,
+    });
+
+    return { courseId, enrollmentStatus: enrollment.status };
   }
 
   async updateCourse(
@@ -343,6 +411,36 @@ export class TeacherService {
     dto: ReorderDto,
   ): Promise<void> {
     await this.coursesService.reorderLessons(sectionId, teacherId, dto.items);
+  }
+
+  // `studentIdSearch` is matched against the student's watermark code
+  // (the traceable ID burned into their video playback — see
+  // watermark-id.util.ts) and, if it looks like one, their full UUID.
+  // Lets a teacher paste the code off a leaked recording straight in.
+  private async findStudents(studentIdSearch?: string): Promise<UserEntity[]> {
+    const query = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: 'student' })
+      .andWhere('user.deleted_at IS NULL');
+
+    const search = studentIdSearch?.trim();
+    if (search) {
+      query.andWhere(
+        new Brackets((sub) => {
+          sub.where(`${watermarkSqlExpression('user')} = UPPER(:search)`, {
+            search,
+          });
+          if (looksLikeUuid(search)) {
+            sub.orWhere('user.id = :fullId', { fullId: search });
+          }
+        }),
+      );
+    }
+
+    return query
+      .orderBy('user.full_name', 'ASC')
+      .addOrderBy('user.created_at', 'ASC')
+      .getMany();
   }
 
   private toListItem(course: CourseEntity): TeacherCourseListItem {

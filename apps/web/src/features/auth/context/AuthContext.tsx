@@ -1,14 +1,37 @@
 import { createContext, useCallback, useEffect, useState } from 'react'
 import type { PropsWithChildren } from 'react'
-import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest } from '../api/auth.api'
-import type { AuthUser, LoginPayload, RegisterPayload } from '../types/auth.types'
+import {
+  getCurrentUser,
+  login as loginRequest,
+  logout as logoutRequest,
+  register as registerRequest,
+  verifyOtp as verifyOtpRequest,
+} from '../api/auth.api'
+import type {
+  AuthUser,
+  LoginPayload,
+  OtpResponse,
+  OtpVerifyPayload,
+  RegisterPayload,
+} from '../types/auth.types'
 
 export interface AuthContextValue {
   user: AuthUser | null
   isLoading: boolean
-  login: (payload: LoginPayload) => Promise<AuthUser>
+  // Standard login returns the user (session cookie set). With
+  // `requireOtp: true` a login OTP is emailed instead and an OtpResponse is
+  // returned — no user, no session yet; sign in via `verifyOtp` next.
+  login: (payload: LoginPayload) => Promise<AuthUser | OtpResponse>
   logout: () => Promise<void>
-  register: (payload: RegisterPayload) => Promise<AuthUser>
+  // Creates an inactive account and emails a verification OTP — it does
+  // NOT sign the user in. That happens via verifyOtp (purpose 'register').
+  register: (payload: RegisterPayload) => Promise<OtpResponse>
+  // Redeems an OTP (login or register) and signs the user in.
+  verifyOtp: (payload: OtpVerifyPayload) => Promise<AuthUser>
+  // Merges a partial profile update (e.g. after a successful PATCH
+  // /users/me/profile) into the signed-in user so the sidebar/topbar
+  // stay in sync without a full re-fetch. No-op while signed out.
+  updateUser: (patch: Partial<AuthUser>) => void
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- context object is not a component; useAuth.ts needs it from this same module.
@@ -46,9 +69,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [])
 
   const login = useCallback(async (payload: LoginPayload) => {
-    const loggedInUser = await loginRequest(payload)
-    setUser(loggedInUser)
-    return loggedInUser
+    const result = await loginRequest(payload)
+    if ('role' in result) {
+      setUser(result)
+    }
+    return result
   }, [])
 
   const logout = useCallback(async () => {
@@ -57,13 +82,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [])
 
   const register = useCallback(async (payload: RegisterPayload) => {
-    const user = await registerRequest(payload)
+    // No session is created here — just the account + verification code.
+    return registerRequest(payload)
+  }, [])
+
+  const verifyOtp = useCallback(async (payload: OtpVerifyPayload) => {
+    const user = await verifyOtpRequest(payload)
     setUser(user)
     return user
   }, [])
 
+  const updateUser = useCallback((patch: Partial<AuthUser>) => {
+    setUser((current) => (current ? { ...current, ...patch } : current))
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, logout, register, verifyOtp, updateUser }}
+    >
       {children}
     </AuthContext.Provider>
   )

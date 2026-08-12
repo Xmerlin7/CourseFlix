@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router'
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import { env } from '../../../shared/lib/env'
@@ -34,6 +35,8 @@ describe('StudentLessonPage', () => {
     login: vi.fn(),
     logout: vi.fn(),
     register: vi.fn(),
+    updateUser: vi.fn(),
+    verifyOtp: vi.fn(),
   }
 
   it('renders YouTube lesson URLs as an embedded player', async () => {
@@ -77,7 +80,7 @@ describe('StudentLessonPage', () => {
     const player = await screen.findByTitle('قانون نيوتن الأول')
     expect(player).toHaveAttribute(
       'src',
-      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&iv_load_policy=3&playsinline=1',
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&enablejsapi=1&controls=0&disablekb=1',
     )
   })
 
@@ -167,8 +170,13 @@ describe('StudentLessonPage', () => {
     )
   })
 
-  it('sends progress heartbeats for embedded YouTube and Bunny players', async () => {
-    let progressPayload: unknown
+  it('does not report any watch progress for an embedded player that never started playing', async () => {
+    // Regression test for a bug where a paused/not-yet-started YouTube or
+    // Bunny embed still "watched itself": the heartbeat used to run on a
+    // plain interval that assumed 15s of playback per tick regardless of
+    // the player's actual play state. See useProgressHeartbeat.spec.ts for
+    // the detailed coverage of the fixed, play-state-gated behavior.
+    let progressRequestCount = 0
     const setIntervalSpy = vi
       .spyOn(globalThis, 'setInterval')
       .mockImplementation((handler: TimerHandler) => {
@@ -208,8 +216,8 @@ describe('StudentLessonPage', () => {
           },
         }),
       ),
-      http.post(`${env.apiBaseUrl}/lessons/lesson-1/progress`, async ({ request }) => {
-        progressPayload = await request.json()
+      http.post(`${env.apiBaseUrl}/lessons/lesson-1/progress`, async () => {
+        progressRequestCount += 1
         return HttpResponse.json({
           watchedPercentage: 2.5,
           status: 'in_progress',
@@ -222,14 +230,12 @@ describe('StudentLessonPage', () => {
       renderPage()
       expect(await screen.findByTitle('درس Bunny')).toBeInTheDocument()
 
-      await waitFor(() => {
-        expect(progressPayload).toEqual({
-          positionSeconds: 15,
-          watchedSeconds: 15,
-          durationSeconds: 600,
-        })
-      })
-      expect(screen.getByText('3%')).toBeInTheDocument()
+      // player.js never loads/reports "playing" in this test environment,
+      // so even with the interval mocked to fire immediately, no heartbeat
+      // should ever be sent.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      expect(progressRequestCount).toBe(0)
+      expect(screen.getByText('0%')).toBeInTheDocument()
     } finally {
       setIntervalSpy.mockRestore()
     }
@@ -345,6 +351,8 @@ describe('StudentLessonPage', () => {
       login: vi.fn(),
       logout: vi.fn(),
       register: vi.fn(),
+      updateUser: vi.fn(),
+      verifyOtp: vi.fn(),
     })
 
     expect(await screen.findByRole('heading', { name: 'فيزياء' })).toBeInTheDocument()
@@ -355,5 +363,110 @@ describe('StudentLessonPage', () => {
       expect(link).toHaveAttribute('href', '/teacher/lessons/lesson-2')
     })
     expect(screen.getByText('معاينة المدرس')).toBeInTheDocument()
+  })
+
+  it('locks next lesson when current progress is 0%, 55%, or 99%, and unlocks at 100%', async () => {
+    const user = userEvent.setup()
+    const buildCourse = (progressPercentage: number, status: 'not_started' | 'in_progress' | 'completed') => ({
+      id: 'lesson-1',
+      title: 'الدرس الأول',
+      video: { id: 'v-1', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', durationSeconds: 100 },
+      course: {
+        id: 'c-1',
+        title: 'دورة الفيزياء',
+        currentSectionId: 's-1',
+        sections: [
+          {
+            id: 's-1',
+            title: 'الفصل الأول',
+            sortOrder: 1,
+            lessons: [
+              { id: 'lesson-1', title: 'الدرس الأول', sortOrder: 1, progressStatus: status, watchedPercentage: progressPercentage },
+              { id: 'lesson-2', title: 'الدرس الثاني', sortOrder: 2, progressStatus: 'not_started', watchedPercentage: 0 },
+            ],
+          },
+        ],
+      },
+      progress: { lastPositionSeconds: 0, watchedPercentage: progressPercentage, status },
+    })
+
+    // 1. Progress = 55% -> Next lesson locked
+    server.use(http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () => HttpResponse.json(buildCourse(55, 'in_progress'))))
+    const { unmount } = renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+    const lockedItems55 = screen.getAllByRole('link', { name: /مقفل/ })
+    expect(lockedItems55.length).toBeGreaterThanOrEqual(1)
+    await user.click(lockedItems55[0])
+    expect(screen.getByText('أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي.')).toBeInTheDocument()
+    unmount()
+
+    // 2. Progress = 99% -> Still locked
+    server.use(http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () => HttpResponse.json(buildCourse(99, 'in_progress'))))
+    const { unmount: unmount99 } = renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+    const lockedItems99 = screen.getAllByRole('link', { name: /مقفل/ })
+    expect(lockedItems99.length).toBeGreaterThanOrEqual(1)
+    unmount99()
+
+    // 3. Progress = 100% -> Unlocked!
+    server.use(http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () => HttpResponse.json(buildCourse(100, 'completed'))))
+    renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الأول' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /مقفل/ })).not.toBeInTheDocument()
+    const nextLessonLinks = screen.getAllByRole('link', { name: /الدرس التالي/ })
+    expect(nextLessonLinks.length).toBeGreaterThanOrEqual(1)
+    nextLessonLinks.forEach((link) => expect(link).toHaveAttribute('href', '/student/lessons/lesson-2'))
+  })
+
+  it('enforces sequential unlocking across multiple lessons', async () => {
+    // L1 = 100% (completed), L2 = 100% (completed), L3 = 55% (in_progress), L4 = not_started
+    server.use(
+      http.get(`${env.apiBaseUrl}/lessons/lesson-3`, () =>
+        HttpResponse.json({
+          id: 'lesson-3',
+          title: 'الدرس الثالث',
+          video: { id: 'v-3', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', durationSeconds: 100 },
+          course: {
+            id: 'c-1',
+            title: 'دورة الفيزياء',
+            currentSectionId: 's-1',
+            sections: [
+              {
+                id: 's-1',
+                title: 'الفصل الأول',
+                sortOrder: 1,
+                lessons: [
+                  { id: 'lesson-1', title: 'الدرس الأول', sortOrder: 1, progressStatus: 'completed', watchedPercentage: 100 },
+                  { id: 'lesson-2', title: 'الدرس الثاني', sortOrder: 2, progressStatus: 'completed', watchedPercentage: 100 },
+                  { id: 'lesson-3', title: 'الدرس الثالث', sortOrder: 3, progressStatus: 'in_progress', watchedPercentage: 55 },
+                  { id: 'lesson-4', title: 'الدرس الرابع', sortOrder: 4, progressStatus: 'not_started', watchedPercentage: 0 },
+                ],
+              },
+            ],
+          },
+          progress: { lastPositionSeconds: 55, watchedPercentage: 55, status: 'in_progress' },
+        }),
+      ),
+    )
+
+    renderPage(['/student/lessons/lesson-3'], studentAuth)
+
+    expect(await screen.findByRole('heading', { name: 'الدرس الثالث' })).toBeInTheDocument()
+
+    // Lessons 1, 2, 3 should be unlocked (accessible)
+    expect(screen.getByRole('link', { name: /الدرس الأول/ })).toHaveAttribute('href', '/student/lessons/lesson-1')
+    expect(screen.getByRole('link', { name: /الدرس الثاني/ })).toHaveAttribute('href', '/student/lessons/lesson-2')
+    expect(screen.getByRole('link', { current: 'page' })).toHaveTextContent('الدرس الثالث')
+
+    // Lesson 4 should be locked (both playlist link and next lesson link)
+    const l4Links = screen.getAllByRole('link', { name: /الدرس الرابع/ })
+    expect(l4Links.length).toBeGreaterThanOrEqual(1)
+    l4Links.forEach((link) => {
+      expect(link).toHaveClass('locked')
+      expect(link).toHaveAttribute('aria-disabled', 'true')
+    })
   })
 })

@@ -2,13 +2,16 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NOTIFICATION_PRODUCER_PORT } from '../../common/ports/notification-producer.port';
 import { SessionsModule } from '../sessions/sessions.module';
+import { UserEntity } from '../users/entities/user.entity';
 import { NotificationEntity } from './entities/notification.entity';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationEntity]),
+    // UserEntity: notify() reads the recipient's notification-type
+    // preferences before writing a row — see NotificationsService.notify().
+    TypeOrmModule.forFeature([NotificationEntity, UserEntity]),
     // Required for AuthGuard to resolve SessionsService within this
     // module's own DI context (same fix as CF-BUG-001 in TeacherModule).
     SessionsModule,

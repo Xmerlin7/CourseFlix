@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useParams } from 'react-router'
 import { CourseDetailView } from '../../courses/components/CourseDetailView'
 import { useCourseDetail } from '../../courses/hooks/useCourseDetail'
+import { CommunityPanelSkeleton } from '../../community/components/CommunityPanelSkeleton'
 import { DocumentStatusList } from '../../documents/components/DocumentStatusList'
 import { DocumentUploader } from '../../documents/components/DocumentUploader'
 import { useCourseDocuments } from '../../documents/hooks/useCourseDocuments'
+import { ExamGenerationManager } from '../../exam-generation/components/ExamGenerationManager'
 import { TeacherQuizManager } from '../../quizzes/components/TeacherQuizManager'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
@@ -12,8 +14,13 @@ import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { TeacherContentManager } from '../components/TeacherContentManager'
 import { TeacherCourseForm } from '../components/TeacherCourseForm'
+import { TeacherCourseDetailSkeleton } from '../components/TeacherCourseDetailSkeleton'
 
-type CourseDetailTab = 'content' | 'quizzes' | 'files'
+const CourseCommunityPanel = lazy(() =>
+  import('../../community/components/CourseCommunityPanel').then((m) => ({ default: m.CourseCommunityPanel })),
+)
+
+type CourseDetailTab = 'content' | 'quizzes' | 'ai-exam' | 'files' | 'community'
 
 export function TeacherCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -22,7 +29,7 @@ export function TeacherCourseDetailPage() {
   const [activeTab, setActiveTab] = useState<CourseDetailTab>('content')
 
   if (isLoading) {
-    return <LoadingState variant="text" />
+    return <TeacherCourseDetailSkeleton />
   }
 
   if (error) {
@@ -63,11 +70,29 @@ export function TeacherCourseDetailPage() {
         <button
           type="button"
           role="tab"
+          aria-selected={activeTab === 'ai-exam'}
+          onClick={() => setActiveTab('ai-exam')}
+          className={`tab${activeTab === 'ai-exam' ? ' active' : ''}`}
+        >
+          امتحان بالذكاء الاصطناعي
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={activeTab === 'files'}
           onClick={() => setActiveTab('files')}
           className={`tab${activeTab === 'files' ? ' active' : ''}`}
         >
           الملفات
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'community'}
+          onClick={() => setActiveTab('community')}
+          className={`tab${activeTab === 'community' ? ' active' : ''}`}
+        >
+          المجتمع
         </button>
       </div>
 
@@ -95,6 +120,8 @@ export function TeacherCourseDetailPage() {
 
       {activeTab === 'quizzes' && <TeacherQuizManager course={data} />}
 
+      {activeTab === 'ai-exam' && <ExamGenerationManager course={data} />}
+
       {activeTab === 'files' && (
         <section className="section">
           <DocumentUploader onUpload={documents.upload} />
@@ -109,6 +136,12 @@ export function TeacherCourseDetailPage() {
             )}
           </div>
         </section>
+      )}
+
+      {activeTab === 'community' && (
+        <Suspense fallback={<CommunityPanelSkeleton />}>
+          <CourseCommunityPanel courseId={data.id} />
+        </Suspense>
       )}
     </>
   )

@@ -22,8 +22,6 @@ interface CourseBlueprint {
   description: string;
   gradeLevel: string;
   status: CourseStatus;
-  /** Index into the resolved teacher list. */
-  teacher: number;
   sections: Array<{ title: string; lessons: string[] }>;
 }
 
@@ -36,7 +34,6 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
     description: 'مقدمة في قوانين نيوتن للحركة والتطبيقات العملية عليها.',
     gradeLevel: 'الصف الأول الثانوي',
     status: 'published',
-    teacher: 0,
     sections: [
       {
         title: 'قوانين نيوتن للحركة',
@@ -71,7 +68,6 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
     description: 'المجالات الكهربية والمغناطيسية والحث الكهرومغناطيسي.',
     gradeLevel: 'الصف الثالث الثانوي',
     status: 'published',
-    teacher: 0,
     sections: [
       {
         title: 'المجال الكهربي',
@@ -107,7 +103,6 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
     description: 'الحركة الموجية، الصوت، وانكسار وانعكاس الضوء.',
     gradeLevel: 'الصف الثاني الثانوي',
     status: 'published',
-    teacher: 0,
     sections: [
       {
         title: 'الحركة الموجية',
@@ -134,7 +129,6 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
     description: 'الحرارة ودرجة الحرارة وقوانين الديناميكا الحرارية.',
     gradeLevel: 'الصف الثاني الثانوي',
     status: 'draft',
-    teacher: 0,
     sections: [
       {
         title: 'الحرارة ودرجة الحرارة',
@@ -148,7 +142,6 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
     description: 'النظرية النسبية وميكانيكا الكم وفيزياء الجسيمات.',
     gradeLevel: 'الصف الثالث الثانوي',
     status: 'published',
-    teacher: 1,
     sections: [
       {
         title: 'النظرية النسبية',
@@ -174,7 +167,6 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
     description: 'تأسيس في مفاهيم الفيزياء الأساسية لطلاب المرحلة الإعدادية.',
     gradeLevel: 'الصف الثالث الإعدادي',
     status: 'published',
-    teacher: 1,
     sections: [
       {
         title: 'المادة وخواصها',
@@ -189,7 +181,6 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
     description: 'دورة قديمة تمت أرشفتها ولم تعد متاحة للتسجيل.',
     gradeLevel: 'الصف الأول الثانوي',
     status: 'archived',
-    teacher: 1,
     sections: [
       {
         title: 'المجموعة الشمسية',
@@ -200,9 +191,10 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
 ];
 
 /**
- * Seeds the full demo catalogue: seven courses across two teachers,
- * covering every course status (published / draft / archived) and both
- * school stages, each with real Arabic physics sections and lessons.
+ * Seeds the full demo catalogue: seven courses, covering every course
+ * status (published / draft / archived) and both school stages, each
+ * with real Arabic physics sections and lessons, all owned by the one
+ * platform teacher.
  *
  * Safe to run on every reseed: upserts by slug (course) and by title
  * within its parent (section, lesson) instead of inserting duplicates.
@@ -210,29 +202,23 @@ export const COURSE_BLUEPRINTS: CourseBlueprint[] = [
 export async function seedCourse(
   dataSource: DataSource,
   teacherId: string,
-  extraTeacherIds: string[] = [],
 ): Promise<SeededCourse> {
   const courseRepository = dataSource.getRepository(CourseEntity);
   const sectionRepository = dataSource.getRepository(SectionEntity);
   const lessonRepository = dataSource.getRepository(LessonEntity);
 
-  const teacherIds = [teacherId, ...extraTeacherIds];
   const courses: CourseEntity[] = [];
   let primarySection: SectionEntity | undefined;
   let primaryLessons: LessonEntity[] = [];
 
   for (const [blueprintIndex, blueprint] of COURSE_BLUEPRINTS.entries()) {
-    // Falls back to the primary teacher when no extras were supplied, so
-    // the fixture still seeds cleanly for single-teacher callers.
-    const ownerId = teacherIds[blueprint.teacher] ?? teacherId;
-
     let course = await courseRepository.findOne({
       where: { slug: blueprint.slug },
     });
     if (!course) {
       course = await courseRepository.save(
         courseRepository.create({
-          teacherId: ownerId,
+          teacherId,
           title: blueprint.title,
           slug: blueprint.slug,
           description: blueprint.description,

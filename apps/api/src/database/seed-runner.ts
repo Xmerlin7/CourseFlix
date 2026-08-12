@@ -6,11 +6,14 @@ import { seedDocuments } from './seeds/document.seed';
 import { seedIntervention } from './seeds/intervention.seed';
 import { seedNotifications } from './seeds/notification.seed';
 import { seedVideo } from './seeds/video.seed';
+import { seedVideoTranscripts } from './seeds/video-transcript.seed';
+import { reEmbedDocumentChunks } from './re-embed-chunks';
 import { clearTransactionalDemoState } from './seeds/transactional-reset.seed';
 
 export interface SeedSummary {
-  teacherCount: number;
   primaryTeacherEmail: string;
+  assistantCount: number;
+  primaryAssistantEmail: string;
   studentCount: number;
   primaryStudentEmail: string;
   courseCount: number;
@@ -35,26 +38,10 @@ export interface RunSeedOptions {
   resetTransactionalState?: boolean;
 }
 
-/**
- * The one source of truth for "populate/restore the deterministic demo
- * fixture" — called by both `seed.ts` (first run, or routine reseed) and
- * `reset.ts` (explicit "undo any rehearsal drift" run before a release/E2E
- * pass). Every step upserts, and `seedDocuments` additionally forces
- * drifted rows back to their blueprint values, so calling this twice in a
- * row from the same DB state produces the same state (sprint2-plan.md §12,
- * sprint3-plan.md E-2).
- *
- * Does not touch `AppDataSource.initialize()` / `.destroy()` — callers own
- * the connection lifecycle so this function can also be reused by a
- * read-only checker without ever writing anything itself.
- */
 export async function runSeed(
   dataSource: DataSource,
   options: RunSeedOptions = {},
 ): Promise<SeedSummary> {
-  // Routine `seed` runs should preserve local rehearsal purchases so a
-  // student does not lose "My courses" on every `./dev.sh` restart. The
-  // explicit `reset` command still clears checkout/order drift.
   const transactionalReset = options.resetTransactionalState
     ? await clearTransactionalDemoState(dataSource)
     : {
@@ -63,12 +50,12 @@ export async function runSeed(
         agentLogsCleared: 0,
       };
 
-  const { teacher, student, teachers, students } = await seedUsers(dataSource);
+  const { teacher, assistant, assistants, student, students } =
+    await seedUsers(dataSource);
 
   const { course, section, lessons, courses } = await seedCourse(
     dataSource,
     teacher.id,
-    teachers.slice(1).map((t) => t.id),
   );
 
   const enrollment = await seedEnrollment(dataSource, {
@@ -76,8 +63,6 @@ export async function runSeed(
     courseId: course.id,
   });
 
-  // Archived courses are excluded: enrolling into one contradicts what
-  // "archived" means, and the catalogue seeds one on purpose.
   const enrollableCourseIds = courses
     .filter((candidate) => candidate.status !== 'archived')
     .map((candidate) => candidate.id);
@@ -89,6 +74,9 @@ export async function runSeed(
 
   const videosCreated = await seedVideo(dataSource);
 
+  await seedVideoTranscripts(dataSource);
+  await reEmbedDocumentChunks();
+
   const { created: documentsCreated, reset: documentsReset } =
     await seedDocuments(dataSource, {
       courseId: course.id,
@@ -96,7 +84,7 @@ export async function runSeed(
     });
 
   const notificationsCreated = await seedNotifications(dataSource, {
-    teacherIds: teachers.map((t) => t.id),
+    teacherIds: [teacher.id],
     studentIds: students.map((s) => s.id),
   });
 
@@ -105,8 +93,9 @@ export async function runSeed(
   const lessonTotal = await countRows(dataSource, 'lessons');
 
   return {
-    teacherCount: teachers.length,
     primaryTeacherEmail: teacher.email,
+    assistantCount: assistants.length,
+    primaryAssistantEmail: assistant.email,
     studentCount: students.length,
     primaryStudentEmail: student.email,
     courseCount: courses.length,
@@ -132,8 +121,9 @@ export async function runSeed(
 /** Shared console formatting so `seed.ts` and `reset.ts` print identically, modulo heading. */
 export function printSeedSummary(summary: SeedSummary, heading: string): void {
   console.log(heading);
+  console.log(`  teacher:        ${summary.primaryTeacherEmail}`);
   console.log(
-    `  teachers:       ${summary.teacherCount} (primary: ${summary.primaryTeacherEmail})`,
+    `  assistants:     ${summary.assistantCount} (primary: ${summary.primaryAssistantEmail})`,
   );
   console.log(
     `  students:       ${summary.studentCount} (primary: ${summary.primaryStudentEmail})`,

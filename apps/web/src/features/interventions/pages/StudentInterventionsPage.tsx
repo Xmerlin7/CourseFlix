@@ -2,8 +2,8 @@ import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { useStudentInterventions } from '../hooks/useStudentInterventions'
+import { StudentInterventionsSkeleton } from '../components/StudentInterventionsSkeleton'
 import type { InterventionRuleKey } from '../types/intervention.types'
 
 const RULE_LABEL: Record<InterventionRuleKey, string> = {
@@ -24,7 +24,7 @@ export function StudentInterventionsPage() {
       <h1 className="page-title">نقاط تحتاج مراجعة</h1>
       <p className="subtitle">هنا هتلاقي أي نقطة رصدها النظام إنك محتاج تراجعها</p>
 
-      {isLoading && <LoadingState variant="list" />}
+      {isLoading && <StudentInterventionsSkeleton />}
 
       {!isLoading &&
         error &&

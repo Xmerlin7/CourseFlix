@@ -21,8 +21,27 @@ export async function getTeacherCourses(filters: { status?: string } = {}): Prom
   return httpClient.get<TeacherCourse[]>('/teacher/courses', { searchParams: filters })
 }
 
-export async function getTeacherStudents(): Promise<TeacherStudentsResponse> {
-  return httpClient.get<TeacherStudentsResponse>('/teacher/students')
+export async function getTeacherStudents(
+  filters: { studentId?: string } = {},
+): Promise<TeacherStudentsResponse> {
+  return httpClient.get<TeacherStudentsResponse>('/teacher/students', {
+    searchParams: filters,
+  })
+}
+
+export async function updateStudentEnrollmentStatus(
+  studentId: string,
+  courseId: string,
+  status: 'active' | 'suspended',
+  reason?: string,
+): Promise<{ courseId: string; enrollmentStatus: 'active' | 'suspended' | 'completed' }> {
+  return httpClient.patch<{
+    courseId: string
+    enrollmentStatus: 'active' | 'suspended' | 'completed'
+  }>(`/teacher/students/${studentId}/courses/${courseId}/enrollment-status`, {
+    status,
+    reason,
+  })
 }
 
 export async function createTeacherCourse(

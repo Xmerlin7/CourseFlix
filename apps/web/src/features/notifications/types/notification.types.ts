@@ -5,6 +5,9 @@ export type NotificationType =
   | 'announcement'
   | 'course_update'
   | 'system'
+  | 'discussion_reply'
+  | 'discussion_accepted'
+  | 'support_ticket_update'
 
 export type NotificationStatusFilter = 'unread' | 'read'
 

@@ -1,8 +1,8 @@
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
-import { LoadingState } from '../../../shared/components/LoadingState'
 import { useTeacherInterventions } from '../hooks/useTeacherInterventions'
+import { TeacherInterventionsSkeleton } from '../components/TeacherInterventionsSkeleton'
 import type { InterventionRuleKey, InterventionStatus } from '../types/intervention.types'
 
 const RULE_LABEL: Record<InterventionRuleKey, string> = {
@@ -28,7 +28,7 @@ export function TeacherInterventionsPage() {
       <h1 className="page-title">تقارير المتابعة</h1>
       <p className="subtitle">نقاط رصدها النظام لطلابك في دوراتك وتحتاج متابعة</p>
 
-      {isLoading && <LoadingState variant="list" />}
+      {isLoading && <TeacherInterventionsSkeleton />}
 
       {!isLoading &&
         error &&

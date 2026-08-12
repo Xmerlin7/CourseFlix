@@ -19,14 +19,19 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+env
 nabile-s2-plan.md
 plan.md
 commit.sh
 AGENTS.md
 nabile-s3-plan.md
 pr.md
+demo-logins.md
 # Local document storage runtime data (STORAGE_ROOT default = ./storage, cwd = apps/api)
 /apps/api/storage/
+
+# Downloaded local tooling (e.g. yt-dlp.exe, see YT_DLP_PATH in .env)
+/bin/
 
 # Editors and OS
 .DS_Store
