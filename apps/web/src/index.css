@@ -1479,6 +1479,61 @@ code {
   text-decoration: underline;
 }
 
+/* Social login (Continue with Google / Apple) */
+.social-login {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.social-divider::before,
+.social-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--outline-variant);
+}
+
+.social-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid var(--outline);
+  color: var(--on-surface);
+  font-weight: 600;
+}
+
+.social-btn svg {
+  flex: none;
+}
+
+.social-soon {
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.oauth-note {
+  text-align: center;
+  color: var(--on-surface-variant);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
 /* ---------- Register wizard ---------- */
 .stepper {
   margin-bottom: 26px;

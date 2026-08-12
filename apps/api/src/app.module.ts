@@ -19,7 +19,10 @@ import { ExamGenerationModule } from './modules/exam-generation/exam-generation.
 import { HealthModule } from './modules/health/health.module';
 import { InterventionsModule } from './modules/interventions/interventions.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
+import { MailModule } from './modules/mail/mail.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { OAuthModule } from './modules/oauth/oauth.module';
+import { OtpModule } from './modules/otp/otp.module';
 import { PaymobModule } from './modules/paymob/paymob.module';
 import { QuizzesModule } from './modules/quizzes/quiz.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
@@ -73,6 +76,9 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     AuthModule,
     UsersModule,
     SessionsModule,
+    OtpModule,
+    MailModule,
+    OAuthModule,
     CoursesModule,
     EnrollmentsModule,
     StudentModule,

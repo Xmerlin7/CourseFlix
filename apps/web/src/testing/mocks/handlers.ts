@@ -34,16 +34,44 @@ export const handlers = [
   http.post(apiUrl("/auth/register"), () =>
     HttpResponse.json(
       {
-        user: {
-          id: "student-2",
-          email: "new@example.com",
-          fullName: "طالب جديد",
-          role: "student",
-          avatarUrl: null,
-        },
+        message: "Registration successful. Check your email for your verification code.",
+        email: "new@example.com",
+        devCode: "123456",
       },
       { status: 201 },
     ),
+  ),
+
+  http.post(apiUrl("/auth/otp/request"), () =>
+    HttpResponse.json({
+      message: "Check your email for your login code.",
+      email: "student@example.com",
+      devCode: "123456",
+    }),
+  ),
+
+  http.post(apiUrl("/auth/otp/verify"), () =>
+    HttpResponse.json({
+      user: {
+        id: "student-1",
+        email: "student@example.com",
+        fullName: "طالب تجريبي",
+        role: "student",
+        avatarUrl: null,
+      },
+    }),
+  ),
+
+  http.post(apiUrl("/auth/password/request"), () =>
+    HttpResponse.json({
+      message: "Check your email for your password reset code.",
+      email: "student@example.com",
+      devCode: "123456",
+    }),
+  ),
+
+  http.post(apiUrl("/auth/password/reset"), () =>
+    HttpResponse.json({ success: true }),
   ),
 
   http.get(apiUrl("/student/dashboard"), () =>
