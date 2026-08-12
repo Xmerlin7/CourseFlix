@@ -463,64 +463,75 @@
   margin: 4px 0 0;
 }
 
-.community-courses-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Course grid section ("دوراتك") — sits below the page header instead of
+   dropping the grid directly under it, so the page always has a clear
+   title → section → content hierarchy even with just one section. */
+.community-section {
+  margin-top: 8px;
 }
 
-.community-course-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.community-course-thumb {
-  width: 52px;
-  height: 52px;
-  border-radius: 10px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.community-course-thumb img,
-.community-course-thumb .course-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.community-course-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.community-course-title {
-  font-size: 15px;
-  font-weight: 600;
+/* Card shell reuses .course-browse-card's proven flex-column/height:100%
+   shape (see StudentBrowseCoursesPage) — deliberately NOT the old
+   .community-course-card row layout, which collided with .card's
+   flex-direction: column default (later in this file, same specificity)
+   and stretched every card into a tall centered stack. Only the pieces
+   that differ from the browse-grid card (no teacher/price row, a plain
+   "enter community" link, and a locked variant) are declared below. */
+.community-course-grade {
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.community-course-arrow {
   color: var(--on-surface-variant);
-  font-size: 18px;
-  flex-shrink: 0;
-  /* In RTL, arrow_back_ios visually points in the correct "enter" direction */
-  transform: scaleX(-1);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-[dir='rtl'] .community-course-arrow {
+.community-course-footer {
+  justify-content: flex-start;
+}
+
+.community-course-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.community-course-cta .ms {
+  font-size: 18px;
+}
+
+.community-course-card--locked {
+  cursor: default;
+  background: var(--surface-container);
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+/* .course-browse-card:hover normally lifts + shadows the card regardless
+   of the .lift class — cancel it here so the locked card stays visibly
+   inert instead of hinting it's clickable. */
+.community-course-card--locked:hover {
   transform: none;
+  box-shadow: none;
+  border-color: var(--outline-variant);
+}
+
+.community-course-card--locked .course-card-title {
+  color: var(--on-surface-variant);
+  -webkit-line-clamp: 1;
+  min-height: 0;
+}
+
+.community-course-locked-thumb {
+  display: grid;
+  place-items: center;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.community-course-locked-thumb .ms {
+  font-size: 28px;
 }
 
 /* ── Course community page ── */

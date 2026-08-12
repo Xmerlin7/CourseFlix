@@ -49,17 +49,36 @@ describe('StudentCommunityPage', () => {
     )
     renderPage()
     expect(await screen.findByText('المجتمع')).toBeInTheDocument()
-    expect(await screen.findByText(/تواصل مع مدرسك/)).toBeInTheDocument()
+    expect(await screen.findByText(/تواصل مع زملائك ومدرسك/)).toBeInTheDocument()
   })
 
-  it('renders a course card for each active enrollment', async () => {
+  it('renders a course card for each active enrollment, with a section heading and count', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/student/enrollments`, () => HttpResponse.json([sampleEnrollment])),
       http.get(`${env.apiBaseUrl}/notifications/unread-count`, () => HttpResponse.json({ count: 0 })),
     )
     renderPage()
-    expect(await screen.findByText('الكيمياء العضوية')).toBeInTheDocument()
+    expect(await screen.findByText('دوراتك')).toBeInTheDocument()
+    expect(screen.getByText('1 دورة')).toBeInTheDocument()
+    expect(screen.getByText('الكيمياء العضوية')).toBeInTheDocument()
     expect(screen.getByText('الصف الأول الثانوي')).toBeInTheDocument()
+    expect(screen.getByText('دخول المجتمع')).toBeInTheDocument()
+
+    const card = screen.getByText('الكيمياء العضوية').closest('a')
+    expect(card).toHaveAttribute('href', '/student/community/course-1')
+  })
+
+  it('renders a locked card instead of a link for a course with no title', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/student/enrollments`, () =>
+        HttpResponse.json([{ ...sampleEnrollment, courseTitle: undefined }]),
+      ),
+      http.get(`${env.apiBaseUrl}/notifications/unread-count`, () => HttpResponse.json({ count: 0 })),
+    )
+    renderPage()
+    expect(await screen.findByText('الدورة غير متاحة')).toBeInTheDocument()
+    expect(screen.queryByText('دخول المجتمع')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /غير متاحة/ })).not.toBeInTheDocument()
   })
 
   it('shows skeleton while loading', () => {
