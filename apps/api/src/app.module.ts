@@ -24,6 +24,7 @@ import { PaymobModule } from './modules/paymob/paymob.module';
 import { QuizzesModule } from './modules/quizzes/quiz.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { StudentModule } from './modules/student/student.module';
+import { SupportModule } from './modules/support/support.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
 import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
@@ -80,6 +81,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     AttachmentsModule,
     DiscussionsModule,
     AnnouncementsModule,
+    SupportModule,
     NotificationsModule,
     PaymobModule,
     QuizzesModule,
