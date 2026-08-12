@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { ENROLLMENT_STATUS } from '../../../shared/lib/status-labels'
 import { CourseThumb } from '../../courses/components/CourseThumb'
 import type { StudentEnrollment } from '../types/student.types'
@@ -9,6 +9,7 @@ interface StudentCourseCardProps {
 }
 
 export function StudentCourseCard({ enrollment, isPrimaryActive = false }: StudentCourseCardProps) {
+  const navigate = useNavigate()
   const status = ENROLLMENT_STATUS[enrollment.status]
   const progressPercent = enrollment.progressPercent
   const isCompleted = enrollment.status === 'completed' || progressPercent >= 100
@@ -16,9 +17,9 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
   const isSuspended = enrollment.status === 'suspended'
 
   const currentLessonId = enrollment.currentLesson?.id
-  const actionTarget = isSuspended || isCompleted || !currentLessonId
-    ? `/student/courses/${enrollment.courseId}`
-    : `/student/lessons/${currentLessonId}`
+  const detailsTarget = `/student/courses/${enrollment.courseId}`
+  const isContinuing = isStarted && !isCompleted && !isSuspended && !!currentLessonId
+  const actionTarget = isContinuing ? `/student/lessons/${currentLessonId}` : detailsTarget
 
   let ctaLabel = 'ابدأ الآن'
   if (isCompleted) {
@@ -28,7 +29,19 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
   }
 
   return (
-    <article className={`card lift student-course-card${isPrimaryActive ? ' active-learning-card' : ''}`}>
+    <article
+      className={`card lift student-course-card${isPrimaryActive ? ' active-learning-card' : ''}`}
+      onClick={() => navigate(detailsTarget)}
+      role="link"
+      aria-label={`عرض تفاصيل ${enrollment.courseTitle ?? 'الدورة'}`}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          navigate(detailsTarget)
+        }
+      }}
+    >
       <div className="student-card-thumb-wrapper">
         <CourseThumb coverImageUrl={enrollment.coverImageUrl} alt={enrollment.courseTitle ?? ''} />
         {isPrimaryActive && (
@@ -83,6 +96,7 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
             className={`btn btn-compact student-card-cta${isCompleted ? ' tonal' : ''}${isSuspended ? ' disabled' : ''}`}
             aria-disabled={isSuspended}
             onClick={(e) => {
+              e.stopPropagation()
               if (isSuspended) e.preventDefault()
             }}
           >

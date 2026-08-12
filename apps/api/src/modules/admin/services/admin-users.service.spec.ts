@@ -190,8 +190,12 @@ describe('AdminUsersService', () => {
       );
       usersRepository.count.mockResolvedValue(2);
 
+      // Target role is 'student' rather than 'teacher' so this only
+      // exercises the last-admin check — demoting to 'teacher' would also
+      // hit assertNoExistingTeacher's single-teacher-platform rule, which
+      // is a separate concern covered under its own describe block.
       await expect(
-        service.updateRole(adminId, otherAdminId, 'teacher'),
+        service.updateRole(adminId, otherAdminId, 'student'),
       ).resolves.toBeDefined();
     });
   });

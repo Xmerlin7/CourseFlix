@@ -36,6 +36,19 @@ const VALID_STATUS_FILTERS: readonly DiscussionStatusFilter[] = [
   'mine',
 ];
 
+function decodeOriginalName(filename: string | undefined): string {
+  if (!filename) return '';
+  try {
+    const decoded = Buffer.from(filename, 'latin1').toString('utf8');
+    if (/[؀-ۿ]/.test(decoded)) {
+      return decoded;
+    }
+  } catch {
+    // fallback
+  }
+  return filename;
+}
+
 /**
  * A discussion thread is reachable by both a student (if enrolled) and
  * the course's teacher/assistants (if they own the course) — access is
@@ -67,19 +80,6 @@ export class DiscussionsController {
     };
     return this.discussionsService.listThreads(courseId, user, filters);
   }
-
-function decodeOriginalName(filename: string | undefined): string {
-  if (!filename) return '';
-  try {
-    const decoded = Buffer.from(filename, 'latin1').toString('utf8');
-    if (/[\u0600-\u06FF]/.test(decoded)) {
-      return decoded;
-    }
-  } catch {
-    // fallback
-  }
-  return filename;
-}
 
   @Post('courses/:courseId/discussions')
   @UseInterceptors(FileInterceptor('attachment'))

@@ -2476,6 +2476,7 @@ h1.page-title {
   padding: calc(16px * var(--space-scale));
   border: 1px solid var(--outline-variant);
   gap: 0;
+  cursor: pointer;
 }
 
 .student-course-card.active-learning-card {
