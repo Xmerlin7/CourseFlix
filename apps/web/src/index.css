@@ -418,6 +418,148 @@
   justify-content: center;
 }
 
+/* ── Sidebar unread indicator dot ──
+   A small filled circle that appears inline after the label when there is
+   new activity in Community or Support. Uses margin-inline-start so it
+   stays correctly positioned in RTL layouts without hardcoded left/right.
+   The dot is visually suppressed in rail mode (label hidden) via display:none
+   to avoid floating orphan dots — the icon alone communicates the route. */
+.nav-unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  /* Subtle pulse so it catches the eye without being distracting */
+  animation: dot-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* Hide the floating dot in rail mode — icon-only nav doesn't have room */
+.sidebar.rail .nav-unread-dot {
+  display: none;
+}
+
+/* ── Community landing page ── */
+.community-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.community-page-header {
+  margin-bottom: 28px;
+}
+
+.community-page-subtitle {
+  color: var(--on-surface-variant);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.community-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.community-course-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.community-course-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.community-course-thumb img,
+.community-course-thumb .course-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.community-course-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.community-course-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.community-course-arrow {
+  color: var(--on-surface-variant);
+  font-size: 18px;
+  flex-shrink: 0;
+  /* In RTL, arrow_back_ios visually points in the correct "enter" direction */
+  transform: scaleX(-1);
+}
+
+[dir='rtl'] .community-course-arrow {
+  transform: none;
+}
+
+/* ── Course community page ── */
+.course-community-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.community-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 20px;
+  /* Reverse arrow direction for RTL */
+  flex-direction: row-reverse;
+}
+
+[dir='rtl'] .community-back-link .ms {
+  transform: scaleX(-1);
+}
+
+.community-course-page-header {
+  margin-bottom: 20px;
+}
+
+.community-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+
+
 /* ===== Topbar ===== */
 .topbar {
   display: flex;
@@ -1599,6 +1741,37 @@ code {
 .stepper-labels .stepper-label.current {
   color: var(--on-surface);
   font-weight: 700;
+}
+
+/* Local-dev-only fallback shown on the OTP step when the API isn't
+   configured to actually send email (RESEND_API_KEY unset/placeholder) —
+   the backend echoes the code in the response instead, and this surfaces
+   it so testing doesn't require digging through server logs. Never
+   rendered in production: the backend omits `devCode` there. */
+.otp-dev-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: calc(14px * var(--radius-scale));
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.otp-dev-hint-code {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .wizard-step {

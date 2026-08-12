@@ -29,6 +29,7 @@ import { StudentProfileSkeleton } from '../../features/profile/components/Studen
 import { LoginSkeleton } from '../../features/auth/components/LoginSkeleton'
 import { RegisterSkeleton } from '../../features/auth/components/RegisterSkeleton'
 import { DiscussionDetailSkeleton } from '../../features/community/components/DiscussionDetailSkeleton'
+import { StudentCommunitySkeleton } from '../../features/community/components/StudentCommunitySkeleton'
 import { SupportTicketsPageSkeleton } from '../../features/support/components/SupportTicketsPageSkeleton'
 import { SupportTicketDetailSkeleton } from '../../features/support/components/SupportTicketDetailSkeleton'
 import { SupportInboxSkeleton } from '../../features/support/components/SupportInboxSkeleton'
@@ -93,6 +94,12 @@ const StudentProfilePage = lazy(() =>
 )
 const DiscussionDetailPage = lazy(() =>
   import('../../features/community/pages/DiscussionDetailPage').then((m) => ({ default: m.DiscussionDetailPage }))
+)
+const StudentCommunityPage = lazy(() =>
+  import('../../features/community/pages/StudentCommunityPage').then((m) => ({ default: m.StudentCommunityPage }))
+)
+const StudentCourseCommunityPage = lazy(() =>
+  import('../../features/community/pages/StudentCourseCommunityPage').then((m) => ({ default: m.StudentCourseCommunityPage }))
 )
 const SupportTicketsPage = lazy(() =>
   import('../../features/support/pages/SupportTicketsPage').then((m) => ({ default: m.SupportTicketsPage }))
@@ -425,6 +432,22 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<SupportTicketDetailSkeleton />}>
                 <SupportTicketDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COMMUNITY,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <StudentCommunityPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COMMUNITY_COURSE,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <StudentCourseCommunityPage />
               </SuspenseWrapper>
             ),
           },
