@@ -1,10 +1,15 @@
-import { Fragment, useState } from 'react'
+import { Fragment, lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
+import { CommunityPanelSkeleton } from '../../community/components/CommunityPanelSkeleton'
 import { StudentDocumentsList } from '../../course-documents/components/StudentDocumentsList'
 import type { QuizSummary } from '../../quizzes/types/quiz.types'
 import type { CourseDetail } from '../types/course.types'
+
+const CourseCommunityPanel = lazy(() =>
+  import('../../community/components/CourseCommunityPanel').then((m) => ({ default: m.CourseCommunityPanel })),
+)
 
 interface CourseDetailViewProps {
   course: CourseDetail
@@ -25,7 +30,7 @@ export function CourseDetailView({
   areQuizzesLoading = false,
   quizzesError = false,
 }: CourseDetailViewProps) {
-  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'files'>('videos')
+  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'files' | 'community'>('videos')
   const lessonCount = course.sections.reduce(
     (total, section) => total + section.lessons.length,
     0,
@@ -151,9 +156,24 @@ export function CourseDetailView({
             >
               ملفات
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeMediaTab === 'community'}
+              onClick={() => setActiveMediaTab('community')}
+              className={`tab${activeMediaTab === 'community' ? ' active' : ''}`}
+            >
+              المجتمع
+            </button>
           </div>
 
-          {activeMediaTab === 'videos' ? videosSection : <StudentDocumentsList courseId={course.id} />}
+          {activeMediaTab === 'videos' && videosSection}
+          {activeMediaTab === 'files' && <StudentDocumentsList courseId={course.id} />}
+          {activeMediaTab === 'community' && (
+            <Suspense fallback={<CommunityPanelSkeleton />}>
+              <CourseCommunityPanel courseId={course.id} />
+            </Suspense>
+          )}
         </>
       )}
 

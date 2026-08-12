@@ -49,6 +49,7 @@ export interface DiscussionAttachmentResponse {
 
 export interface DiscussionThreadListItemResponse {
   id: string;
+  courseId: string;
   title: string;
   author: DiscussionAuthorSummary;
   tags: string[];
@@ -534,6 +535,7 @@ export class DiscussionsService {
   ): DiscussionThreadListItemResponse {
     return {
       id: thread.id,
+      courseId: thread.courseId,
       title: thread.title,
       author: this.resolveAuthor(thread.authorId, thread.authorRole, authors),
       tags: thread.tags,
