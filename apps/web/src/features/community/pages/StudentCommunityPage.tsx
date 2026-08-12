@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { EmptyState } from '../../../shared/components/EmptyState'
+import { Link } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { useStudentEnrollments } from '../../student/hooks/useStudentEnrollments'
@@ -16,6 +15,8 @@ function buildCommunityPath(courseId: string): string {
   return ROUTE_PATHS.STUDENT.COMMUNITY_COURSE.replace(':courseId', courseId)
 }
 
+// WhatsApp-style relative stamp: time for today, "أمس" for yesterday, the
+// weekday name within the last week, and a short date beyond that.
 function formatActivityTime(iso: string): string {
   const date = new Date(iso)
   const now = new Date()
@@ -30,6 +31,11 @@ function formatActivityTime(iso: string): string {
     return 'أمس'
   }
 
+  const daysSince = Math.floor((now.getTime() - date.getTime()) / 86_400_000)
+  if (daysSince >= 0 && daysSince < 7) {
+    return date.toLocaleDateString('ar-EG', { weekday: 'long' })
+  }
+
   return date.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' })
 }
 
@@ -37,7 +43,6 @@ export function StudentCommunityPage() {
   const { data: enrollments, isLoading, error, refetch } = useStudentEnrollments()
   const { data: summaries } = useStudentCommunitySummary()
   const [search, setSearch] = useState('')
-  const navigate = useNavigate()
 
   if (isLoading) return <StudentCommunitySkeleton />
 
@@ -73,14 +78,11 @@ export function StudentCommunityPage() {
       {error ? (
         <ErrorState onRetry={refetch} />
       ) : courses.length === 0 ? (
-        <EmptyState
-          variant="courses"
-          title="لا توجد دورات بعد"
-          message="انضم إلى دورة لبدء المشاركة في المجتمع"
-          actionLabel="استكشف الدورات"
-          onAction={() => navigate(ROUTE_PATHS.STUDENT.BROWSE)}
-          fullPage
-        />
+        <div className="community-empty">
+          <span className="ms" aria-hidden="true">groups</span>
+          <p className="community-empty-title">لا توجد مجتمعات متاحة</p>
+          <p className="community-empty-message">اشترك في دورة للانضمام إلى مجتمعها</p>
+        </div>
       ) : (
         <>
           <div className="community-search">
@@ -133,23 +135,21 @@ function CommunityCourseRow({
       </div>
 
       <div className="community-row-main">
-        <div className="community-row-top">
+        <div className="community-row-line1">
           <span className="community-row-title">{enrollment.courseTitle}</span>
           {summary?.lastActivityAt && (
             <span className="community-row-time">{formatActivityTime(summary.lastActivityAt)}</span>
           )}
         </div>
 
-        <div className="community-row-bottom">
-          <span className="community-row-preview">
-            {enrollment.gradeLevel && (
-              <>
-                <span className="community-row-grade">{enrollment.gradeLevel}</span>
-                {summary?.preview && <span className="community-row-sep">·</span>}
-              </>
-            )}
-            {summary?.preview ?? 'لا يوجد نشاط بعد'}
-          </span>
+        {enrollment.gradeLevel && (
+          <div className="community-row-line2">
+            <span className="community-row-grade">{enrollment.gradeLevel}</span>
+          </div>
+        )}
+
+        <div className="community-row-line3">
+          <span className="community-row-preview">{summary?.preview ?? 'لا توجد رسائل جديدة'}</span>
           {unreadCount > 0 && <span className="community-row-badge">{unreadCount}</span>}
         </div>
       </div>
@@ -169,10 +169,10 @@ function CommunityCourseUnavailableRow() {
       </div>
 
       <div className="community-row-main">
-        <div className="community-row-top">
+        <div className="community-row-line1">
           <span className="community-row-title">الدورة غير متاحة</span>
         </div>
-        <div className="community-row-bottom">
+        <div className="community-row-line3">
           <span className="community-row-preview">لا يمكنك الوصول إلى مجتمع هذه الدورة حاليًا</span>
         </div>
       </div>

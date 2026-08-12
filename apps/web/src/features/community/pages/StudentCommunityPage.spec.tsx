@@ -98,7 +98,7 @@ describe('StudentCommunityPage', () => {
     mockSummary([{ courseId: 'course-1', preview: null, lastActivityAt: null, unreadCount: 0 }])
     renderPage()
 
-    expect(await screen.findByText('لا يوجد نشاط بعد')).toBeInTheDocument()
+    expect(await screen.findByText('لا توجد رسائل جديدة')).toBeInTheDocument()
     expect(screen.queryByText(/^\d+$/)).not.toBeInTheDocument()
   })
 
@@ -151,11 +151,11 @@ describe('StudentCommunityPage', () => {
     expect(screen.getByTestId('community-skeleton')).toBeInTheDocument()
   })
 
-  it('shows an empty state with an explore-courses action when there are no enrollments', async () => {
+  it('shows a compact empty state when there are no enrollments', async () => {
     mockEnrollments([])
     mockSummary([])
     renderPage()
-    expect(await screen.findByText('لا توجد دورات بعد')).toBeInTheDocument()
-    expect(screen.getByText('استكشف الدورات')).toBeInTheDocument()
+    expect(await screen.findByText('لا توجد مجتمعات متاحة')).toBeInTheDocument()
+    expect(screen.getByText('اشترك في دورة للانضمام إلى مجتمعها')).toBeInTheDocument()
   })
 })

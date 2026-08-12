@@ -506,13 +506,46 @@
   text-align: center;
 }
 
+/* Compact empty state — a small icon, not the full illustration used
+   elsewhere, so a student with zero enrollments never sees a huge blank
+   area on this page. */
+.community-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.community-empty .ms {
+  font-size: 34px;
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.community-empty-title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.community-empty-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--on-surface-variant);
+}
+
 /* Conversation-style course list — a WhatsApp/Telegram-inspired compact
-   row list, deliberately NOT cards: a course row stays a fixed, small
-   height no matter how many courses the student has, unlike the previous
-   card-grid design this replaces. */
+   row list, deliberately NOT cards: each row is a small, self-contained,
+   rounded row (not a divider-separated flat list), so it stays scannable
+   no matter how many courses the student has. */
 .community-list {
   display: flex;
   flex-direction: column;
+  gap: 7px;
   max-width: 920px;
 }
 
@@ -520,20 +553,19 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 10px;
-  border-bottom: 1px solid var(--outline-variant);
+  min-height: 76px;
+  padding: 12px 14px;
+  border-radius: calc(14px * var(--radius-scale));
   border-inline-start: 3px solid transparent;
+  background: var(--surface-container-low);
   text-decoration: none;
   color: inherit;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.community-list .community-row:last-child {
-  border-bottom: none;
-}
-
+/* Minimal, elegant hover — a single subtle tone shift, not a color swap. */
 .community-row:hover {
-  background: var(--secondary-container);
+  background: var(--surface-container);
 }
 
 .community-row:active,
@@ -562,10 +594,10 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
-.community-row-top {
+.community-row-line1 {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -587,7 +619,16 @@
   color: var(--on-surface-variant);
 }
 
-.community-row-bottom {
+.community-row-line2 .community-row-grade {
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.community-row-line3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -602,15 +643,6 @@
   white-space: nowrap;
   font-size: 13px;
   color: var(--on-surface-variant);
-}
-
-.community-row-grade {
-  color: var(--on-surface-variant);
-}
-
-.community-row-sep {
-  margin: 0 4px;
-  opacity: 0.6;
 }
 
 .community-row-badge {
@@ -635,7 +667,7 @@
 .community-row--locked:hover,
 .community-row--locked:active,
 .community-row--locked:focus-visible {
-  background: transparent;
+  background: var(--surface-container-low);
   border-inline-start-color: transparent;
 }
 
@@ -645,15 +677,14 @@
 
 @media (max-width: 1024px) {
   .community-row {
-    padding: 12px 8px;
+    padding: 11px 10px;
     gap: 10px;
   }
 }
 
 @media (max-width: 480px) {
-  .community-row-grade,
-  .community-row-sep {
-    display: none;
+  .community-row {
+    padding: 10px 8px;
   }
 }
 
