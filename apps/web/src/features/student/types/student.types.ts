@@ -86,3 +86,12 @@ export interface StudentEnrollmentFilters {
   status?: EnrollmentStatus
   gradeLevel?: string
 }
+
+export interface StudentCommunitySummaryItem {
+  courseId: string
+  /** A single line — latest discussion thread or announcement — or null when the course has no community activity yet. */
+  preview: string | null
+  lastActivityAt: string | null
+  /** Unread discussion_reply/discussion_accepted notifications addressed to this student for this course. */
+  unreadCount: number
+}

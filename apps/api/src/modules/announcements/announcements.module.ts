@@ -31,5 +31,8 @@ import { PostEntity } from './entities/post.entity';
   ],
   controllers: [AnnouncementsController],
   providers: [AnnouncementsService],
+  // StudentService (StudentModule) needs the bulk latest-post lookup to
+  // build the community list's activity preview.
+  exports: [AnnouncementsService],
 })
 export class AnnouncementsModule {}

@@ -1,8 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { AnnouncementsService } from '../announcements/announcements.service';
 import { CoursesService } from '../courses/courses.service';
+import { DiscussionsService } from '../discussions/discussions.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { LessonsService } from '../lessons/lessons.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { StudentService } from './student.service';
 
@@ -12,6 +15,12 @@ describe('StudentService', () => {
   let coursesService: { findByIds: jest.Mock };
   let usersService: { findById: jest.Mock };
   let lessonsService: { getCourseProgressSummaries: jest.Mock };
+  let discussionsService: {
+    getLatestThreadsByCourseIds: jest.Mock;
+    getCourseIdsForThreadIds: jest.Mock;
+  };
+  let announcementsService: { getLatestPostsByCourseIds: jest.Mock };
+  let notificationsService: { listForUser: jest.Mock };
 
   const studentId = 'student-1';
 
@@ -51,6 +60,14 @@ describe('StudentService', () => {
     lessonsService = {
       getCourseProgressSummaries: jest.fn().mockResolvedValue(new Map()),
     };
+    discussionsService = {
+      getLatestThreadsByCourseIds: jest.fn().mockResolvedValue(new Map()),
+      getCourseIdsForThreadIds: jest.fn().mockResolvedValue(new Map()),
+    };
+    announcementsService = {
+      getLatestPostsByCourseIds: jest.fn().mockResolvedValue(new Map()),
+    };
+    notificationsService = { listForUser: jest.fn().mockResolvedValue([]) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -59,6 +76,9 @@ describe('StudentService', () => {
         { provide: CoursesService, useValue: coursesService },
         { provide: UsersService, useValue: usersService },
         { provide: LessonsService, useValue: lessonsService },
+        { provide: DiscussionsService, useValue: discussionsService },
+        { provide: AnnouncementsService, useValue: announcementsService },
+        { provide: NotificationsService, useValue: notificationsService },
       ],
     }).compile();
 
@@ -440,6 +460,147 @@ describe('StudentService', () => {
         studentService.getEnrollments(studentId, { status: 'bogus' }),
       ).rejects.toThrow(BadRequestException);
       expect(enrollmentsService.findStudentEnrollments).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getCommunitySummary', () => {
+    it('returns no rows when the student has no active/completed enrollments', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue([]);
+
+      const result = await studentService.getCommunitySummary(studentId);
+
+      expect(result).toEqual([]);
+      expect(
+        discussionsService.getLatestThreadsByCourseIds,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('excludes suspended enrollments from the summary', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue([
+        { ...enrollments[0], status: 'suspended' as const },
+      ]);
+
+      const result = await studentService.getCommunitySummary(studentId);
+
+      expect(result).toEqual([]);
+    });
+
+    it('prefers the newer of the latest thread vs. latest announcement as the preview', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue(enrollments);
+      discussionsService.getLatestThreadsByCourseIds.mockResolvedValue(
+        new Map([
+          [
+            mechanicsCourse.id,
+            {
+              authorName: 'أحمد',
+              title: 'ازاي احسب العزم؟',
+              createdAt: new Date('2026-08-10T10:00:00.000Z'),
+            },
+          ],
+        ]),
+      );
+      announcementsService.getLatestPostsByCourseIds.mockResolvedValue(
+        new Map([
+          [
+            mechanicsCourse.id,
+            {
+              content: 'الامتحان الأسبوع الجاي',
+              createdAt: new Date('2026-08-11T10:00:00.000Z'),
+            },
+          ],
+          [
+            electroCourse.id,
+            {
+              content: 'مرحبا بكم',
+              createdAt: new Date('2026-08-01T10:00:00.000Z'),
+            },
+          ],
+        ]),
+      );
+
+      const result = await studentService.getCommunitySummary(studentId);
+
+      const mechanics = result.find((r) => r.courseId === mechanicsCourse.id);
+      expect(mechanics).toMatchObject({
+        preview: 'إعلان: الامتحان الأسبوع الجاي',
+        lastActivityAt: '2026-08-11T10:00:00.000Z',
+      });
+
+      const electro = result.find((r) => r.courseId === electroCourse.id);
+      expect(electro).toMatchObject({
+        preview: 'إعلان: مرحبا بكم',
+        lastActivityAt: '2026-08-01T10:00:00.000Z',
+      });
+    });
+
+    it('returns a null preview and zero unread count for a course with no activity', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue([
+        enrollments[0],
+      ]);
+
+      const result = await studentService.getCommunitySummary(studentId);
+
+      expect(result).toEqual([
+        {
+          courseId: mechanicsCourse.id,
+          preview: null,
+          lastActivityAt: null,
+          unreadCount: 0,
+        },
+      ]);
+    });
+
+    it('groups unread discussion notifications by the course their thread belongs to', async () => {
+      enrollmentsService.findStudentEnrollments.mockResolvedValue(enrollments);
+      notificationsService.listForUser.mockResolvedValue([
+        {
+          id: 'n1',
+          type: 'discussion_reply',
+          title: 'رد جديد على سؤالك',
+          message: 'أحمد رد على سؤالك: ...',
+          relatedEntityType: 'discussion_thread',
+          relatedEntityId: 'thread-1',
+          isRead: false,
+          createdAt: '2026-08-10T10:00:00.000Z',
+        },
+        {
+          id: 'n2',
+          type: 'discussion_accepted',
+          title: 'تم قبول إجابتك',
+          message: '...',
+          relatedEntityType: 'discussion_thread',
+          relatedEntityId: 'thread-2',
+          isRead: false,
+          createdAt: '2026-08-10T11:00:00.000Z',
+        },
+        // Not a community type — must be ignored entirely.
+        {
+          id: 'n3',
+          type: 'announcement',
+          title: 'إعلان جديد من المدرس',
+          message: '...',
+          relatedEntityType: 'post',
+          relatedEntityId: 'post-1',
+          isRead: false,
+          createdAt: '2026-08-10T12:00:00.000Z',
+        },
+      ]);
+      discussionsService.getCourseIdsForThreadIds.mockResolvedValue(
+        new Map([
+          ['thread-1', mechanicsCourse.id],
+          ['thread-2', mechanicsCourse.id],
+        ]),
+      );
+
+      const result = await studentService.getCommunitySummary(studentId);
+
+      expect(discussionsService.getCourseIdsForThreadIds).toHaveBeenCalledWith(
+        expect.arrayContaining(['thread-1', 'thread-2']),
+      );
+      const mechanics = result.find((r) => r.courseId === mechanicsCourse.id);
+      expect(mechanics?.unreadCount).toBe(2);
+      const electro = result.find((r) => r.courseId === electroCourse.id);
+      expect(electro?.unreadCount).toBe(0);
     });
   });
 });

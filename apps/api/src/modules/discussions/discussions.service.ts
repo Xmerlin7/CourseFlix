@@ -78,6 +78,12 @@ export interface DiscussionThreadDetailResponse
   canPin: boolean;
 }
 
+export interface LatestThreadByCourse {
+  authorName: string;
+  title: string;
+  createdAt: Date;
+}
+
 export interface CreateThreadInput {
   title: string;
   body: string;
@@ -418,6 +424,57 @@ export class DiscussionsService {
     await this.threadsRepository.save(thread);
 
     return this.getThread(threadId, user);
+  }
+
+  /**
+   * Bulk, trusted-caller variant of listThreads — no per-course access
+   * check, since callers (StudentService's community summary) already
+   * derived `courseIds` from the student's own verified enrollments.
+   * Returns only the single newest thread per course, for a "دوراتك"
+   * list preview line — not a substitute for listThreads' full filtering.
+   */
+  async getLatestThreadsByCourseIds(
+    courseIds: string[],
+  ): Promise<Map<string, LatestThreadByCourse>> {
+    if (courseIds.length === 0) return new Map();
+
+    const threads = await this.threadsRepository
+      .createQueryBuilder('t')
+      .distinctOn(['t.courseId'])
+      .where('t.courseId IN (:...courseIds)', { courseIds })
+      .andWhere('t.deletedAt IS NULL')
+      .orderBy('t.courseId', 'ASC')
+      .addOrderBy('t.createdAt', 'DESC')
+      .getMany();
+
+    const authors = await this.loadAuthors(threads.map((t) => t.authorId));
+
+    const result = new Map<string, LatestThreadByCourse>();
+    for (const thread of threads) {
+      result.set(thread.courseId, {
+        authorName: authors.get(thread.authorId)?.fullName ?? 'مستخدم محذوف',
+        title: thread.title,
+        createdAt: thread.createdAt,
+      });
+    }
+    return result;
+  }
+
+  /**
+   * Resolves discussion-notification `relatedEntityId`s (thread ids) back
+   * to their courseId — notifications carry no course FK (see
+   * NotificationEntity's docblock), so this is how StudentService groups
+   * unread discussion notifications by course.
+   */
+  async getCourseIdsForThreadIds(
+    threadIds: string[],
+  ): Promise<Map<string, string>> {
+    if (threadIds.length === 0) return new Map();
+    const threads = await this.threadsRepository.find({
+      where: { id: In(threadIds) },
+      select: { id: true, courseId: true },
+    });
+    return new Map(threads.map((t) => [t.id, t.courseId]));
   }
 
   // ---------------------------------------------------------------------

@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
+import { AnnouncementsModule } from '../announcements/announcements.module';
 import { CoursesModule } from '../courses/courses.module';
+import { DiscussionsModule } from '../discussions/discussions.module';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { LessonsModule } from '../lessons/lessons.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { UsersModule } from '../users/users.module';
 import { StudentController } from './student.controller';
@@ -17,6 +20,9 @@ import { StudentService } from './student.service';
     UsersModule,
     SessionsModule,
     LessonsModule,
+    DiscussionsModule,
+    AnnouncementsModule,
+    NotificationsModule,
   ],
   controllers: [StudentController],
   providers: [StudentService],

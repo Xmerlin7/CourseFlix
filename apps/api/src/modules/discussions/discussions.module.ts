@@ -35,5 +35,8 @@ import { DiscussionThreadEntity } from './entities/discussion-thread.entity';
   ],
   controllers: [DiscussionsController],
   providers: [DiscussionsService],
+  // StudentService (StudentModule) needs the bulk community-summary
+  // methods to build the "دوراتك" list preview/unread data.
+  exports: [DiscussionsService],
 })
 export class DiscussionsModule {}

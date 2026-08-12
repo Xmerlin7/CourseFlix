@@ -1,7 +1,7 @@
 import '../../../shared/components/Skeleton.css'
-import { CommunityCourseCardSkeleton } from './CommunityCourseCardSkeleton'
+import { CommunityCourseRowSkeleton } from './CommunityCourseRowSkeleton'
 
-/** Mirrors StudentCommunityPage's header + course grid while enrollments load. */
+/** Mirrors StudentCommunityPage's header + search + course list while data loads. */
 export function StudentCommunitySkeleton() {
   return (
     <div className="community-page skeleton-pulse" data-testid="community-skeleton">
@@ -10,21 +10,13 @@ export function StudentCommunitySkeleton() {
         <div className="skeleton" style={{ height: 16, width: 320, borderRadius: 6 }} />
       </div>
 
-      <div className="community-section">
-        <div className="section-head">
-          <div className="skeleton" style={{ height: 22, width: 90, borderRadius: 6 }} />
-        </div>
+      <div className="skeleton" style={{ height: 42, width: 260, borderRadius: 999, marginBottom: 18 }} />
 
-        <div
-          className="grid-3 course-browse-grid community-course-grid"
-          role="status"
-          aria-label="جاري تحميل الدورات"
-        >
-          {Array.from({ length: 6 }).map((_, i) => (
-            <CommunityCourseCardSkeleton key={i} />
-          ))}
-          <span className="skeleton-sr-only">جاري تحميل الدورات</span>
-        </div>
+      <div className="community-list" role="status" aria-label="جاري تحميل الدورات">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <CommunityCourseRowSkeleton key={i} />
+        ))}
+        <span className="skeleton-sr-only">جاري تحميل الدورات</span>
       </div>
     </div>
   )

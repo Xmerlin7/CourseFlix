@@ -36,6 +36,11 @@ export interface AnnouncementResponse {
   updatedAt: string;
 }
 
+export interface LatestPostByCourse {
+  content: string;
+  createdAt: Date;
+}
+
 export interface CreateAnnouncementInput {
   content: string;
   attachment?: {
@@ -161,7 +166,9 @@ export class AnnouncementsService {
     const post = await this.loadPostOrThrow(postId);
     const course = await this.assertCanAccessCourse(user, post.courseId);
     if (!this.isEffectiveTeacher(user, course)) {
-      throw new ForbiddenException('Only the teacher can delete announcements.');
+      throw new ForbiddenException(
+        'Only the teacher can delete announcements.',
+      );
     }
 
     await this.postsRepository.softDelete(post.id);
@@ -181,6 +188,36 @@ export class AnnouncementsService {
     await this.postsRepository.save(post);
 
     return (await this.toResponses([post], true))[0];
+  }
+
+  /**
+   * Bulk, trusted-caller variant of listAnnouncements — no per-course
+   * access check, since callers (StudentService's community summary)
+   * already derived `courseIds` from the student's own verified
+   * enrollments. Returns only the single newest post per course.
+   */
+  async getLatestPostsByCourseIds(
+    courseIds: string[],
+  ): Promise<Map<string, LatestPostByCourse>> {
+    if (courseIds.length === 0) return new Map();
+
+    const posts = await this.postsRepository
+      .createQueryBuilder('p')
+      .distinctOn(['p.courseId'])
+      .where('p.courseId IN (:...courseIds)', { courseIds })
+      .andWhere('p.deletedAt IS NULL')
+      .orderBy('p.courseId', 'ASC')
+      .addOrderBy('p.createdAt', 'DESC')
+      .getMany();
+
+    const result = new Map<string, LatestPostByCourse>();
+    for (const post of posts) {
+      result.set(post.courseId, {
+        content: post.content,
+        createdAt: post.createdAt,
+      });
+    }
+    return result;
   }
 
   // ---------------------------------------------------------------------
