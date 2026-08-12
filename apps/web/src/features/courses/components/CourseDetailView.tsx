@@ -2,13 +2,17 @@ import { Fragment, lazy, Suspense, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
+import { AnnouncementsSectionSkeleton } from '../../community/components/AnnouncementsSectionSkeleton'
 import { CommunityPanelSkeleton } from '../../community/components/CommunityPanelSkeleton'
 import { StudentDocumentsList } from '../../course-documents/components/StudentDocumentsList'
 import type { QuizSummary } from '../../quizzes/types/quiz.types'
 import type { CourseDetail } from '../types/course.types'
 
-const CourseCommunityPanel = lazy(() =>
-  import('../../community/components/CourseCommunityPanel').then((m) => ({ default: m.CourseCommunityPanel })),
+const DiscussionsSection = lazy(() =>
+  import('../../community/components/DiscussionsSection').then((m) => ({ default: m.DiscussionsSection })),
+)
+const AnnouncementsSection = lazy(() =>
+  import('../../community/components/AnnouncementsSection').then((m) => ({ default: m.AnnouncementsSection })),
 )
 
 interface CourseDetailViewProps {
@@ -30,7 +34,7 @@ export function CourseDetailView({
   areQuizzesLoading = false,
   quizzesError = false,
 }: CourseDetailViewProps) {
-  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'files' | 'community'>('videos')
+  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'files' | 'community' | 'announcements'>('videos')
   const lessonCount = course.sections.reduce(
     (total, section) => total + section.lessons.length,
     0,
@@ -185,17 +189,33 @@ export function CourseDetailView({
               <span className="ms sm" aria-hidden="true">forum</span>
               المجتمع
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeMediaTab === 'announcements'}
+              onClick={() => setActiveMediaTab('announcements')}
+              className={`course-detail-tab-btn${activeMediaTab === 'announcements' ? ' active' : ''}`}
+            >
+              <span className="ms sm" aria-hidden="true">campaign</span>
+              الإعلانات
+            </button>
           </div>
 
           {activeMediaTab === 'videos' && videosSection}
           {activeMediaTab === 'files' && <StudentDocumentsList courseId={course.id} />}
           {activeMediaTab === 'community' && (
             <Suspense fallback={<CommunityPanelSkeleton />}>
-              <CourseCommunityPanel courseId={course.id} />
+              <DiscussionsSection courseId={course.id} />
+            </Suspense>
+          )}
+          {activeMediaTab === 'announcements' && (
+            <Suspense fallback={<AnnouncementsSectionSkeleton />}>
+              <AnnouncementsSection courseId={course.id} canManage={course.canEdit} />
             </Suspense>
           )}
         </>
       )}
+
 
       {!course.canEdit && areQuizzesLoading && (
         <p className="subtitle">جارٍ تحميل اختبارات الدورة...</p>

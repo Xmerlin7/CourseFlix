@@ -61,9 +61,9 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
     <section className="section" aria-label="مناقشات الدورة">
       <div className="support-page-head" style={{ marginBottom: 16 }}>
         <div className="support-page-title-group">
-          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>المناقشات</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>المجتمع</h2>
           <p className="support-page-subtitle" style={{ margin: 0 }}>
-            اتناقش مع زملائك واسأل المدرس عن أي حاجة تخص الدورة
+            اتناقش مع زملائك والمدرس في كل ما يخص الكورس
           </p>
         </div>
         {isStudent && (
