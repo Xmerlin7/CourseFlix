@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { showToast } from '../../../shared/components/Toast'
+import { sanitizeFilename } from '../../../shared/utils/sanitizeFilename'
 import { useAuth } from '../../auth/hooks/useAuth'
 import {
   acceptAnswer,
@@ -12,9 +14,9 @@ import {
   toggleThreadPin,
   unacceptAnswer,
 } from '../api/community.api'
+import { DiscussionDetailSkeleton } from '../components/DiscussionDetailSkeleton'
 import { useDiscussion } from '../hooks/useDiscussion'
 import type { DiscussionReply } from '../types/community.types'
-import { DiscussionDetailSkeleton } from '../components/DiscussionDetailSkeleton'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
@@ -109,134 +111,176 @@ export function DiscussionDetailPage() {
   }
 
   return (
-    <div>
-      <Link to={coursePath} className="meta-link">
-        <span className="ms">arrow_back</span>
-        الرجوع للمجتمع
-      </Link>
+    <div style={{ maxWidth: 880, margin: '0 auto', width: '100%' }}>
+      <div style={{ marginBottom: 16 }}>
+        <Link to={coursePath} className="btn tonal sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span className="ms sm" aria-hidden="true">arrow_forward</span>
+          العودة للمجتمع
+        </Link>
+      </div>
 
-      <div className="card" style={{ gap: 10, marginTop: 14, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-          <h1 className="page-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="card discussion-question-card" style={{ gap: 14, marginBottom: 24 }}>
+        <div className="support-card-top" style={{ alignItems: 'center' }}>
+          <div className="support-card-meta">
+            <span className={`chip ${data.isAnswered ? 'green' : 'outline'} sm`}>
+              <span className="ms sm" aria-hidden="true">
+                {data.isAnswered ? 'check_circle' : 'help'}
+              </span>
+              {data.isAnswered ? 'تمت الإجابة' : 'بدون إجابة'}
+            </span>
             {data.isPinned && (
-              <span className="ms" style={{ color: 'var(--primary)' }} aria-label="مثبت">
-                push_pin
+              <span className="chip outline sm">
+                <span className="ms sm" style={{ color: 'var(--primary)' }} aria-hidden="true">
+                  push_pin
+                </span>
+                مثبت
               </span>
             )}
-            {data.title}
-          </h1>
-          <span className={`chip${data.isAnswered ? ' green' : ''}`}>
-            {data.isAnswered ? 'تمت الإجابة' : 'بدون إجابة'}
+          </div>
+          <div className="discussion-author-badge">
+            <span className="ms sm" aria-hidden="true">account_circle</span>
+            <span>{data.author.fullName}</span>
+            {data.author.role === 'teacher' && <span className="chip sm primary">المدرس</span>}
+          </div>
+        </div>
+
+        <h1 className="page-title" style={{ fontSize: 22, margin: 0, overflowWrap: 'anywhere' }}>
+          {data.title}
+        </h1>
+
+        <div className="support-card-info" style={{ fontSize: 13, color: 'var(--on-surface-variant)' }}>
+          <span className="support-card-info-item">
+            <span className="ms sm" aria-hidden="true">schedule</span>
+            {formatDate(data.createdAt)}
           </span>
         </div>
 
-        <span className="meta">
-          {data.author.fullName} · {formatDate(data.createdAt)}
-        </span>
-
-        <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{data.body}</p>
+        <p className="discussion-body-text">{data.body}</p>
 
         {data.attachments.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {data.attachments.map((file) => (
-              <span key={file.id} className="chip outline">
-                <span className="ms" style={{ fontSize: 14 }}>
-                  attach_file
-                </span>
-                {file.fileName}
-              </span>
-            ))}
+          <div className="discussion-attachments-list">
+            {data.attachments.map((file) => {
+              const cleanName = sanitizeFilename(file.fileName)
+              return (
+                <a
+                  key={file.id}
+                  href={`/api/v1/attachments/${file.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="attachment-card"
+                >
+                  <span className="ms" aria-hidden="true">file_present</span>
+                  <span className="attachment-card-name">{cleanName}</span>
+                  <span className="ms sm" style={{ marginInlineStart: 'auto' }} aria-hidden="true">download</span>
+                </a>
+              )
+            })}
           </div>
         )}
 
         {data.tags.length > 0 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {data.tags.map((tag) => (
-              <span key={tag} className="chip outline">
+              <span key={tag} className="chip outline sm">
                 #{tag}
               </span>
             ))}
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+        <div className="discussion-question-actions">
           <button
             type="button"
-            className={`btn outline${data.isHelpfulByMe ? ' active' : ''}`}
+            className={`btn outline sm${data.isHelpfulByMe ? ' active' : ''}`}
             onClick={handleToggleHelpful}
             disabled={isTogglingHelpful}
           >
-            <span className="ms">thumb_up</span>
+            <span className="ms sm" aria-hidden="true">thumb_up</span>
             مفيد ({data.helpfulCount})
           </button>
           {data.canPin && (
-            <button type="button" className="btn outline" onClick={handleTogglePin}>
-              <span className="ms">push_pin</span>
+            <button type="button" className="btn outline sm" onClick={handleTogglePin}>
+              <span className="ms sm" aria-hidden="true">push_pin</span>
               {data.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
             </button>
           )}
         </div>
       </div>
 
-      <h2>الردود ({data.replies.length})</h2>
+      <div className="section-head" style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>الردود ({data.replies.length})</h2>
+      </div>
 
       {data.replies.length === 0 ? (
-        <p className="subtitle">لا يوجد ردود بعد. كن أول من يرد.</p>
+        <EmptyState
+          compact
+          title="لا توجد ردود بعد"
+          message="كن أول من يجيب على هذا السؤال."
+        />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-          {data.replies.map((reply) => (
-            <div
-              key={reply.id}
-              className={`card${reply.isAccepted ? ' announcement-pinned' : ''}`}
-              style={{ gap: 6 }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                <span className="meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {reply.author.fullName}
-                  {roleLabel(reply.author.role) && (
-                    <span className="chip" style={{ fontSize: 11, padding: '2px 8px' }}>
-                      <span className="ms" style={{ fontSize: 13 }}>
-                        verified
-                      </span>
-                      {roleLabel(reply.author.role)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+          {data.replies.map((reply) => {
+            const isTeacherReply = reply.author.role === 'teacher' || reply.author.role === 'assistant'
+            return (
+              <div
+                key={reply.id}
+                className={`card discussion-reply-card${reply.isAccepted ? ' discussion-reply-card--accepted' : ''}`}
+              >
+                <div className="support-card-top" style={{ alignItems: 'center' }}>
+                  <div className="discussion-author-badge">
+                    <span className="ms sm" aria-hidden="true">
+                      {isTeacherReply ? 'verified_user' : 'account_circle'}
                     </span>
-                  )}
-                  {' · '}
-                  {formatDate(reply.createdAt)}
-                </span>
+                    <span>{reply.author.fullName}</span>
+                    {roleLabel(reply.author.role) && (
+                      <span className="chip sm primary">{roleLabel(reply.author.role)}</span>
+                    )}
+                  </div>
 
-                {reply.isAccepted ? (
-                  <span className="chip green">
-                    <span className="ms">check_circle</span>
-                    إجابة مقبولة
+                  {reply.isAccepted ? (
+                    <span className="chip green sm">
+                      <span className="ms sm" aria-hidden="true">check_circle</span>
+                      إجابة مقبولة
+                    </span>
+                  ) : (
+                    data.canAccept && (
+                      <button type="button" className="btn outline sm" onClick={() => handleAccept(reply.id)}>
+                        اعتماد كإجابة
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <div className="support-card-info" style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', margin: '6px 0 10px' }}>
+                  <span className="support-card-info-item">
+                    <span className="ms sm" aria-hidden="true">schedule</span>
+                    {formatDate(reply.createdAt)}
                   </span>
-                ) : (
-                  data.canAccept && (
-                    <button type="button" className="btn outline" onClick={() => handleAccept(reply.id)}>
-                      اعتماد كإجابة
-                    </button>
-                  )
-                )}
+                </div>
+
+                <p className="discussion-body-text">{reply.body}</p>
               </div>
-              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{reply.body}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
       {data.canAccept && data.isAnswered && (
-        <button type="button" className="btn outline" onClick={handleUnaccept} style={{ marginBottom: 20 }}>
-          التراجع عن الإجابة المعتمدة
-        </button>
+        <div style={{ marginBottom: 24 }}>
+          <button type="button" className="btn outline sm" onClick={handleUnaccept}>
+            التراجع عن الإجابة المعتمدة
+          </button>
+        </div>
       )}
 
-      <form onSubmit={handleReply} className="card" style={{ gap: 10 }}>
+      <form onSubmit={handleReply} className="card discussion-reply-composer" style={{ gap: 12 }}>
         <div className="tf" style={{ marginBottom: 0 }}>
-          <label htmlFor="reply-body">اكتب ردًا</label>
+          <label htmlFor="reply-body" style={{ fontWeight: 600, fontSize: 14 }}>اكتب ردًا...</label>
           <textarea
             id="reply-body"
             value={replyBody}
             onChange={(event) => setReplyBody(event.target.value)}
+            placeholder="اكتب توضيحك أو إجابتك هنا..."
             rows={3}
             maxLength={10000}
             disabled={isReplying}
@@ -244,8 +288,8 @@ export function DiscussionDetailPage() {
           />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="submit" className="btn primary" disabled={isReplying}>
-            {isReplying && <span className="ms spin">progress_activity</span>}
+          <button type="submit" className="btn primary" disabled={isReplying || !replyBody.trim()}>
+            {isReplying && <span className="ms spin" aria-hidden="true">progress_activity</span>}
             {isReplying ? 'جارٍ الإرسال...' : 'إرسال الرد'}
           </button>
         </div>
@@ -253,3 +297,4 @@ export function DiscussionDetailPage() {
     </div>
   )
 }
+

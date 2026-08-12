@@ -957,5 +957,79 @@
   border-radius: calc(999px * var(--radius-scale));
 }
 
+/* ── Discussion Detail Page ───────────────────────────── */
+.discussion-question-card {
+  padding: calc(20px * var(--space-scale)) calc(22px * var(--space-scale));
+  border-radius: calc(20px * var(--radius-scale));
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.discussion-body-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--on-surface);
+}
+
+.discussion-attachments-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 0 8px;
+}
+
+.discussion-attachments-list .attachment-card {
+  max-width: 100%;
+  box-sizing: border-box;
+  text-decoration: none;
+  color: var(--on-surface);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.discussion-attachments-list .attachment-card:hover {
+  border-color: var(--primary);
+  background: var(--surface-container);
+}
+
+.discussion-question-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent);
+}
+
+.discussion-reply-card {
+  padding: calc(16px * var(--space-scale)) calc(18px * var(--space-scale));
+  border-radius: calc(16px * var(--radius-scale));
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.discussion-reply-card--accepted {
+  border-color: color-mix(in srgb, #10b981 50%, var(--outline-variant));
+  background: color-mix(in srgb, #10b981 5%, var(--surface));
+}
+
+.discussion-reply-composer {
+  padding: calc(18px * var(--space-scale)) calc(20px * var(--space-scale));
+  border-radius: calc(18px * var(--radius-scale));
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
 
 

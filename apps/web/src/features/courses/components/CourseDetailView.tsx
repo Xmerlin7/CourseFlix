@@ -1,19 +1,12 @@
-import { Fragment, lazy, Suspense, useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
-import { AnnouncementsSectionSkeleton } from '../../community/components/AnnouncementsSectionSkeleton'
-import { CommunityPanelSkeleton } from '../../community/components/CommunityPanelSkeleton'
+import { DiscussionsSection } from '../../community/components/DiscussionsSection'
+import { AnnouncementsSection } from '../../community/components/AnnouncementsSection'
 import { StudentDocumentsList } from '../../course-documents/components/StudentDocumentsList'
 import type { QuizSummary } from '../../quizzes/types/quiz.types'
 import type { CourseDetail } from '../types/course.types'
-
-const DiscussionsSection = lazy(() =>
-  import('../../community/components/DiscussionsSection').then((m) => ({ default: m.DiscussionsSection })),
-)
-const AnnouncementsSection = lazy(() =>
-  import('../../community/components/AnnouncementsSection').then((m) => ({ default: m.AnnouncementsSection })),
-)
 
 interface CourseDetailViewProps {
   course: CourseDetail
@@ -203,15 +196,9 @@ export function CourseDetailView({
 
           {activeMediaTab === 'videos' && videosSection}
           {activeMediaTab === 'files' && <StudentDocumentsList courseId={course.id} />}
-          {activeMediaTab === 'community' && (
-            <Suspense fallback={<CommunityPanelSkeleton />}>
-              <DiscussionsSection courseId={course.id} />
-            </Suspense>
-          )}
+          {activeMediaTab === 'community' && <DiscussionsSection courseId={course.id} />}
           {activeMediaTab === 'announcements' && (
-            <Suspense fallback={<AnnouncementsSectionSkeleton />}>
-              <AnnouncementsSection courseId={course.id} canManage={course.canEdit} />
-            </Suspense>
+            <AnnouncementsSection courseId={course.id} canManage={course.canEdit} />
           )}
         </>
       )}
