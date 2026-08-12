@@ -174,10 +174,11 @@ export function SupportTicketDetailPage() {
 
   return (
     <div>
-      <Link to={backPath} className="meta-link">
-        <span className="ms">arrow_back</span>
-        الرجوع لطلبات الدعم
+      <Link to={backPath} className="meta-link support-back-link">
+        <span className="ms" aria-hidden="true">arrow_forward</span>
+        العودة للدعم
       </Link>
+
 
       <div className="card support-ticket-header">
         <div className="support-ticket-header-top">

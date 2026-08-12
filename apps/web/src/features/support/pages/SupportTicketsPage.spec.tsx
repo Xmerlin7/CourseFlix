@@ -63,13 +63,46 @@ describe('SupportTicketsPage', () => {
     expect(within(card).getByText('مفتوح')).toBeInTheDocument()
   })
 
+  it('filters tickets based on search query input', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/support/tickets`, () =>
+        HttpResponse.json([
+          sampleTicket,
+          {
+            id: 'ticket-2',
+            category: 'payment',
+            subject: 'مشكلة في الدفع فوري',
+            status: 'resolved',
+            courseTitle: null,
+            studentName: 'محمد',
+            createdAt: '2026-01-02T10:00:00Z',
+            updatedAt: '2026-01-02T10:00:00Z',
+          },
+        ]),
+      ),
+    )
+
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')
+    expect(screen.getByText('مشكلة في الدفع فوري')).toBeInTheDocument()
+
+    const searchInput = screen.getByPlaceholderText('ابحث في طلبات الدعم...')
+    await user.type(searchInput, 'الدفع')
+
+    expect(screen.getByText('مشكلة في الدفع فوري')).toBeInTheDocument()
+    expect(screen.queryByText('الفيديو بيتوقف عند الدقيقة 15')).not.toBeInTheDocument()
+  })
+
+
   it('shows an empty state with a create-ticket action when there are no tickets', async () => {
     server.use(http.get(`${env.apiBaseUrl}/support/tickets`, () => HttpResponse.json([])))
 
     renderPage()
 
-    expect(await screen.findByText('لا يوجد طلبات دعم بعد')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'طلب دعم جديد' })).toBeInTheDocument()
+    expect(await screen.findByText('مفيش طلبات دعم لسه')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'طلب دعم جديد' })[0]).toBeInTheDocument()
   })
 
   it('validates required fields before submitting a new ticket', async () => {
@@ -78,7 +111,7 @@ describe('SupportTicketsPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await screen.findByText('لا يوجد طلبات دعم بعد')
+    await screen.findByText('مفيش طلبات دعم لسه')
     await user.click(screen.getAllByRole('button', { name: 'طلب دعم جديد' })[0])
 
     const dialog = await screen.findByRole('dialog', { hidden: true })
@@ -115,7 +148,7 @@ describe('SupportTicketsPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await screen.findByText('لا يوجد طلبات دعم بعد')
+    await screen.findByText('مفيش طلبات دعم لسه')
     await user.click(screen.getAllByRole('button', { name: 'طلب دعم جديد' })[0])
 
     const dialog = await screen.findByRole('dialog', { hidden: true })
@@ -137,7 +170,7 @@ describe('SupportTicketsPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await screen.findByText('لا يوجد طلبات دعم بعد')
+    await screen.findByText('مفيش طلبات دعم لسه')
     await user.click(screen.getAllByRole('button', { name: 'طلب دعم جديد' })[0])
 
     const dialog = await screen.findByRole('dialog', { hidden: true })
@@ -180,8 +213,9 @@ describe('SupportTicketsPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await screen.findByText('لا يوجد طلبات دعم بعد')
+    await screen.findByText('مفيش طلبات دعم لسه')
     await user.click(screen.getAllByRole('button', { name: 'طلب دعم جديد' })[0])
+
 
     const dialog = await screen.findByRole('dialog', { hidden: true })
     const courseSelect = await within(dialog).findByLabelText('الدورة المرتبطة (اختياري)')

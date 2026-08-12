@@ -483,10 +483,10 @@
 .attachment-upload-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 10px;
+  padding: 10px 16px;
   border: 1.5px dashed var(--outline-variant);
-  border-radius: calc(12px * var(--radius-scale));
+  border-radius: calc(14px * var(--radius-scale));
   background: var(--surface-container-low);
   color: var(--on-surface-variant);
   font-size: 13.5px;
@@ -494,6 +494,20 @@
   cursor: pointer;
   width: fit-content;
   transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+
+.attachment-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: start;
+}
+
+.attachment-btn-hint {
+  font-size: 11.5px;
+  font-weight: 400;
+  opacity: 0.75;
 }
 
 .attachment-upload-btn:hover:not(:disabled) {
@@ -510,10 +524,10 @@
 .selected-attachment-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 10px;
+  padding: 8px 12px;
   border: 1px solid var(--outline-variant);
-  border-radius: calc(12px * var(--radius-scale));
+  border-radius: calc(14px * var(--radius-scale));
   background: var(--surface-container);
   color: var(--on-surface);
   font-size: 13px;
@@ -521,15 +535,27 @@
 }
 
 .selected-attachment-item .attachment-item-icon {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--primary);
+}
+
+.attachment-item-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .selected-attachment-item .attachment-item-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 260px;
+  max-width: 240px;
+  font-weight: 600;
+}
+
+.attachment-item-size {
+  font-size: 11px;
+  color: var(--on-surface-variant);
 }
 
 .selected-attachment-item .attachment-item-remove {
@@ -538,6 +564,7 @@
   padding: 0;
   margin-inline-start: auto;
 }
+
 
 .attachment-error {
   color: var(--error);
@@ -606,4 +633,225 @@
   font-weight: 600;
   margin: 0;
 }
+
+/* ---------- Support Tickets List Page ---------- */
+.support-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.support-page-title-group h1 {
+  margin: 0 0 4px;
+}
+
+.support-page-subtitle {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: 14px;
+}
+
+.support-controls-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .support-controls-section {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.support-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+.support-search-field .search-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  color: var(--on-surface-variant);
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.support-search-field input[type="search"] {
+  width: 100%;
+  height: 42px;
+  padding-inline-start: 40px;
+  padding-inline-end: 36px;
+  border-radius: calc(999px * var(--radius-scale));
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.support-search-field input[type="search"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.support-search-field .clear-search-btn {
+  position: absolute;
+  inset-inline-end: 8px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.support-status-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 0;
+  scrollbar-width: thin;
+}
+
+
+.support-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: calc(999px * var(--radius-scale));
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-low);
+  color: var(--on-surface-variant);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.support-filter-chip:hover {
+  background: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.support-filter-chip.active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+
+.support-filter-count {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+/* Ticket cards list */
+.support-tickets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.support-ticket-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(18px * var(--radius-scale));
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.support-ticket-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  box-shadow: var(--shadow-md);
+}
+
+.support-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.support-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.support-card-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+  padding: 2px 8px;
+  border-radius: calc(6px * var(--radius-scale));
+}
+
+.support-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.support-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent);
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+}
+
+.support-card-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.support-card-info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.support-card-info-item .ms {
+  font-size: 15px;
+}
+
+.support-card-arrow {
+  color: var(--on-surface-variant);
+  transition: transform 0.15s ease;
+}
+
+.support-ticket-card:hover .support-card-arrow {
+  color: var(--primary);
+  transform: translateX(-4px);
+}
+
 

@@ -1,7 +1,4 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-
-
-import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { Route, Routes } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -80,14 +77,13 @@ describe('SupportInboxPage', () => {
       ),
     )
 
-    const user = userEvent.setup()
     renderPage()
 
     await screen.findByText('مشكلة في تحميل خطة المادة')
     expect(screen.getByText('استفسار عن الفاتورة')).toBeInTheDocument()
 
     const resolvedTab = screen.getByRole('tab', { name: /تم الحل/ })
-    await user.click(resolvedTab)
+    fireEvent.click(resolvedTab)
 
     expect(screen.getByText('استفسار عن الفاتورة')).toBeInTheDocument()
     expect(screen.queryByText('مشكلة في تحميل خطة المادة')).not.toBeInTheDocument()
@@ -122,9 +118,7 @@ describe('SupportInboxPage', () => {
       }),
     )
 
-
     renderPage()
-
 
     await screen.findByText('مشكلة في تحميل خطة المادة')
 
@@ -135,10 +129,6 @@ describe('SupportInboxPage', () => {
       expect(screen.getByText('تغيير كلمة المرور')).toBeInTheDocument()
       expect(screen.queryByText('مشكلة في تحميل خطة المادة')).not.toBeInTheDocument()
     })
-
-
-
-
   })
 
   it('displays friendly empty state when no tickets match', async () => {

@@ -28,8 +28,14 @@ function getFileIcon(type: string): string {
   return 'attach_file'
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 /** Shared "optional image/file attachment" picker for questions, announcements, and support tickets. */
-export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة صورة أو ملف' }: AttachmentPickerProps) {
+export function AttachmentPicker({ file, onChange, disabled, label = 'إرفاق صورة أو ملف' }: AttachmentPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -57,9 +63,12 @@ export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة
           <span className="ms attachment-item-icon" aria-hidden="true">
             {getFileIcon(file.type)}
           </span>
-          <span className="attachment-item-name" title={file.name}>
-            {file.name}
-          </span>
+          <div className="attachment-item-details">
+            <span className="attachment-item-name" title={file.name}>
+              {file.name}
+            </span>
+            <span className="attachment-item-size">{formatFileSize(file.size)}</span>
+          </div>
           <button
             type="button"
             className="icon-btn attachment-item-remove"
@@ -78,7 +87,10 @@ export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة
           disabled={disabled}
         >
           <span className="ms" aria-hidden="true">attach_file</span>
-          <span>{label}</span>
+          <div className="attachment-btn-text">
+            <span>{label}</span>
+            <span className="attachment-btn-hint">PDF, PNG, JPG, WEBP, GIF (حتى 15 ميجابايت)</span>
+          </div>
         </button>
       )}
       <input
@@ -97,4 +109,5 @@ export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة
     </div>
   )
 }
+
 
