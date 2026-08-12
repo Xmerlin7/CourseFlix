@@ -268,4 +268,29 @@ describe('SupportTicketDetailPage', () => {
     expect(await screen.findByText('محتاج مساعدة')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'إعادة المحاولة' })).not.toBeInTheDocument()
   })
+
+  it('prevents submitting empty or whitespace-only messages', async () => {
+    server.use(http.get(`${env.apiBaseUrl}/support/tickets/ticket-1`, () => HttpResponse.json(ticketDetail)))
+    let postAttempted = false
+    server.use(
+      http.post(`${env.apiBaseUrl}/support/tickets/ticket-1/messages`, () => {
+        postAttempted = true
+        return HttpResponse.json({ id: 'msg-empty', authorName: 'محمد', isStaffReply: false, body: '', createdAt: '2026-01-01T11:00:00Z' })
+      }),
+    )
+
+    const user = userEvent.setup()
+    renderPage(studentAuth)
+    expect(await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')).toBeInTheDocument()
+
+    const sendBtn = screen.getByRole('button', { name: 'إرسال' })
+    expect(sendBtn).toBeDisabled()
+
+    await user.type(screen.getByLabelText('اكتب ردًا'), '   ')
+    expect(sendBtn).toBeDisabled()
+
+    await user.keyboard('{Enter}')
+    expect(postAttempted).toBe(false)
+  })
 })
+

@@ -130,4 +130,70 @@ describe('SupportTicketsPage', () => {
       description: 'بيتوقف عند الدقيقة 15',
     })
   })
+
+  it('closes the dialog when clicking the close button or cancel button', async () => {
+    server.use(http.get(`${env.apiBaseUrl}/support/tickets`, () => HttpResponse.json([])))
+
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('لا يوجد طلبات دعم بعد')
+    await user.click(screen.getAllByRole('button', { name: 'طلب دعم جديد' })[0])
+
+    const dialog = await screen.findByRole('dialog', { hidden: true })
+    expect(dialog).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'إغلاق' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('supports selecting an optional course when creating a ticket', async () => {
+    server.use(http.get(`${env.apiBaseUrl}/support/tickets`, () => HttpResponse.json([])))
+    server.use(
+      http.get(`${env.apiBaseUrl}/student/enrollments`, () =>
+        HttpResponse.json([
+          {
+            courseId: 'c-101',
+            courseTitle: 'الفيزياء الحديثة',
+            status: 'active',
+            progressPercent: 20,
+            completedLessonsCount: 2,
+            totalLessonsCount: 10,
+            coverImageUrl: null,
+            enrolledAt: '2026-01-01T00:00:00Z',
+            lastAccessedAt: '2026-01-01T00:00:00Z',
+            currentLesson: null,
+          },
+        ]),
+      ),
+    )
+
+    let postedCourseId: string | null = null
+    server.use(
+      http.post(`${env.apiBaseUrl}/support/tickets`, async ({ request }) => {
+        const bodyText = await request.text()
+        if (bodyText.includes('c-101')) postedCourseId = 'c-101'
+        return HttpResponse.json({ ...sampleTicket, id: 'ticket-3' })
+      }),
+    )
+
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('لا يوجد طلبات دعم بعد')
+    await user.click(screen.getAllByRole('button', { name: 'طلب دعم جديد' })[0])
+
+    const dialog = await screen.findByRole('dialog', { hidden: true })
+    const courseSelect = await within(dialog).findByLabelText('الدورة المرتبطة (اختياري)')
+    await user.selectOptions(courseSelect, 'c-101')
+
+    await user.type(within(dialog).getByLabelText('العنوان'), 'سؤال في الدرس الثالث')
+    await user.type(within(dialog).getByLabelText('وصف المشكلة'), 'المشكلة موضحة بالحساب')
+
+    await user.click(within(dialog).getByRole('button', { name: 'إرسال الطلب' }))
+
+    await waitFor(() => expect(postedCourseId).toBe('c-101'))
+  })
 })
+
+
