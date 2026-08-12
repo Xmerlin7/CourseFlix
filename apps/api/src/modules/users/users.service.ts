@@ -51,6 +51,9 @@ const KNOWN_NOTIFICATION_TYPES = [
   'announcement',
   'course_update',
   'system',
+  'discussion_reply',
+  'discussion_accepted',
+  'support_ticket_update',
 ] as const;
 
 @Injectable()

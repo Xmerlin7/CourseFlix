@@ -13,7 +13,10 @@ export type NotificationType =
   | 'progress_report'
   | 'announcement'
   | 'course_update'
-  | 'system';
+  | 'system'
+  | 'discussion_reply'
+  | 'discussion_accepted'
+  | 'support_ticket_update';
 
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
 
@@ -48,6 +51,9 @@ export class NotificationEntity {
       'announcement',
       'course_update',
       'system',
+      'discussion_reply',
+      'discussion_accepted',
+      'support_ticket_update',
     ],
     enumName: 'notification_type',
   })

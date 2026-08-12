@@ -64,6 +64,9 @@ const VALID_TYPE_FILTERS: readonly NotificationType[] = [
   'announcement',
   'course_update',
   'system',
+  'discussion_reply',
+  'discussion_accepted',
+  'support_ticket_update',
 ];
 
 function parseStatusFilter(

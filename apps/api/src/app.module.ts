@@ -7,9 +7,11 @@ import { AppService } from './app.service';
 import { AdminModule } from './modules/admin/admin.module';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { CoursesModule } from './modules/courses/courses.module';
+import { DiscussionsModule } from './modules/discussions/discussions.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { ExamGenerationModule } from './modules/exam-generation/exam-generation.module';
@@ -74,6 +76,8 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     StudentModule,
     TeacherModule,
     DocumentsModule,
+    AttachmentsModule,
+    DiscussionsModule,
     NotificationsModule,
     PaymobModule,
     QuizzesModule,
