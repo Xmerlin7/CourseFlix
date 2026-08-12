@@ -1,0 +1,413 @@
+/* ── Support ticket chat ──────────────────────────────────────────────
+   Scoped styles for the ticket detail page's conversation UI. Mirrors the
+   bubble pattern already used by FloatingAssistant (index.css) so the
+   support chat reads as "the same app", not a bolted-on admin table. */
+
+.support-ticket-header {
+  gap: 10px;
+  padding: calc(18px * var(--space-scale)) calc(20px * var(--space-scale));
+  margin-top: 14px;
+  margin-bottom: 18px;
+}
+
+.support-ticket-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.support-ticket-id {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+}
+
+.support-ticket-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.support-ticket-chips .chip {
+  padding: calc(5px * var(--space-scale)) calc(11px * var(--space-scale));
+  font-size: 12px;
+}
+
+.support-ticket-chips .chip .ms {
+  font-size: 15px;
+}
+
+.support-ticket-description {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--on-surface-variant);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.support-ticket-attachments {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Attachment card ---------- */
+.attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale));
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(14px * var(--radius-scale));
+  background: var(--surface-container-low);
+  max-width: 220px;
+  min-width: 0;
+}
+
+.attachment-card .ms {
+  flex: none;
+  color: var(--on-surface-variant);
+}
+
+.attachment-card-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ---------- Conversation panel ---------- */
+.support-chat-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(22px * var(--radius-scale));
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.support-chat-messages {
+  flex: 1;
+  min-height: 220px;
+  max-height: min(58vh, 620px);
+  overflow-y: auto;
+  padding: calc(16px * var(--space-scale));
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.support-chat-empty {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 28px 16px;
+  color: var(--on-surface-variant);
+}
+
+.support-chat-empty strong {
+  font-size: 15.5px;
+  color: var(--on-surface);
+}
+
+.support-chat-empty p {
+  margin: 0;
+  font-size: 13.5px;
+  max-width: 280px;
+}
+
+/* ---------- Message group / bubble ---------- */
+.chat-msg-group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2px;
+}
+
+.chat-msg-group.is-new-group {
+  margin-top: 14px;
+}
+
+.chat-msg-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+.chat-msg-group.from-student .chat-msg-group-label {
+  margin-inline-end: auto;
+}
+
+.chat-msg-group.from-support .chat-msg-group-label {
+  margin-inline-start: auto;
+  flex-direction: row-reverse;
+}
+
+.chat-msg-group-label .support-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.chat-msg {
+  position: relative;
+  max-width: 76%;
+  width: fit-content;
+  padding: 9px 13px;
+  margin-top: 3px;
+  border-radius: calc(16px * var(--radius-scale));
+  line-height: 1.6;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  animation: chat-msg-in 0.18s ease-out;
+}
+
+@keyframes chat-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-msg p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.chat-msg.from-student {
+  align-self: flex-start;
+  margin-inline-end: auto;
+  background: var(--primary);
+  color: var(--on-primary);
+  border-end-start-radius: calc(4px * var(--radius-scale));
+}
+
+.chat-msg.from-support {
+  align-self: flex-end;
+  margin-inline-start: auto;
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  border-end-end-radius: calc(4px * var(--radius-scale));
+}
+
+.chat-msg-time {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  opacity: 0.72;
+}
+
+.chat-msg.from-student .chat-msg-time {
+  color: var(--on-primary);
+}
+
+.chat-msg.from-support .chat-msg-time {
+  color: var(--on-surface-variant);
+}
+
+.chat-msg-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.chat-msg-status .ms {
+  font-size: 13px;
+}
+
+.chat-msg.is-failed {
+  border: 1px solid var(--error);
+}
+
+.chat-msg-retry {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-msg-retry-btn,
+.chat-msg-dismiss-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.chat-msg.from-student .chat-msg-retry-btn,
+.chat-msg.from-student .chat-msg-dismiss-btn {
+  color: var(--on-primary);
+}
+
+.chat-msg.from-support .chat-msg-retry-btn,
+.chat-msg.from-support .chat-msg-dismiss-btn {
+  color: var(--on-surface-variant);
+}
+
+/* Attachment rendered inside a bubble (mirrors the standalone card, tuned
+   for the bubble's own background so it stays legible on the primary
+   (student) bubble too). */
+.chat-msg .attachment-card {
+  margin-top: 8px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  border-color: color-mix(in srgb, currentColor 22%, transparent);
+  max-width: 100%;
+}
+
+.chat-msg .attachment-card .ms {
+  color: inherit;
+}
+
+/* ---------- Typing indicator ---------- */
+.chat-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.chat-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  animation: chat-typing-bounce 1.1s ease-in-out infinite;
+}
+
+.chat-typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.chat-typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes chat-typing-bounce {
+  0%, 60%, 100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-msg {
+    animation: none;
+  }
+  .chat-typing-dot {
+    animation: none;
+    opacity: 0.75;
+  }
+}
+
+/* ---------- Closed-ticket notice ---------- */
+.support-chat-closed-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--outline-variant);
+  background: var(--surface-container);
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------- Composer ---------- */
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: calc(10px * var(--space-scale)) calc(12px * var(--space-scale));
+  border-top: 1px solid var(--outline-variant);
+  background: var(--surface-container);
+}
+
+.chat-composer-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1.5px solid var(--outline-variant);
+  border-radius: calc(20px * var(--radius-scale));
+  padding-inline: 6px;
+  transition: border-color 0.15s;
+}
+
+.chat-composer-field:focus-within {
+  border-color: var(--primary);
+}
+
+.chat-composer textarea {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  max-height: 140px;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 10px 8px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--on-surface);
+}
+
+.chat-composer-send {
+  flex: none;
+  width: 42px;
+  height: 42px;
+}
+
+@media (max-width: 720px) {
+  .chat-msg {
+    max-width: 88%;
+  }
+
+  .support-chat-messages {
+    max-height: min(64vh, 520px);
+  }
+}
+
+@media (max-width: 480px) {
+  .support-ticket-header {
+    padding: 14px;
+  }
+
+  .support-chat-messages {
+    padding: 10px;
+  }
+
+  .chat-msg {
+    max-width: 92%;
+    font-size: 13.5px;
+  }
+}

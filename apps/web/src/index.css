@@ -1667,6 +1667,11 @@ code {
   color: var(--on-success-container);
 }
 
+.chip.primary {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
 .chip.pink {
   background: var(--tertiary-container);
   color: var(--on-tertiary-container);
