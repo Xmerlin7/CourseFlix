@@ -70,6 +70,20 @@ export class UsersService {
     });
   }
 
+  // Google OAuth — links a user row to their Google account id.
+  findByGoogleId(googleId: string): Promise<UserEntity | null> {
+    return this.usersRepository.findOne({
+      where: { googleId, deletedAt: IsNull() },
+    });
+  }
+
+  async linkGoogleId(userId: string, googleId: string): Promise<void> {
+    await this.usersRepository.update(
+      { id: userId, deletedAt: IsNull() },
+      { googleId },
+    );
+  }
+
   // Safe profile shape — passwordHash is stripped before returning.
   async findById(
     userId: string,
@@ -89,7 +103,7 @@ export class UsersService {
   async createUser(
     fullName: string,
     email: string,
-    passwordHash: string,
+    passwordHash: string | null,
     status: 'active' | 'suspended' | 'inactive',
     role: UserRole,
   ): Promise<Omit<UserEntity, 'passwordHash'>> {
@@ -100,6 +114,30 @@ export class UsersService {
       passwordHash,
       status,
       role,
+    });
+    const savedUser = await this.usersRepository.save(newUser);
+    const { passwordHash: _passwordHash, ...safeUser } = savedUser;
+    return safeUser;
+  }
+
+  // Google sign-in first-timer: the email is already verified by Google, so
+  // the account is created active + verified with no password.
+  async createOAuthUser(
+    fullName: string,
+    email: string,
+    googleId: string,
+    avatarUrl: string | null,
+  ): Promise<Omit<UserEntity, 'passwordHash'>> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const newUser = this.usersRepository.create({
+      fullName,
+      email: normalizedEmail,
+      passwordHash: null,
+      googleId,
+      status: 'active',
+      role: 'student',
+      emailVerifiedAt: new Date(),
+      avatarUrl,
     });
     const savedUser = await this.usersRepository.save(newUser);
     const { passwordHash: _passwordHash, ...safeUser } = savedUser;
@@ -231,12 +269,34 @@ export class UsersService {
     return this.getSettings(userId);
   }
 
+  // Proves the account's email (register OTP flow): activates the user and
+  // stamps email_verified_at. No-op for already-verified accounts.
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.usersRepository.update(
+      { id: userId, deletedAt: IsNull() },
+      { status: 'active', emailVerifiedAt: new Date() },
+    );
+  }
+
+  // Password reset flow — the reset OTP is verified before this is called.
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
+    await this.usersRepository.update(
+      { id: userId, deletedAt: IsNull() },
+      { passwordHash },
+    );
+  }
+
   async changePassword(
     userId: string,
     currentPassword: string,
     newPassword: string,
   ): Promise<void> {
     const user = await this.findActiveEntityOrThrow(userId);
+
+    // Google-created accounts have no password — nothing to verify against.
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('Current password is incorrect.');
+    }
 
     const currentMatches = await argon2.verify(
       user.passwordHash,

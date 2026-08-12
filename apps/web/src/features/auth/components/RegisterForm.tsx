@@ -2,14 +2,20 @@ import { Fragment, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
+import { requestOtp } from '../api/auth.api'
 import { useAuth } from '../hooks/useAuth'
 import { getRoleHomePath } from '../utils/get-role-home-path'
+import { VerifyCodeForm } from './VerifyCodeForm'
 
 const STEPS = ['البيانات الأساسية', 'كلمة المرور', 'الشروط والأحكام'] as const
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 type FieldName = 'fullName' | 'email' | 'password' | 'confirmPassword'
+
+interface PendingRegistration {
+  email: string
+}
 
 export function RegisterForm() {
   const { register } = useAuth()
@@ -25,6 +31,11 @@ export function RegisterForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({})
   const [stepError, setStepError] = useState<string | null>(null)
+  const [pendingRegistration, setPendingRegistration] = useState<PendingRegistration | null>(null)
+  // Set when a 409 says the email is already registered — the account may
+  // exist but be unverified (pending), so offer re-sending the verification
+  // code instead of making the user abandon the email.
+  const [resumeEmail, setResumeEmail] = useState<string | null>(null)
 
   const isLastStep = step === STEPS.length - 1
 
@@ -86,12 +97,15 @@ export function RegisterForm() {
     setStepError(null)
     setIsSubmitting(true)
     try {
-      const user = await register({ fullName, email, password, acceptedTerms: true })
-      navigate(getRoleHomePath(user.role), { replace: true })
+      // No session yet — the account is created inactive and a verification
+      // code is emailed. The code step below activates + signs the user in.
+      const response = await register({ fullName, email, password, acceptedTerms: true })
+      setPendingRegistration({ email: response.email })
     } catch (caughtError) {
       if (caughtError instanceof ApiError && caughtError.status === 409) {
-        setStep(0)
-        setFieldErrors({ email: 'البريد الإلكتروني ده مسجل بالفعل — جرب بريد تاني أو سجّل الدخول' })
+        // Email is taken. It might be their own earlier registration that was
+        // never verified — route them to re-send the verification code.
+        setResumeEmail(email.trim())
       } else if (caughtError instanceof ApiError && caughtError.status === 400) {
         setStep(0)
         setStepError(
@@ -104,7 +118,57 @@ export function RegisterForm() {
     }
   }
 
-  return (
+  const verificationEmail = pendingRegistration?.email ?? resumeEmail
+  const isResume = resumeEmail !== null
+
+  return verificationEmail ? (
+    <>
+      <p className="subtitle" style={{ marginBottom: '1rem' }}>
+        {isResume ? (
+          <>
+            البريد <strong>{verificationEmail}</strong> مسجل بالفعل — إن كنت أنشأت
+            الحساب ولم تفعّله بعد، أعد إرسال الرمز وأدخله بالأسفل.
+          </>
+        ) : (
+          <>
+            راسلنا رمز تحقق إلى <strong>{verificationEmail}</strong> — اكتبه
+            بالأسفل لتفعيل حسابك وتسجيل الدخول.
+          </>
+        )}
+      </p>
+      <VerifyCodeForm
+        email={verificationEmail}
+        purpose="register"
+        onResend={(email) => requestOtp({ email, purpose: 'register' })}
+        onResendResult={(response) => {
+          if (isResume && response.accountStatus === 'active') {
+            setStepError('هذا البريد مفعّل بالفعل — سجّل الدخول مباشرة بكلمة المرور')
+          } else if (isResume && response.accountStatus === 'unknown') {
+            setStepError('هذا البريد غير مسجل في المنصة — أنشئ حسابًا جديدًا من البداية')
+          }
+        }}
+        onVerified={(user) => navigate(getRoleHomePath(user.role), { replace: true })}
+      />
+      {stepError && (
+        <span className="error-text" role="alert" style={{ display: 'block', marginTop: '0.5rem' }}>
+          {stepError}
+        </span>
+      )}
+      {isResume && (
+        <button
+          type="button"
+          className="btn text btn-compact"
+          onClick={() => {
+            setResumeEmail(null)
+            setStep(0)
+          }}
+          style={{ marginTop: '0.5rem' }}
+        >
+          استخدم بريدًا آخر
+        </button>
+      )}
+    </>
+  ) : (
     <form onSubmit={(event) => void handleSubmit(event)} noValidate className="register-wizard">
       <div className="stepper" aria-label="خطوات إنشاء الحساب">
         <div className="stepper-track">

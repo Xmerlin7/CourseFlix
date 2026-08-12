@@ -138,6 +138,13 @@ async function upsertUser(
   const email = input.email.trim().toLowerCase();
   const existing = await repository.findOne({ where: { email } });
   if (existing) {
+    // Seeded accounts are admin-created, so their email is trusted — stamp
+    // email_verified_at so the post-registration-verification invariant
+    // ("active accounts are verified") holds for demo data too.
+    if (!existing.emailVerifiedAt) {
+      existing.emailVerifiedAt = new Date();
+      await repository.save(existing);
+    }
     return existing;
   }
 
@@ -150,6 +157,7 @@ async function upsertUser(
       role: input.role,
       status: input.status ?? 'active',
       managedByTeacherId: input.managedByTeacherId ?? null,
+      emailVerifiedAt: new Date(),
     }),
   );
 }

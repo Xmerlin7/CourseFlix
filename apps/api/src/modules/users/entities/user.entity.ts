@@ -22,10 +22,17 @@ export class UserEntity {
   @Column({ type: 'text', unique: true })
   email!: string;
 
+  // Google "Continue with Google" account id — null for everyone else.
+  // One Google account maps to at most one CourseFlix account.
+  @Index({ unique: true })
+  @Column({ name: 'google_id', type: 'text', nullable: true })
+  googleId!: string | null;
+
   // Argon2id hash only — never the plaintext password. Only ever
   // select this column on the login path, never in profile responses.
-  @Column({ name: 'password_hash', type: 'text' })
-  passwordHash!: string;
+  // Null for accounts created via Google sign-in (they have no password).
+  @Column({ name: 'password_hash', type: 'text', nullable: true })
+  passwordHash!: string | null;
 
   @Column({
     type: 'enum',
@@ -52,6 +59,11 @@ export class UserEntity {
 
   @Column({ name: 'last_login_at', type: 'timestamptz', nullable: true })
   lastLoginAt!: Date | null;
+
+  // Set when the account's email is proven via the register OTP. New
+  // self-signed registrations stay null (and status 'inactive') until then.
+  @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
+  emailVerifiedAt!: Date | null;
 
   // Mirrors schemaV2.sql's settings_theme — client applies 'system' by
   // resolving prefers-color-scheme itself, the server just stores the
