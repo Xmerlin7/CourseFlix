@@ -22,6 +22,12 @@ function validate(file: File): string | null {
   return null
 }
 
+function getFileIcon(type: string): string {
+  if (type.startsWith('image/')) return 'image'
+  if (type === 'application/pdf') return 'picture_as_pdf'
+  return 'attach_file'
+}
+
 /** Shared "optional image/file attachment" picker for questions, announcements, and support tickets. */
 export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة صورة أو ملف' }: AttachmentPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -45,14 +51,18 @@ export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="attachment-picker">
       {file ? (
-        <div className="chip" style={{ justifyContent: 'space-between', width: 'fit-content' }}>
-          <span className="ms">attach_file</span>
-          {file.name}
+        <div className="selected-attachment-item">
+          <span className="ms attachment-item-icon" aria-hidden="true">
+            {getFileIcon(file.type)}
+          </span>
+          <span className="attachment-item-name" title={file.name}>
+            {file.name}
+          </span>
           <button
             type="button"
-            className="icon-btn"
+            className="icon-btn attachment-item-remove"
             onClick={handleRemove}
             disabled={disabled}
             aria-label="إزالة المرفق"
@@ -63,12 +73,12 @@ export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة
       ) : (
         <button
           type="button"
-          className="btn outline"
+          className="attachment-upload-btn"
           onClick={() => inputRef.current?.click()}
           disabled={disabled}
         >
-          <span className="ms">attach_file</span>
-          {label}
+          <span className="ms" aria-hidden="true">attach_file</span>
+          <span>{label}</span>
         </button>
       )}
       <input
@@ -80,10 +90,11 @@ export function AttachmentPicker({ file, onChange, disabled, label = 'إضافة
         onChange={(event) => handleSelect(event.target.files?.[0] ?? null)}
       />
       {error && (
-        <p role="alert" style={{ color: 'var(--error)', fontSize: 12.5, fontWeight: 600 }}>
+        <p role="alert" className="attachment-error">
           {error}
         </p>
       )}
     </div>
   )
 }
+

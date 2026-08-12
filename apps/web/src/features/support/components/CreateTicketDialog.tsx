@@ -83,12 +83,12 @@ export function CreateTicketDialog({ open, isSubmitting, onSubmit, onClose }: Cr
   return (
     <dialog
       ref={dialogRef}
-      className="form-dialog"
+      className="form-dialog create-ticket-dialog"
       onCancel={handleCancel}
       onClick={handleBackdropClick}
       aria-labelledby="create-ticket-title"
     >
-      <form className="form-dialog-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+      <form className="form-dialog-card create-ticket-dialog-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <div className="form-dialog-head">
           <h2 id="create-ticket-title">طلب دعم جديد</h2>
           <button type="button" className="icon-btn" onClick={resetAndClose} disabled={isSubmitting} aria-label="إغلاق">
@@ -96,80 +96,91 @@ export function CreateTicketDialog({ open, isSubmitting, onSubmit, onClose }: Cr
           </button>
         </div>
 
-        <div className="tf">
-          <label htmlFor="ticket-category">نوع المشكلة</label>
-          <select
-            id="ticket-category"
-            value={category}
-            onChange={(event) => setCategory(event.target.value as CreateTicketInput['category'])}
-            disabled={isSubmitting}
-          >
-            {CATEGORIES.map((value) => (
-              <option key={value} value={value}>
-                {SUPPORT_TICKET_CATEGORY_LABELS[value]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <div className="form-dialog-body">
+          <div className="create-ticket-grid">
+            <div className="tf">
+              <label htmlFor="ticket-category">نوع المشكلة</label>
+              <select
+                id="ticket-category"
+                value={category}
+                onChange={(event) => setCategory(event.target.value as CreateTicketInput['category'])}
+                disabled={isSubmitting}
+              >
+                {CATEGORIES.map((value) => (
+                  <option key={value} value={value}>
+                    {SUPPORT_TICKET_CATEGORY_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {enrollments.length > 0 && (
-          <div className="tf">
-            <label htmlFor="ticket-course">الدورة المرتبطة (اختياري)</label>
-            <select
-              id="ticket-course"
-              value={courseId}
-              onChange={(event) => setCourseId(event.target.value)}
-              disabled={isSubmitting}
-            >
-              <option value="">بدون دورة محددة</option>
-              {enrollments.map((enrollment) => (
-                <option key={enrollment.courseId} value={enrollment.courseId}>
-                  {enrollment.courseTitle ?? enrollment.courseId}
-                </option>
-              ))}
-            </select>
+            {enrollments.length > 0 && (
+              <div className="tf">
+                <label htmlFor="ticket-course">الدورة المرتبطة (اختياري)</label>
+                <select
+                  id="ticket-course"
+                  value={courseId}
+                  onChange={(event) => setCourseId(event.target.value)}
+                  disabled={isSubmitting}
+                >
+                  <option value="">بدون دورة محددة</option>
+                  {enrollments.map((enrollment) => (
+                    <option key={enrollment.courseId} value={enrollment.courseId}>
+                      {enrollment.courseTitle ?? enrollment.courseId}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
-        )}
 
-        <div className="tf">
-          <label htmlFor="ticket-subject">العنوان</label>
-          <input
-            id="ticket-subject"
-            value={subject}
-            onChange={(event) => setSubject(event.target.value)}
-            disabled={isSubmitting}
-            maxLength={200}
-            required
-          />
+          <div className="tf">
+            <label htmlFor="ticket-subject">العنوان</label>
+            <input
+              id="ticket-subject"
+              className="ticket-subject-input"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              disabled={isSubmitting}
+              maxLength={200}
+              placeholder="اكتب عنوانًا مختصرًا للمشكلة..."
+              required
+            />
+          </div>
+
+          <div className="tf">
+            <div className="tf-label-row">
+              <label htmlFor="ticket-description">وصف المشكلة</label>
+              <span className="tf-char-counter">{description.length} / 10000</span>
+            </div>
+            <textarea
+              id="ticket-description"
+              className="ticket-description-textarea"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              disabled={isSubmitting}
+              rows={4}
+              maxLength={10000}
+              placeholder="شرح للتفاصيل أو المشكلة التي تواجهها..."
+              required
+            />
+          </div>
+
+          <AttachmentPicker file={attachment} onChange={setAttachment} disabled={isSubmitting} label="إضافة صورة أو ملف" />
+
+          {error && (
+            <p role="alert" className="create-ticket-error">
+              {error}
+            </p>
+          )}
         </div>
-
-        <div className="tf">
-          <label htmlFor="ticket-description">وصف المشكلة</label>
-          <textarea
-            id="ticket-description"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            disabled={isSubmitting}
-            rows={5}
-            maxLength={10000}
-            required
-          />
-        </div>
-
-        <AttachmentPicker file={attachment} onChange={setAttachment} disabled={isSubmitting} label="إضافة صورة/ملف" />
-
-        {error && (
-          <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, fontWeight: 600, margin: 0 }}>
-            {error}
-          </p>
-        )}
 
         <div className="form-dialog-actions">
           <button type="button" className="btn outline" onClick={resetAndClose} disabled={isSubmitting}>
             إلغاء
           </button>
           <button type="submit" className="btn primary" disabled={isSubmitting}>
-            {isSubmitting && <span className="ms spin">progress_activity</span>}
+            {isSubmitting && <span className="ms spin" aria-hidden="true">progress_activity</span>}
             {isSubmitting ? 'جارٍ الإرسال...' : 'إرسال الطلب'}
           </button>
         </div>
@@ -177,3 +188,4 @@ export function CreateTicketDialog({ open, isSubmitting, onSubmit, onClose }: Cr
     </dialog>
   )
 }
+

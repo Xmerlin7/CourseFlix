@@ -411,3 +411,138 @@
     font-size: 13.5px;
   }
 }
+
+/* ---------- Attachment Picker ---------- */
+.attachment-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attachment-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1.5px dashed var(--outline-variant);
+  border-radius: calc(12px * var(--radius-scale));
+  background: var(--surface-container-low);
+  color: var(--on-surface-variant);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  width: fit-content;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+
+.attachment-upload-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--surface-container);
+}
+
+.attachment-upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.selected-attachment-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(12px * var(--radius-scale));
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: 13px;
+  max-width: 100%;
+}
+
+.selected-attachment-item .attachment-item-icon {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.selected-attachment-item .attachment-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+.selected-attachment-item .attachment-item-remove {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-inline-start: auto;
+}
+
+.attachment-error {
+  color: var(--error);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ---------- Support Ticket Modal Redesign ---------- */
+.create-ticket-dialog {
+  max-width: min(580px, calc(100vw - 32px));
+}
+
+.create-ticket-dialog-card {
+  gap: 14px;
+  padding: 20px 24px;
+  max-height: calc(100vh - 40px);
+}
+
+.create-ticket-dialog-card .form-dialog-head {
+  padding-bottom: 4px;
+}
+
+.form-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-dialog-body .tf {
+  margin-bottom: 0;
+}
+
+.create-ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ticket-subject-input {
+  height: 48px;
+}
+
+.ticket-description-textarea {
+  min-height: 120px;
+  max-height: 150px;
+  line-height: 1.6;
+}
+
+.tf-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.tf-char-counter {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  opacity: 0.8;
+}
+
+.create-ticket-error {
+  color: var(--error);
+  font-size: 13.5px;
+  font-weight: 600;
+  margin: 0;
+}
+
