@@ -426,12 +426,21 @@
   border: none;
   background: transparent;
   outline: none;
+  box-shadow: none;
   padding: 10px 8px;
   font: inherit;
   font-size: 14px;
   line-height: 1.5;
   color: var(--on-surface);
 }
+
+.chat-composer textarea:focus,
+.chat-composer textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 
 .chat-composer-send {
   flex: none;
