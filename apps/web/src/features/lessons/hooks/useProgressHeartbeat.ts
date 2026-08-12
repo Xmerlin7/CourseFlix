@@ -3,13 +3,18 @@ import { postLessonProgress } from '../api/lessons.api'
 import type { UpdateProgressResponse } from '../types/lesson.types'
 
 const HEARTBEAT_INTERVAL_MS = 15_000
-const HEARTBEAT_INTERVAL_SECONDS = HEARTBEAT_INTERVAL_MS / 1000
 
 interface UseProgressHeartbeatOptions {
   lessonId: string
   videoRef: React.RefObject<HTMLVideoElement | null>
   enabled?: boolean
   externalTracking?: boolean
+  // The external (YouTube/Bunny) player's own reported play state and
+  // position — see useYoutubeController / useBunnyController. Required
+  // whenever externalTracking is true; without them this hook has no way
+  // to know whether the video is actually playing.
+  externalIsPlaying?: boolean
+  externalCurrentTimeSeconds?: number
   fallbackDurationSeconds?: number | null
   initialPositionSeconds?: number
   initialWatchedPercentage?: number
@@ -18,9 +23,12 @@ interface UseProgressHeartbeatOptions {
 
 /**
  * Sends one progress heartbeat per 15s while the video is playing, plus
- * one on `pause`, `ended`, and `beforeunload` — never on a repeating timer
- * while paused, since the interval is only running between `play` and the
- * next `pause`/`ended`.
+ * one right when it pauses or ends — never on a repeating timer while
+ * paused. This holds for both the native <video> element (driven by its
+ * own `play`/`pause`/`ended` events) and external YouTube/Bunny embeds
+ * (driven by `externalIsPlaying`/`externalCurrentTimeSeconds`, which mirror
+ * those same semantics via postMessage/player.js — see
+ * useYoutubeController and useBunnyController).
  *
  * `watchedSeconds` is the furthest point reached in this playback session
  * (a high-water mark on `currentTime`) — a simple, honest MVP proxy for
@@ -40,14 +48,24 @@ export function useProgressHeartbeat({
   videoRef,
   enabled = true,
   externalTracking = false,
+  externalIsPlaying = false,
+  externalCurrentTimeSeconds = 0,
   fallbackDurationSeconds = null,
   initialPositionSeconds = 0,
   initialWatchedPercentage = 0,
   onProgress,
 }: UseProgressHeartbeatOptions): void {
   const maxReachedSecondsRef = useRef(0)
-  const externalPositionSecondsRef = useRef(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Read on each tick instead of closed over, so the interval below doesn't
+  // need to be torn down and rebuilt every time playback advances.
+  const externalCurrentTimeRef = useRef(externalCurrentTimeSeconds)
+  externalCurrentTimeRef.current = externalCurrentTimeSeconds
+  // Kept out of sendHeartbeat's deps so a parent re-render (e.g. the
+  // setState calls the caller makes from inside onProgress itself) can't
+  // change sendHeartbeat's identity and retrigger the effects below.
+  const onProgressRef = useRef(onProgress)
+  onProgressRef.current = onProgress
 
   useEffect(() => {
     const estimatedWatchedSeconds =
@@ -56,7 +74,6 @@ export function useProgressHeartbeat({
         : 0
 
     maxReachedSecondsRef.current = Math.max(initialPositionSeconds, estimatedWatchedSeconds)
-    externalPositionSecondsRef.current = initialPositionSeconds
   }, [fallbackDurationSeconds, initialPositionSeconds, initialWatchedPercentage, lessonId])
 
   const sendHeartbeat = useCallback(
@@ -71,7 +88,7 @@ export function useProgressHeartbeat({
 
       if (override) {
         postLessonProgress(lessonId, override)
-          .then((result) => onProgress?.(result))
+          .then((result) => onProgressRef.current?.(result))
           .catch(() => {
             // A missed heartbeat is retried on the next interval tick or
             // lifecycle event — nothing to surface mid-playback.
@@ -100,30 +117,31 @@ export function useProgressHeartbeat({
         watchedSeconds: maxReachedSecondsRef.current,
         ...(videoDurationSeconds ? { durationSeconds: videoDurationSeconds } : {}),
       })
-        .then((result) => onProgress?.(result))
+        .then((result) => onProgressRef.current?.(result))
         .catch(() => {
           // A missed heartbeat is retried on the next interval tick or the
           // next pause/ended event — nothing to surface mid-playback.
         })
     },
-    [enabled, fallbackDurationSeconds, lessonId, onProgress, videoRef],
+    [enabled, fallbackDurationSeconds, lessonId, videoRef],
   )
 
   useEffect(() => {
-    if (!enabled || !externalTracking || !fallbackDurationSeconds) {
+    // Mirrors the native <video> effect below: the interval only exists
+    // while the player is actually playing. Previously this ran
+    // unconditionally and just added a fixed 15s to a counter on every
+    // tick, regardless of whether the embed was playing, paused, or even
+    // still on-screen — so a paused YouTube video kept "watching" itself
+    // and could reach 100%/attendance without the student watching it.
+    if (!enabled || !externalTracking || !externalIsPlaying || !fallbackDurationSeconds) {
       return
     }
     const externalDurationSeconds = fallbackDurationSeconds
 
-    function stopInterval() {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-    }
-
     function sendExternalHeartbeat() {
-      const positionSeconds = externalPositionSecondsRef.current
+      // The real position the player reports, not a wall-clock guess —
+      // this is what makes pause/seek/buffering reflected accurately.
+      const positionSeconds = Math.floor(externalCurrentTimeRef.current)
       maxReachedSecondsRef.current = Math.max(maxReachedSecondsRef.current, positionSeconds)
       sendHeartbeat({
         positionSeconds,
@@ -136,35 +154,32 @@ export function useProgressHeartbeat({
       if (document.visibilityState === 'hidden') {
         return
       }
-
-      externalPositionSecondsRef.current += HEARTBEAT_INTERVAL_SECONDS
       sendExternalHeartbeat()
-    }
-
-    function startInterval() {
-      stopInterval()
-      intervalRef.current = setInterval(tick, HEARTBEAT_INTERVAL_MS)
     }
 
     function handleVisibilityChange() {
       if (document.visibilityState === 'hidden') {
         sendExternalHeartbeat()
-        stopInterval()
-      } else {
-        startInterval()
       }
     }
 
-    startInterval()
+    intervalRef.current = setInterval(tick, HEARTBEAT_INTERVAL_MS)
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('beforeunload', sendExternalHeartbeat)
 
     return () => {
-      stopInterval()
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', sendExternalHeartbeat)
+      // Playback stopped (paused, ended, or the effect is tearing down for
+      // any other reason) — report exactly how far it actually got, same
+      // as the native <video> pause/ended handler below.
+      sendExternalHeartbeat()
     }
-  }, [enabled, externalTracking, fallbackDurationSeconds, sendHeartbeat])
+  }, [enabled, externalTracking, externalIsPlaying, fallbackDurationSeconds, sendHeartbeat])
 
   useEffect(() => {
     const video = videoRef.current
