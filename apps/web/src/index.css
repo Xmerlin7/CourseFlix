@@ -1754,28 +1754,43 @@ textarea:placeholder-shown {
 }
 
 .auth-form-inner {
-  width: min(460px, 100%);
+  width: min(440px, 100%);
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 2;
-  padding: clamp(24px, 4vw, 38px);
-  border: 1px solid color-mix(in srgb, var(--outline-variant) 62%, white);
-  border-radius: calc(22px * var(--radius-scale));
+  padding: clamp(24px, 4vw, 36px);
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, white);
+  border-inline-start: 4px solid color-mix(in srgb, #22D3EE 76%, var(--primary));
+  border-radius: calc(28px * var(--radius-scale)) calc(10px * var(--radius-scale)) calc(28px * var(--radius-scale)) calc(10px * var(--radius-scale));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--surface-container-low) 88%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface-container-low) 90%, transparent)),
+    linear-gradient(90deg, color-mix(in srgb, #22D3EE 12%, transparent), transparent 36%),
     var(--surface);
   box-shadow:
-    0 28px 88px rgba(5, 12, 24, 0.34),
-    0 1px 0 rgba(255, 255, 255, 0.72) inset;
+    0 28px 88px rgba(5, 12, 24, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.46) inset,
+    -18px 0 58px rgba(34, 211, 238, 0.14);
   backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.auth-form-inner::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-block: 1px solid color-mix(in srgb, #22D3EE 24%, transparent);
+  border-inline-end: 1px solid color-mix(in srgb, #22D3EE 16%, transparent);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 :root.dark .auth-form-inner {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface-container-low) 86%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface-container-low) 86%, transparent)),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.12), transparent 36%),
     var(--surface);
   border-color: rgba(255, 255, 255, 0.18);
+  border-inline-start-color: #67E8F9;
 }
 
 .auth-form-logo {
@@ -1791,11 +1806,11 @@ textarea:placeholder-shown {
   align-items: center;
   gap: 10px;
   margin-bottom: 24px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border: 1px solid var(--outline-variant);
-  border-radius: calc(16px * var(--radius-scale));
-  background: var(--surface-container-low);
-  box-shadow: var(--shadow);
+  border-radius: calc(18px * var(--radius-scale)) calc(8px * var(--radius-scale)) calc(18px * var(--radius-scale)) calc(8px * var(--radius-scale));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, #22D3EE 12%, var(--surface-container-low)), var(--surface-container-low));
 }
 
 .auth-course-strip-icon {
