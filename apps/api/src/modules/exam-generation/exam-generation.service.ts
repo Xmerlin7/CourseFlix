@@ -20,6 +20,8 @@ import { QuizEntity } from '../quizzes/entities/quiz.entity';
 import { QuestionEntity } from '../quizzes/entities/question.entity';
 import { QuizQuestionEntity } from '../quizzes/entities/quiz-question.entity';
 import { JobsService } from '../jobs/jobs.service';
+import { CREDIT_COSTS } from '../teacher-billing/teacher-billing.constants';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import { CreateExamGenerationRequestDto } from './dto/create-exam-generation-request.dto';
 import {
   QuestionSpecItem,
@@ -79,6 +81,7 @@ export class ExamGenerationService {
     private readonly lessonsRepo: Repository<LessonEntity>,
     private readonly jobsService: JobsService,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly teacherBillingService: TeacherBillingService,
     @Inject(NOTIFICATION_PRODUCER_PORT)
     private readonly notificationProducer: NotificationProducerPort,
   ) {}
@@ -116,6 +119,14 @@ export class ExamGenerationService {
     );
 
     await this.jobsService.enqueueExamGeneration(request.id);
+
+    // Reservation model: the request consumes its credits the moment the
+    // teacher submits it (the actual LLM work runs in the queue). Never
+    // blocks — quota exhaustion only warns, per the billing policy.
+    await this.teacherBillingService.consumeCredits(
+      teacherId,
+      CREDIT_COSTS.examGeneration,
+    );
 
     return this.toSummary(request);
   }
