@@ -6,6 +6,9 @@ export type TopbarProps = {
   notificationsPath: string
   onSettingsClick: () => void
   onLogoClick?: () => void
+  /** Opens the phone nav drawer. The button is hidden on desktop, where
+   *  the sidebar is always on screen. */
+  onMenuClick?: () => void
 }
 
 export function Topbar({
@@ -13,9 +16,21 @@ export function Topbar({
   notificationsPath,
   onSettingsClick,
   onLogoClick,
+  onMenuClick,
 }: TopbarProps) {
   return (
     <header className="topbar">
+      {onMenuClick && (
+        <button
+          className="icon-btn topbar-menu-btn"
+          onClick={onMenuClick}
+          aria-label="فتح القائمة"
+          type="button"
+        >
+          <span className="ms">menu</span>
+        </button>
+      )}
+
       <a
         className="logo"
         href="/"

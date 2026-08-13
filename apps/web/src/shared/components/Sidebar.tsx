@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { NavLink } from 'react-router'
 import { ROUTE_PATHS } from '../../app/routes/route-paths'
 
@@ -9,6 +10,12 @@ export type SidebarProps = {
   onLogout?: () => void
   isOpen?: boolean
   isRail?: boolean
+  /** Phone only: whether the slide-in drawer is showing. Ignored on
+   *  desktop, where the sidebar is always visible. */
+  isMobileOpen?: boolean
+  /** Called when the drawer should close — a nav click, the scrim, the
+   *  close button, or Escape. */
+  onCloseMobile?: () => void
   onToggle?: () => void
   onToggleRail?: () => void
   // Every layout passes this now that all four roles have a profile
@@ -106,6 +113,8 @@ export function Sidebar({
   onLogout,
   isOpen = true,
   isRail = false,
+  isMobileOpen = false,
+  onCloseMobile,
   onToggle,
   onToggleRail,
   profilePath,
@@ -113,6 +122,18 @@ export function Sidebar({
   supportHasUnread = false,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
+
+  // Escape closes the drawer, matching every other overlay in the app.
+  // Bound unconditionally (not behind `isMobileOpen`) so the hook order
+  // stays stable across renders; the handler itself no-ops when shut.
+  useEffect(() => {
+    if (!isMobileOpen) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onCloseMobile?.()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isMobileOpen, onCloseMobile])
 
   if (!isOpen) return null
 
@@ -124,7 +145,16 @@ export function Sidebar({
   }
 
   return (
-    <aside className={`sidebar${isRail ? ' rail' : ''}`}>
+    <>
+      {/* Scrim only exists while the phone drawer is open; on desktop the
+          sidebar is part of the layout and has nothing behind it. */}
+      {isMobileOpen && (
+        <div className="sidebar-scrim" onClick={onCloseMobile} aria-hidden="true" />
+      )}
+
+      <aside
+        className={`sidebar${isRail ? ' rail' : ''}${isMobileOpen ? ' mobile-open' : ''}`}
+      >
       <button
         onClick={onToggleRail ?? onToggle}
         className="icon-btn rail-toggle"
@@ -132,6 +162,18 @@ export function Sidebar({
         type="button"
       >
         <span className="ms">menu_open</span>
+      </button>
+
+      {/* Phone-only close affordance. The scrim and Escape both work, but
+          neither is discoverable, and the drawer covers the topbar button
+          that opened it. */}
+      <button
+        onClick={onCloseMobile}
+        className="icon-btn sidebar-close"
+        aria-label="إغلاق القائمة"
+        type="button"
+      >
+        <span className="ms">close</span>
       </button>
 
       <nav>
@@ -144,6 +186,7 @@ export function Sidebar({
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={onCloseMobile}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             >
               {({ isActive }) => (
@@ -171,6 +214,7 @@ export function Sidebar({
         {profilePath ? (
           <NavLink
             to={profilePath}
+            onClick={onCloseMobile}
             title={userName}
             className={({ isActive }) => `nav-item profile-item${isActive ? ' active' : ''}`}
           >
@@ -193,6 +237,7 @@ export function Sidebar({
           <span className="lbl">تسجيل الخروج</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

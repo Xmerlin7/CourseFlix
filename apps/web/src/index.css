@@ -429,6 +429,15 @@
   border-radius: 50%;
 }
 
+/* Phone-drawer affordances. Hidden by default and switched on inside the
+   860px block — the sidebar is permanently on screen above it, so a
+   menu button, a close button and a scrim would all be dead chrome. */
+.topbar-menu-btn,
+.sidebar-close,
+.sidebar-scrim {
+  display: none;
+}
+
 /* Rail mode */
 .sidebar.rail {
   width: 96px;
@@ -1171,55 +1180,60 @@ code {
 
   .main {
     padding: 10px;
-    padding-bottom: 86px;
   }
 
   .sheet {
     border-radius: calc(22px * var(--radius-scale));
   }
 
+  /* Slide-in drawer, not a bottom bar. The bar squeezed every nav item
+     into a 72px strip: with ten entries on the admin side that left ~38px
+     per target with the labels shrunk to 11px, and the profile row and
+     collapse toggle had to be hidden outright to make room. A drawer
+     shows the same vertical list as desktop, at full size, and nothing
+     has to be dropped.
+
+     Anchored to the inline-start edge, which is the right in this RTL
+     document — so `translateX(100%)` parks it off the right of the
+     screen and `translateX(0)` brings it in. */
   .sidebar {
     position: fixed;
-    bottom: 0;
-    top: auto;
-    inset-inline: 0;
-    width: 100% !important;
-    height: 72px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
-    padding: 6px 10px;
-    background: var(--surface-container-high);
-    z-index: 70;
-    box-shadow: 0 -2px 14px rgba(20, 10, 40, 0.14);
-  }
-
-  .sidebar .rail-toggle,
-  .side-footer .profile-item {
-    display: none;
-  }
-
-  .sidebar nav {
-    flex-direction: row;
-    flex: 1;
-    justify-content: space-around;
-    gap: 2px;
-  }
-
-  .nav-item {
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: min(300px, 84vw) !important;
+    height: 100%;
     flex-direction: column;
-    gap: 3px;
-    padding: 7px 12px;
-    font-size: 11px;
-    border-radius: calc(16px * var(--radius-scale));
+    padding: 14px 12px;
+    background: var(--surface-container-high);
+    z-index: 80;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
   }
 
-  .side-footer {
-    margin: 0;
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
 
-  .side-footer .nav-item .lbl {
+  /* The desktop collapse control has no meaning in a drawer. */
+  .sidebar .rail-toggle {
     display: none;
+  }
+
+  .sidebar-close {
+    align-self: flex-start;
+    margin-bottom: 6px;
+  }
+
+  .sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 79;
+    background: var(--scrim);
+  }
+
+  .topbar-menu-btn {
+    display: grid;
   }
 }
 
