@@ -40,7 +40,7 @@ describe('NotificationsPage', () => {
 
     expect(await screen.findByText('اختبار قصير جاهز لك')).toBeInTheDocument()
     expect(screen.getByText('عندك 1 إشعار غير مقروء')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /ابدأ الكويز/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /اختبار قصير جاهز لك/ })).toHaveAttribute(
       'href',
       '/student/mini-quizzes/quiz-1',
     )

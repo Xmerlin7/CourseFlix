@@ -1,4 +1,4 @@
-import type { TeacherQuota } from '../../types/teacher-billing.types'
+import type { TeacherQuota } from '../types/teacher-billing.types'
 
 interface QuotaChipProps {
   quota: TeacherQuota

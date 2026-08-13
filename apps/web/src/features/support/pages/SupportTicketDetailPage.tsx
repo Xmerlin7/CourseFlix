@@ -256,7 +256,11 @@ export function SupportTicketDetailPage() {
           {renderList.length === 0 ? (
             <div className="support-chat-empty">
               <strong>أهلاً بيك 👋</strong>
-              <p>اكتب رسالتك وهيساعدك فريق الدعم في حل المشكلة.</p>
+              <p>
+                {isStaff
+                  ? 'اكتب ردك هنا.'
+                  : 'اكتب رسالتك وهيساعدك فريق الدعم في حل المشكلة.'}
+              </p>
             </div>
           ) : (
             renderList.map((message, index) => (

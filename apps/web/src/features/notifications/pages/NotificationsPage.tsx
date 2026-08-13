@@ -6,8 +6,10 @@ import { SearchField } from '../../../shared/components/SearchField'
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { Link } from 'react-router'
 import { NOTIFICATION_TYPE } from '../../../shared/lib/status-labels'
+import { useAuth } from '../../auth/hooks/useAuth'
 import { useNotifications } from '../hooks/useNotifications'
 import { NotificationsSkeleton } from '../components/NotificationsSkeleton'
+import { resolveNotificationTarget } from '../lib/notification-target'
 import type { NotificationType } from '../types/notification.types'
 
 const PAGE_SIZE = 10
@@ -40,6 +42,7 @@ export function NotificationsPage() {
     markAllRead,
     refetch,
   } = useNotifications()
+  const { user } = useAuth()
   const unreadCount = data.filter((notification) => !notification.isRead).length
 
   const toHaystack = useCallback(
@@ -131,13 +134,13 @@ export function NotificationsPage() {
         <div className="list">
           {list.pageItems.map((notification) => {
             const meta = NOTIFICATION_TYPE[notification.type]
-            const miniQuizPath =
-              notification.relatedEntityType === 'mini_quiz' && notification.relatedEntityId
-                ? `/student/mini-quizzes/${notification.relatedEntityId}`
-                : null
+            const target = user ? resolveNotificationTarget(notification, user.role) : null
+            const handleRowClick = () => {
+              if (!notification.isRead) void markRead(notification.id)
+            }
 
-            return (
-              <div key={notification.id} className="list-item">
+            const row = (
+              <>
                 <span className={`lead ${meta.lead}`}>
                   <span className="ms">{meta.icon}</span>
                 </span>
@@ -150,26 +153,35 @@ export function NotificationsPage() {
                 <span className="end">
                   <span className="chip outline">{meta.label}</span>
 
-                  {miniQuizPath && (
-                    <Link to={miniQuizPath} className="btn tonal">
-                      <span className="ms">quiz</span>
-                      ابدأ الكويز
-                    </Link>
+                  {!notification.isRead && (
+                    <span className="unread-dot" aria-label="غير مقروء" />
                   )}
 
-                  {!notification.isRead && (
-                    <>
-                      <span className="unread-dot" aria-label="غير مقروء" />
-                      <button
-                        type="button"
-                        onClick={() => void markRead(notification.id)}
-                        className="btn text"
-                      >
-                        تعليم كمقروء
-                      </button>
-                    </>
+                  {!notification.isRead && !target && (
+                    <button
+                      type="button"
+                      onClick={() => void markRead(notification.id)}
+                      className="btn text"
+                    >
+                      تعليم كمقروء
+                    </button>
                   )}
                 </span>
+              </>
+            )
+
+            return target ? (
+              <Link
+                key={notification.id}
+                to={target.path}
+                className="list-item"
+                onClick={handleRowClick}
+              >
+                {row}
+              </Link>
+            ) : (
+              <div key={notification.id} className="list-item">
+                {row}
               </div>
             )
           })}
