@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { SupportInboxSkeleton } from '../components/SupportInboxSkeleton'
 import { TicketStatusBadge } from '../components/TicketStatusBadge'
@@ -21,6 +23,11 @@ const STATUS_FILTERS: { value: SupportTicketStatus | undefined; label: string; c
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
+
+const PAGE_SIZE = 10
+
+/** This page already filters `filteredTickets` itself. */
+const NO_CLIENT_FILTER = () => ''
 
 function getEmptyStateProps(status?: SupportTicketStatus) {
   switch (status) {
@@ -84,6 +91,11 @@ export function SupportInboxPage() {
     }
     return list
   }, [allTickets, selectedStatus, searchQuery])
+
+  // This page keeps its own search box (it matches the ticket UUID, which
+  // the shared field's Arabic folding would mangle), so the hook only
+  // paginates — `searchQuery` is passed purely to reset to page 1.
+  const list = usePaginatedList(filteredTickets, NO_CLIENT_FILTER, PAGE_SIZE, searchQuery)
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -173,7 +185,7 @@ export function SupportInboxPage() {
         )
       ) : (
         <div className="support-tickets-list">
-          {filteredTickets.map((ticket) => (
+          {list.pageItems.map((ticket) => (
             <Link
               key={ticket.id}
               to={`${detailPathPrefix}/${ticket.id}`}
@@ -215,6 +227,17 @@ export function SupportInboxPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="طلب"
+        />
       )}
     </>
   )

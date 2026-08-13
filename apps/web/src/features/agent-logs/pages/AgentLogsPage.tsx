@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { useAgentLogs } from '../hooks/useAgentLogs'
 import { AgentLogsSkeleton } from '../components/AgentLogsSkeleton'
@@ -26,6 +29,8 @@ const STATUS_CHIP_CLASS: Record<AgentLogStatus, string> = {
   retrying: '',
   skipped: '',
 }
+
+const PAGE_SIZE = 10
 
 const AGENT_TYPE_OPTIONS: Array<{ label: string; value: AgentType | '' }> = [
   { label: 'كل الأنواع', value: '' },
@@ -60,6 +65,13 @@ export function AgentLogsPage() {
     status: status || undefined,
   })
 
+  const toHaystack = useCallback(
+    (log: (typeof data)[number]) =>
+      `${log.agentType} ${log.action} ${log.status} ${log.errorMessage ?? ''}`,
+    [],
+  )
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
+
   return (
     <>
       <h1 className="page-title">سجل الوكيل</h1>
@@ -93,6 +105,14 @@ export function AgentLogsPage() {
         ))}
       </div>
 
+      <SearchField
+        id="agent-logs-search"
+        label="بحث في السجل"
+        placeholder="ابحث بنوع الوكيل أو الإجراء أو الحالة..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {isLoading && <AgentLogsSkeleton />}
 
       {!isLoading &&
@@ -106,9 +126,13 @@ export function AgentLogsPage() {
         />
       )}
 
-      {!isLoading && !error && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState title="لا توجد نتائج" message="مفيش سجلات مطابقة لبحثك، جرّب كلمة تانية" />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="list">
-          {data.map((log) => {
+          {list.pageItems.map((log) => {
             const isExpanded = expandedId === log.id
 
             return (
@@ -162,6 +186,17 @@ export function AgentLogsPage() {
             )
           })}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="سجل"
+        />
       )}
     </>
   )

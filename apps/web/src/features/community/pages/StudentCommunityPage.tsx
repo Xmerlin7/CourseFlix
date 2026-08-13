@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useCallback } from 'react'
 import { Link } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { useStudentEnrollments } from '../../student/hooks/useStudentEnrollments'
 import { useStudentCommunitySummary } from '../../student/hooks/useStudentCommunitySummary'
@@ -39,12 +42,16 @@ function formatActivityTime(iso: string): string {
   return date.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' })
 }
 
+const PAGE_SIZE = 10
+
 export function StudentCommunityPage() {
   const { data: enrollments, isLoading, error, refetch } = useStudentEnrollments()
   const { data: summaries } = useStudentCommunitySummary()
-  const [search, setSearch] = useState('')
 
-  if (isLoading) return <StudentCommunitySkeleton />
+  const toHaystack = useCallback(
+    (enrollment: StudentEnrollment) => enrollment.courseTitle ?? '',
+    [],
+  )
 
   const summaryByCourseId = new Map(summaries.map((item) => [item.courseId, item]))
 
@@ -61,10 +68,12 @@ export function StudentCommunityPage() {
       return 0
     })
 
-  const query = search.trim().toLowerCase()
-  const filteredCourses = query
-    ? courses.filter((enrollment) => (enrollment.courseTitle ?? '').toLowerCase().includes(query))
-    : courses
+  // Declared after `courses` because it paginates that list, but the
+  // hook still has to run before the loading early-return below — React
+  // forbids a conditional hook call.
+  const list = usePaginatedList(courses, toHaystack, PAGE_SIZE)
+
+  if (isLoading) return <StudentCommunitySkeleton />
 
   return (
     <div className="community-page">
@@ -85,22 +94,19 @@ export function StudentCommunityPage() {
         </div>
       ) : (
         <>
-          <div className="community-search">
-            <span className="ms" aria-hidden="true">search</span>
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="ابحث عن دورة..."
-              aria-label="ابحث عن دورة"
-            />
-          </div>
+          <SearchField
+            id="community-search"
+            label="بحث عن دورة"
+            placeholder="ابحث باسم الدورة..."
+            value={list.query}
+            onChange={list.search}
+          />
 
-          {filteredCourses.length === 0 ? (
+          {list.pageItems.length === 0 ? (
             <p className="community-no-results">مفيش دورات مطابقة لبحثك.</p>
           ) : (
             <div className="community-list">
-              {filteredCourses.map((enrollment) =>
+              {list.pageItems.map((enrollment) =>
                 enrollment.courseTitle ? (
                   <CommunityCourseRow
                     key={enrollment.courseId}
@@ -112,6 +118,17 @@ export function StudentCommunityPage() {
                 ),
               )}
             </div>
+          )}
+
+          {list.hasPages && (
+            <Pagination
+              page={list.page}
+              totalPages={list.totalPages}
+              onPageChange={list.setPage}
+              matchCount={list.matchCount}
+              pageSize={PAGE_SIZE}
+              itemLabel="دورة"
+            />
           )}
         </>
       )}

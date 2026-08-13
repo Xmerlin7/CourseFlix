@@ -1,6 +1,10 @@
+import { useCallback } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { useStudentInterventions } from '../hooks/useStudentInterventions'
 import { StudentInterventionsSkeleton } from '../components/StudentInterventionsSkeleton'
@@ -16,13 +20,32 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-EG', { dateStyle: 'medium' })
 }
 
+const PAGE_SIZE = 10
+
 export function StudentInterventionsPage() {
   const { data, isLoading, error, refetch } = useStudentInterventions()
+
+  const toHaystack = useCallback(
+    (intervention: (typeof data)[number]) =>
+      Object.values(intervention)
+        .filter((value): value is string => typeof value === 'string')
+        .join(' '),
+    [],
+  )
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
 
   return (
     <>
       <h1 className="page-title">نقاط تحتاج مراجعة</h1>
       <p className="subtitle">هنا هتلاقي أي نقطة رصدها النظام إنك محتاج تراجعها</p>
+
+      <SearchField
+        id="studentinterventions-search"
+        label="بحث في التنبيهات"
+        placeholder="ابحث في المفاهيم أو الدورات..."
+        value={list.query}
+        onChange={list.search}
+      />
 
       {isLoading && <StudentInterventionsSkeleton />}
 
@@ -37,9 +60,13 @@ export function StudentInterventionsPage() {
         />
       )}
 
-      {!isLoading && !error && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState title="لا توجد نتائج" message="مفيش تنبيهات مطابقة لبحثك، جرّب كلمة تانية" />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="list">
-          {data.map((intervention) => (
+          {list.pageItems.map((intervention) => (
             <div key={intervention.id} className="list-item">
               <span className="lead">
                 <span className="ms">monitoring</span>
@@ -66,6 +93,17 @@ export function StudentInterventionsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="تنبيه"
+        />
       )}
     </>
   )
