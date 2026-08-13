@@ -10,6 +10,7 @@ interface MeshPoint {
 }
 
 const LINE_DISTANCE = 0.28
+const POINTER_RADIUS = 0.24
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -78,15 +79,25 @@ export function AuthMeshCanvas() {
       const depth = 0.35 + z * 1.65
       const driftX = Math.sin(time * 0.00045 + point.phase) * 0.08
       const driftY = Math.cos(time * 0.00038 + point.phase * 1.3) * 0.06
-      const pullX = pointer.active ? pointer.x * (1 - z) * 0.06 : 0
-      const pullY = pointer.active ? pointer.y * (1 - z) * 0.04 : 0
+      const pointX = point.baseX * 0.72
+      const pointY = point.baseY * 0.68
+      const pointerDx = pointer.x - pointX
+      const pointerDy = pointer.y - pointY
+      const pointerDistance = Math.hypot(pointerDx, pointerDy)
+      const force = pointer.active
+        ? Math.max(0, 1 - pointerDistance / POINTER_RADIUS) ** 2
+        : 0
+      const pullX = force * pointerDx * (0.18 + z * 0.08)
+      const pullY = force * pointerDy * (0.13 + z * 0.06)
+      const ripple = force * Math.sin(time * 0.006 + point.phase) * 0.045
 
       return {
-        x: width * (0.5 + (point.baseX + driftX + pullX) * depth * 0.36),
-        y: height * (0.46 + (point.baseY + driftY + pullY) * depth * 0.34),
+        x: width * (0.5 + (point.baseX + driftX + pullX + ripple) * depth * 0.36),
+        y: height * (0.46 + (point.baseY + driftY + pullY - ripple * 0.6) * depth * 0.34),
         z,
         depth,
         size: point.size * (0.72 + z * 1.35),
+        force,
       }
     }
 
@@ -108,34 +119,48 @@ export function AuthMeshCanvas() {
 
           if (distance > LINE_DISTANCE) continue
 
-          const alpha = Math.pow(1 - distance / LINE_DISTANCE, 1.8) * 0.58
+          const pointerBoost = Math.max(a.force, b.force)
+          const alpha = Math.pow(1 - distance / LINE_DISTANCE, 1.8) * (0.5 + pointerBoost * 0.9)
           const widthFactor = 0.35 + Math.max(a.z, b.z) * 1.35
 
           meshContext.beginPath()
           meshContext.moveTo(a.x, a.y)
           meshContext.lineTo(b.x, b.y)
-          meshContext.lineWidth = widthFactor
+          meshContext.lineWidth = widthFactor + pointerBoost * 1.8
           meshContext.strokeStyle = `rgba(103, 245, 255, ${alpha})`
           meshContext.shadowColor = 'rgba(35, 230, 255, 0.75)'
-          meshContext.shadowBlur = 9 * alpha
+          meshContext.shadowBlur = 9 * alpha + pointerBoost * 18
           meshContext.stroke()
         }
       }
 
       for (const point of projected) {
         const pulse = reducedMotion ? 1 : 0.78 + Math.sin(time * 0.003 + point.z * 8) * 0.22
-        const radius = point.size * pulse
+        const radius = point.size * pulse * (1 + point.force * 1.15)
 
         meshContext.beginPath()
-        meshContext.arc(point.x, point.y, radius * 2.6, 0, Math.PI * 2)
-        meshContext.fillStyle = `rgba(73, 232, 255, ${0.08 + point.z * 0.12})`
+        meshContext.arc(point.x, point.y, radius * (2.6 + point.force * 2.4), 0, Math.PI * 2)
+        meshContext.fillStyle = `rgba(73, 232, 255, ${0.08 + point.z * 0.12 + point.force * 0.28})`
         meshContext.fill()
 
         meshContext.beginPath()
         meshContext.arc(point.x, point.y, radius, 0, Math.PI * 2)
         meshContext.fillStyle = `rgba(236, 254, 255, ${0.72 + point.z * 0.22})`
         meshContext.shadowColor = 'rgba(86, 242, 255, 0.95)'
-        meshContext.shadowBlur = 18
+        meshContext.shadowBlur = 18 + point.force * 30
+        meshContext.fill()
+      }
+
+      if (pointer.active) {
+        const pointerX = width * (0.5 + pointer.x * 0.5)
+        const pointerY = height * (0.5 + pointer.y * 0.5)
+        const gradient = meshContext.createRadialGradient(pointerX, pointerY, 0, pointerX, pointerY, 180)
+        gradient.addColorStop(0, 'rgba(124, 255, 255, 0.22)')
+        gradient.addColorStop(0.35, 'rgba(124, 255, 255, 0.08)')
+        gradient.addColorStop(1, 'rgba(124, 255, 255, 0)')
+        meshContext.fillStyle = gradient
+        meshContext.beginPath()
+        meshContext.arc(pointerX, pointerY, 180, 0, Math.PI * 2)
         meshContext.fill()
       }
 
