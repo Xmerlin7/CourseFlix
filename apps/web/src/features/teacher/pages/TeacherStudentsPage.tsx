@@ -3,6 +3,7 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
 import { SearchField } from '../../../shared/components/SearchField'
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
+import { useDebouncedValue } from '../../../shared/hooks/useDebouncedValue'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { showToast } from '../../../shared/components/Toast'
 import { COURSE_STATUS, ENROLLMENT_STATUS } from '../../../shared/lib/status-labels'
@@ -22,8 +23,13 @@ export function TeacherStudentsPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const [studentIdSearch, setStudentIdSearch] = useState('')
   const [pendingKey, setPendingKey] = useState<string | null>(null)
+  // The ID lookup is server-side (it matches a watermark code the client
+  // never receives), so it has to be debounced — un-debounced it fired a
+  // request per character, and each one swapped the table for a skeleton.
+  const debouncedIdSearch = useDebouncedValue(studentIdSearch)
+
   const { data, isLoading, error, refetch } = useTeacherStudents(
-    studentIdSearch.trim() || undefined,
+    debouncedIdSearch.trim() || undefined,
   )
 
   async function handleToggleSuspend(

@@ -15,20 +15,21 @@ export function useSalesSummary(filters: SalesDateFilter = {}): UseSalesSummaryR
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
   const [refetchToken, setRefetchToken] = useState(0)
-  // Tells a manual refetch() apart from a first load or a switch to a
-  // different target; see the guard inside the effect below.
-  const lastRefetchTokenRef = useRef(refetchToken)
+  // True once a response has landed. Gates the skeleton — see the guard
+  // inside the effect below.
+  const hasLoadedRef = useRef(false)
 
   useEffect(() => {
-    const isManualRefetch = lastRefetchTokenRef.current !== refetchToken
-    lastRefetchTokenRef.current = refetchToken
     const controller = new AbortController()
 
     async function load() {
-      // A manual refetch keeps the current content mounted: swapping in a
-      // full-page skeleton collapses the page height, which makes the
-      // browser reset scroll to the top after every save/edit/delete.
-      if (!isManualRefetch) {
+      // Only the first load shows a skeleton; every load after it keeps
+      // the current content mounted. Swapping in a full-page skeleton
+      // collapses the page height, which makes the browser reset scroll
+      // to the top — that fired after every save/edit/delete, and once
+      // per keystroke on the pages whose search term is part of the
+      // request, where it read as the page reloading mid-word.
+      if (!hasLoadedRef.current) {
         setIsLoading(true)
       }
       setError(null)
@@ -47,6 +48,7 @@ export function useSalesSummary(filters: SalesDateFilter = {}): UseSalesSummaryR
         }
       } finally {
         if (!controller.signal.aborted) {
+          hasLoadedRef.current = true
           setIsLoading(false)
         }
       }

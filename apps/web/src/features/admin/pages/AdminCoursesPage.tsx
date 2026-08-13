@@ -7,6 +7,7 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { Pagination } from '../../../shared/components/Pagination'
 import { SearchField } from '../../../shared/components/SearchField'
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
+import { useDebouncedValue } from '../../../shared/hooks/useDebouncedValue'
 import { COURSE_STATUS } from '../../../shared/lib/status-labels'
 import { useAdminCourses } from '../hooks/useAdminCourses'
 import type { CourseStatus } from '../../courses/types/course.types'
@@ -26,15 +27,19 @@ export function AdminCoursesPage() {
   const [status, setStatus] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
 
+  // Debounced for the same reason as AdminUsersPage: the endpoint does
+  // the filtering, so an un-debounced term is one request per keystroke.
+  const debouncedSearch = useDebouncedValue(search)
+
   const { data, isLoading, error, refetch } = useAdminCourses({
     status: status === 'all' ? undefined : status,
-    search: search.trim() || undefined,
+    search: debouncedSearch.trim() || undefined,
   })
 
   // `search` is applied by the endpoint (it matches fields the client
   // never receives), so the hook only paginates here — hence the fourth
   // argument and the no-op haystack.
-  const list = usePaginatedList(data, NO_CLIENT_FILTER, PAGE_SIZE, search)
+  const list = usePaginatedList(data, NO_CLIENT_FILTER, PAGE_SIZE, debouncedSearch)
 
   return (
     <>

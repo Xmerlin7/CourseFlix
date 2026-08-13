@@ -5,6 +5,7 @@ import { ErrorState } from '../../../shared/components/ErrorState'
 import { Pagination } from '../../../shared/components/Pagination'
 import { SearchField } from '../../../shared/components/SearchField'
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
+import { useDebouncedValue } from '../../../shared/hooks/useDebouncedValue'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { SupportInboxSkeleton } from '../components/SupportInboxSkeleton'
 import { TicketStatusBadge } from '../components/TicketStatusBadge'
@@ -72,7 +73,13 @@ export function SupportInboxPage() {
   const [selectedStatus, setSelectedStatus] = useState<SupportTicketStatus | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: allTickets, isLoading, error, refetch } = useStaffTickets({ search: searchQuery })
+  // Debounced before it reaches the endpoint; the client-side narrowing
+  // below still runs off the live value so typing feels immediate.
+  const debouncedSearch = useDebouncedValue(searchQuery)
+
+  const { data: allTickets, isLoading, error, refetch } = useStaffTickets({
+    search: debouncedSearch,
+  })
 
   const filteredTickets = useMemo(() => {
     let list = allTickets

@@ -82,14 +82,25 @@ export class AdminUsersService {
       // Name/email substring match, plus an exact match against the
       // student's video watermark code (and their full UUID, if the
       // search string looks like one) — see watermark-id.util.ts.
+      //
+      // `:searchLike` and `:searchExact` are deliberately two different
+      // parameter names for the same user input. QueryBuilder parameters
+      // live in one flat map for the whole query, not per-clause, so
+      // binding `:search` to `%admin%` here and to `admin` on the
+      // watermark line below left every clause using the last value
+      // written — which silently turned both ILIKEs into exact matches
+      // and made the search return nothing for any partial term.
       qb.andWhere(
         new Brackets((sub) => {
           sub
-            .where('user.full_name ILIKE :search', { search: `%${search}%` })
-            .orWhere('user.email ILIKE :search', { search: `%${search}%` })
-            .orWhere(`${watermarkSqlExpression('user')} = UPPER(:search)`, {
-              search,
-            });
+            .where('user.full_name ILIKE :searchLike', {
+              searchLike: `%${search}%`,
+            })
+            .orWhere('user.email ILIKE :searchLike')
+            .orWhere(
+              `${watermarkSqlExpression('user')} = UPPER(:searchExact)`,
+              { searchExact: search },
+            );
           if (looksLikeUuid(search)) {
             sub.orWhere('user.id = :fullId', { fullId: search });
           }
