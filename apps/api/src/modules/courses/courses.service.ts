@@ -111,25 +111,36 @@ export class CoursesService {
     courseId: string,
     viewer: AuthenticatedUser,
   ): Promise<CourseDetailResponseDto> {
-    // Non-teacher viewers (students) never see draft lessons here, same
-    // as loadCourseOutline in lessons.service.ts — otherwise a draft
-    // sitting between two published lessons shows up in the student's
-    // own outline as a lesson they can never complete.
+    // Only real students never see draft lessons here, same as
+    // loadCourseOutline in lessons.service.ts — otherwise a draft sitting
+    // between two published lessons shows up in the student's own
+    // outline as a lesson they can never complete. Teachers, the
+    // assistants scoped to them, and admins all need the full outline.
     const course = await this.loadCourseWithSectionsAndLessons(
       courseId,
-      viewer.role !== 'teacher',
+      viewer.role === 'student',
     );
     if (!course) {
       throw new NotFoundException('Course not found.');
     }
 
-    const canEdit = course.teacherId === viewer.id;
+    // Mirrors TeacherController's scopeTeacherId: an assistant manages
+    // whatever their teacher owns. Their own id counts too — the
+    // single-teacher migration (1785000091000) demoted extra teachers to
+    // assistants without reassigning the courses they still own, so
+    // scoping purely by managedByTeacherId would lock them out of those.
+    const canEdit =
+      course.teacherId === viewer.id ||
+      (viewer.role === 'assistant' &&
+        course.teacherId === viewer.managedByTeacherId);
 
-    if (viewer.role === 'teacher') {
+    if (viewer.role === 'teacher' || viewer.role === 'assistant') {
       if (!canEdit) {
         throw new ForbiddenException('You do not own this course.');
       }
-    } else {
+    } else if (viewer.role !== 'admin') {
+      // Students only — admins bypass both ownership and enrollment,
+      // same as getCourseDetailForAdmin.
       await this.enrollmentsService.assertStudentEnrolled(viewer.id, courseId);
     }
 
@@ -151,11 +162,17 @@ export class CoursesService {
 
     let enrolledCourseIds = new Set<string>();
     if (viewer.role === 'student') {
+      // Same entitlement rule as assertStudentEnrolled: a completed course
+      // is still owned, so it must not show a "شراء" button offering to
+      // sell it back to the student who already finished it.
       const enrollments = await this.enrollmentsService.findStudentEnrollments(
         viewer.id,
-        { status: 'active' },
       );
-      enrolledCourseIds = new Set(enrollments.map((e) => e.courseId));
+      enrolledCourseIds = new Set(
+        enrollments
+          .filter((e) => e.status === 'active' || e.status === 'completed')
+          .map((e) => e.courseId),
+      );
     }
 
     return courses.map((course) => ({

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import {
   EnrollmentEntity,
   EnrollmentStatus,
@@ -40,6 +40,21 @@ export class EnrollmentsService {
     return query.orderBy('enrollment.enrolled_at', 'DESC').getMany();
   }
 
+  /**
+   * Entitlement gate for every student-facing course read (detail page,
+   * lessons, materials, tutor chat, quizzes).
+   *
+   * Accepts `completed` as well as `active`: finishing a course does not
+   * revoke access to it — the student still owns it and the UI actively
+   * invites them back in ("مراجعة الدورة" in StudentCourseCard). Only
+   * `suspended` (the teacher's explicit "إيقاف") and a missing enrollment
+   * are refused. Checking `status: 'active'` alone used to 403 every
+   * student the moment they completed a course.
+   *
+   * Note this is deliberately broader than `listActiveStudentIds` /
+   * `countActiveStudentsByCourseIds`, which stay active-only because they
+   * drive notification fan-out and seat counts, not access.
+   */
   async assertStudentEnrolled(
     studentId: string,
     courseId: string,
@@ -48,7 +63,7 @@ export class EnrollmentsService {
       where: {
         studentId,
         courseId,
-        status: 'active',
+        status: In(['active', 'completed']),
         deletedAt: IsNull(),
       },
     });
