@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
 import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { SupportInboxSkeleton } from '../components/SupportInboxSkeleton'
@@ -128,26 +129,13 @@ export function SupportInboxPage() {
       </div>
 
       <div className="support-controls-section">
-        <div className="support-search-field">
-          <span className="ms search-icon" aria-hidden="true">search</span>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ابحث في طلبات الدعم..."
-            aria-label="ابحث في طلبات الدعم"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="icon-btn clear-search-btn"
-              onClick={() => setSearchQuery('')}
-              aria-label="مسح البحث"
-            >
-              <span className="ms">close</span>
-            </button>
-          )}
-        </div>
+        <SearchField
+          id="support-inbox-search"
+          label="بحث في طلبات الدعم"
+          placeholder="ابحث بعنوان الطلب أو اسم الطالب أو رقم الطلب..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
 
         <div className="support-status-filters" role="tablist" aria-label="تصفية طلبات الدعم">
           {STATUS_FILTERS.map((filter) => {

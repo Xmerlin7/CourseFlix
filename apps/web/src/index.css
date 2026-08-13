@@ -498,42 +498,6 @@
   margin: 4px 0 0;
 }
 
-/* Search ("ابحث عن دورة...") */
-.community-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-  max-width: 420px;
-  margin-bottom: 18px;
-}
-
-.community-search .ms {
-  position: absolute;
-  inset-inline-start: 14px;
-  color: var(--on-surface-variant);
-  font-size: 19px;
-  pointer-events: none;
-}
-
-.community-search input {
-  width: 100%;
-  height: 42px;
-  padding-inline-start: 42px;
-  padding-inline-end: 16px;
-  border-radius: calc(999px * var(--radius-scale));
-  border: 1px solid var(--outline-variant);
-  background: var(--surface-container-low);
-  color: var(--on-surface);
-  font-size: 13.5px;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.community-search input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
-}
-
 .community-no-results {
   color: var(--on-surface-variant);
   font-size: 13.5px;

@@ -86,25 +86,33 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
       </div>
 
       <div className="support-controls-section" style={{ marginBottom: 20 }}>
-        <form onSubmit={handleSearchSubmit} className="support-search-field" style={{ margin: 0 }}>
-          <span className="ms search-icon" aria-hidden="true">search</span>
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="ابحث في المناقشات..."
-            aria-label="ابحث في المناقشات"
-          />
-          {searchInput && (
-            <button
-              type="button"
-              className="icon-btn clear-search-btn"
-              onClick={clearSearch}
-              aria-label="مسح البحث"
-            >
-              <span className="ms">close</span>
-            </button>
-          )}
+        {/* Shares SearchField's classes rather than the component itself:
+            this box submits on Enter (the endpoint does the searching, so
+            firing per keystroke would be a request per character), and
+            SearchField is a controlled live-filter input. Same markup, so
+            it looks identical to every other search box in the app. */}
+        <form onSubmit={handleSearchSubmit} className="tf search-field" style={{ margin: 0 }}>
+          <label htmlFor="discussions-search">بحث في المناقشات</label>
+          <div className="search-field-box">
+            <span className="ms search-field-icon" aria-hidden="true">search</span>
+            <input
+              id="discussions-search"
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="اكتب كلمة واضغط Enter للبحث..."
+            />
+            {searchInput && (
+              <button
+                type="button"
+                className="search-field-clear"
+                onClick={clearSearch}
+                aria-label="مسح البحث"
+              >
+                <span className="ms">close</span>
+              </button>
+            )}
+          </div>
         </form>
 
         <div className="support-status-filters" role="tablist" aria-label="تصفية المناقشات">
