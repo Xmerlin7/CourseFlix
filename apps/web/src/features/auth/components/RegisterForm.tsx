@@ -15,6 +15,7 @@ type FieldName = 'fullName' | 'email' | 'password' | 'confirmPassword'
 
 interface PendingRegistration {
   email: string
+  devCode?: string
 }
 
 export function RegisterForm() {
@@ -100,7 +101,7 @@ export function RegisterForm() {
       // No session yet — the account is created inactive and a verification
       // code is emailed. The code step below activates + signs the user in.
       const response = await register({ fullName, email, password, acceptedTerms: true })
-      setPendingRegistration({ email: response.email })
+      setPendingRegistration({ email: response.email, devCode: response.devCode })
     } catch (caughtError) {
       if (caughtError instanceof ApiError && caughtError.status === 409) {
         // Email is taken. It might be their own earlier registration that was
@@ -139,6 +140,7 @@ export function RegisterForm() {
       <VerifyCodeForm
         email={verificationEmail}
         purpose="register"
+        devCode={pendingRegistration?.devCode}
         onResend={(email) => requestOtp({ email, purpose: 'register' })}
         onResendResult={(response) => {
           if (isResume && response.accountStatus === 'active') {

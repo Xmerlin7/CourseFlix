@@ -23,6 +23,19 @@ type UploadedAttachment = {
   size: number;
 };
 
+function decodeOriginalName(filename: string | undefined): string {
+  if (!filename) return '';
+  try {
+    const decoded = Buffer.from(filename, 'latin1').toString('utf8');
+    if (/[؀-ۿ]/.test(decoded)) {
+      return decoded;
+    }
+  } catch {
+    // fallback
+  }
+  return filename;
+}
+
 /**
  * Same "one controller, service resolves student-vs-teacher access"
  * shape as DiscussionsController — see its docblock for why.
@@ -39,19 +52,6 @@ export class AnnouncementsController {
   ) {
     return this.announcementsService.listAnnouncements(courseId, user);
   }
-
-function decodeOriginalName(filename: string | undefined): string {
-  if (!filename) return '';
-  try {
-    const decoded = Buffer.from(filename, 'latin1').toString('utf8');
-    if (/[\u0600-\u06FF]/.test(decoded)) {
-      return decoded;
-    }
-  } catch {
-    // fallback
-  }
-  return filename;
-}
 
   @Post('courses/:courseId/announcements')
   @UseInterceptors(FileInterceptor('attachment'))

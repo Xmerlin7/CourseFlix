@@ -1,6 +1,8 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as argon2 from 'argon2';
+import { MailService } from '../mail/mail.service';
+import { OtpService } from '../otp/otp.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
@@ -13,6 +15,8 @@ describe('AuthService', () => {
     revokeSession: jest.Mock;
     findActiveSession: jest.Mock;
   };
+  let otpService: { issue: jest.Mock; verify: jest.Mock };
+  let mailService: { isConfigured: jest.Mock };
 
   const activeUser = {
     id: 'user-1',
@@ -31,12 +35,16 @@ describe('AuthService', () => {
       revokeSession: jest.fn(),
       findActiveSession: jest.fn(),
     };
+    otpService = { issue: jest.fn(), verify: jest.fn() };
+    mailService = { isConfigured: jest.fn().mockReturnValue(false) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsersService, useValue: usersService },
         { provide: SessionsService, useValue: sessionsService },
+        { provide: OtpService, useValue: otpService },
+        { provide: MailService, useValue: mailService },
       ],
     }).compile();
 
@@ -102,7 +110,11 @@ describe('AuthService', () => {
     expect(sessionsService.revokeSession).not.toHaveBeenCalled();
   });
 
-  it('register creates a user and issues a session', async () => {
+  it('register creates a pending user and emails a verification code', async () => {
+    // Registration is two-step now: the account is created 'inactive' and a
+    // register OTP is mailed — no session is opened until it's redeemed via
+    // verifyOtp (see the 'verifyOtp' tests below), so no createSession call
+    // to mock here.
     usersService.findByEmail.mockResolvedValue(null);
     usersService.createUser.mockResolvedValue({
       id: 'new-user',
@@ -112,19 +124,23 @@ describe('AuthService', () => {
       avatarUrl: null,
       managedByTeacherId: null,
     });
-    sessionsService.createSession.mockResolvedValue({
-      token: 'session-token',
-      session: { expiresAt: new Date(Date.now() + 86400000) },
-    });
+    otpService.issue.mockResolvedValue('123456');
+
     const result = await authService.register({
       fullName: 'New User',
       email: 'NEW@TEST.COM',
       password: 'StrongPass1',
       acceptedTerms: true,
     });
-    expect(result.token).toBe('session-token');
-    expect(result.user.role).toBe('student');
+
+    expect(result.accountStatus).toBe('pending');
+    expect(result.email).toBe('new@test.com');
     expect(usersService.createUser).toHaveBeenCalled();
+    expect(otpService.issue).toHaveBeenCalledWith(
+      'new-user',
+      'new@test.com',
+      'register',
+    );
   });
 
   it('register rejects duplicate email', async () => {
