@@ -62,8 +62,6 @@ export function LoginPage() {
 
   return (
     <>
-      <SocialLoginButtons />
-
       {oauth === 'success' && !user && (
         <p className="oauth-note" role="status">
           جارٍ إتمام تسجيل الدخول عبر جوجل...
@@ -88,6 +86,8 @@ export function LoginPage() {
           نسيت كلمة المرور؟
         </button>
       )}
+
+      <SocialLoginButtons />
 
       <p className="auth-switch">
         مستخدم جديد؟ <Link to="/register">إنشاء حساب</Link>

@@ -1063,6 +1063,35 @@ code {
   border-color: var(--error);
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-inline-end: calc(44px * var(--space-scale));
+}
+
+.password-toggle {
+  position: absolute;
+  inset-inline-end: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: calc(999px * var(--radius-scale));
+  background: none;
+  display: grid;
+  place-items: center;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.password-toggle:hover {
+  background: var(--hover);
+}
+
 /* ---------- Quiz (ported from ui5/) ---------- */
 .qcard {
   background: var(--surface-container-low);

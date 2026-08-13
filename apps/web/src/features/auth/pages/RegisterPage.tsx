@@ -5,8 +5,8 @@ import { SocialLoginButtons } from '../components/SocialLoginButtons'
 export function RegisterPage() {
   return (
     <>
-      <SocialLoginButtons />
       <RegisterForm />
+      <SocialLoginButtons />
       <p className="auth-switch">
         عندك حساب بالفعل؟ <Link to="/login">تسجيل الدخول</Link>
       </p>

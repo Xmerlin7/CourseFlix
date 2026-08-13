@@ -2,6 +2,7 @@ import { Fragment, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
+import { PasswordField } from '../../../shared/components/PasswordField'
 import { requestOtp } from '../api/auth.api'
 import { useAuth } from '../hooks/useAuth'
 import { getRoleHomePath } from '../utils/get-role-home-path'
@@ -234,40 +235,28 @@ export function RegisterForm() {
 
       {step === 1 && (
         <div className="wizard-step">
-          <div className={`tf${fieldErrors.password ? ' invalid' : ''}`}>
-            <label htmlFor="password">كلمة المرور</label>
-            <input
-              type="password"
-              id="password"
-              placeholder="********"
-              autoComplete="new-password"
-              autoFocus
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-            {fieldErrors.password && (
-              <span className="error-text" role="alert">
-                {fieldErrors.password}
-              </span>
-            )}
-          </div>
+          <PasswordField
+            id="password"
+            label="كلمة المرور"
+            placeholder="********"
+            autoComplete="new-password"
+            autoFocus
+            value={password}
+            onChange={setPassword}
+            invalid={Boolean(fieldErrors.password)}
+            error={fieldErrors.password}
+          />
 
-          <div className={`tf${fieldErrors.confirmPassword ? ' invalid' : ''}`}>
-            <label htmlFor="confirmPassword">تأكيد كلمة المرور</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              placeholder="********"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-            {fieldErrors.confirmPassword && (
-              <span className="error-text" role="alert">
-                {fieldErrors.confirmPassword}
-              </span>
-            )}
-          </div>
+          <PasswordField
+            id="confirmPassword"
+            label="تأكيد كلمة المرور"
+            placeholder="********"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            invalid={Boolean(fieldErrors.confirmPassword)}
+            error={fieldErrors.confirmPassword}
+          />
         </div>
       )}
 
