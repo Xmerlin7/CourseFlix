@@ -41,14 +41,8 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<{ user: AuthenticatedUser } | OtpResponse> {
+  ): Promise<{ user: AuthenticatedUser }> {
     const result = await this.authService.login(loginDto);
-
-    // Two-step login: with `requireOtp` the password is only verified and a
-    // login OTP is emailed — no session yet, so no cookie is set.
-    if (!('token' in result)) {
-      return result;
-    }
 
     response.cookie(SESSION_COOKIE_NAME, result.token, {
       httpOnly: true,
@@ -100,7 +94,9 @@ export class AuthController {
   @Post('auth/password/reset')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
-  async resetPassword(@Body() dto: PasswordResetDto): Promise<{ success: true }> {
+  async resetPassword(
+    @Body() dto: PasswordResetDto,
+  ): Promise<{ success: true }> {
     await this.authService.resetPassword(dto);
     return { success: true };
   }

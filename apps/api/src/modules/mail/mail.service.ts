@@ -2,10 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { OtpPurpose } from '../otp/entities/otp-code.entity';
 
 const OTP_SUBJECTS: Record<OtpPurpose, { en: string; ar: string }> = {
-  login: {
-    en: 'Your CourseFlix login code',
-    ar: 'رمز تسجيل الدخول إلى كورس فلاكس',
-  },
   register: {
     en: 'Verify your CourseFlix email',
     ar: 'تأكيد بريدك الإلكتروني في كورس فلاكس',
