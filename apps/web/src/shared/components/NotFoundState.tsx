@@ -33,13 +33,13 @@ export function NotFoundState({
         </p>
       </div>
 
-      {/* Action Buttons */}
+      {/* Uses the shared .btn design-system class rather than ad-hoc
+          Tailwind: .btn pairs var(--primary) with var(--on-primary), the
+          contrast-checked foreground the accent picker computes. The old
+          hardcoded `text-white` went unreadable on a light accent. */}
       {onGoHome && (
         <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={onGoHome}
-            className="flex items-center gap-2 px-7 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 cursor-pointer"
-          >
+          <button type="button" className="btn big cursor-pointer" onClick={onGoHome}>
             <Home className="w-4 h-4" />
             الرجوع للصفحة الرئيسية
           </button>

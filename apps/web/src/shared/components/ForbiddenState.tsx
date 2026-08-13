@@ -1,16 +1,18 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { ForbiddenIllustration } from './illustrations/ForbiddenIllustration'
 
 type ForbiddenStateProps = {
   title?: string
   message?: string
   onGoBack?: () => void
+  goBackLabel?: string
 }
 
 export function ForbiddenState({
   title = 'غير مسموح لك بالوصول',
   message = 'ليس لديك الصلاحية الكافية لعرض هذه الصفحة',
   onGoBack,
+  goBackLabel = 'الرجوع للصفحة الرئيسية',
 }: ForbiddenStateProps) {
   return (
     <div
@@ -30,14 +32,16 @@ export function ForbiddenState({
         </p>
       </div>
 
-      {/* Back button */}
+      {/* Uses the shared .btn design-system class rather than ad-hoc
+          Tailwind: .btn pairs var(--primary) with var(--on-primary), the
+          contrast-checked foreground the accent picker computes. The old
+          hardcoded `text-white` went unreadable on a light accent. */}
       {onGoBack && (
-        <button
-          onClick={onGoBack}
-          className="mt-4 flex items-center gap-2 px-7 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 active:scale-[0.97] transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          الرجوع للصفحة الرئيسية
+        <button type="button" className="btn big mt-4 cursor-pointer" onClick={onGoBack}>
+          {/* RTL: "back" points right, matching the arrow_forward the
+              register wizard already uses for its السابق control. */}
+          <ArrowRight className="w-4 h-4" />
+          {goBackLabel}
         </button>
       )}
     </div>

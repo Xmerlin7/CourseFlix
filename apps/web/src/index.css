@@ -7,6 +7,33 @@
   --animate-float: float 4s ease-in-out infinite;
 }
 
+/*
+ * Illustration ramp — the empty/error-state artwork (403/404/error) is
+ * inline SVG, so its fills can be driven by the accent the user picks in
+ * Settings instead of the hardcoded purple/blue/amber each illustration
+ * shipped with. Steps mirror Tailwind's 50–950 scale so the existing
+ * shade choices map across one-for-one and the artwork keeps its
+ * original depth and contrast structure.
+ *
+ * Derived from --primary, which the accent picker already recomputes per
+ * mode (accent-theme.ts), so these follow light/dark automatically. Only
+ * the tinted parts are remapped — grays, whites and skin tones stay
+ * neutral on purpose, since tinting those turns the art muddy.
+ */
+:root {
+  --illus-50: color-mix(in srgb, var(--primary) 8%, white);
+  --illus-100: color-mix(in srgb, var(--primary) 16%, white);
+  --illus-200: color-mix(in srgb, var(--primary) 30%, white);
+  --illus-300: color-mix(in srgb, var(--primary) 48%, white);
+  --illus-400: color-mix(in srgb, var(--primary) 72%, white);
+  --illus-500: var(--primary);
+  --illus-600: color-mix(in srgb, var(--primary) 86%, black);
+  --illus-700: color-mix(in srgb, var(--primary) 70%, black);
+  --illus-800: color-mix(in srgb, var(--primary) 55%, black);
+  --illus-900: color-mix(in srgb, var(--primary) 40%, black);
+  --illus-950: color-mix(in srgb, var(--primary) 26%, black);
+}
+
 @keyframes float {
 
   0%,

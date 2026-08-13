@@ -32,14 +32,12 @@ export function ErrorState({
         </p>
       </div>
 
-      {/* Retry button with icon spin on hover */}
+      {/* Uses the shared .btn design-system class rather than ad-hoc
+          Tailwind: .btn pairs var(--primary) with var(--on-primary), the
+          contrast-checked foreground the accent picker computes. The old
+          hardcoded `text-white` went unreadable on a light accent. */}
       {onRetry && (
-        <button
-          onClick={onRetry}
-          className="group mt-4 inline-flex items-center gap-2.5 px-7 py-3.5 bg-primary text-white text-sm font-semibold rounded-xl
-                     hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25
-                     active:scale-[0.97] transition-all duration-200 cursor-pointer"
-        >
+        <button type="button" className="btn big group mt-4 cursor-pointer" onClick={onRetry}>
           <RefreshCw className="w-4 h-4 transition-transform duration-500 group-hover:rotate-180" />
           إعادة المحاولة
         </button>
