@@ -97,11 +97,23 @@ export class PaymobService {
     path: string,
     body: Record<string, unknown>,
   ): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (caught) {
+      // fetch throws on network-level failures (DNS, TLS, blocked egress,
+      // timeouts) — surface the real cause instead of a bare 500. This is
+      // what "تعذر الاتصال بمزود الدفع" shows when Paymob is unreachable.
+      const reason = caught instanceof Error ? caught.message : String(caught);
+      this.logger.error(`Paymob ${path} unreachable: ${reason}`);
+      throw new BadGatewayException(
+        `Could not reach Paymob at ${path} (${reason})`,
+      );
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

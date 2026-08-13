@@ -175,10 +175,19 @@ export function CheckoutPage() {
       )}
 
       {paymobError && (
-        <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
+        <div
+          className="card section"
+          role="alert"
+          style={{ borderInlineStart: '4px solid var(--error)' }}
+        >
           <p style={{ color: 'var(--on-error-container)' }}>
             تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى.
           </p>
+          {getServerMessage(paymobError) && (
+            <p className="meta" dir="ltr" style={{ marginTop: 4 }}>
+              {getServerMessage(paymobError)}
+            </p>
+          )}
         </div>
       )}
 
