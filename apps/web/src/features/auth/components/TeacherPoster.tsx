@@ -1,124 +1,137 @@
-/**
- * The decorative half of the /login and /register split screen.
- *
- * Replaces the previous "four feature bullets on a gradient" panel with
- * something the audience actually recognises: the printed poster an
- * Egyptian private tutor puts up outside a study centre — subject in big
- * type, the teacher's name, the class timetable, a phone number and the
- * address.
- *
- * The portrait is deliberately featureless (no eyes, nose or mouth). It
- * stands for "the teacher" generically, and a drawn face would either
- * look like a specific real person or land in uncanny-valley territory at
- * this size. Everything is inline SVG + theme tokens, so the poster
- * follows the accent colour and light/dark mode like the rest of the app.
- *
- * The whole panel is decorative: every piece of information on it also
- * exists elsewhere in the product, and the DOM puts the form first, so
- * the caller marks it aria-hidden.
- */
+import { useState, type CSSProperties, type MouseEvent } from 'react'
+import type { AuthPosterContent, AuthPosterCourse } from '../types/auth-poster.types'
 
-const SCHEDULE = [
-  { grade: 'الثالث الإعدادي', days: 'السبت والثلاثاء', time: '٤:٠٠ م' },
-  { grade: 'الأول والثاني الثانوي', days: 'الأحد والأربعاء', time: '٦:٠٠ م' },
-  { grade: 'الثالث الثانوي', days: 'الاثنين والخميس', time: '٨:٠٠ م' },
+const FALLBACK_COURSE: AuthPosterCourse = {
+  id: null,
+  title: 'الفيزياء',
+  description:
+    'حصص منظمة، مراجعات ذكية، ومتابعة تقدم تساعدك تدخل الحصة وانت عارف خطوتك الجاية.',
+  coverImageUrl: null,
+  gradeLevel: 'من الإعدادي للثانوي',
+  teacherName: 'محمد عبدالرحمن',
+}
+
+const STUDY_STATS = [
+  { label: 'خطة مذاكرة', value: '١٢ أسبوع' },
+  { label: 'اختبارات قصيرة', value: '٤٨ تدريب' },
+  { label: 'متابعة تقدم', value: 'كل حصة' },
 ]
 
-/**
- * Head-and-shoulders figure built from plain geometry.
- *
- * Skin and hair are literal colours rather than theme tokens on purpose —
- * the same reasoning as the `--illus-*` ramp's docblock: tinting skin with
- * whatever accent the user picked turns the figure green or pink. Only the
- * clothing follows the theme.
- */
-function FacelessTeacher() {
+function getPosterCourse(content?: AuthPosterContent | null): AuthPosterCourse {
+  return content?.course ?? FALLBACK_COURSE
+}
+
+function getShortDescription(description: string | null): string {
+  const fallback = FALLBACK_COURSE.description ?? ''
+  const normalized = description?.trim() || fallback
+  return normalized.length > 130 ? `${normalized.slice(0, 127).trim()}...` : normalized
+}
+
+function PosterAvatar({ title, coverImageUrl }: Pick<AuthPosterCourse, 'title' | 'coverImageUrl'>) {
+  if (coverImageUrl) {
+    return (
+      <img
+        className="poster-cover-img"
+        src={coverImageUrl}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+    )
+  }
+
   return (
-    <svg
-      className="poster-figure-svg"
-      viewBox="0 0 160 160"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <clipPath id="poster-figure-clip">
-          <circle cx="80" cy="80" r="80" />
-        </clipPath>
-      </defs>
-
-      {/* Disc the figure is cropped into. */}
-      <circle cx="80" cy="80" r="80" fill="var(--primary-container)" />
-      {/* Painted back to front, so each layer tucks under the next: the
-          neck disappears into the jacket, the jacket under the collar,
-          the collar under the tie. Drawing the neck last (the obvious
-          order, chin downward) left a skin-coloured block sitting on top
-          of the shirt. */}
-      <g clipPath="url(#poster-figure-clip)">
-        {/* Neck. */}
-        <rect x="70" y="84" width="20" height="26" rx="10" fill="#DDB089" />
-        {/* Jacket / shoulders. */}
-        <path
-          d="M22 160 C22 122 47 104 80 104 C113 104 138 122 138 160 Z"
-          fill="var(--primary)"
-        />
-        {/* Shirt showing at the collar. */}
-        <path d="M64 106 L80 132 L96 106 L88 102 L80 112 L72 102 Z" fill="#F6F3FA" />
-        {/* Tie. */}
-        <path d="M80 130 L87 141 L80 160 L73 141 Z" fill="var(--tertiary-container)" />
-
-        {/* Ears. */}
-        <circle cx="52" cy="66" r="5.5" fill="#DDB089" />
-        <circle cx="108" cy="66" r="5.5" fill="#DDB089" />
-        {/* Head — no facial features, by design. */}
-        <circle cx="80" cy="64" r="28" fill="#EFC7A0" />
-        {/* Hair. */}
-        <path
-          d="M52 62 C52 42 64 32 80 32 C96 32 108 42 108 62 C103 53 94 48 80 48 C66 48 57 53 52 62 Z"
-          fill="#3B2F2B"
-        />
-      </g>
-    </svg>
+    <div className="poster-cover-fallback" aria-hidden="true">
+      <span className="ms">auto_stories</span>
+      <strong>{title.slice(0, 2)}</strong>
+    </div>
   )
 }
 
-export function TeacherPoster() {
+export function AuthCourseStrip({ content }: { content?: AuthPosterContent | null }) {
+  const course = getPosterCourse(content)
+
   return (
-    <div className="poster">
-      <div className="poster-head">
-        <span className="poster-subject">الفيزياء</span>
-        <span className="poster-head-note">مراجعات وحصص شرح</span>
-      </div>
+    <div className="auth-course-strip">
+      <span className="auth-course-strip-icon ms">school</span>
+      <span>
+        <strong>{course.title}</strong>
+        <small>{course.teacherName}</small>
+      </span>
+    </div>
+  )
+}
 
-      <div className="poster-identity">
-        <div className="poster-figure">
-          <FacelessTeacher />
+export function TeacherPoster({ content, isLoading = false }: {
+  content?: AuthPosterContent | null
+  isLoading?: boolean
+}) {
+  const course = getPosterCourse(content)
+  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+
+  function handlePointerMove(event: MouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect()
+    setTilt({
+      x: (event.clientX - rect.left) / rect.width - 0.5,
+      y: (event.clientY - rect.top) / rect.height - 0.5,
+    })
+  }
+
+  return (
+    <div
+      className={`poster-stage${isLoading ? ' loading' : ''}`}
+      style={{
+        '--poster-x': tilt.x,
+        '--poster-y': tilt.y,
+      } as CSSProperties}
+      onMouseMove={handlePointerMove}
+      onMouseLeave={() => setTilt({ x: 0, y: 0 })}
+    >
+      <div className="poster-light" aria-hidden="true" />
+      <div className="poster-grid-lines" aria-hidden="true" />
+
+      <div className="poster">
+        <div className="poster-hero">
+          <PosterAvatar title={course.title} coverImageUrl={course.coverImageUrl} />
+          <div className="poster-hero-overlay" />
+          <span className="poster-live-badge">
+            <span className="ms">verified</span>
+            منصة تعليم تفاعلية
+          </span>
         </div>
-        <div className="poster-titles">
-          <p className="poster-eyebrow">مع الأستاذ</p>
-          <p className="poster-name">محمد عبدالرحمن</p>
-          <p className="poster-role">من الثالث الإعدادي إلى الثالث الثانوي</p>
+
+        <div className="poster-body">
+          <div className="poster-head">
+            <span className="poster-head-note">{course.gradeLevel ?? 'برنامج دراسي كامل'}</span>
+            <h2 className="poster-subject">{course.title}</h2>
+          </div>
+
+          <div className="poster-identity">
+            <span className="poster-teacher-icon ms">person</span>
+            <div className="poster-titles">
+              <p className="poster-eyebrow">مع الأستاذ</p>
+              <p className="poster-name">{course.teacherName}</p>
+            </div>
+          </div>
+
+          <p className="poster-description">{getShortDescription(course.description)}</p>
+
+          <ul className="poster-stats">
+            {STUDY_STATS.map((stat) => (
+              <li key={stat.label}>
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="poster-progress">
+            <span>رحلة الطالب</span>
+            <div className="poster-progress-track">
+              <span />
+            </div>
+          </div>
         </div>
-      </div>
-
-      <ul className="poster-schedule">
-        {SCHEDULE.map((row) => (
-          <li key={row.grade} className="poster-schedule-row">
-            <span className="poster-schedule-grade">{row.grade}</span>
-            <span className="poster-schedule-days">{row.days}</span>
-            <span className="poster-schedule-time">{row.time}</span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="poster-contact">
-        <span className="poster-contact-item">
-          <span className="ms">call</span>
-          <bdi>010 1234 5678</bdi>
-        </span>
-        <span className="poster-contact-item">
-          <span className="ms">location_on</span>
-          سنتر النخبة التعليمي — المنصورة
-        </span>
       </div>
     </div>
   )
