@@ -20,7 +20,7 @@ interface VerifyCodeFormProps {
   devCode?: string
 }
 
-// Shared code-entry step for the register-verification and passwordless-login
+// Shared code-entry step for the register-verification and Google sign-in
 // flows: type the 6-digit code from the email, optionally resend it, and the
 // parent is handed the freshly-authenticated user on success.
 export function VerifyCodeForm({

@@ -44,7 +44,7 @@ export const handlers = [
 
   http.post(apiUrl("/auth/otp/request"), () =>
     HttpResponse.json({
-      message: "Check your email for your login code.",
+      message: "Check your email for your verification code.",
       email: "student@example.com",
       devCode: "123456",
     }),

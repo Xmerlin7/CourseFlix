@@ -34,7 +34,6 @@ describe('LoginForm', () => {
     expect(login).toHaveBeenCalledWith({
       email: 'student@example.com',
       password: 'password123',
-      requireOtp: true,
     })
   })
 })
