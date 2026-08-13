@@ -1,13 +1,19 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { showToast } from '../../../shared/components/Toast'
 import { useAdminAgentLogs } from '../hooks/useAdminAgentLogs'
 import { deleteAdminAgentLog } from '../api/admin-agent-logs.api'
+import type { AdminAgentLogListItem } from '../types/admin.types'
+
+const PAGE_SIZE = 10
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
@@ -22,6 +28,9 @@ const STATUS_CHIP: Record<string, string> = {
 
 export function AdminAgentLogsPage() {
   const { data, isLoading, error, refetch } = useAdminAgentLogs({})
+
+  const toHaystack = useCallback((log: AdminAgentLogListItem) => `${log.agentType} ${log.action} ${log.status} ${log.errorMessage ?? ''}`, [])
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -55,6 +64,14 @@ export function AdminAgentLogsPage() {
         </p>
       )}
 
+      <SearchField
+        id="admin-agent-logs-search"
+        label="بحث في السجل"
+        placeholder="ابحث بنوع الوكيل أو الإجراء..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {isLoading && <LoadingState variant="list" />}
 
       {!isLoading && error && (
@@ -65,7 +82,11 @@ export function AdminAgentLogsPage() {
         <EmptyState fullPage title="لا توجد سجلات" message="مفيش عمليات وكلاء مسجلة حاليًا" />
       )}
 
-      {!isLoading && !error && data && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState fullPage title="لا توجد نتائج" message="مفيش نتائج مطابقة لبحثك، جرّب كلمة تانية" />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="table-wrap section">
           <table className="mtable">
             <thead>
@@ -78,7 +99,7 @@ export function AdminAgentLogsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.map((log) => (
+              {list.pageItems.map((log) => (
                 <tr key={log.id}>
                   <td>{log.agentType}</td>
                   <td>
@@ -108,6 +129,17 @@ export function AdminAgentLogsPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!isLoading && !error && list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="سجل"
+        />
       )}
 
       <ConfirmModal

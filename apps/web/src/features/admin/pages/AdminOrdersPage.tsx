@@ -1,18 +1,23 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ORDER_STATUS_LABEL } from '../lib/order-labels'
 import { useAdminOrders } from '../hooks/useAdminOrders'
-import type { OrderStatus } from '../types/admin.types'
+import type { OrderStatus, AdminOrderListItem } from '../types/admin.types'
 
 type StatusFilter = OrderStatus | 'all'
 
 function formatMoney(minor: number, currency: string) {
   return `${(minor / 100).toLocaleString('ar-EG')} ${currency}`
 }
+
+const PAGE_SIZE = 10
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -23,6 +28,9 @@ export function AdminOrdersPage() {
   const { data, isLoading, error, refetch } = useAdminOrders({
     status: status === 'all' ? undefined : status,
   })
+
+  const toHaystack = useCallback((order: AdminOrderListItem) => `${order.studentName} ${order.status} ${order.paymentStatus}`, [])
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
 
   return (
     <>
@@ -42,6 +50,14 @@ export function AdminOrdersPage() {
         ))}
       </div>
 
+      <SearchField
+        id="admin-orders-search"
+        label="بحث في الطلبات"
+        placeholder="ابحث باسم الطالب..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {isLoading && <LoadingState variant="list" />}
 
       {!isLoading && error && (
@@ -56,7 +72,11 @@ export function AdminOrdersPage() {
         <EmptyState fullPage title="لا توجد طلبات" message="مفيش طلبات مطابقة للفلتر الحالي" />
       )}
 
-      {!isLoading && !error && data && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState fullPage title="لا توجد نتائج" message="مفيش نتائج مطابقة لبحثك، جرّب كلمة تانية" />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="table-wrap section">
           <table className="mtable">
             <thead>
@@ -69,7 +89,7 @@ export function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {data.map((order) => {
+              {list.pageItems.map((order) => {
                 const statusLabel = ORDER_STATUS_LABEL[order.status]
                 const paymentLabel = ORDER_STATUS_LABEL[order.paymentStatus]
                 return (
@@ -95,6 +115,17 @@ export function AdminOrdersPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!isLoading && !error && list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="طلب"
+        />
       )}
     </>
   )

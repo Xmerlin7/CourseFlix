@@ -3085,6 +3085,140 @@ table.mtable {
   font-weight: 700;
 }
 
+/* ---------- Search field ----------
+   Shared by every paginated list (SearchField.tsx). The icon and clear
+   button are absolutely positioned over a normally-padded input rather
+   than laid out as flex siblings, so the input keeps the exact height,
+   focus ring and background of every other `.tf input` on the page. */
+.search-field {
+  max-width: 420px;
+  width: 100%;
+}
+
+.search-field-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-field-box input {
+  padding-inline-start: calc(42px * var(--space-scale));
+  padding-inline-end: calc(40px * var(--space-scale));
+}
+
+/* Chrome draws its own clear "x" inside type=search, which would sit
+   next to ours. */
+.search-field-box input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-field-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  font-size: 20px;
+  color: var(--on-surface-variant);
+  pointer-events: none;
+}
+
+.search-field-clear {
+  position: absolute;
+  inset-inline-end: 6px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--on-surface-variant);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.search-field-clear:hover {
+  background: var(--hover);
+}
+
+.search-field-clear .ms {
+  font-size: 18px;
+}
+
+/* ---------- Pagination ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pager-count {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.pager-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pager-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(10px * var(--radius-scale));
+  background: var(--surface);
+  color: var(--on-surface);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pager-btn:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pager-btn.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.pager-btn .ms {
+  font-size: 20px;
+}
+
+.pager-gap {
+  padding: 0 2px;
+  color: var(--on-surface-variant);
+}
+
+@media (max-width: 640px) {
+  /* On a phone the count line and the controls each want the full width;
+     side by side they collide once the page numbers reach four digits
+     of combined width. */
+  .pager {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pager-controls {
+    justify-content: center;
+  }
+}
+
 /* ---------- Upload zone ---------- */
 .dropzone {
   border: 2px dashed var(--outline-variant);
