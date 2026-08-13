@@ -2386,12 +2386,16 @@ h1.page-title {
   flex: none;
 }
 
+/* No inline padding. This carried `padding-right: 6px` from an LTR-first
+   draft, which in an RTL document pads the *leading* edge — so every
+   action row (card footers, page headers, table cells) sat 6px inward
+   from the title and body text above it, and nothing lined up down the
+   start edge of a card. */
 .actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  padding-right: 6px;
 }
 
 /* ---------- Student Browse Course Grid & Cards ---------- */
@@ -3853,11 +3857,71 @@ table.mtable {
   }
 }
 
-@media (max-width: 480px) {
+/* ---------- Phone layout ----------
+   The product targets two form factors: desktop, and a phone the size of
+   a Pixel 7 (412 × 915 CSS px). Everything below is written against that
+   412px width. The intermediate 1180/860 breakpoints above still exist —
+   they're what makes a resized desktop window degrade sensibly on the way
+   down — but this block is the one that has to be right, because it's a
+   real device rather than a waypoint. */
+@media (max-width: 640px) {
+  /* Two tiles per row, not one: a single stat tile stretched across
+     412px is mostly empty space, and four of them turn the top of every
+     dashboard into a full screen of scrolling before any content. */
   .tiles {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
+  /* Title and actions each get their own row. `.section-head` is
+     `space-between` with no wrap, so a header with three buttons (admin
+     users) squeezed the <h1> down to a couple of characters. */
+  .section-head {
+    flex-wrap: wrap;
+  }
+
+  .section-head>.actions {
+    width: 100%;
+  }
+
+  .section-head>.actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .card {
+    padding: calc(16px * var(--space-scale));
+  }
+
+  .search-field {
+    max-width: none;
+  }
+
+  /* Tables keep their horizontal scroll on a phone — 760px of columns
+     cannot become 380px without either dropping data or shrinking text
+     past readable. Since scrollbars are hidden app-wide, the affordance
+     has to be explicit, hence the hint. `position: sticky` pins it to the
+     start edge so it stays put while the table scrolls beneath it. */
+  .table-wrap::before {
+    content: 'اسحب الجدول أفقيًا لعرض باقي الأعمدة';
+    display: block;
+    position: sticky;
+    inset-inline-start: 0;
+    width: max-content;
+    max-width: 100%;
+    padding: 10px 16px 0;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+  }
+
+  .mtable th,
+  .mtable td {
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 480px) {
   .course-card .row {
     flex-direction: column;
     align-items: stretch;
