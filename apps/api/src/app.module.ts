@@ -62,7 +62,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: false,
       port: 5432,
       ssl: isLocalDatabaseUrl ? false : true,
       extra: isLocalDatabaseUrl

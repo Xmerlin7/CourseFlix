@@ -174,7 +174,7 @@ install_ngrok() {
   url="$NGROK_DOWNLOAD_BASE/ngrok-v3-stable-$arch.tgz"
 
   printf '  downloading ngrok (%s) ...\n' "$arch"
-  if ! curl -fsSL "$url" -o "$LOG_DIR/ngrok.tgz"; then
+  if ! curl --connect-timeout 10 --max-time 60 -fsSL "$url" -o "$LOG_DIR/ngrok.tgz"; then
     warn "failed to download ngrok from $url"
     return 1
   fi
@@ -663,4 +663,3 @@ case "$COMMAND" in
   status) cmd_status ;;
   logs)   cmd_logs ;;
 esac
-
