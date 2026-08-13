@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { downloadStudentDocument } from '../api/student-documents.api'
 import { useStudentDocuments } from '../hooks/useStudentDocuments'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ApiError } from '../../../shared/api/api-error'
+
+const PAGE_SIZE = 10
 
 interface StudentDocumentsListProps {
   courseId: string
@@ -29,6 +34,9 @@ export function StudentDocumentsList({ courseId }: StudentDocumentsListProps) {
   const { data: documents, isLoading, error } = useStudentDocuments(courseId)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({})
+
+  const toHaystack = useCallback((doc: (typeof documents)[number]) => doc.fileName, [])
+  const list = usePaginatedList(documents, toHaystack, PAGE_SIZE)
 
   async function handleDownload(documentId: string, fileName: string) {
     setDownloadingId(documentId)
@@ -87,14 +95,26 @@ export function StudentDocumentsList({ courseId }: StudentDocumentsListProps) {
         <h2>المواد والملفات</h2>
       </div>
 
+      {documents.length > 0 && (
+        <SearchField
+          id="student-documents-search"
+          label="بحث في المواد"
+          placeholder="ابحث باسم الملف..."
+          value={list.query}
+          onChange={list.search}
+        />
+      )}
+
       {documents.length === 0 ? (
         <EmptyState
           title="لا توجد مواد حتى الآن"
           message="لما يتم رفع ملفات ومواد للدورة هتظهر هنا"
         />
+      ) : list.isEmptyResult ? (
+        <EmptyState title="لا توجد نتائج" message="مفيش ملفات مطابقة لبحثك، جرّب اسم تاني" />
       ) : (
         <div className="list">
-          {documents.map((doc) => {
+          {list.pageItems.map((doc) => {
             const isDownloading = downloadingId === doc.id
             const downloadError = downloadErrors[doc.id]
 
@@ -135,6 +155,17 @@ export function StudentDocumentsList({ courseId }: StudentDocumentsListProps) {
             )
           })}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="ملف"
+        />
       )}
     </section>
   )

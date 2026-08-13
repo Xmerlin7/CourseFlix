@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
@@ -22,6 +24,11 @@ const STATUS_FILTERS: { value: DiscussionStatusFilter; label: string }[] = [
   { value: 'mine', label: 'أسئلتي' },
 ]
 
+const PAGE_SIZE = 10
+
+/** The endpoint already filters — don't filter twice. */
+const NO_CLIENT_FILTER = () => ''
+
 export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -35,6 +42,10 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { data, isLoading, error, refetch } = useDiscussions(courseId, { status, search })
+
+  // The search box above posts its term to the endpoint, so the hook only
+  // paginates; `search` is passed so a new term returns to page 1.
+  const list = usePaginatedList(data, NO_CLIENT_FILTER, PAGE_SIZE, search)
 
   async function handleAsk(input: { title: string; body: string; tags: string[]; attachment: File | null }) {
     setIsSubmitting(true)
@@ -136,11 +147,24 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
           />
         )
       ) : (
-        <div className="support-tickets-list">
-          {data.map((thread) => (
-            <DiscussionCard key={thread.id} thread={thread} to={`${detailPathPrefix}/${thread.id}`} />
-          ))}
-        </div>
+        <>
+          <div className="support-tickets-list">
+            {list.pageItems.map((thread) => (
+              <DiscussionCard key={thread.id} thread={thread} to={`${detailPathPrefix}/${thread.id}`} />
+            ))}
+          </div>
+
+          {list.hasPages && (
+            <Pagination
+              page={list.page}
+              totalPages={list.totalPages}
+              onPageChange={list.setPage}
+              matchCount={list.matchCount}
+              pageSize={PAGE_SIZE}
+              itemLabel="مناقشة"
+            />
+          )}
+        </>
       )}
 
       <AskQuestionDialog
