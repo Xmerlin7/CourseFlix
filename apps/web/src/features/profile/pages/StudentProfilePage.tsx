@@ -94,7 +94,12 @@ export function StudentProfilePage() {
 
   return (
     <div className="profile-page">
-      <header className="profile-header">
+      {/* Back control and page title on their own row. They used to share
+          a row with the name and the avatar, which put a 20px heading
+          between a 40px button and an 88px avatar — `text-align: center`
+          then centred it in the leftover space, so it never lined up with
+          anything above or below it. */}
+      <header className="profile-topbar">
         <button
           type="button"
           className="icon-btn"
@@ -103,9 +108,10 @@ export function StudentProfilePage() {
         >
           <span className="ms">arrow_forward</span>
         </button>
+        <h1 className="profile-page-title">الملف الشخصي</h1>
+      </header>
 
-        <h1 className="profile-header-name">{currentUser.fullName}</h1>
-
+      <section className="card profile-identity-card">
         <div className="profile-avatar-wrap">
           <span className="avatar profile-avatar-lg">
             {currentUser.avatarUrl ? (
@@ -123,10 +129,24 @@ export function StudentProfilePage() {
             <span className="ms sm fill">edit</span>
           </button>
         </div>
-      </header>
+
+        <div className="profile-identity-text">
+          <p className="profile-identity-name">{currentUser.fullName}</p>
+          {/* bdi: the address is Latin inside an RTL paragraph, so without
+              isolation the bidi algorithm drags trailing punctuation to
+              the wrong end of it. */}
+          <p className="profile-identity-email">
+            <bdi>{currentUser.email}</bdi>
+          </p>
+          <span className="chip">طالب</span>
+        </div>
+      </section>
 
       <form className="card profile-form-card" onSubmit={(e) => void handleSaveName(e)}>
-        <h3 style={{ marginBottom: 0 }}>البيانات الأساسية</h3>
+        <div className="profile-card-head">
+          <h3 className="profile-card-title">البيانات الأساسية</h3>
+          <p className="profile-card-sub">اسمك كما يظهر لمعلمك وفي المناقشات.</p>
+        </div>
 
         <div className={`tf${nameError ? ' invalid' : ''}`}>
           <label htmlFor="profile-full-name">الاسم الكامل *</label>
@@ -174,6 +194,8 @@ export function StudentProfilePage() {
       </form>
 
       <section className="section profile-nav-list">
+        <h3 className="profile-card-title profile-nav-title">اختصارات</h3>
+
         <Link to={ROUTE_PATHS.STUDENT.COURSES} className="list-item hoverable">
           <span className="lead">
             <span className="ms">menu_book</span>

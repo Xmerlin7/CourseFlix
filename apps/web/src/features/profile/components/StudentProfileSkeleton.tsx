@@ -1,9 +1,9 @@
 import '../../../shared/components/Skeleton.css'
 
 /**
- * Mirrors StudentProfilePage's structure 1:1 (header with back button +
- * name + avatar, the basic-info card, the nav-row list, and the footer)
- * so swapping this out for the real page causes no layout shift.
+ * Mirrors StudentProfilePage's structure 1:1 (title bar, identity card,
+ * the basic-info card, the nav-row list, and the footer) so swapping this
+ * out for the real page causes no layout shift.
  */
 export function StudentProfileSkeleton() {
   return (
@@ -13,13 +13,21 @@ export function StudentProfileSkeleton() {
       aria-label="جاري تحميل الملف الشخصي"
       data-testid="student-profile-skeleton"
     >
-      <header className="profile-header">
+      <header className="profile-topbar">
         <div className="skeleton" style={{ width: 44, height: 44, borderRadius: 999 }} />
-        <div className="skeleton" style={{ height: 24, width: 160, borderRadius: 6 }} />
+        <div className="skeleton" style={{ height: 24, width: 130, borderRadius: 6 }} />
+      </header>
+
+      <div className="card profile-identity-card">
         <div className="profile-avatar-wrap">
           <div className="skeleton" style={{ width: 88, height: 88, borderRadius: '50%' }} />
         </div>
-      </header>
+        <div className="profile-identity-text">
+          <div className="skeleton" style={{ height: 22, width: 170, borderRadius: 6 }} />
+          <div className="skeleton" style={{ height: 14, width: 210, borderRadius: 6 }} />
+          <div className="skeleton" style={{ height: 24, width: 60, borderRadius: 999, marginTop: 6 }} />
+        </div>
+      </div>
 
       <div className="card profile-form-card">
         <div className="skeleton" style={{ height: 18, width: 140, borderRadius: 6 }} />
