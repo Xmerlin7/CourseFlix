@@ -124,15 +124,13 @@ export class CoursesService {
       throw new NotFoundException('Course not found.');
     }
 
-    // Mirrors TeacherController's scopeTeacherId: an assistant manages
-    // whatever their teacher owns. Their own id counts too — the
-    // single-teacher migration (1785000091000) demoted extra teachers to
-    // assistants without reassigning the courses they still own, so
-    // scoping purely by managedByTeacherId would lock them out of those.
-    const canEdit =
-      course.teacherId === viewer.id ||
-      (viewer.role === 'assistant' &&
-        course.teacherId === viewer.managedByTeacherId);
+    // Same rule as common/utils/scope-teacher-id: an assistant manages
+    // exactly what their teacher owns. The platform is single-teacher
+    // (ux_users_single_teacher), so an assistant never legitimately owns
+    // a course — the seed re-points any such leftover at the real teacher.
+    const ownerId =
+      viewer.role === 'assistant' ? viewer.managedByTeacherId : viewer.id;
+    const canEdit = ownerId !== null && course.teacherId === ownerId;
 
     if (viewer.role === 'teacher' || viewer.role === 'assistant') {
       if (!canEdit) {

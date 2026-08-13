@@ -24,6 +24,7 @@ import { UpdateSectionDto } from '../courses/dto/update-section.dto';
 import { CreateLessonDto } from '../courses/dto/create-lesson.dto';
 import { UpdateLessonDto } from '../courses/dto/update-lesson.dto';
 import { ReorderDto } from '../courses/dto/reorder.dto';
+import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 
 @Controller('api/v1/teacher')
 @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
@@ -32,9 +33,10 @@ export class TeacherController {
 
   // Assistants act on behalf of the one teacher they're scoped to —
   // everything below is scoped by this id, never by the caller's own id
-  // when the caller is an assistant.
+  // when the caller is an assistant. Shared with the other
+  // teacher-surface controllers via common/utils/scope-teacher-id.
   private scopeTeacherId(user: AuthenticatedUser): string {
-    return user.role === 'assistant' ? user.managedByTeacherId! : user.id;
+    return scopeTeacherId(user);
   }
 
   @Get('dashboard')

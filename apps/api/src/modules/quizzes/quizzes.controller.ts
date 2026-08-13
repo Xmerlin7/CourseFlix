@@ -11,9 +11,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { StudentRoleGuard } from '../auth/guards/student-role.guard';
 import { TeacherRoleGuard } from '../auth/guards/teacher-role.guard';
+import { TeacherOrAssistantRoleGuard } from '../auth/guards/teacher-or-assistant-role.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { SubmitQuizDto } from './dto/submit-quiz.dto';
@@ -78,49 +80,49 @@ export class QuizzesController {
 
   @Post('teacher/quizzes')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(AuthGuard, TeacherRoleGuard)
+  @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
   async createQuiz(
     @Body() dto: CreateQuizDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<TeacherQuizResponse> {
-    return this.quizzesService.createQuiz(user.id, dto);
+    return this.quizzesService.createQuiz(scopeTeacherId(user), dto);
   }
 
   @Get('teacher/quizzes/:quizId')
-  @UseGuards(AuthGuard, TeacherRoleGuard)
+  @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
   async getTeacherQuiz(
     @Param('quizId') quizId: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<TeacherQuizResponse> {
-    return this.quizzesService.getTeacherQuiz(quizId, user.id);
+    return this.quizzesService.getTeacherQuiz(quizId, scopeTeacherId(user));
   }
 
   @Get('teacher/courses/:courseId/quizzes')
-  @UseGuards(AuthGuard, TeacherRoleGuard)
+  @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
   async listCourseQuizzes(
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<TeacherQuizResponse[]> {
-    return this.quizzesService.listCourseQuizzes(courseId, user.id);
+    return this.quizzesService.listCourseQuizzes(courseId, scopeTeacherId(user));
   }
 
   @Patch('teacher/quizzes/:quizId')
-  @UseGuards(AuthGuard, TeacherRoleGuard)
+  @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
   async updateQuiz(
     @Param('quizId') quizId: string,
     @Body() dto: UpdateQuizDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<TeacherQuizResponse> {
-    return this.quizzesService.updateQuiz(quizId, user.id, dto);
+    return this.quizzesService.updateQuiz(quizId, scopeTeacherId(user), dto);
   }
 
   @Delete('teacher/quizzes/:quizId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard, TeacherRoleGuard)
+  @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
   async deleteQuiz(
     @Param('quizId') quizId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    await this.quizzesService.deleteQuiz(quizId, user.id);
+    await this.quizzesService.deleteQuiz(quizId, scopeTeacherId(user));
   }
 }
