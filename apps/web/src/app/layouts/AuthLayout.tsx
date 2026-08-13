@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import type { PropsWithChildren } from 'react'
-import { TeacherPoster } from '../../features/auth/components/TeacherPoster'
+import { AuthCourseStrip, TeacherPoster } from '../../features/auth/components/TeacherPoster'
+import { useAuthPoster } from '../../features/auth/hooks/useAuthPoster'
 
 // Split-screen shell shared by /login and /register: a compact form
 // column plus a branded panel, instead of one small card floating in an
@@ -8,11 +9,14 @@ import { TeacherPoster } from '../../features/auth/components/TeacherPoster'
 // order in the DOM puts the form first, right-aligned in RTL) so it's
 // aria-hidden — the actual page content is the form.
 export function AuthLayout({ children }: PropsWithChildren) {
+  const poster = useAuthPoster()
+
   return (
     <div className="auth-shell">
       <main className="auth-panel-form">
         <div className="auth-form-inner">
           <span className="logo auth-form-logo">COURSEFLIX</span>
+          <AuthCourseStrip content={poster.data} />
 
           {children ?? <Outlet />}
 
@@ -21,7 +25,7 @@ export function AuthLayout({ children }: PropsWithChildren) {
       </main>
 
       <aside className="auth-panel-brand" aria-hidden="true">
-        <TeacherPoster />
+        <TeacherPoster content={poster.data} isLoading={poster.isLoading} />
       </aside>
     </div>
   )
