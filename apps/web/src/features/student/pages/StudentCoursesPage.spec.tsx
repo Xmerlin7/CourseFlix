@@ -125,7 +125,7 @@ describe('StudentCoursesPage', () => {
     expect(reviewBtn).toHaveAttribute('href', '/student/courses/course-2')
   })
 
-  it('shows a not-started CTA and no progress bar for a course with zero lessons watched', async () => {
+  it('shows a not-started CTA that goes to course details, not straight into a lesson', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/student/enrollments`, () => {
         return HttpResponse.json([
@@ -149,9 +149,11 @@ describe('StudentCoursesPage', () => {
     renderPage()
 
     expect(await screen.findByText('الميكانيكا')).toBeInTheDocument()
+    // Not started yet: the CTA (and the card itself) lead to course
+    // details rather than dropping the student straight into a lesson.
     expect(screen.getByRole('link', { name: /ابدأ الآن/i })).toHaveAttribute(
       'href',
-      '/student/lessons/lesson-1',
+      '/student/courses/course-3',
     )
     // Not started: no active Continue Learning section for this course.
     expect(screen.queryByRole('region', { name: 'استكمل التعلم' })).not.toBeInTheDocument()

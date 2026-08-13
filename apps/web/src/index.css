@@ -419,6 +419,14 @@
   color: var(--on-primary-container);
   display: grid;
   place-items: center;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 /* Rail mode */
@@ -444,6 +452,313 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ── Sidebar unread indicator dot ──
+   A small filled circle that appears inline after the label when there is
+   new activity in Community or Support. Uses margin-inline-start so it
+   stays correctly positioned in RTL layouts without hardcoded left/right.
+   The dot is visually suppressed in rail mode (label hidden) via display:none
+   to avoid floating orphan dots — the icon alone communicates the route. */
+.nav-unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  /* Subtle pulse so it catches the eye without being distracting */
+  animation: dot-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* Hide the floating dot in rail mode — icon-only nav doesn't have room */
+.sidebar.rail .nav-unread-dot {
+  display: none;
+}
+
+/* ── Community landing page ── */
+.community-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.community-page-header {
+  margin-bottom: 28px;
+}
+
+.community-page-subtitle {
+  color: var(--on-surface-variant);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+/* Search ("ابحث عن دورة...") */
+.community-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 420px;
+  margin-bottom: 18px;
+}
+
+.community-search .ms {
+  position: absolute;
+  inset-inline-start: 14px;
+  color: var(--on-surface-variant);
+  font-size: 19px;
+  pointer-events: none;
+}
+
+.community-search input {
+  width: 100%;
+  height: 42px;
+  padding-inline-start: 42px;
+  padding-inline-end: 16px;
+  border-radius: calc(999px * var(--radius-scale));
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.community-search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.community-no-results {
+  color: var(--on-surface-variant);
+  font-size: 13.5px;
+  padding: 24px 4px;
+  text-align: center;
+}
+
+/* Compact empty state — a small icon, not the full illustration used
+   elsewhere, so a student with zero enrollments never sees a huge blank
+   area on this page. */
+.community-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.community-empty .ms {
+  font-size: 34px;
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+
+.community-empty-title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.community-empty-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--on-surface-variant);
+}
+
+/* Conversation-style course list — a WhatsApp/Telegram-inspired compact
+   row list, deliberately NOT cards: each row is a small, self-contained,
+   rounded row (not a divider-separated flat list), so it stays scannable
+   no matter how many courses the student has. */
+.community-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-width: 920px;
+}
+
+.community-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 12px 14px;
+  border-radius: calc(14px * var(--radius-scale));
+  border-inline-start: 3px solid transparent;
+  background: var(--surface-container-low);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Minimal, elegant hover — a single subtle tone shift, not a color swap. */
+.community-row:hover {
+  background: var(--surface-container);
+}
+
+.community-row:active,
+.community-row:focus-visible {
+  background: var(--primary-container);
+  border-inline-start-color: var(--primary);
+}
+
+.community-row-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.community-row-avatar--locked {
+  display: grid;
+  place-items: center;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.community-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.community-row-line1 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.community-row-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-row-time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+.community-row-line2 .community-row-grade {
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.community-row-line3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.community-row-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--on-surface-variant);
+}
+
+.community-row-badge {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 11px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.community-row--locked {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.community-row--locked:hover,
+.community-row--locked:active,
+.community-row--locked:focus-visible {
+  background: var(--surface-container-low);
+  border-inline-start-color: transparent;
+}
+
+.community-row--locked .community-row-title {
+  color: var(--on-surface-variant);
+}
+
+@media (max-width: 1024px) {
+  .community-row {
+    padding: 11px 10px;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .community-row {
+    padding: 10px 8px;
+  }
+}
+
+/* ── Course community page ── */
+.course-community-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.community-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 20px;
+  /* Reverse arrow direction for RTL */
+  flex-direction: row-reverse;
+}
+
+[dir='rtl'] .community-back-link .ms {
+  transform: scaleX(-1);
+}
+
+.community-course-page-header {
+  margin-bottom: 20px;
+}
+
+.community-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+
 
 /* ===== Topbar ===== */
 .topbar {
@@ -1657,6 +1972,37 @@ code {
   font-weight: 700;
 }
 
+/* Local-dev-only fallback shown on the OTP step when the API isn't
+   configured to actually send email (RESEND_API_KEY unset/placeholder) —
+   the backend echoes the code in the response instead, and this surfaces
+   it so testing doesn't require digging through server logs. Never
+   rendered in production: the backend omits `devCode` there. */
+.otp-dev-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: calc(14px * var(--radius-scale));
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.otp-dev-hint-code {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .wizard-step {
   display: flex;
   flex-direction: column;
@@ -1776,6 +2122,11 @@ code {
 .chip.green {
   background: var(--success-container);
   color: var(--on-success-container);
+}
+
+.chip.primary {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
 }
 
 .chip.pink {
@@ -2189,28 +2540,7 @@ h1.page-title {
   padding: calc(16px * var(--space-scale));
   border: 1px solid var(--outline-variant);
   gap: 0;
-  position: relative;
-}
-
-/* Covers the whole card so clicking anywhere but the CTA opens the
-   course overview. Kept as a real <a> (not an onClick) so middle-click,
-   ctrl-click and focus/Enter all behave like a normal link. */
-.student-card-overlay-link {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-radius: inherit;
-}
-
-.student-card-overlay-link:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* Lifted above the overlay so the resume button keeps its own target. */
-.student-card-footer {
-  position: relative;
-  z-index: 2;
+  cursor: pointer;
 }
 
 .student-course-card.active-learning-card {
@@ -3474,6 +3804,73 @@ table.mtable {
 
 .ms.spin {
   animation: spin-anim 0.8s linear infinite;
+}
+
+/* Generic form dialog — same native-<dialog> technique as
+   .confirm-modal-*, but wider and left/start-aligned for a real form
+   body instead of a centered confirm message. Shared by "Ask a
+   question" and "Create support request". */
+.form-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: min(560px, calc(100vw - 32px));
+  width: 100%;
+  height: fit-content;
+  max-height: calc(100vh - 48px);
+  border-radius: calc(28px * var(--radius-scale));
+  overflow: visible;
+}
+
+.form-dialog::backdrop {
+  background: var(--scrim);
+  animation: scrim-in 0.18s ease-out;
+}
+
+.form-dialog-card {
+  background: var(--surface);
+  border-radius: calc(28px * var(--radius-scale));
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  animation: modal-pop 0.2s ease-out;
+}
+
+.form-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-dialog-head h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.form-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .form-dialog {
+    max-width: calc(100vw - 24px);
+  }
+
+  .form-dialog-card {
+    padding: 18px;
+  }
 }
 
 /* ---------- Toast ---------- */

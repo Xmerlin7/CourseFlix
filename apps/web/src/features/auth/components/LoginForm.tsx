@@ -2,8 +2,10 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
 import { PasswordField } from '../../../shared/components/PasswordField'
+import { requestOtp } from '../api/auth.api'
 import { useAuth } from '../hooks/useAuth'
 import { getRoleHomePath } from '../utils/get-role-home-path'
+import { VerifyCodeForm } from './VerifyCodeForm'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -52,13 +54,20 @@ function resolveApiError(error: unknown): string {
   return 'حدث خطأ ما، حاول مرة أخرى'
 }
 
-// Standard single-step login: correct email + password signs the user in
-// immediately (POST /auth/login, session cookie set right away — no OTP).
+interface OtpStep {
+  email: string
+  devCode?: string
+}
+
+// Standard login, now in two steps: correct email + password first, then a
+// one-time code emailed to the account. The session is only opened after the
+// code is verified (POST /auth/otp/verify with purpose 'login').
 export function LoginForm() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [otpStep, setOtpStep] = useState<OtpStep | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,15 +83,43 @@ export function LoginForm() {
 
     setIsSubmitting(true)
     try {
-      const result = await login({ email, password, requireOtp: false })
+      const result = await login({ email, password, requireOtp: true })
       if ('role' in result) {
         navigate(getRoleHomePath(result.role), { replace: true })
+      } else {
+        setOtpStep({ email: result.email, devCode: result.devCode })
       }
     } catch (caughtError) {
       setError(resolveApiError(caughtError))
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (otpStep) {
+    return (
+      <>
+        <p className="subtitle" style={{ marginBottom: '1rem' }}>
+          كلمة المرور صحيحة — راسلنا رمز تأكيد إلى <strong>{otpStep.email}</strong>،
+          اكتبه بالأسفل لإتمام تسجيل الدخول.
+        </p>
+        <VerifyCodeForm
+          email={otpStep.email}
+          purpose="login"
+          devCode={otpStep.devCode}
+          onResend={(email) => requestOtp({ email, purpose: 'login' })}
+          onVerified={(user) => navigate(getRoleHomePath(user.role), { replace: true })}
+        />
+        <button
+          type="button"
+          className="btn text btn-compact"
+          onClick={() => setOtpStep(null)}
+          style={{ marginTop: '0.5rem' }}
+        >
+          تسجيل الدخول بكلمة مرور مختلفة
+        </button>
+      </>
+    )
   }
 
   return (

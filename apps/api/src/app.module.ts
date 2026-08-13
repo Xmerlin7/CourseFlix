@@ -7,9 +7,12 @@ import { AppService } from './app.service';
 import { AdminModule } from './modules/admin/admin.module';
 import { AgentLogsModule } from './modules/agent-logs/agent-logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { CoursesModule } from './modules/courses/courses.module';
+import { DiscussionsModule } from './modules/discussions/discussions.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { ExamGenerationModule } from './modules/exam-generation/exam-generation.module';
@@ -24,6 +27,7 @@ import { PaymobModule } from './modules/paymob/paymob.module';
 import { QuizzesModule } from './modules/quizzes/quiz.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { StudentModule } from './modules/student/student.module';
+import { SupportModule } from './modules/support/support.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
 import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
@@ -80,6 +84,10 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     StudentModule,
     TeacherModule,
     DocumentsModule,
+    AttachmentsModule,
+    DiscussionsModule,
+    AnnouncementsModule,
+    SupportModule,
     NotificationsModule,
     PaymobModule,
     QuizzesModule,

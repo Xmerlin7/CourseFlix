@@ -27,6 +27,7 @@ export function TeacherLayout({ children }: PropsWithChildren) {
       <Sidebar
         role={isAssistant ? 'assistant' : 'teacher'}
         userName={user?.fullName ?? ''}
+        avatarUrl={user?.avatarUrl}
         activePath={location.pathname}
         onLogout={() => void handleLogout()}
         isRail={isRail}

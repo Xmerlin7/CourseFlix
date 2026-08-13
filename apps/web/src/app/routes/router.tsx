@@ -28,6 +28,11 @@ import { SettingsSkeleton } from '../../features/settings/components/SettingsSke
 import { StudentProfileSkeleton } from '../../features/profile/components/StudentProfileSkeleton'
 import { LoginSkeleton } from '../../features/auth/components/LoginSkeleton'
 import { RegisterSkeleton } from '../../features/auth/components/RegisterSkeleton'
+import { DiscussionDetailSkeleton } from '../../features/community/components/DiscussionDetailSkeleton'
+import { StudentCommunitySkeleton } from '../../features/community/components/StudentCommunitySkeleton'
+import { SupportTicketsPageSkeleton } from '../../features/support/components/SupportTicketsPageSkeleton'
+import { SupportTicketDetailSkeleton } from '../../features/support/components/SupportTicketDetailSkeleton'
+import { SupportInboxSkeleton } from '../../features/support/components/SupportInboxSkeleton'
 
 // Lazy-loaded page components
 const LoginPage = lazy(() =>
@@ -86,6 +91,24 @@ const SettingsPage = lazy(() =>
 )
 const StudentProfilePage = lazy(() =>
   import('../../features/profile/pages/StudentProfilePage').then((m) => ({ default: m.StudentProfilePage }))
+)
+const DiscussionDetailPage = lazy(() =>
+  import('../../features/community/pages/DiscussionDetailPage').then((m) => ({ default: m.DiscussionDetailPage }))
+)
+const StudentCommunityPage = lazy(() =>
+  import('../../features/community/pages/StudentCommunityPage').then((m) => ({ default: m.StudentCommunityPage }))
+)
+const StudentCourseCommunityPage = lazy(() =>
+  import('../../features/community/pages/StudentCourseCommunityPage').then((m) => ({ default: m.StudentCourseCommunityPage }))
+)
+const SupportTicketsPage = lazy(() =>
+  import('../../features/support/pages/SupportTicketsPage').then((m) => ({ default: m.SupportTicketsPage }))
+)
+const SupportTicketDetailPage = lazy(() =>
+  import('../../features/support/pages/SupportTicketDetailPage').then((m) => ({ default: m.SupportTicketDetailPage }))
+)
+const SupportInboxPage = lazy(() =>
+  import('../../features/support/pages/SupportInboxPage').then((m) => ({ default: m.SupportInboxPage }))
 )
 const AgentLogsPage = lazy(() =>
   import('../../features/agent-logs/pages/AgentLogsPage').then((m) => ({ default: m.AgentLogsPage }))
@@ -388,6 +411,46 @@ export const router = createBrowserRouter([
               </SuspenseWrapper>
             ),
           },
+          {
+            path: ROUTE_PATHS.STUDENT.DISCUSSION_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<DiscussionDetailSkeleton />}>
+                <DiscussionDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.SUPPORT,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketsPageSkeleton />}>
+                <SupportTicketsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.SUPPORT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketDetailSkeleton />}>
+                <SupportTicketDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COMMUNITY,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <StudentCommunityPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.STUDENT.COMMUNITY_COURSE,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <StudentCourseCommunityPage />
+              </SuspenseWrapper>
+            ),
+          },
         ],
       },
     ],
@@ -468,6 +531,34 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<SettingsSkeleton />}>
                 <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.DISCUSSION_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<DiscussionDetailSkeleton />}>
+                <DiscussionDetailPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            // Support staff is served by teacher/assistant/admin, not a new
+            // role — see SupportStaffRoleGuard on the API. Shared with
+            // assistants on purpose, so the teacher isn't the only one who
+            // can triage tickets.
+            path: ROUTE_PATHS.TEACHER.SUPPORT,
+            element: (
+              <SuspenseWrapper fallback={<SupportInboxSkeleton />}>
+                <SupportInboxPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.SUPPORT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketDetailSkeleton />}>
+                <SupportTicketDetailPage />
               </SuspenseWrapper>
             ),
           },
@@ -669,6 +760,22 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<SettingsSkeleton />}>
                 <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.SUPPORT,
+            element: (
+              <SuspenseWrapper fallback={<SupportInboxSkeleton />}>
+                <SupportInboxPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.ADMIN.SUPPORT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<SupportTicketDetailSkeleton />}>
+                <SupportTicketDetailPage />
               </SuspenseWrapper>
             ),
           },
