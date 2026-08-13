@@ -1676,49 +1676,49 @@ textarea:placeholder-shown {
 
 /* Decorative panel — hidden below the breakpoint (see media query at the
    end of this block), never the only way to reach anything. Holds the
-   tutor poster (TeacherPoster.tsx). */
+   tutor poster (TeacherPoster.tsx), which fills it edge to edge. */
 .auth-panel-brand {
   flex: 1 1 50%;
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
   background: var(--surface-container);
 }
 
 /* ---------- Tutor poster ----------
-   Styled as a printed sheet: a light paper surface with a hard accent
-   header bar, sitting on the panel's own darker surface so it reads as
-   an object pinned to a wall rather than as more page chrome. */
+   Fills its half of the split screen completely: no padding around it, no
+   corner radius, no card shadow. It isn't a card sitting on a page — it
+   *is* that side of the page, so a floating sheet with rounded corners
+   left a frame of dead surface around it. */
 .poster {
-  width: min(400px, 100%);
-  border-radius: calc(20px * var(--radius-scale));
-  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
-  border: 1px solid var(--outline-variant);
-  box-shadow: var(--shadow-lg);
+  /* Space the blocks out over the full column height rather than
+     stacking them at the top of a very tall panel. */
+  justify-content: space-between;
 }
 
 .poster-head {
   background: var(--primary);
   color: var(--on-primary);
-  padding: 18px 24px 16px;
+  padding: 40px 48px 34px;
   text-align: center;
 }
 
 .poster-subject {
   display: block;
   font-family: var(--heading);
-  font-size: 38px;
+  font-size: clamp(38px, 4.2vw, 58px);
   font-weight: 700;
   line-height: 1.1;
 }
 
 .poster-head-note {
   display: block;
-  margin-top: 4px;
-  font-size: 13px;
+  margin-top: 6px;
+  font-size: 15px;
   font-weight: 600;
   opacity: 0.9;
 }
@@ -1726,14 +1726,14 @@ textarea:placeholder-shown {
 .poster-identity {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 22px 24px;
+  gap: 24px;
+  padding: 40px 48px 28px;
 }
 
 .poster-figure {
   flex: none;
-  width: 92px;
-  height: 92px;
+  width: clamp(92px, 9vw, 132px);
+  height: clamp(92px, 9vw, 132px);
 }
 
 .poster-figure-svg {
@@ -1747,22 +1747,22 @@ textarea:placeholder-shown {
 }
 
 .poster-eyebrow {
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--on-surface-variant);
 }
 
 .poster-name {
   font-family: var(--heading);
-  font-size: 26px;
+  font-size: clamp(26px, 2.6vw, 36px);
   font-weight: 700;
   line-height: 1.25;
   color: var(--on-surface);
 }
 
 .poster-role {
-  margin-top: 2px;
-  font-size: 12.5px;
+  margin-top: 4px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--on-surface-variant);
 }
@@ -1770,10 +1770,10 @@ textarea:placeholder-shown {
 .poster-schedule {
   list-style: none;
   margin: 0;
-  padding: 0 24px 22px;
+  padding: 0 48px 40px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 /* Three columns rather than a flex row with `space-between`: the grade
@@ -1783,12 +1783,12 @@ textarea:placeholder-shown {
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: calc(12px * var(--radius-scale));
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: calc(14px * var(--radius-scale));
   background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .poster-schedule-grade {
@@ -1809,7 +1809,7 @@ textarea:placeholder-shown {
   font-weight: 700;
   color: var(--on-primary-container);
   background: var(--primary-container);
-  padding: 2px 9px;
+  padding: 4px 12px;
   border-radius: calc(999px * var(--radius-scale));
   white-space: nowrap;
 }
@@ -1817,11 +1817,11 @@ textarea:placeholder-shown {
 .poster-contact {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 14px 24px 16px;
+  gap: 10px;
+  padding: 26px 48px 30px;
   background: var(--surface-container-highest);
   border-top: 1px solid var(--outline-variant);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--on-surface);
 }
@@ -2695,15 +2695,15 @@ h1.page-title {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  /* Flat surface + a single accent edge, not a gradient wash: the body text
-     inside is `--on-surface`/`--on-surface-variant`, which only has a
-     guaranteed contrast ratio against a `--surface-*` token. The old
-     `--primary-container → --surface-container-low` gradient meant the
-     left-hand text sat on an accent the user picks, so contrast changed
-     with the accent. The stripe carries the emphasis instead. */
+  /* Flat surface, no accent stripe. The body text inside is
+     `--on-surface`/`--on-surface-variant`, which only has a guaranteed
+     contrast ratio against a `--surface-*` token, so the old
+     `--primary-container → --surface-container-low` gradient made
+     contrast depend on the accent the user picked. The emphasis lives in
+     the badge and the CTA instead — a 3px edge just read as a stray line
+     down the side of the card. */
   background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
-  border-inline-start: 3px solid var(--primary);
 }
 
 .continue-learning-info {
@@ -4414,19 +4414,6 @@ table.mtable {
   gap: 28px;
 }
 
-.profile-topbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.profile-page-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
-  min-width: 0;
-}
-
 /* Identity block: avatar leading, text stacked beside it and aligned to
    the same inline edge as every card below, so the page has one text
    margin instead of one centred heading and one start-aligned body. */
@@ -4595,10 +4582,6 @@ table.mtable {
 @media (max-width: 640px) {
   .profile-page {
     gap: 22px;
-  }
-
-  .profile-page-title {
-    font-size: 19px;
   }
 
   /* Stacked and centred on a phone: at 412px the avatar plus a long

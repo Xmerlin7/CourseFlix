@@ -94,23 +94,9 @@ export function StudentProfilePage() {
 
   return (
     <div className="profile-page">
-      {/* Back control and page title on their own row. They used to share
-          a row with the name and the avatar, which put a 20px heading
-          between a 40px button and an 88px avatar — `text-align: center`
-          then centred it in the leftover space, so it never lined up with
-          anything above or below it. */}
-      <header className="profile-topbar">
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={() => navigate(-1)}
-          aria-label="رجوع"
-        >
-          <span className="ms">arrow_forward</span>
-        </button>
-        <h1 className="profile-page-title">الملف الشخصي</h1>
-      </header>
-
+      {/* No back button or page title: the sidebar already says which
+          page this is, and the identity card below names the user, so
+          both were redundant chrome above the real content. */}
       <section className="card profile-identity-card">
         <div className="profile-avatar-wrap">
           <span className="avatar profile-avatar-lg">
