@@ -10,6 +10,9 @@ interface UseCourseDetailResult {
   refetch: () => void
 }
 
+// Same cadence as useCourseDocuments' ingestion poll.
+const POLL_INTERVAL_MS = 5000
+
 // NOTE: plain useEffect/useState, matching useStudentDashboard.ts — no
 // data-fetching library is installed in apps/web yet.
 export function useCourseDetail(courseId: string): UseCourseDetailResult {
@@ -55,6 +58,28 @@ export function useCourseDetail(courseId: string): UseCourseDetailResult {
 
     return () => controller.abort()
   }, [courseId, refetchToken])
+
+  // Video moderation runs asynchronously in the worker, so a lesson sits
+  // at `pending` for a while after upload and then flips to approved or
+  // rejected with no client action. Poll until nothing is pending, then
+  // stop — same shape as useCourseDocuments' ingestion poll. Only the
+  // teacher/assistant view ever sees a status here (the API omits it for
+  // students), so this never adds load to a student's page.
+  const hasPendingModeration = (data?.sections ?? []).some((section) =>
+    section.lessons.some((lesson) => lesson.videoModerationStatus === 'pending'),
+  )
+
+  useEffect(() => {
+    if (!hasPendingModeration) {
+      return
+    }
+
+    const timer = setInterval(() => {
+      setRefetchToken((token) => token + 1)
+    }, POLL_INTERVAL_MS)
+
+    return () => clearInterval(timer)
+  }, [hasPendingModeration])
 
   return {
     data,

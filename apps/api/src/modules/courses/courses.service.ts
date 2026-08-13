@@ -144,7 +144,11 @@ export class CoursesService {
       await this.enrollmentsService.assertStudentEnrolled(viewer.id, courseId);
     }
 
-    return this.toDetailDto(course, canEdit);
+    return this.toDetailDto(
+      course,
+      canEdit,
+      canEdit ? await this.loadVideoModerationByLessonId(course) : undefined,
+    );
   }
 
   // Deliberately not enrollment-gated, unlike getCourseDetail — this is
@@ -198,7 +202,11 @@ export class CoursesService {
     if (!course) {
       throw new NotFoundException('Course not found.');
     }
-    return this.toDetailDto(course, true);
+    return this.toDetailDto(
+      course,
+      true,
+      await this.loadVideoModerationByLessonId(course),
+    );
   }
 
   async findOwnedCourses(
@@ -489,6 +497,13 @@ export class CoursesService {
       return;
     }
 
+    // YouTube videos are gated behind the worker's caption moderation
+    // check (see VideoIngestionProcessor) until it clears them; every
+    // other provider is visible immediately, same as before this gate
+    // existed. Re-evaluated on every URL change, not just creation — a
+    // teacher swapping in a new YouTube link must re-clear moderation.
+    const isYoutube = this.videoIngestionService.detectProvider(videoUrl) === 'youtube';
+
     const video = existingVideo
       ? Object.assign(existingVideo, {
           courseId: lesson.courseId,
@@ -497,6 +512,9 @@ export class CoursesService {
           videoUrl,
           type: 'recorded' as const,
           status: 'recorded' as const,
+          moderationStatus: isYoutube ? ('pending' as const) : ('approved' as const),
+          moderationReason: null,
+          moderationCheckedAt: null,
         })
       : this.videosRepository.create({
           courseId: lesson.courseId,
@@ -507,6 +525,7 @@ export class CoursesService {
           type: 'recorded',
           status: 'recorded',
           durationSeconds: null,
+          moderationStatus: isYoutube ? 'pending' : 'approved',
         });
 
     const savedVideo = await this.videosRepository.save(video);
@@ -582,9 +601,32 @@ export class CoursesService {
       .getOne();
   }
 
+  /**
+   * Moderation state lives on `videos`, not `lessons`, so it has to be
+   * fetched alongside the outline. Only loaded for viewers who can edit
+   * (teacher/assistant) — students have no use for it and the rejection
+   * reason must never reach them.
+   */
+  private async loadVideoModerationByLessonId(
+    course: CourseEntity,
+  ): Promise<Map<string, VideoEntity>> {
+    const lessonIds = (course.sections ?? []).flatMap((section) =>
+      (section.lessons ?? []).map((lesson) => lesson.id),
+    );
+    if (lessonIds.length === 0) {
+      return new Map();
+    }
+
+    const videos = await this.videosRepository.find({
+      where: { lessonId: In(lessonIds), deletedAt: IsNull() },
+    });
+    return new Map(videos.map((video) => [video.lessonId!, video]));
+  }
+
   private toDetailDto(
     course: CourseEntity,
     canEdit: boolean,
+    videosByLessonId: Map<string, VideoEntity> = new Map(),
   ): CourseDetailResponseDto {
     return {
       id: course.id,
@@ -604,13 +646,18 @@ export class CoursesService {
         title: section.title,
         sortOrder: section.sortOrder,
         status: section.status,
-        lessons: (section.lessons ?? []).map((lesson) => ({
-          id: lesson.id,
-          title: lesson.title,
-          videoUrl: lesson.videoUrl,
-          sortOrder: lesson.sortOrder,
-          status: lesson.status,
-        })),
+        lessons: (section.lessons ?? []).map((lesson) => {
+          const video = videosByLessonId.get(lesson.id);
+          return {
+            id: lesson.id,
+            title: lesson.title,
+            videoUrl: lesson.videoUrl,
+            sortOrder: lesson.sortOrder,
+            status: lesson.status,
+            videoModerationStatus: video?.moderationStatus ?? null,
+            videoModerationReason: video?.moderationReason ?? null,
+          };
+        }),
       })),
     };
   }

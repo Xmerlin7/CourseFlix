@@ -1,5 +1,6 @@
 import type { CourseStatus } from '../entities/course.entity';
 import type { LessonStatus } from '../entities/lesson.entity';
+import type { VideoModerationStatus } from '../../lessons/entities/video.entity';
 import type { SectionStatus } from '../entities/section.entity';
 
 export interface CourseLessonResponseDto {
@@ -8,6 +9,16 @@ export interface CourseLessonResponseDto {
   videoUrl: string | null;
   sortOrder: number;
   status: LessonStatus;
+  /**
+   * Review state of the lesson's video, or null when the lesson has no
+   * video row at all. `status` above is only the teacher's own
+   * publish/draft toggle — a "published" lesson whose video is still
+   * `pending` or was `rejected` is invisible to students, so the two
+   * have to be shown separately.
+   */
+  videoModerationStatus: VideoModerationStatus | null;
+  /** Teacher/admin only — quotes the flagged content. */
+  videoModerationReason: string | null;
 }
 
 export interface CourseSectionResponseDto {

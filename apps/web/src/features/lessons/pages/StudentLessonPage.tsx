@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
@@ -123,6 +123,7 @@ function getIframeEmbedUrl(value: string): string | null {
  */
 export function StudentLessonPage() {
   const { lessonId } = useParams<{ lessonId: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const viewerRole = user?.role ?? 'student'
   // Assistants view lessons the same way the teacher does (full preview,
@@ -137,7 +138,7 @@ export function StudentLessonPage() {
   const [status, setStatus] = useState<LessonProgressStatus | null>(null)
   const [attendanceAwarded, setAttendanceAwarded] = useState(false)
   const [videoError, setVideoError] = useState(false)
-  const iframeEmbedUrl = data ? getIframeEmbedUrl(data.video.url) : null
+  const iframeEmbedUrl = data?.video.url ? getIframeEmbedUrl(data.video.url) : null
   const progressDurationSeconds =
     data?.video.durationSeconds ?? (iframeEmbedUrl ? EXTERNAL_VIDEO_FALLBACK_DURATION_SECONDS : null)
   const isYoutubeEmbed = iframeEmbedUrl?.includes('youtube-nocookie.com') ?? false
@@ -306,6 +307,26 @@ export function StudentLessonPage() {
     )
   }
 
+  // The video is withheld until it clears AI moderation. The lesson still
+  // exists and sits in the student's outline, so say that plainly instead
+  // of rendering an empty player (or the "page not found" the API used to
+  // trigger here). The rejection reason is teacher-only and never sent.
+  if (!isTeacher && data && !data.video.url) {
+    const isRejected = data.video.moderationStatus === 'rejected'
+    return (
+      <ForbiddenState
+        title={isRejected ? 'هذا الدرس غير متاح' : 'الفيديو قيد المراجعة'}
+        message={
+          isRejected
+            ? 'تمت إزالة فيديو هذا الدرس بعد مراجعته. تواصل مع مدرّس الدورة لمزيد من التفاصيل.'
+            : 'يخضع فيديو هذا الدرس للمراجعة الآن، وسيصبح متاحًا فور اعتماده.'
+        }
+        onGoBack={() => navigate(coursePath)}
+        goBackLabel="العودة لصفحة الدورة"
+      />
+    )
+  }
+
   const studentWatermarkId =
     !isTeacher ? getStudentWatermarkId(user?.id) : null
 
@@ -323,6 +344,32 @@ export function StudentLessonPage() {
     <>
       <div className="lesson-shell">
         <main className="lesson-main">
+          {/* Teachers/assistants keep full playback while a video is under
+              review or after it's rejected — they need to watch it to judge
+              the outcome — but nothing on the page said which state it was
+              in, so a rejected video just silently vanished for students. */}
+          {isTeacher && data.video.moderationStatus !== 'approved' && (
+            <div
+              className={`moderation-banner${data.video.moderationStatus === 'rejected' ? ' rejected' : ''}`}
+              role="status"
+            >
+              <span className="ms sm" aria-hidden="true">
+                {data.video.moderationStatus === 'rejected' ? 'block' : 'hourglass_top'}
+              </span>
+              <span>
+                {data.video.moderationStatus === 'rejected' ? (
+                  <>
+                    <strong>هذا الفيديو مرفوض ولا يظهر للطلاب.</strong>
+                    {data.video.moderationReason ? ` السبب: ${data.video.moderationReason}` : ''}
+                  </>
+                ) : (
+                  <strong>
+                    الفيديو قيد المراجعة التلقائية ولن يظهر للطلاب حتى يتم اعتماده.
+                  </strong>
+                )}
+              </span>
+            </div>
+          )}
           <div
             ref={playerRef}
             className="player secure-player"
@@ -357,7 +404,7 @@ export function StudentLessonPage() {
               <video
                 key={data.video.id}
                 ref={videoRef}
-                src={data.video.url}
+                src={data.video.url ?? undefined}
                 controlsList="nodownload noplaybackrate noremoteplayback"
                 disablePictureInPicture
                 disableRemotePlayback

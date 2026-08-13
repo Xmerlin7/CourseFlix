@@ -10,12 +10,23 @@ import {
   ContentProgressEntity,
   ContentProgressStatus,
 } from './entities/content-progress.entity';
-import { VideoEntity } from './entities/video.entity';
+import { VideoEntity, VideoModerationStatus } from './entities/video.entity';
 
 export interface LessonDetailResponse {
   id: string;
   title: string;
-  video: { id: string; url: string; durationSeconds: number | null };
+  video: {
+    id: string;
+    // Null when the video has not cleared moderation. Students get null
+    // rather than a 404 so the page can say *why* the lesson can't be
+    // played; teachers always get the real URL so they can review their
+    // own upload while it's pending or after it's been rejected.
+    url: string | null;
+    durationSeconds: number | null;
+    moderationStatus: VideoModerationStatus;
+    // Teacher-only: never disclosed to students.
+    moderationReason: string | null;
+  };
   course: {
     id: string;
     title: string;
@@ -92,6 +103,10 @@ export class LessonsService {
       studentId,
       lesson.courseId,
     );
+    // Deliberately not gated on moderation: a lesson whose video hasn't
+    // cleared review still exists, so 404-ing here would tell the student
+    // "page not found" about a lesson sitting right there in their
+    // outline. The URL is withheld below instead.
     const video = await this.loadVideoForLesson(lesson.id);
     const course = await this.loadCourseOutline(lesson.courseId, true);
     const lessonProgress = await this.loadCourseLessonProgress(
@@ -108,8 +123,12 @@ export class LessonsService {
       title: lesson.title,
       video: {
         id: video.id,
-        url: video.videoUrl,
+        url: video.moderationStatus === 'approved' ? video.videoUrl : null,
         durationSeconds: video.durationSeconds,
+        moderationStatus: video.moderationStatus,
+        // The rejection reason quotes the flagged content — teacher and
+        // admin only, never surfaced to students.
+        moderationReason: null,
       },
       course: this.toCourseOutline(course, lesson.sectionId, lessonProgress),
       progress: {
@@ -125,6 +144,9 @@ export class LessonsService {
     teacherId: string,
   ): Promise<LessonDetailResponse> {
     const lesson = await this.loadLesson(lessonId);
+    // Unlike the student path, teachers see their own video regardless of
+    // moderation status — otherwise they'd have no way to tell a pending
+    // review from a video that was never uploaded.
     const video = await this.loadVideoForLesson(lesson.id);
     const course = await this.loadCourseOutline(lesson.courseId);
 
@@ -139,6 +161,8 @@ export class LessonsService {
         id: video.id,
         url: video.videoUrl,
         durationSeconds: video.durationSeconds,
+        moderationStatus: video.moderationStatus,
+        moderationReason: video.moderationReason,
       },
       course: this.toCourseOutline(course, lesson.sectionId),
       progress: {
@@ -299,7 +323,7 @@ export class LessonsService {
       studentId,
       lesson.courseId,
     );
-    const video = await this.loadVideoForLesson(lesson.id);
+    const video = await this.loadApprovedVideoForLesson(lesson.id);
 
     const existing = await this.progressRepository.findOne({
       where: { studentId, videoId: video.id, itemType: 'video' },
@@ -371,6 +395,21 @@ export class LessonsService {
       where: { lessonId, deletedAt: IsNull() },
     });
     if (!video) {
+      throw new NotFoundException('This lesson has no video yet.');
+    }
+    return video;
+  }
+
+  // Write guard for progress only. Reads (getLessonDetail) deliberately
+  // do NOT use this — they return the lesson with a null URL so the page
+  // can explain the review state — but a student must never be able to
+  // accrue watch progress or attendance against a video that hasn't
+  // cleared moderation, so the write path still refuses outright.
+  private async loadApprovedVideoForLesson(
+    lessonId: string,
+  ): Promise<VideoEntity> {
+    const video = await this.loadVideoForLesson(lessonId);
+    if (video.moderationStatus !== 'approved') {
       throw new NotFoundException('This lesson has no video yet.');
     }
     return video;

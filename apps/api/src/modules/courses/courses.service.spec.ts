@@ -134,6 +134,9 @@ describe('CoursesService', () => {
     enrollmentsService = { assertStudentEnrolled: jest.fn() };
     const videoIngestionService = {
       enqueueForVideo: jest.fn().mockResolvedValue(undefined),
+      detectProvider: jest.fn((url: string) =>
+        /youtu\.be|youtube\.com/.test(url) ? 'youtube' : 'local',
+      ),
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -367,6 +370,7 @@ describe('CoursesService', () => {
         type: 'recorded',
         status: 'recorded',
         durationSeconds: null,
+        moderationStatus: 'pending',
       });
       expect(videosRepository.save).toHaveBeenCalled();
     });

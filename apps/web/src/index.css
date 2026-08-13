@@ -2728,6 +2728,37 @@ table.mtable {
   min-width: 0;
 }
 
+/* Teacher-only notice above the player when a video hasn't cleared the
+   AI moderation gate (see StudentLessonPage). */
+.moderation-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: calc(12px * var(--space-scale)) calc(16px * var(--space-scale));
+  border-radius: calc(14px * var(--radius-scale));
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.moderation-banner .ms {
+  flex: none;
+  margin-top: 1px;
+  color: var(--on-surface-variant);
+}
+
+.moderation-banner.rejected {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.moderation-banner.rejected .ms {
+  color: var(--error);
+}
+
 .player {
   aspect-ratio: 16 / 9;
   border-radius: calc(24px * var(--radius-scale));

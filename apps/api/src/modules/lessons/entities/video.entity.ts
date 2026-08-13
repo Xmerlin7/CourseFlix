@@ -8,6 +8,7 @@ import {
 
 export type VideoType = 'recorded' | 'live';
 export type VideoStatus = 'scheduled' | 'live' | 'ended' | 'recorded';
+export type VideoModerationStatus = 'pending' | 'approved' | 'rejected';
 
 /**
  * Mirrors `schemaV2.sql:297`. Authoritative for playback, progress, and
@@ -70,6 +71,29 @@ export class VideoEntity {
     default: 80,
   })
   minAttendancePercentage!: string;
+
+  // YouTube uploads start `pending` and are gated from students until the
+  // worker's caption-safety + subject-relevance check clears them (see
+  // VideoIngestionProcessor); Bunny/local videos are set `approved`
+  // immediately in CoursesService.syncLessonVideo, unaffected by this gate.
+  @Column({
+    name: 'moderation_status',
+    type: 'enum',
+    enum: ['pending', 'approved', 'rejected'],
+    enumName: 'video_moderation_status',
+    default: 'approved',
+  })
+  moderationStatus!: VideoModerationStatus;
+
+  @Column({ name: 'moderation_reason', type: 'text', nullable: true })
+  moderationReason!: string | null;
+
+  @Column({
+    name: 'moderation_checked_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  moderationCheckedAt!: Date | null;
 
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;
