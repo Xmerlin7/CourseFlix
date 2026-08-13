@@ -15,7 +15,7 @@ export class CreatePosts1785000102000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE "posts" (
+      CREATE TABLE IF NOT EXISTS "posts" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "course_id" UUID NOT NULL REFERENCES "courses"("id") ON DELETE CASCADE,
         "teacher_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE RESTRICT,
@@ -27,11 +27,11 @@ export class CreatePosts1785000102000 implements MigrationInterface {
       );
     `);
     await queryRunner.query(
-      `CREATE INDEX "idx_posts_course_id" ON "posts" ("course_id");`,
+      `CREATE INDEX IF NOT EXISTS "idx_posts_course_id" ON "posts" ("course_id");`,
     );
 
     await queryRunner.query(`
-      CREATE TABLE "post_attachments" (
+      CREATE TABLE IF NOT EXISTS "post_attachments" (
         "post_id" UUID NOT NULL REFERENCES "posts"("id") ON DELETE CASCADE,
         "file_id" UUID NOT NULL REFERENCES "files"("id") ON DELETE CASCADE,
         "order_index" INTEGER NOT NULL DEFAULT 0,

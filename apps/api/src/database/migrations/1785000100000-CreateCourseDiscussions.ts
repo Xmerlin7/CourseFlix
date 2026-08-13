@@ -28,7 +28,7 @@ export class CreateCourseDiscussions1785000100000
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE "discussion_threads" (
+      CREATE TABLE IF NOT EXISTS "discussion_threads" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "course_id" UUID NOT NULL REFERENCES "courses"("id") ON DELETE CASCADE,
         "author_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE RESTRICT,
@@ -46,17 +46,17 @@ export class CreateCourseDiscussions1785000100000
       );
     `);
     await queryRunner.query(
-      `CREATE INDEX "idx_discussion_threads_course_id" ON "discussion_threads" ("course_id");`,
+      `CREATE INDEX IF NOT EXISTS "idx_discussion_threads_course_id" ON "discussion_threads" ("course_id");`,
     );
     await queryRunner.query(
-      `CREATE INDEX "idx_discussion_threads_author_id" ON "discussion_threads" ("author_id");`,
+      `CREATE INDEX IF NOT EXISTS "idx_discussion_threads_author_id" ON "discussion_threads" ("author_id");`,
     );
     await queryRunner.query(
-      `CREATE INDEX "idx_discussion_threads_tags" ON "discussion_threads" USING GIN ("tags");`,
+      `CREATE INDEX IF NOT EXISTS "idx_discussion_threads_tags" ON "discussion_threads" USING GIN ("tags");`,
     );
 
     await queryRunner.query(`
-      CREATE TABLE "discussion_replies" (
+      CREATE TABLE IF NOT EXISTS "discussion_replies" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "thread_id" UUID NOT NULL REFERENCES "discussion_threads"("id") ON DELETE CASCADE,
         "author_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE RESTRICT,
@@ -68,7 +68,7 @@ export class CreateCourseDiscussions1785000100000
       );
     `);
     await queryRunner.query(
-      `CREATE INDEX "idx_discussion_replies_thread_id" ON "discussion_replies" ("thread_id");`,
+      `CREATE INDEX IF NOT EXISTS "idx_discussion_replies_thread_id" ON "discussion_replies" ("thread_id");`,
     );
 
     await queryRunner.query(`
@@ -80,7 +80,7 @@ export class CreateCourseDiscussions1785000100000
     // One helpful vote per user per thread — same compound-PK-as-unique-
     // constraint shape as `post_attachments` in schemaV2.sql.
     await queryRunner.query(`
-      CREATE TABLE "discussion_helpful_votes" (
+      CREATE TABLE IF NOT EXISTS "discussion_helpful_votes" (
         "thread_id" UUID NOT NULL REFERENCES "discussion_threads"("id") ON DELETE CASCADE,
         "user_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
         "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -91,7 +91,7 @@ export class CreateCourseDiscussions1785000100000
     // Reuses the existing `files` table (documents module) instead of a
     // parallel storage system — same junction shape as `post_attachments`.
     await queryRunner.query(`
-      CREATE TABLE "discussion_thread_attachments" (
+      CREATE TABLE IF NOT EXISTS "discussion_thread_attachments" (
         "thread_id" UUID NOT NULL REFERENCES "discussion_threads"("id") ON DELETE CASCADE,
         "file_id" UUID NOT NULL REFERENCES "files"("id") ON DELETE CASCADE,
         "order_index" INTEGER NOT NULL DEFAULT 0,

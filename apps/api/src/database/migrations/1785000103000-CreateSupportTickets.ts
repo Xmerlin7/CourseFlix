@@ -14,14 +14,14 @@ export class CreateSupportTickets1785000103000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TYPE "support_ticket_category" AS ENUM ('technical', 'course', 'payment', 'account', 'other');
+      DO $$ BEGIN CREATE TYPE "support_ticket_category" AS ENUM ('technical', 'course', 'payment', 'account', 'other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     `);
     await queryRunner.query(`
-      CREATE TYPE "support_ticket_status" AS ENUM ('open', 'in_progress', 'waiting_for_student', 'resolved', 'closed');
+      DO $$ BEGIN CREATE TYPE "support_ticket_status" AS ENUM ('open', 'in_progress', 'waiting_for_student', 'resolved', 'closed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "support_tickets" (
+      CREATE TABLE IF NOT EXISTS "support_tickets" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "student_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE RESTRICT,
         "course_id" UUID REFERENCES "courses"("id") ON DELETE SET NULL,
@@ -38,14 +38,14 @@ export class CreateSupportTickets1785000103000 implements MigrationInterface {
       );
     `);
     await queryRunner.query(
-      `CREATE INDEX "idx_support_tickets_student_id" ON "support_tickets" ("student_id");`,
+      `CREATE INDEX IF NOT EXISTS "idx_support_tickets_student_id" ON "support_tickets" ("student_id");`,
     );
     await queryRunner.query(
-      `CREATE INDEX "idx_support_tickets_status" ON "support_tickets" ("status");`,
+      `CREATE INDEX IF NOT EXISTS "idx_support_tickets_status" ON "support_tickets" ("status");`,
     );
 
     await queryRunner.query(`
-      CREATE TABLE "support_messages" (
+      CREATE TABLE IF NOT EXISTS "support_messages" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "ticket_id" UUID NOT NULL REFERENCES "support_tickets"("id") ON DELETE CASCADE,
         "author_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE RESTRICT,
@@ -55,13 +55,13 @@ export class CreateSupportTickets1785000103000 implements MigrationInterface {
       );
     `);
     await queryRunner.query(
-      `CREATE INDEX "idx_support_messages_ticket_id" ON "support_messages" ("ticket_id");`,
+      `CREATE INDEX IF NOT EXISTS "idx_support_messages_ticket_id" ON "support_messages" ("ticket_id");`,
     );
 
     // Attachments only on the initial ticket (matches the create-ticket
     // form's "optional attachment" — replies are text-only in this MVP).
     await queryRunner.query(`
-      CREATE TABLE "support_ticket_attachments" (
+      CREATE TABLE IF NOT EXISTS "support_ticket_attachments" (
         "ticket_id" UUID NOT NULL REFERENCES "support_tickets"("id") ON DELETE CASCADE,
         "file_id" UUID NOT NULL REFERENCES "files"("id") ON DELETE CASCADE,
         "order_index" INTEGER NOT NULL DEFAULT 0,
