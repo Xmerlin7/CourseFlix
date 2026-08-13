@@ -31,6 +31,9 @@ if (typeof HTMLCanvasElement !== 'undefined') {
       arc: () => {},
       beginPath: () => {},
       clearRect: () => {},
+      createRadialGradient: () => ({
+        addColorStop: () => {},
+      }),
       fill: () => {},
       lineTo: () => {},
       moveTo: () => {},
