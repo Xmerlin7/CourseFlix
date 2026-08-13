@@ -12,7 +12,6 @@ import {
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { PendingApprovalInterceptor } from '../assistant-actions/pending-approval.interceptor';
 import { TeacherOrAssistantRoleGuard } from '../auth/guards/teacher-or-assistant-role.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { CreateExamGenerationRequestDto } from './dto/create-exam-generation-request.dto';
@@ -21,7 +20,6 @@ import { ExamGenerationService } from './exam-generation.service';
 
 @Controller('api/v1')
 @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
-@UseInterceptors(PendingApprovalInterceptor)
 export class ExamGenerationController {
   constructor(private readonly examGenerationService: ExamGenerationService) {}
 

@@ -319,25 +319,14 @@ export function StudentLessonPage() {
     )
   }
 
-  // The video is withheld until it clears AI moderation. The lesson still
-  // exists and sits in the student's outline, so say that plainly instead
-  // of rendering an empty player (or the "page not found" the API used to
-  // trigger here). The rejection reason is teacher-only and never sent.
-  if (!isTeacher && data && !data.video.url) {
-    const isRejected = data.video.moderationStatus === 'rejected'
-    return (
-      <ForbiddenState
-        title={isRejected ? 'هذا الدرس غير متاح' : 'الفيديو قيد المراجعة'}
-        message={
-          isRejected
-            ? 'تمت إزالة فيديو هذا الدرس بعد مراجعته. تواصل مع مدرّس الدورة لمزيد من التفاصيل.'
-            : 'يخضع فيديو هذا الدرس للمراجعة الآن، وسيصبح متاحًا فور اعتماده.'
-        }
-        onGoBack={() => navigate(coursePath)}
-        goBackLabel="العودة لصفحة الدورة"
-      />
-    )
-  }
+  // The video is withheld until it clears AI moderation. The lesson page
+  // itself still renders (title, description, quiz link) — only the
+  // player is replaced with a blurred lock overlay, rather than the
+  // full-page block this used to be. The lesson genuinely exists in the
+  // student's outline, so treating the whole page as unreachable
+  // overstated what's actually missing. The rejection reason is
+  // teacher-only and never sent.
+  const isVideoLocked = !isTeacher && !data.video.url
 
   const studentWatermarkId =
     !isTeacher ? getStudentWatermarkId(user?.id) : null
@@ -390,7 +379,24 @@ export function StudentLessonPage() {
             }}
             onDragStart={(event) => event.preventDefault()}
           >
-            {videoError ? (
+            {isVideoLocked ? (
+              <div className="player-locked" role="status">
+                <div className="player-locked-backdrop" aria-hidden="true" />
+                <span className="ms player-locked-icon" aria-hidden="true">
+                  {data.video.moderationStatus === 'rejected' ? 'block' : 'lock'}
+                </span>
+                <p className="player-locked-title">
+                  {data.video.moderationStatus === 'rejected'
+                    ? 'هذا الفيديو غير متاح'
+                    : 'الفيديو قيد المراجعة'}
+                </p>
+                <p className="player-locked-message">
+                  {data.video.moderationStatus === 'rejected'
+                    ? 'تمت إزالة فيديو هذا الدرس بعد مراجعته. تواصل مع مدرّس الدورة لمزيد من التفاصيل.'
+                    : 'يخضع فيديو هذا الدرس للمراجعة الآن، وسيصبح متاحًا فور اعتماده.'}
+                </p>
+              </div>
+            ) : videoError ? (
               <div className="flex h-full flex-col items-center justify-center gap-4" style={{ color: '#CFC4E6' }}>
                 <span className="ms" style={{ fontSize: 40 }}>
                   error

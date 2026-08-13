@@ -30,7 +30,6 @@ import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 
 @Controller('api/v1/teacher')
 @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
-@UseInterceptors(PendingApprovalInterceptor)
 export class TeacherController {
   constructor(private readonly teacherService: TeacherService) {}
 
@@ -82,6 +81,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Post('courses')
   @HttpCode(HttpStatus.CREATED)
   async createCourse(
@@ -91,6 +91,7 @@ export class TeacherController {
     return this.teacherService.createCourse(this.scopeTeacherId(user), dto);
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('courses/:courseId')
   async updateCourse(
     @Param('courseId') courseId: string,
@@ -104,6 +105,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Delete('courses/:courseId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteCourse(
@@ -115,6 +117,7 @@ export class TeacherController {
 
   // ── Sections ──
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Post('courses/:courseId/sections')
   @HttpCode(HttpStatus.CREATED)
   async createSection(
@@ -137,6 +140,7 @@ export class TeacherController {
     return this.teacherService.getSection(sectionId, this.scopeTeacherId(user));
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('sections/:sectionId')
   async updateSection(
     @Param('sectionId') sectionId: string,
@@ -150,6 +154,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Delete('sections/:sectionId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteSection(
@@ -162,6 +167,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('courses/:courseId/sections/reorder')
   async reorderSections(
     @Param('courseId') courseId: string,
@@ -177,6 +183,7 @@ export class TeacherController {
 
   // ── Lessons ──
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Post('sections/:sectionId/lessons')
   @HttpCode(HttpStatus.CREATED)
   async createLesson(
@@ -210,6 +217,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('lessons/:lessonId')
   async updateLesson(
     @Param('lessonId') lessonId: string,
@@ -223,6 +231,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Delete('lessons/:lessonId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteLesson(
@@ -232,6 +241,7 @@ export class TeacherController {
     await this.teacherService.deleteLesson(lessonId, this.scopeTeacherId(user));
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('sections/:sectionId/lessons/reorder')
   async reorderLessons(
     @Param('sectionId') sectionId: string,

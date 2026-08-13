@@ -39,10 +39,6 @@ type NavItem = { path: string; label: string; icon: string }
 // dropped the user on the 404 page. They come back as each owner's slice
 // ships, not before.
 //
-// Settings sits at the end of every list rather than only behind the
-// topbar gear: on a phone the topbar is above the fold but the gear is a
-// 24px target among three others, and it was the one piece of navigation
-// with no entry in the menu itself.
 const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.STUDENT.BROWSE, label: 'استكشف الدورات', icon: 'explore' },
@@ -50,7 +46,6 @@ const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.INTERVENTIONS, label: 'نقاط تحتاج مراجعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.STUDENT.SUPPORT, label: 'الدعم الفني', icon: 'support_agent' },
   { path: ROUTE_PATHS.STUDENT.COMMUNITY, label: 'المجتمع', icon: 'groups' },
-  { path: ROUTE_PATHS.STUDENT.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 const teacherNavItems: NavItem[] = [
@@ -67,7 +62,6 @@ const teacherNavItems: NavItem[] = [
   // Both roles see this, with different meanings: the teacher reviews
   // what their assistants parked, the assistant tracks their own.
   { path: ROUTE_PATHS.TEACHER.ASSISTANT_ACTIONS, label: 'طلبات المساعدين', icon: 'rule' },
-  { path: ROUTE_PATHS.TEACHER.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 // Assistants share the teacher's course/student surface but not
@@ -97,7 +91,6 @@ const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG, label: 'سجل الإشعارات', icon: 'history' },
   { path: ROUTE_PATHS.ADMIN.AGENT_LOGS, label: 'سجل الوكلاء', icon: 'smart_toy' },
   { path: ROUTE_PATHS.ADMIN.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
-  { path: ROUTE_PATHS.ADMIN.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {

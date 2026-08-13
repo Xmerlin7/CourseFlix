@@ -14,7 +14,6 @@ import {
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { PendingApprovalInterceptor } from '../assistant-actions/pending-approval.interceptor';
 import { StudentRoleGuard } from '../auth/guards/student-role.guard';
 import { TeacherRoleGuard } from '../auth/guards/teacher-role.guard';
 import { TeacherOrAssistantRoleGuard } from '../auth/guards/teacher-or-assistant-role.guard';
@@ -30,7 +29,6 @@ import {
 } from './quizzes.service';
 
 @Controller('api/v1')
-@UseInterceptors(PendingApprovalInterceptor)
 export class QuizzesController {
   constructor(private readonly quizzesService: QuizzesService) {}
 

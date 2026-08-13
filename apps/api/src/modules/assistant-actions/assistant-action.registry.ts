@@ -1,14 +1,8 @@
 import { TeacherService } from '../teacher/teacher.service';
-import { QuizzesService } from '../quizzes/quizzes.service';
-import { ExamGenerationService } from '../exam-generation/exam-generation.service';
-import { DocumentsService } from '../documents/documents.service';
 
 /** Services a replay may call, injected once by AssistantActionsService. */
 export interface ReplayDeps {
   teacherService: TeacherService;
-  quizzesService: QuizzesService;
-  examGenerationService: ExamGenerationService;
-  documentsService: DocumentsService;
 }
 
 export interface ReplayContext {
@@ -42,7 +36,13 @@ function quoted(value: string | null, fallback: string): string {
 }
 
 /**
- * Every assistant-writable route, keyed by `${METHOD} ${route pattern}`.
+ * Assistant writes that need the teacher's sign-off, keyed by
+ * `${METHOD} ${route pattern}` — deliberately scoped to course/section/
+ * lesson structure only. Quizzes, AI exam generation, document retries
+ * and enrollment-status changes are NOT gated: those controllers don't
+ * mount PendingApprovalInterceptor at all, so an assistant's writes there
+ * still run immediately. Only teacher.controller's course-shape routes
+ * do — see the per-method @UseInterceptors there.
  *
  * This is an explicit allow-list, not a generic re-dispatch: replaying a
  * parked request by re-entering the HTTP layer would mean re-running
@@ -51,10 +51,11 @@ function quoted(value: string | null, fallback: string): string {
  * replay on one code path, keeps it typed, and makes it testable without
  * a server.
  *
- * A route reachable by assistants but missing here is refused outright by
- * PendingApprovalInterceptor rather than silently executed — see the
- * comment there. That's the safe direction: a new endpoint is unavailable
- * to assistants until someone adds it, instead of bypassing review.
+ * A route that does mount the interceptor but is missing here is refused
+ * outright rather than silently executed — see the comment in
+ * PendingApprovalInterceptor. That's the safe direction: a new gated
+ * endpoint is unavailable to assistants until someone adds it, instead of
+ * bypassing review.
  */
 export const ASSISTANT_ACTIONS: Record<string, ActionDefinition> = {
   // ── Courses ──
@@ -142,84 +143,6 @@ export const ASSISTANT_ACTIONS: Record<string, ActionDefinition> = {
         teacherId,
         body as never,
       ),
-  },
-
-  // ── Enrollment ──
-  'PATCH /api/v1/teacher/students/:studentId/courses/:courseId/enrollment-status':
-    {
-      label: 'تغيير حالة اشتراك طالب',
-      describe: ({ body }) =>
-        text(body, 'status') === 'suspended'
-          ? 'إيقاف اشتراك طالب في دورة'
-          : 'إعادة تفعيل اشتراك طالب في دورة',
-      run: (d, { params, body, teacherId }) =>
-        d.teacherService.setStudentEnrollmentStatus(
-          teacherId,
-          params.studentId,
-          params.courseId,
-          body.status as never,
-          body.reason as string | undefined,
-        ),
-    },
-
-  // ── Quizzes ──
-  'POST /api/v1/teacher/quizzes': {
-    label: 'إنشاء اختبار',
-    describe: ({ body }) =>
-      `إنشاء اختبار ${quoted(text(body, 'title'), 'جديد')}`,
-    run: (d, { body, teacherId }) =>
-      d.quizzesService.createQuiz(teacherId, body as never),
-  },
-  'PATCH /api/v1/teacher/quizzes/:quizId': {
-    label: 'تعديل اختبار',
-    describe: ({ body }) =>
-      `تعديل اختبار ${quoted(text(body, 'title'), '')}`.trim(),
-    run: (d, { params, body, teacherId }) =>
-      d.quizzesService.updateQuiz(params.quizId, teacherId, body as never),
-  },
-  'DELETE /api/v1/teacher/quizzes/:quizId': {
-    label: 'حذف اختبار',
-    describe: () => 'حذف اختبار',
-    run: (d, { params, teacherId }) =>
-      d.quizzesService.deleteQuiz(params.quizId, teacherId),
-  },
-
-  // ── AI exam generation ──
-  'POST /api/v1/teacher/exam-generation-requests': {
-    label: 'طلب توليد اختبار بالذكاء الاصطناعي',
-    describe: () => 'طلب توليد اختبار جديد بالذكاء الاصطناعي',
-    run: (d, { body, teacherId }) =>
-      d.examGenerationService.createRequest(teacherId, body as never),
-  },
-  'POST /api/v1/teacher/exam-generation-requests/:requestId/accept': {
-    label: 'قبول اختبار مولَّد',
-    describe: () => 'قبول ونشر اختبار مولَّد بالذكاء الاصطناعي',
-    run: (d, { params, teacherId }) =>
-      d.examGenerationService.accept(params.requestId, teacherId),
-  },
-  'POST /api/v1/teacher/exam-generation-requests/:requestId/reject': {
-    label: 'رفض اختبار مولَّد',
-    describe: () => 'رفض اختبار مولَّد بالذكاء الاصطناعي',
-    run: (d, { params, teacherId }) =>
-      d.examGenerationService.reject(params.requestId, teacherId),
-  },
-  'POST /api/v1/teacher/exam-generation-requests/:requestId/feedback': {
-    label: 'إرسال ملاحظات على اختبار مولَّد',
-    describe: () => 'إرسال ملاحظات لإعادة توليد اختبار',
-    run: (d, { params, body, teacherId }) =>
-      d.examGenerationService.submitFeedback(
-        params.requestId,
-        teacherId,
-        body.message as string,
-      ),
-  },
-
-  // ── Documents ──
-  'POST /api/v1/teacher/documents/:documentId/retry': {
-    label: 'إعادة معالجة مستند',
-    describe: () => 'إعادة محاولة معالجة مستند فشل رفعه',
-    run: (d, { params, teacherId }) =>
-      d.documentsService.retryDocument(params.documentId, teacherId),
   },
 };
 

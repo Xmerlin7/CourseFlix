@@ -13,7 +13,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { PendingApprovalInterceptor } from '../assistant-actions/pending-approval.interceptor';
 import { TeacherOrAssistantRoleGuard } from '../auth/guards/teacher-or-assistant-role.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { DocumentsService } from './documents.service';
@@ -27,7 +26,6 @@ type UploadedDocumentFile = {
 
 @Controller('api/v1')
 @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
-@UseInterceptors(PendingApprovalInterceptor)
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 

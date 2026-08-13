@@ -431,9 +431,15 @@
 
 /* Phone-drawer affordances. Hidden by default and switched on inside the
    860px block — the sidebar is permanently on screen above it, so a
-   menu button, a close button and a scrim would all be dead chrome. */
-.topbar-menu-btn,
-.sidebar-close,
+   menu button, a close button and a scrim would all be dead chrome.
+
+   Qualified by a parent class (.topbar/.sidebar) rather than bare, so
+   this beats `.icon-btn`'s `display: grid` on specificity. Both rules
+   are 0-1-0 unqualified, and `.icon-btn` is declared later in this file
+   — same-specificity + later-wins meant the plain button leaked onto
+   desktop before this. */
+.topbar .topbar-menu-btn,
+.sidebar .sidebar-close,
 .sidebar-scrim {
   display: none;
 }
@@ -1220,7 +1226,8 @@ code {
     display: none;
   }
 
-  .sidebar-close {
+  .sidebar .sidebar-close {
+    display: grid;
     align-self: flex-start;
     margin-bottom: 6px;
   }
@@ -1232,7 +1239,7 @@ code {
     background: var(--scrim);
   }
 
-  .topbar-menu-btn {
+  .topbar .topbar-menu-btn {
     display: grid;
   }
 }
@@ -1713,49 +1720,49 @@ textarea:placeholder-shown {
 
 /* Decorative panel — hidden below the breakpoint (see media query at the
    end of this block), never the only way to reach anything. Holds the
-   tutor poster (TeacherPoster.tsx), which fills it edge to edge. */
+   tutor poster (TeacherPoster.tsx). */
 .auth-panel-brand {
   flex: 1 1 50%;
   position: relative;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
   background: var(--surface-container);
 }
 
 /* ---------- Tutor poster ----------
-   Fills its half of the split screen completely: no padding around it, no
-   corner radius, no card shadow. It isn't a card sitting on a page — it
-   *is* that side of the page, so a floating sheet with rounded corners
-   left a frame of dead surface around it. */
+   Styled as a printed sheet: a light paper surface with a hard accent
+   header bar, sitting on the panel's own darker surface so it reads as
+   an object pinned to a wall rather than as more page chrome. */
 .poster {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+  width: min(400px, 100%);
+  border-radius: calc(20px * var(--radius-scale));
+  overflow: hidden;
   background: var(--surface);
-  /* Space the blocks out over the full column height rather than
-     stacking them at the top of a very tall panel. */
-  justify-content: space-between;
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-lg);
 }
 
 .poster-head {
   background: var(--primary);
   color: var(--on-primary);
-  padding: 40px 48px 34px;
+  padding: 18px 24px 16px;
   text-align: center;
 }
 
 .poster-subject {
   display: block;
   font-family: var(--heading);
-  font-size: clamp(38px, 4.2vw, 58px);
+  font-size: 38px;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .poster-head-note {
   display: block;
-  margin-top: 6px;
-  font-size: 15px;
+  margin-top: 4px;
+  font-size: 13px;
   font-weight: 600;
   opacity: 0.9;
 }
@@ -1763,14 +1770,14 @@ textarea:placeholder-shown {
 .poster-identity {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 40px 48px 28px;
+  gap: 18px;
+  padding: 22px 24px;
 }
 
 .poster-figure {
   flex: none;
-  width: clamp(92px, 9vw, 132px);
-  height: clamp(92px, 9vw, 132px);
+  width: 92px;
+  height: 92px;
 }
 
 .poster-figure-svg {
@@ -1784,22 +1791,22 @@ textarea:placeholder-shown {
 }
 
 .poster-eyebrow {
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--on-surface-variant);
 }
 
 .poster-name {
   font-family: var(--heading);
-  font-size: clamp(26px, 2.6vw, 36px);
+  font-size: 26px;
   font-weight: 700;
   line-height: 1.25;
   color: var(--on-surface);
 }
 
 .poster-role {
-  margin-top: 4px;
-  font-size: 14px;
+  margin-top: 2px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--on-surface-variant);
 }
@@ -1807,10 +1814,10 @@ textarea:placeholder-shown {
 .poster-schedule {
   list-style: none;
   margin: 0;
-  padding: 0 48px 40px;
+  padding: 0 24px 22px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* Three columns rather than a flex row with `space-between`: the grade
@@ -1820,12 +1827,12 @@ textarea:placeholder-shown {
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
-  border-radius: calc(14px * var(--radius-scale));
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: calc(12px * var(--radius-scale));
   background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .poster-schedule-grade {
@@ -1846,7 +1853,7 @@ textarea:placeholder-shown {
   font-weight: 700;
   color: var(--on-primary-container);
   background: var(--primary-container);
-  padding: 4px 12px;
+  padding: 2px 9px;
   border-radius: calc(999px * var(--radius-scale));
   white-space: nowrap;
 }
@@ -1854,11 +1861,11 @@ textarea:placeholder-shown {
 .poster-contact {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 26px 48px 30px;
+  gap: 6px;
+  padding: 14px 24px 16px;
   background: var(--surface-container-highest);
   border-top: 1px solid var(--outline-variant);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--on-surface);
 }
@@ -3320,6 +3327,81 @@ table.mtable {
   border: 0;
 }
 
+/* ---------- Locked player (video not yet approved) ----------
+   Replaces the old full-page block: the lesson itself is reachable, only
+   the player is covered. `.player-locked-backdrop` is two solid,
+   heavily-blurred discs over the dark player base — a frosted-glass
+   "there's something under here" cue rather than a flat placeholder,
+   without needing an actual video frame to blur (there isn't one; the
+   video never reached the student). Solid fills + `filter: blur()`
+   rather than a CSS gradient, matching the rest of the app. */
+.player-locked {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  text-align: center;
+  color: #fff;
+}
+
+.player-locked-backdrop {
+  position: absolute;
+  inset: 0;
+  background: #171321;
+  overflow: hidden;
+}
+
+.player-locked-backdrop::before,
+.player-locked-backdrop::after {
+  content: '';
+  position: absolute;
+  width: 55%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(48px);
+}
+
+.player-locked-backdrop::before {
+  inset-inline-start: 8%;
+  top: 10%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.player-locked-backdrop::after {
+  inset-inline-end: 4%;
+  bottom: 6%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.player-locked-icon {
+  position: relative;
+  font-size: 40px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+}
+
+.player-locked-title {
+  position: relative;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.player-locked-message {
+  position: relative;
+  font-size: 13.5px;
+  max-width: 340px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
 @media print {
 
   .secure-player video,
@@ -4377,9 +4459,9 @@ table.mtable {
 }
 
 /* A real <input type="color"> filling a proper rounded-square preview —
-   deliberately not a small circle: this is the one and only control for
-   picking the accent (no preset swatches beside it), so it needs to read
-   as a real, substantial form field rather than a decoration. */
+   deliberately not a small circle, so it reads as a real form field
+   rather than a decoration. The preset row below (.accent-suggestions)
+   is the fast path; this is the precise one. */
 .color-picker-swatch {
   position: relative;
   flex: none;
@@ -4400,6 +4482,44 @@ table.mtable {
   cursor: pointer;
   border: none;
   padding: 0;
+}
+
+/* ---------- Accent suggestions ---------- */
+.accent-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accent-suggestions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.accent-suggestion-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--outline-variant);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  transition: transform 0.12s ease;
+}
+
+.accent-suggestion-swatch:hover {
+  transform: scale(1.08);
+}
+
+.accent-suggestion-swatch.selected {
+  border-color: var(--on-surface);
+  box-shadow: 0 0 0 2px var(--surface-container-low), 0 0 0 3px var(--on-surface);
+}
+
+.accent-suggestion-swatch .ms {
+  font-size: 18px;
 }
 
 /* ---------- Corner style preview swatch ---------- */
