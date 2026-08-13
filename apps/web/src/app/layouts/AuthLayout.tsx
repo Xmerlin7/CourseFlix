@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router'
 import type { PropsWithChildren } from 'react'
+import { AuthMeshCanvas } from '../../features/auth/components/AuthMeshCanvas'
 import { AuthCourseStrip, TeacherPoster } from '../../features/auth/components/TeacherPoster'
 import { useAuthPoster } from '../../features/auth/hooks/useAuthPoster'
 
@@ -11,7 +12,7 @@ export function AuthLayout({ children }: PropsWithChildren) {
 
   return (
     <div className="auth-shell">
-      <div className="auth-mesh" aria-hidden="true" />
+      <AuthMeshCanvas />
       <div className="auth-grid" aria-hidden="true" />
 
       <main className="auth-panel-form">
