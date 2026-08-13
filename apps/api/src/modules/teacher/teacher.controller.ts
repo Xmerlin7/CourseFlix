@@ -10,9 +10,11 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { PendingApprovalInterceptor } from '../assistant-actions/pending-approval.interceptor';
 import { TeacherOrAssistantRoleGuard } from '../auth/guards/teacher-or-assistant-role.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -24,6 +26,7 @@ import { UpdateSectionDto } from '../courses/dto/update-section.dto';
 import { CreateLessonDto } from '../courses/dto/create-lesson.dto';
 import { UpdateLessonDto } from '../courses/dto/update-lesson.dto';
 import { ReorderDto } from '../courses/dto/reorder.dto';
+import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 
 @Controller('api/v1/teacher')
 @UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
@@ -32,9 +35,10 @@ export class TeacherController {
 
   // Assistants act on behalf of the one teacher they're scoped to —
   // everything below is scoped by this id, never by the caller's own id
-  // when the caller is an assistant.
+  // when the caller is an assistant. Shared with the other
+  // teacher-surface controllers via common/utils/scope-teacher-id.
   private scopeTeacherId(user: AuthenticatedUser): string {
-    return user.role === 'assistant' ? user.managedByTeacherId! : user.id;
+    return scopeTeacherId(user);
   }
 
   @Get('dashboard')
@@ -77,6 +81,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Post('courses')
   @HttpCode(HttpStatus.CREATED)
   async createCourse(
@@ -86,6 +91,7 @@ export class TeacherController {
     return this.teacherService.createCourse(this.scopeTeacherId(user), dto);
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('courses/:courseId')
   async updateCourse(
     @Param('courseId') courseId: string,
@@ -99,6 +105,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Delete('courses/:courseId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteCourse(
@@ -110,6 +117,7 @@ export class TeacherController {
 
   // ── Sections ──
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Post('courses/:courseId/sections')
   @HttpCode(HttpStatus.CREATED)
   async createSection(
@@ -132,6 +140,7 @@ export class TeacherController {
     return this.teacherService.getSection(sectionId, this.scopeTeacherId(user));
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('sections/:sectionId')
   async updateSection(
     @Param('sectionId') sectionId: string,
@@ -145,6 +154,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Delete('sections/:sectionId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteSection(
@@ -157,6 +167,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('courses/:courseId/sections/reorder')
   async reorderSections(
     @Param('courseId') courseId: string,
@@ -172,6 +183,7 @@ export class TeacherController {
 
   // ── Lessons ──
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Post('sections/:sectionId/lessons')
   @HttpCode(HttpStatus.CREATED)
   async createLesson(
@@ -205,6 +217,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('lessons/:lessonId')
   async updateLesson(
     @Param('lessonId') lessonId: string,
@@ -218,6 +231,7 @@ export class TeacherController {
     );
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Delete('lessons/:lessonId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteLesson(
@@ -227,6 +241,7 @@ export class TeacherController {
     await this.teacherService.deleteLesson(lessonId, this.scopeTeacherId(user));
   }
 
+  @UseInterceptors(PendingApprovalInterceptor)
   @Patch('sections/:sectionId/lessons/reorder')
   async reorderLessons(
     @Param('sectionId') sectionId: string,

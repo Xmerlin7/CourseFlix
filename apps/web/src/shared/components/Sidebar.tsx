@@ -1,23 +1,34 @@
+import { useEffect } from 'react'
 import { NavLink } from 'react-router'
 import { ROUTE_PATHS } from '../../app/routes/route-paths'
 
 export type SidebarProps = {
   role: 'student' | 'teacher' | 'admin' | 'assistant'
   userName: string
+  avatarUrl?: string | null
   activePath: string
   onLogout?: () => void
   isOpen?: boolean
   isRail?: boolean
+  /** Phone only: whether the slide-in drawer is showing. Ignored on
+   *  desktop, where the sidebar is always visible. */
+  isMobileOpen?: boolean
+  /** Called when the drawer should close — a nav click, the scrim, the
+   *  close button, or Escape. */
+  onCloseMobile?: () => void
   onToggle?: () => void
   onToggleRail?: () => void
-  // Only StudentLayout passes this today (the only role with a Profile
-  // page so far) — omitted, the identity row stays the plain, non-
-  // interactive display it's always been for teacher/admin/assistant.
+  // Every layout passes this now that all four roles have a profile
+  // page. Left optional so a layout that genuinely has nowhere to send
+  // the user still renders the identity row as plain, non-interactive
+  // text rather than a dead link.
   profilePath?: string
   // Unread activity indicators — student-only for now. A small dot
   // appears next to the nav item when the flag is true.
   communityHasUnread?: boolean
   supportHasUnread?: boolean
+  /** Teacher only: assistant actions waiting on their review. */
+  pendingActionCount?: number
 }
 
 type NavItem = { path: string; label: string; icon: string }
@@ -28,10 +39,6 @@ type NavItem = { path: string; label: string; icon: string }
 // dropped the user on the 404 page. They come back as each owner's slice
 // ships, not before.
 //
-// Settings and Notifications are deliberately NOT linked here even
-// though both routes/pages still exist and work fine — just no sidebar
-// entry point for now. Remove this comment and re-add their NavItem
-// entries below to bring them back.
 const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.STUDENT.BROWSE, label: 'استكشف الدورات', icon: 'explore' },
@@ -52,6 +59,9 @@ const teacherNavItems: NavItem[] = [
   // Deliberately NOT in the assistant-exclusion list below — assistants
   // are meant to help triage support tickets too, see SupportStaffRoleGuard.
   { path: ROUTE_PATHS.TEACHER.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
+  // Both roles see this, with different meanings: the teacher reviews
+  // what their assistants parked, the assistant tracks their own.
+  { path: ROUTE_PATHS.TEACHER.ASSISTANT_ACTIONS, label: 'طلبات المساعدين', icon: 'rule' },
 ]
 
 // Assistants share the teacher's course/student surface but not
@@ -97,18 +107,40 @@ const COMMUNITY_PATH = ROUTE_PATHS.STUDENT.COMMUNITY
 export function Sidebar({
   role,
   userName,
+  avatarUrl,
   onLogout,
   isOpen = true,
   isRail = false,
+  isMobileOpen = false,
+  onCloseMobile,
   onToggle,
   onToggleRail,
   profilePath,
   communityHasUnread = false,
   supportHasUnread = false,
+  pendingActionCount = 0,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
 
+  // Escape closes the drawer, matching every other overlay in the app.
+  // Bound unconditionally (not behind `isMobileOpen`) so the hook order
+  // stays stable across renders; the handler itself no-ops when shut.
+  useEffect(() => {
+    if (!isMobileOpen) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onCloseMobile?.()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isMobileOpen, onCloseMobile])
+
   if (!isOpen) return null
+
+  function getBadgeCount(itemPath: string): number {
+    return itemPath === ROUTE_PATHS.TEACHER.ASSISTANT_ACTIONS
+      ? pendingActionCount
+      : 0
+  }
 
   function getUnreadDot(itemPath: string): boolean {
     if (role !== 'student') return false
@@ -118,7 +150,16 @@ export function Sidebar({
   }
 
   return (
-    <aside className={`sidebar${isRail ? ' rail' : ''}`}>
+    <>
+      {/* Scrim only exists while the phone drawer is open; on desktop the
+          sidebar is part of the layout and has nothing behind it. */}
+      {isMobileOpen && (
+        <div className="sidebar-scrim" onClick={onCloseMobile} aria-hidden="true" />
+      )}
+
+      <aside
+        className={`sidebar${isRail ? ' rail' : ''}${isMobileOpen ? ' mobile-open' : ''}`}
+      >
       <button
         onClick={onToggleRail ?? onToggle}
         className="icon-btn rail-toggle"
@@ -128,9 +169,22 @@ export function Sidebar({
         <span className="ms">menu_open</span>
       </button>
 
+      {/* Phone-only close affordance. The scrim and Escape both work, but
+          neither is discoverable, and the drawer covers the topbar button
+          that opened it. */}
+      <button
+        onClick={onCloseMobile}
+        className="icon-btn sidebar-close"
+        aria-label="إغلاق القائمة"
+        type="button"
+      >
+        <span className="ms">close</span>
+      </button>
+
       <nav>
         {navItems.map((item) => {
           const hasUnread = getUnreadDot(item.path)
+          const badgeCount = getBadgeCount(item.path)
           return (
             // NavLink, not <a href>: an anchor did a full document load on
             // every nav click, remounting the app and flashing the login
@@ -138,12 +192,18 @@ export function Sidebar({
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={onCloseMobile}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             >
               {({ isActive }) => (
                 <>
                   <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
                   <span className="lbl">{item.label}</span>
+                  {badgeCount > 0 && (
+                    <span className="nav-count-badge" aria-label={`${badgeCount} بانتظار المراجعة`}>
+                      {badgeCount}
+                    </span>
+                  )}
                   {hasUnread && (
                     <span
                       className="nav-unread-dot"
@@ -159,24 +219,25 @@ export function Sidebar({
       </nav>
 
       <div className="side-footer">
-        {/* Links to the Profile page when one exists for this role
-            (student only, for now) — otherwise stays the plain,
-            non-interactive identity display it's always been. */}
+        {/* The identity row doubles as the link to this role's profile
+            page. All four roles have one; the non-link branch is the
+            fallback for a layout that doesn't pass a path. */}
         {profilePath ? (
           <NavLink
             to={profilePath}
+            onClick={onCloseMobile}
             title={userName}
             className={({ isActive }) => `nav-item profile-item${isActive ? ' active' : ''}`}
           >
             <span className="avatar">
-              <span className="ms">person</span>
+              {avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ms">person</span>}
             </span>
             <span className="lbl">{userName}</span>
           </NavLink>
         ) : (
           <div className="nav-item profile-item" title={userName}>
             <span className="avatar">
-              <span className="ms">person</span>
+              {avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ms">person</span>}
             </span>
             <span className="lbl">{userName}</span>
           </div>
@@ -187,6 +248,7 @@ export function Sidebar({
           <span className="lbl">تسجيل الخروج</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

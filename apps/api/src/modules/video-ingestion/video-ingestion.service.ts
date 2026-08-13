@@ -46,6 +46,16 @@ export class VideoIngestionService {
   ) {}
 
   /**
+   * Exposed so `CoursesService` can decide a new video's initial
+   * `moderationStatus` (YouTube starts `pending`, everything else
+   * `approved`) using the exact same host-based detection this module
+   * uses to route captions — without duplicating the hostname logic.
+   */
+  detectProvider(videoUrl: string): VideoTranscriptProvider | null {
+    return detectCaptionProvider(videoUrl);
+  }
+
+  /**
    * Called by `CoursesService` right after a lesson's video row is
    * created or its URL changes. Fire-and-forget by design (same as
    * ingestion elsewhere) — a caption-fetch failure must never block

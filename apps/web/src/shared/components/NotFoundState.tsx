@@ -25,21 +25,27 @@ export function NotFoundState({
 
       {/* Main Title & Message with verified High Contrast Dark Mode Classes */}
       <div className="space-y-2 max-w-md px-2">
-        <h3 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
+      {/* Design-system tokens, not Tailwind grays: every other heading and
+          body copy in the app is `--on-surface`/`--on-surface-variant`,
+          which the theme redefines per mode and the accent picker tunes.
+          The `text-gray-800 dark:text-gray-100` pair these carried was a
+          near-miss of both, so the error screens rendered in a slightly
+          different grey from the pages they interrupt. */}
+        <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: 'var(--on-surface)' }}>
           {title}
         </h3>
-        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+        <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--on-surface-variant)' }}>
           {message}
         </p>
       </div>
 
-      {/* Action Buttons */}
+      {/* Uses the shared .btn design-system class rather than ad-hoc
+          Tailwind: .btn pairs var(--primary) with var(--on-primary), the
+          contrast-checked foreground the accent picker computes. The old
+          hardcoded `text-white` went unreadable on a light accent. */}
       {onGoHome && (
         <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={onGoHome}
-            className="flex items-center gap-2 px-7 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 cursor-pointer"
-          >
+          <button type="button" className="btn big cursor-pointer" onClick={onGoHome}>
             <Home className="w-4 h-4" />
             الرجوع للصفحة الرئيسية
           </button>

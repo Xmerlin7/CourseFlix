@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { showToast } from '../../../shared/components/Toast'
 import { DOCUMENT_STATUS } from '../../../shared/lib/status-labels'
 import { useAdminDocuments } from '../hooks/useAdminDocuments'
 import { deleteAdminDocument, getAdminDocumentViewUrl } from '../api/admin-documents.api'
+import type { AdminDocumentListItem } from '../types/admin.types'
+
+const PAGE_SIZE = 10
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -16,6 +22,9 @@ function formatDate(iso: string) {
 
 export function AdminDocumentsPage() {
   const { data, isLoading, error, refetch } = useAdminDocuments({})
+
+  const toHaystack = useCallback((document: AdminDocumentListItem) => `${document.fileName} ${document.courseTitle} ${document.processingStatus}`, [])
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; fileName: string } | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -49,6 +58,14 @@ export function AdminDocumentsPage() {
         </p>
       )}
 
+      <SearchField
+        id="admin-documents-search"
+        label="بحث في المستندات"
+        placeholder="ابحث باسم الملف أو الدورة..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {isLoading && <LoadingState variant="list" />}
 
       {!isLoading && error && (
@@ -63,7 +80,11 @@ export function AdminDocumentsPage() {
         <EmptyState fullPage title="لا توجد مستندات" message="مفيش مستندات مرفوعة على المنصة حاليًا" />
       )}
 
-      {!isLoading && !error && data && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState fullPage title="لا توجد نتائج" message="مفيش نتائج مطابقة لبحثك، جرّب كلمة تانية" />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="table-wrap section">
           <table className="mtable">
             <thead>
@@ -77,7 +98,7 @@ export function AdminDocumentsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.map((document) => {
+              {list.pageItems.map((document) => {
                 const statusLabel = DOCUMENT_STATUS[document.processingStatus]
                 return (
                   <tr key={document.id}>
@@ -128,6 +149,17 @@ export function AdminDocumentsPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!isLoading && !error && list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="مستند"
+        />
       )}
 
       <ConfirmModal

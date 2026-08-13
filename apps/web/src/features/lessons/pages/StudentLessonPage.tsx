@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
@@ -123,6 +123,7 @@ function getIframeEmbedUrl(value: string): string | null {
  */
 export function StudentLessonPage() {
   const { lessonId } = useParams<{ lessonId: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const viewerRole = user?.role ?? 'student'
   // Assistants view lessons the same way the teacher does (full preview,
@@ -137,7 +138,7 @@ export function StudentLessonPage() {
   const [status, setStatus] = useState<LessonProgressStatus | null>(null)
   const [attendanceAwarded, setAttendanceAwarded] = useState(false)
   const [videoError, setVideoError] = useState(false)
-  const iframeEmbedUrl = data ? getIframeEmbedUrl(data.video.url) : null
+  const iframeEmbedUrl = data?.video.url ? getIframeEmbedUrl(data.video.url) : null
   const progressDurationSeconds =
     data?.video.durationSeconds ?? (iframeEmbedUrl ? EXTERNAL_VIDEO_FALLBACK_DURATION_SECONDS : null)
   const isYoutubeEmbed = iframeEmbedUrl?.includes('youtube-nocookie.com') ?? false
@@ -273,7 +274,11 @@ export function StudentLessonPage() {
   // 1. It is a teacher preview.
   // 2. It is the first lesson in the course.
   // 3. It is already completed.
-  // 4. All preceding lessons in the course are 100% completed.
+  // 4. It has already been started — you can always return to a lesson
+  //    you were let into before, otherwise finishing a later lesson out
+  //    of order would lock you out of your own in-progress one (which is
+  //    exactly where the resume CTA points).
+  // 5. All preceding lessons in the course are 100% completed.
   const unlockedLessonIds = new Set<string>()
   if (isTeacher) {
     courseLessons.forEach((l) => unlockedLessonIds.add(l.id))
@@ -286,8 +291,10 @@ export function StudentLessonPage() {
         l.id === data.id
           ? isCurrentCompleted
           : l.progressStatus === 'completed' || (l.watchedPercentage ?? 0) >= 100
+      const isLStarted =
+        l.progressStatus === 'in_progress' || (l.watchedPercentage ?? 0) > 0
 
-      if (allPreviousCompleted || isLCompleted) {
+      if (allPreviousCompleted || isLCompleted || isLStarted) {
         unlockedLessonIds.add(l.id)
       }
 
@@ -297,14 +304,29 @@ export function StudentLessonPage() {
     }
   }
 
+  // Reachable by a stale bookmark or a hand-typed URL — the resume link
+  // itself always targets the first incomplete lesson now (see
+  // getCourseProgressSummaries). Never dead-end here: offer the course
+  // page, which lists every lesson and shows what's still locked.
   if (!isTeacher && data && !unlockedLessonIds.has(data.id)) {
     return (
       <ForbiddenState
         title="هذا الدرس مغلق حاليًا"
-        message="أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي."
+        message="أكمل الدروس السابقة بنسبة 100% لفتح هذا الدرس."
+        onGoBack={() => navigate(coursePath)}
+        goBackLabel="العودة لصفحة الدورة"
       />
     )
   }
+
+  // The video is withheld until it clears AI moderation. The lesson page
+  // itself still renders (title, description, quiz link) — only the
+  // player is replaced with a blurred lock overlay, rather than the
+  // full-page block this used to be. The lesson genuinely exists in the
+  // student's outline, so treating the whole page as unreachable
+  // overstated what's actually missing. The rejection reason is
+  // teacher-only and never sent.
+  const isVideoLocked = !isTeacher && !data.video.url
 
   const studentWatermarkId =
     !isTeacher ? getStudentWatermarkId(user?.id) : null
@@ -323,6 +345,32 @@ export function StudentLessonPage() {
     <>
       <div className="lesson-shell">
         <main className="lesson-main">
+          {/* Teachers/assistants keep full playback while a video is under
+              review or after it's rejected — they need to watch it to judge
+              the outcome — but nothing on the page said which state it was
+              in, so a rejected video just silently vanished for students. */}
+          {isTeacher && data.video.moderationStatus !== 'approved' && (
+            <div
+              className={`moderation-banner${data.video.moderationStatus === 'rejected' ? ' rejected' : ''}`}
+              role="status"
+            >
+              <span className="ms sm" aria-hidden="true">
+                {data.video.moderationStatus === 'rejected' ? 'block' : 'hourglass_top'}
+              </span>
+              <span>
+                {data.video.moderationStatus === 'rejected' ? (
+                  <>
+                    <strong>هذا الفيديو مرفوض ولا يظهر للطلاب.</strong>
+                    {data.video.moderationReason ? ` السبب: ${data.video.moderationReason}` : ''}
+                  </>
+                ) : (
+                  <strong>
+                    الفيديو قيد المراجعة التلقائية ولن يظهر للطلاب حتى يتم اعتماده.
+                  </strong>
+                )}
+              </span>
+            </div>
+          )}
           <div
             ref={playerRef}
             className="player secure-player"
@@ -331,7 +379,24 @@ export function StudentLessonPage() {
             }}
             onDragStart={(event) => event.preventDefault()}
           >
-            {videoError ? (
+            {isVideoLocked ? (
+              <div className="player-locked" role="status">
+                <div className="player-locked-backdrop" aria-hidden="true" />
+                <span className="ms player-locked-icon" aria-hidden="true">
+                  {data.video.moderationStatus === 'rejected' ? 'block' : 'lock'}
+                </span>
+                <p className="player-locked-title">
+                  {data.video.moderationStatus === 'rejected'
+                    ? 'هذا الفيديو غير متاح'
+                    : 'الفيديو قيد المراجعة'}
+                </p>
+                <p className="player-locked-message">
+                  {data.video.moderationStatus === 'rejected'
+                    ? 'تمت إزالة فيديو هذا الدرس بعد مراجعته. تواصل مع مدرّس الدورة لمزيد من التفاصيل.'
+                    : 'يخضع فيديو هذا الدرس للمراجعة الآن، وسيصبح متاحًا فور اعتماده.'}
+                </p>
+              </div>
+            ) : videoError ? (
               <div className="flex h-full flex-col items-center justify-center gap-4" style={{ color: '#CFC4E6' }}>
                 <span className="ms" style={{ fontSize: 40 }}>
                   error
@@ -357,7 +422,7 @@ export function StudentLessonPage() {
               <video
                 key={data.video.id}
                 ref={videoRef}
-                src={data.video.url}
+                src={data.video.url ?? undefined}
                 controlsList="nodownload noplaybackrate noremoteplayback"
                 disablePictureInPicture
                 disableRemotePlayback

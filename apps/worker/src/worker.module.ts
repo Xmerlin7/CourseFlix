@@ -15,6 +15,11 @@ import {
   MockExamLlmProvider,
   OpenAIExamLlmProvider,
 } from './adapters/exam-llm.adapter';
+import {
+  VIDEO_MODERATION_PROVIDER,
+  MockVideoModerationProvider,
+  OpenAIVideoModerationProvider,
+} from './adapters/video-moderation-llm.adapter';
 import { ChromaAdapter } from './adapters/chroma.adapter';
 import { DbNotificationProducer } from './adapters/db-notification.adapter';
 import { BunnyCaptionsAdapter } from './adapters/captions/bunny-captions.adapter';
@@ -99,6 +104,21 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
           return new MockExamLlmProvider();
         }
         return new OpenAIExamLlmProvider(configService);
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: VIDEO_MODERATION_PROVIDER,
+      useFactory: (configService: ConfigService) => {
+        const apiKey =
+          configService.get<string>('OPENAI_API_KEY') ||
+          configService.get<string>('LLM_API_KEY');
+        const env = configService.get<string>('NODE_ENV');
+
+        if (!apiKey || apiKey === 'replace-me' || env === 'test') {
+          return new MockVideoModerationProvider();
+        }
+        return new OpenAIVideoModerationProvider(configService);
       },
       inject: [ConfigService],
     },

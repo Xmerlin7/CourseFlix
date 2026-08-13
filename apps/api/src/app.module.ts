@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AssistantActionsModule } from './modules/assistant-actions/assistant-actions.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -83,6 +84,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     EnrollmentsModule,
     StudentModule,
     TeacherModule,
+    AssistantActionsModule,
     DocumentsModule,
     AttachmentsModule,
     DiscussionsModule,

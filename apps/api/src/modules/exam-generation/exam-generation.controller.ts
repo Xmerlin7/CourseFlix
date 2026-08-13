@@ -7,17 +7,19 @@ import {
   Param,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { TeacherRoleGuard } from '../auth/guards/teacher-role.guard';
+import { TeacherOrAssistantRoleGuard } from '../auth/guards/teacher-or-assistant-role.guard';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { CreateExamGenerationRequestDto } from './dto/create-exam-generation-request.dto';
 import { ExamGenerationFeedbackDto } from './dto/exam-generation-feedback.dto';
 import { ExamGenerationService } from './exam-generation.service';
 
 @Controller('api/v1')
-@UseGuards(AuthGuard, TeacherRoleGuard)
+@UseGuards(AuthGuard, TeacherOrAssistantRoleGuard)
 export class ExamGenerationController {
   constructor(private readonly examGenerationService: ExamGenerationService) {}
 
@@ -27,7 +29,7 @@ export class ExamGenerationController {
     @Body() dto: CreateExamGenerationRequestDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.examGenerationService.createRequest(user.id, dto);
+    return this.examGenerationService.createRequest(scopeTeacherId(user), dto);
   }
 
   @Get('teacher/courses/:courseId/exam-generation-requests')
@@ -35,7 +37,7 @@ export class ExamGenerationController {
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.examGenerationService.listForCourse(courseId, user.id);
+    return this.examGenerationService.listForCourse(courseId, scopeTeacherId(user));
   }
 
   @Get('teacher/exam-generation-requests/:requestId')
@@ -43,7 +45,7 @@ export class ExamGenerationController {
     @Param('requestId') requestId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.examGenerationService.getRequest(requestId, user.id);
+    return this.examGenerationService.getRequest(requestId, scopeTeacherId(user));
   }
 
   @Post('teacher/exam-generation-requests/:requestId/accept')
@@ -51,7 +53,7 @@ export class ExamGenerationController {
     @Param('requestId') requestId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.examGenerationService.accept(requestId, user.id);
+    return this.examGenerationService.accept(requestId, scopeTeacherId(user));
   }
 
   @Post('teacher/exam-generation-requests/:requestId/reject')
@@ -59,7 +61,7 @@ export class ExamGenerationController {
     @Param('requestId') requestId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.examGenerationService.reject(requestId, user.id);
+    return this.examGenerationService.reject(requestId, scopeTeacherId(user));
   }
 
   @Post('teacher/exam-generation-requests/:requestId/feedback')
@@ -70,7 +72,7 @@ export class ExamGenerationController {
   ) {
     return this.examGenerationService.submitFeedback(
       requestId,
-      user.id,
+      scopeTeacherId(user),
       dto.message,
     );
   }

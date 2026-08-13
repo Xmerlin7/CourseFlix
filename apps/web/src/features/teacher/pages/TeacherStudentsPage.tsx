@@ -1,5 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
+import { useDebouncedValue } from '../../../shared/hooks/useDebouncedValue'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { showToast } from '../../../shared/components/Toast'
 import { COURSE_STATUS, ENROLLMENT_STATUS } from '../../../shared/lib/status-labels'
@@ -9,6 +13,8 @@ import { TeacherStudentsSkeleton } from '../components/TeacherStudentsSkeleton'
 
 type Filter = 'all' | 'subscribed' | 'unsubscribed'
 
+const PAGE_SIZE = 10
+
 function formatMoney(minor: number, currency: string) {
   return `${(minor / 100).toLocaleString('ar-EG')} ${currency}`
 }
@@ -17,8 +23,13 @@ export function TeacherStudentsPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const [studentIdSearch, setStudentIdSearch] = useState('')
   const [pendingKey, setPendingKey] = useState<string | null>(null)
+  // The ID lookup is server-side (it matches a watermark code the client
+  // never receives), so it has to be debounced — un-debounced it fired a
+  // request per character, and each one swapped the table for a skeleton.
+  const debouncedIdSearch = useDebouncedValue(studentIdSearch)
+
   const { data, isLoading, error, refetch } = useTeacherStudents(
-    studentIdSearch.trim() || undefined,
+    debouncedIdSearch.trim() || undefined,
   )
 
   async function handleToggleSuspend(
@@ -56,6 +67,15 @@ export function TeacherStudentsPage() {
     }
     return data.students
   }, [data, filter])
+
+  // Name/email search is client-side on top of whatever the chip filter
+  // left; the ID box above stays server-side because a student's UUID is
+  // matched against columns the list response doesn't carry.
+  const toHaystack = useCallback(
+    (student: (typeof students)[number]) => `${student.fullName} ${student.email}`,
+    [],
+  )
+  const list = usePaginatedList(students, toHaystack, PAGE_SIZE)
 
   if (isLoading) return <TeacherStudentsSkeleton />
 
@@ -109,7 +129,7 @@ export function TeacherStudentsPage() {
         </div>
       </section>
 
-      <div className="tf section" style={{ maxWidth: 360 }}>
+      <div className="tf search-field section">
         <label htmlFor="teacher-students-id-search">البحث بمعرف تتبع الفيديو (ID)</label>
         <input
           id="teacher-students-id-search"
@@ -138,8 +158,23 @@ export function TeacherStudentsPage() {
         ))}
       </div>
 
-      {students.length === 0 ? (
-        <EmptyState title="لا توجد نتائج" message="غيّر الفلتر لعرض طلاب آخرين" />
+      <SearchField
+        id="teacher-students-search"
+        label="بحث باسم الطالب أو بريده"
+        placeholder="ابحث باسم الطالب أو بريده الإلكتروني..."
+        value={list.query}
+        onChange={list.search}
+      />
+
+      {list.pageItems.length === 0 ? (
+        <EmptyState
+          title="لا توجد نتائج"
+          message={
+            list.isEmptyResult
+              ? 'مفيش نتائج مطابقة لبحثك، جرّب كلمة تانية'
+              : 'غيّر الفلتر لعرض طلاب آخرين'
+          }
+        />
       ) : (
         <div className="table-wrap section">
           <table className="mtable">
@@ -153,7 +188,7 @@ export function TeacherStudentsPage() {
               </tr>
             </thead>
             <tbody>
-              {students.map((student) => (
+              {list.pageItems.map((student) => (
                 <tr key={student.id}>
                   <td>
                     <strong>{student.fullName}</strong>
@@ -212,6 +247,17 @@ export function TeacherStudentsPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="طالب"
+        />
       )}
     </>
   )

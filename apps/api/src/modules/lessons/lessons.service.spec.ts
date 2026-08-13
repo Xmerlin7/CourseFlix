@@ -69,12 +69,14 @@ describe('LessonsService', () => {
     lessonId,
     videoUrl: 'https://example.test/video.mp4',
     durationSeconds: 400,
+    moderationStatus: 'approved',
   } as VideoEntity;
   const completedVideo = {
     id: completedVideoId,
     lessonId: completedLessonId,
     videoUrl: 'https://example.test/completed.mp4',
     durationSeconds: 300,
+    moderationStatus: 'approved',
   } as VideoEntity;
 
   beforeEach(async () => {
@@ -471,7 +473,11 @@ describe('LessonsService', () => {
       });
     });
 
-    it('falls back to the last completed lesson when nothing is in progress', async () => {
+    // Regression guard: a lesson with no content_progress row at all used
+    // to be skipped here, so the resume target jumped *past* it to a later
+    // lesson — which the client's sequential unlocking then refused to
+    // open, dead-ending the student on a "الدرس مغلق" screen.
+    it('resumes at a never-opened lesson rather than skipping past it to a later one', async () => {
       mockCourseLessons(courseLessons);
       videosRepository.find.mockResolvedValue([video, completedVideo]);
       const completedAt = new Date('2026-08-01T00:00:00.000Z');
@@ -493,16 +499,48 @@ describe('LessonsService', () => {
         totalLessonsCount: 2,
         completedLessonsCount: 1,
         progressPercent: 50,
+        // الدرس الأول has no progress row and comes first, so it is the
+        // resume target — not the already-completed second lesson.
         currentLesson: {
-          id: completedLessonId,
-          title: 'الدرس المكتمل',
-          lastVideoPosition: 300,
+          id: lessonId,
+          title: 'الدرس الأول',
+          lastVideoPosition: 0,
         },
         lastActivityAt: completedAt,
         lastCompletedLesson: {
           id: completedLessonId,
           title: 'الدرس المكتمل',
           lastVideoPosition: 300,
+        },
+      });
+    });
+
+    // The resume CTA should land on the lesson the student is actually
+    // working through, even when an earlier one was never opened —
+    // sequential unlocking admits any already-started lesson, so this
+    // stays openable.
+    it('prefers the furthest in-progress lesson over an earlier untouched one', async () => {
+      mockCourseLessons(courseLessons);
+      videosRepository.find.mockResolvedValue([video, completedVideo]);
+      progressRepository.find.mockResolvedValue([
+        {
+          videoId: completedVideoId,
+          status: 'in_progress',
+          lastVideoPosition: 120,
+          completedAt: null,
+        },
+      ]);
+
+      const result = await lessonsService.getCourseProgressSummaries(
+        studentId,
+        [courseId],
+      );
+
+      expect(result.get(courseId)).toMatchObject({
+        currentLesson: {
+          id: completedLessonId,
+          title: 'الدرس المكتمل',
+          lastVideoPosition: 120,
         },
       });
     });

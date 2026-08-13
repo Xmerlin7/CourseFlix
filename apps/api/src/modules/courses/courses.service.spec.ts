@@ -15,9 +15,15 @@ import { LessonEntity } from './entities/lesson.entity';
 import { VideoEntity } from '../lessons/entities/video.entity';
 
 function viewer(
-  overrides: Pick<AuthenticatedUser, 'id' | 'email' | 'role'>,
+  overrides: Pick<AuthenticatedUser, 'id' | 'email' | 'role'> &
+    Partial<Pick<AuthenticatedUser, 'managedByTeacherId'>>,
 ): AuthenticatedUser {
-  return { fullName: 'Test User', avatarUrl: null, ...overrides };
+  return {
+    fullName: 'Test User',
+    avatarUrl: null,
+    managedByTeacherId: null,
+    ...overrides,
+  };
 }
 
 describe('CoursesService', () => {
@@ -128,6 +134,9 @@ describe('CoursesService', () => {
     enrollmentsService = { assertStudentEnrolled: jest.fn() };
     const videoIngestionService = {
       enqueueForVideo: jest.fn().mockResolvedValue(undefined),
+      detectProvider: jest.fn((url: string) =>
+        /youtu\.be|youtube\.com/.test(url) ? 'youtube' : 'local',
+      ),
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -245,6 +254,55 @@ describe('CoursesService', () => {
         ),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('returns the course for an assistant scoped to the owning teacher, without checking enrollment', async () => {
+      queryBuilder.getOne.mockResolvedValue(course);
+
+      const result = await coursesService.getCourseDetail(
+        course.id,
+        viewer({
+          id: 'assistant-1',
+          email: 'assistant@courseflix.local',
+          role: 'assistant',
+          managedByTeacherId: teacher.id,
+        }),
+      );
+
+      expect(result.canEdit).toBe(true);
+      expect(enrollmentsService.assertStudentEnrolled).not.toHaveBeenCalled();
+    });
+
+    it('rejects an assistant scoped to a different teacher', async () => {
+      queryBuilder.getOne.mockResolvedValue(course);
+
+      await expect(
+        coursesService.getCourseDetail(
+          course.id,
+          viewer({
+            id: 'assistant-1',
+            email: 'assistant@courseflix.local',
+            role: 'assistant',
+            managedByTeacherId: 'someone-else',
+          }),
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('lets an admin view any course without an enrollment or ownership check', async () => {
+      queryBuilder.getOne.mockResolvedValue(course);
+
+      const result = await coursesService.getCourseDetail(
+        course.id,
+        viewer({
+          id: 'admin-1',
+          email: 'admin@courseflix.local',
+          role: 'admin',
+        }),
+      );
+
+      expect(result.canEdit).toBe(false);
+      expect(enrollmentsService.assertStudentEnrolled).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateCourseMetadata', () => {
@@ -312,6 +370,7 @@ describe('CoursesService', () => {
         type: 'recorded',
         status: 'recorded',
         durationSeconds: null,
+        moderationStatus: 'pending',
       });
       expect(videosRepository.save).toHaveBeenCalled();
     });

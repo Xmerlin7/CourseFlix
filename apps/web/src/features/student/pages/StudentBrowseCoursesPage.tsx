@@ -1,10 +1,16 @@
+import { useCallback } from 'react'
 import { Link } from 'react-router'
 import { User } from 'lucide-react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { CourseThumb } from '../../courses/components/CourseThumb'
 import { useCourseCatalog } from '../../courses/hooks/useCourseCatalog'
 import { StudentBrowseCoursesSkeleton } from '../components/StudentBrowseCoursesSkeleton'
+
+const PAGE_SIZE = 9
 
 function formatMoney(minor: number, currency: string) {
   const amount = (minor / 100).toLocaleString('ar-EG')
@@ -15,12 +21,30 @@ function formatMoney(minor: number, currency: string) {
 export function StudentBrowseCoursesPage() {
   const { data, isLoading, error, refetch } = useCourseCatalog()
 
+  const toHaystack = useCallback(
+    (course: (typeof data)[number]) =>
+      `${course.title} ${course.teacherName} ${course.gradeLevel ?? ''}`,
+    [],
+  )
+  // Nine per page, not ten: the grid is three columns wide, so a
+  // multiple of three is the only page size that never leaves a ragged
+  // last row on desktop.
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
+
   return (
     <>
       <div className="browse-header">
         <h1 className="page-title">استكشف الدورات</h1>
         <p className="subtitle">كل الدورات المتاحة للاشتراك</p>
       </div>
+
+      <SearchField
+        id="browse-courses-search"
+        label="بحث في الدورات"
+        placeholder="ابحث باسم الدورة أو المعلم أو الصف..."
+        value={list.query}
+        onChange={list.search}
+      />
 
       {isLoading && <StudentBrowseCoursesSkeleton />}
 
@@ -41,9 +65,18 @@ export function StudentBrowseCoursesPage() {
         />
       )}
 
-      {!isLoading && !error && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState
+          variant="courses"
+          title="لا توجد نتائج"
+          message="مفيش دورات مطابقة لبحثك، جرّب كلمة تانية"
+          fullPage
+        />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="grid-3 course-browse-grid">
-          {data.map((course) => (
+          {list.pageItems.map((course) => (
             <article key={course.id} className="card lift course-browse-card">
               <div className="course-card-thumb-wrapper">
                 <CourseThumb coverImageUrl={course.coverImageUrl} alt={course.title} />
@@ -95,6 +128,17 @@ export function StudentBrowseCoursesPage() {
             </article>
           ))}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="دورة"
+        />
       )}
     </>
   )

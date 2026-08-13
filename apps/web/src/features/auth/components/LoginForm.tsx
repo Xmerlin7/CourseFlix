@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
+import { PasswordField } from '../../../shared/components/PasswordField'
 import { requestOtp } from '../api/auth.api'
 import { useAuth } from '../hooks/useAuth'
 import { getRoleHomePath } from '../utils/get-role-home-path'
@@ -128,7 +129,7 @@ export function LoginForm() {
         <input
           type="email"
           id="email"
-          placeholder="name@example.com"
+          placeholder="أدخل بريدك الإلكتروني"
           autoComplete="email"
           required
           value={email}
@@ -136,24 +137,16 @@ export function LoginForm() {
         />
       </div>
 
-      <div className="tf">
-        <label htmlFor="password">كلمة المرور</label>
-        <input
-          type="password"
-          id="password"
-          placeholder="********"
-          autoComplete="current-password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-        {error && (
-          <span className="error-text" role="alert">
-            {error}
-          </span>
-        )}
-      </div>
+      <PasswordField
+        id="password"
+        label="كلمة المرور"
+        placeholder="أدخل كلمة المرور"
+        autoComplete="current-password"
+        minLength={8}
+        value={password}
+        onChange={setPassword}
+        error={error}
+      />
 
       <button className="btn big" type="submit" disabled={isSubmitting} style={{ width: '100%' }}>
         <span className="ms">login</span>

@@ -90,7 +90,7 @@ export function VerifyCodeForm({
           type="text"
           inputMode="numeric"
           id="otpCode"
-          placeholder="000000"
+          placeholder="أدخل الرمز المكوّن من ٦ أرقام"
           autoComplete="one-time-code"
           autoFocus
           required

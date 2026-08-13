@@ -5,10 +5,12 @@ import { DataSource } from 'typeorm';
 import { BunnyCaptionsAdapter } from '../adapters/captions/bunny-captions.adapter';
 import { YoutubeCaptionsAdapter } from '../adapters/captions/youtube-captions.adapter';
 import { WhisperCaptionsAdapter } from '../adapters/captions/whisper-captions.adapter';
-import { CaptionProvider } from '../adapters/captions/caption-provider';
+import { CaptionCue, CaptionProvider } from '../adapters/captions/caption-provider';
 import { ChromaAdapter } from '../adapters/chroma.adapter';
 import type { EmbeddingProvider } from '../adapters/embedding.adapter';
 import { EMBEDDING_PROVIDER } from '../adapters/embedding.adapter';
+import type { VideoModerationProvider } from '../adapters/video-moderation-llm.adapter';
+import { VIDEO_MODERATION_PROVIDER } from '../adapters/video-moderation-llm.adapter';
 import { chunkCaptions, VideoChunk } from '../stages/caption-chunk.stage';
 import type { NotificationProducerPort } from '../common/ports/notification-producer.port';
 import { NOTIFICATION_PRODUCER_PORT } from '../common/ports/notification-producer.port';
@@ -36,6 +38,15 @@ interface JobRecord {
   target_entity_id: string;
 }
 
+interface CourseInfo {
+  teacherId: string | null;
+  title: string;
+}
+
+// Captions can run long for a full lecture; this caps what's sent to the
+// moderation LLM, same budgeting idea as exam-generation's MAX_CONTENT_CHARS.
+const MAX_MODERATION_CHARS = 20_000;
+
 /**
  * BullMQ worker processor for video caption ingestion:
  * Fetch captions (Bunny/YouTube) → Chunk → Embed → Chroma Upsert →
@@ -61,6 +72,8 @@ export class VideoIngestionProcessor extends WorkerHost {
     private readonly chromaAdapter: ChromaAdapter,
     @Inject(NOTIFICATION_PRODUCER_PORT)
     private readonly notificationProducer: NotificationProducerPort,
+    @Inject(VIDEO_MODERATION_PROVIDER)
+    private readonly moderationProvider: VideoModerationProvider,
   ) {
     super();
   }
@@ -101,11 +114,52 @@ export class VideoIngestionProcessor extends WorkerHost {
       videoTitle = video.title;
       videoId = video.id;
 
-      teacherId = await this.getCourseTeacherId(transcript.course_id);
+      const courseInfo = await this.getCourseInfo(transcript.course_id);
+      teacherId = courseInfo?.teacherId ?? null;
 
       await this.markTranscriptProcessing(transcriptId);
 
-      await this.runStages(transcript, video);
+      const provider = this.resolveCaptionProvider(transcript.provider);
+      const cues = await provider.fetchCaptions(video.video_url);
+
+      if (transcript.provider === 'youtube') {
+        const rejectionReason = await this.checkModeration(
+          video,
+          courseInfo?.title ?? '',
+          cues,
+        );
+        if (rejectionReason) {
+          await this.rejectVideo(video.id, rejectionReason);
+          await this.markTranscriptCompleted(transcriptId);
+          await this.markCompleted(jobId);
+
+          if (teacherId) {
+            await this.notificationProducer.notify({
+              userId: teacherId,
+              type: 'video_moderation_rejected',
+              title: 'تم رفض الفيديو',
+              message: `تم رفض فيديو "${videoTitle}": ${rejectionReason}`,
+              relatedEntityType: 'video',
+              relatedEntityId: videoId ?? undefined,
+            });
+          }
+          await this.notifyAdminsOfRejection(
+            teacherId,
+            videoTitle,
+            videoId,
+            rejectionReason,
+          );
+
+          this.logger.log(
+            `[${job.id}] ai_jobs row ${jobId} (transcript ${transcriptId}) → video ${videoId} rejected by moderation`,
+          );
+          return;
+        }
+
+        await this.approveVideo(video.id);
+      }
+
+      await this.runStages(transcript, cues);
 
       await this.markCompleted(jobId);
       await this.markTranscriptCompleted(transcriptId);
@@ -152,19 +206,107 @@ export class VideoIngestionProcessor extends WorkerHost {
     }
   }
 
+  private resolveCaptionProvider(
+    provider: TranscriptRecord['provider'],
+  ): CaptionProvider {
+    return provider === 'bunny'
+      ? this.bunnyCaptionsAdapter
+      : provider === 'youtube'
+        ? this.youtubeCaptionsAdapter
+        : this.whisperCaptionsAdapter;
+  }
+
+  // Only called for `provider === 'youtube'` — Bunny/local videos skip
+  // moderation entirely and stay `approved` (set in CoursesService).
+  // Safety is checked first; relevance is only meaningful once safety
+  // passes, matching the two-stage review this gate is meant to do.
+  private async checkModeration(
+    video: VideoRecord,
+    courseTitle: string,
+    cues: CaptionCue[],
+  ): Promise<string | null> {
+    const transcriptText = cues
+      .map((cue) => cue.text)
+      .join(' ')
+      .slice(0, MAX_MODERATION_CHARS);
+
+    const result = await this.moderationProvider.checkCaptions({
+      videoTitle: video.title,
+      courseTitle,
+      transcriptText,
+    });
+
+    if (!result.safe) {
+      return result.unsafeReason ?? 'المحتوى غير لائق للطلاب.';
+    }
+    if (!result.onTopic) {
+      return result.offTopicReason ?? 'المحتوى لا يتعلق بمادة الفيزياء.';
+    }
+    return null;
+  }
+
+  private async rejectVideo(videoId: string, reason: string): Promise<void> {
+    await this.dataSource.query(
+      `UPDATE videos
+          SET moderation_status = 'rejected',
+              moderation_reason = $2,
+              moderation_checked_at = NOW()
+        WHERE id = $1`,
+      [videoId, reason],
+    );
+  }
+
+  private async approveVideo(videoId: string): Promise<void> {
+    await this.dataSource.query(
+      `UPDATE videos
+          SET moderation_status = 'approved',
+              moderation_reason = NULL,
+              moderation_checked_at = NOW()
+        WHERE id = $1`,
+      [videoId],
+    );
+  }
+
+  // Best-effort fan-out to every admin, same Promise.allSettled shape as
+  // interventions.service.ts's notifyAndLog — one admin's notify failure
+  // must never block the others or the pipeline.
+  private async notifyAdminsOfRejection(
+    teacherId: string | null,
+    videoTitle: string | null,
+    videoId: string | null,
+    reason: string,
+  ): Promise<void> {
+    const teacherName = teacherId ? await this.getUserName(teacherId) : 'غير معروف';
+    const admins = (await this.dataSource.query(
+      `SELECT id FROM users WHERE role = 'admin' AND deleted_at IS NULL`,
+    )) as unknown as Array<{ id: string }>;
+
+    await Promise.allSettled(
+      admins.map((admin) =>
+        this.notificationProducer.notify({
+          userId: admin.id,
+          type: 'video_moderation_rejected',
+          title: 'رفض تلقائي لفيديو',
+          message: `رفض النظام تلقائيًا فيديو "${videoTitle ?? ''}" الذي رفعه المدرس ${teacherName}. السبب: ${reason}`,
+          relatedEntityType: 'video',
+          relatedEntityId: videoId ?? undefined,
+        }),
+      ),
+    );
+  }
+
+  private async getUserName(userId: string): Promise<string> {
+    const rows = (await this.dataSource.query(
+      `SELECT full_name FROM users WHERE id = $1`,
+      [userId],
+    )) as unknown as Array<{ full_name: string }>;
+    return rows[0]?.full_name ?? 'غير معروف';
+  }
+
   private async runStages(
     transcript: TranscriptRecord,
-    video: VideoRecord,
+    cues: CaptionCue[],
   ): Promise<void> {
-    const provider: CaptionProvider =
-      transcript.provider === 'bunny'
-        ? this.bunnyCaptionsAdapter
-        : transcript.provider === 'youtube'
-          ? this.youtubeCaptionsAdapter
-          : this.whisperCaptionsAdapter;
-
-    const cues = await provider.fetchCaptions(video.video_url);
-
     const chunks: VideoChunk[] = chunkCaptions({
       videoTranscriptId: transcript.id,
       version: transcript.version,
@@ -304,12 +446,15 @@ export class VideoIngestionProcessor extends WorkerHost {
     return rows[0] || null;
   }
 
-  private async getCourseTeacherId(courseId: string): Promise<string | null> {
+  private async getCourseInfo(courseId: string): Promise<CourseInfo | null> {
     const rows = (await this.dataSource.query(
-      `SELECT teacher_id FROM courses WHERE id = $1`,
+      `SELECT teacher_id, title FROM courses WHERE id = $1`,
       [courseId],
-    )) as unknown as Array<{ teacher_id: string }>;
-    return rows[0]?.teacher_id ?? null;
+    )) as unknown as Array<{ teacher_id: string | null; title: string }>;
+    if (!rows[0]) {
+      return null;
+    }
+    return { teacherId: rows[0].teacher_id, title: rows[0].title };
   }
 
   private async markCompleted(jobId: string): Promise<void> {

@@ -74,7 +74,7 @@ export function TeacherCourseCreatePage() {
             value={coverImageUrl}
             onChange={(event) => setCoverImageUrl(event.target.value)}
             type="url"
-            placeholder="https://..."
+            placeholder="الصق رابط صورة الغلاف"
           />
         </div>
 

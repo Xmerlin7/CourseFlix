@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen } from 'lucide-react'
+import { CourseThumbPlaceholder } from './CourseThumbPlaceholder'
 
 interface CourseThumbProps {
   coverImageUrl: string | null
@@ -8,8 +8,8 @@ interface CourseThumbProps {
 }
 
 /**
- * Real cover image when the course has one, or a polished Courseflix
- * placeholder otherwise. Shared by course cards across the application.
+ * Real cover image when the course has one, or Material 3 shape artwork
+ * otherwise. Shared by course cards across the application.
  */
 export function CourseThumb({ coverImageUrl, alt, className = '' }: CourseThumbProps) {
   const [failed, setFailed] = useState(false)
@@ -32,13 +32,7 @@ export function CourseThumb({ coverImageUrl, alt, className = '' }: CourseThumbP
 
   return (
     <div className={`${containerClass} thumb-placeholder`} aria-hidden="true">
-      <div className="thumb-placeholder-pattern" />
-      <div className="thumb-placeholder-content">
-        <div className="thumb-icon-badge">
-          <BookOpen className="thumb-icon" size={26} strokeWidth={1.8} />
-        </div>
-        <span className="thumb-brand">COURSEFLIX</span>
-      </div>
+      <CourseThumbPlaceholder seed={alt} />
     </div>
   )
 }

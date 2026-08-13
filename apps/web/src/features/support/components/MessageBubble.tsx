@@ -2,6 +2,7 @@ export type MessagePendingStatus = 'sending' | 'failed'
 
 interface MessageBubbleProps {
   authorName: string
+  authorAvatarUrl?: string | null
   isStaffReply: boolean
   body: string
   createdAt: string
@@ -17,6 +18,7 @@ function formatTime(iso: string): string {
 
 export function MessageBubble({
   authorName,
+  authorAvatarUrl,
   isStaffReply,
   body,
   createdAt,
@@ -32,7 +34,11 @@ export function MessageBubble({
       {showHeader && (
         <div className="chat-msg-group-label">
           <span className="chat-msg-avatar" aria-hidden="true">
-            <span className="ms">{isStaffReply ? 'support_agent' : 'person'}</span>
+            {authorAvatarUrl ? (
+              <img src={authorAvatarUrl} alt="" />
+            ) : (
+              <span className="ms">{isStaffReply ? 'support_agent' : 'person'}</span>
+            )}
           </span>
           <span className="chat-msg-author-name">{authorName}</span>
           <span className={`chat-role-tag ${isStaffReply ? 'support-tag' : 'student-tag'}`}>

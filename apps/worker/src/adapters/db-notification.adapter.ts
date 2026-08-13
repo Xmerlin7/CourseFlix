@@ -32,6 +32,9 @@ function toEnumType(type: string): string {
   if (type.startsWith('exam_generation')) {
     return 'quiz_ready';
   }
+  if (type.startsWith('video_moderation')) {
+    return 'course_update';
+  }
   return 'system';
 }
 

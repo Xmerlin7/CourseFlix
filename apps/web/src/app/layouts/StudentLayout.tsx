@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../../features/auth/hooks/useAuth'
@@ -14,6 +15,10 @@ export function StudentLayout({ children }: PropsWithChildren) {
   const location = useLocation()
   const navigate = useNavigate()
   const { isCollapsed: isRail, setCollapsed: setIsRail } = useSidebarCollapsed()
+  // Phone nav drawer. Separate from `isRail` (the desktop collapse) —
+  // they're different controls on different breakpoints, and sharing one
+  // flag meant collapsing on desktop also armed the phone drawer.
+  const [isNavOpen, setIsNavOpen] = useState(false)
   const unreadCount = useUnreadNotificationsCount()
   const { communityHasUnread, supportHasUnread } = useStudentSidebarUnread()
 
@@ -27,10 +32,13 @@ export function StudentLayout({ children }: PropsWithChildren) {
       <Sidebar
         role="student"
         userName={user?.fullName ?? ''}
+        avatarUrl={user?.avatarUrl}
         activePath={location.pathname}
         onLogout={() => void handleLogout()}
         isRail={isRail}
         onToggleRail={() => setIsRail(!isRail)}
+        isMobileOpen={isNavOpen}
+        onCloseMobile={() => setIsNavOpen(false)}
         profilePath={ROUTE_PATHS.STUDENT.PROFILE}
         communityHasUnread={communityHasUnread}
         supportHasUnread={supportHasUnread}
@@ -39,6 +47,7 @@ export function StudentLayout({ children }: PropsWithChildren) {
       <div className="main">
         <div className="sheet">
           <Topbar
+            onMenuClick={() => setIsNavOpen(true)}
             notificationCount={unreadCount}
             notificationsPath={ROUTE_PATHS.STUDENT.NOTIFICATIONS}
             onSettingsClick={() => navigate(ROUTE_PATHS.STUDENT.SETTINGS)}

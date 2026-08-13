@@ -334,6 +334,26 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
                             <span className={`chip${lesson.status === 'published' ? ' green' : ' outline'}`}>
                               {lesson.status === 'published' ? 'منشور' : 'مسودة'}
                             </span>
+                            {/* Publish state alone is misleading: a
+                                "منشور" lesson whose video hasn't cleared
+                                moderation is still invisible to students,
+                                which looked like the lesson silently
+                                vanished. Show the review state next to it. */}
+                            {lesson.videoModerationStatus === 'pending' && (
+                              <span className="chip outline" title="لن يظهر للطلاب حتى يتم اعتماده">
+                                <span className="ms sm">hourglass_top</span>
+                                قيد المراجعة
+                              </span>
+                            )}
+                            {lesson.videoModerationStatus === 'rejected' && (
+                              <span
+                                className="chip red"
+                                title={lesson.videoModerationReason ?? 'تم رفض الفيديو بعد مراجعته'}
+                              >
+                                <span className="ms sm">block</span>
+                                مرفوض
+                              </span>
+                            )}
                             <button
                               type="button"
                               className="btn text"

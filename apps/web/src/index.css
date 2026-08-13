@@ -7,6 +7,33 @@
   --animate-float: float 4s ease-in-out infinite;
 }
 
+/*
+ * Illustration ramp — the empty/error-state artwork (403/404/error) is
+ * inline SVG, so its fills can be driven by the accent the user picks in
+ * Settings instead of the hardcoded purple/blue/amber each illustration
+ * shipped with. Steps mirror Tailwind's 50–950 scale so the existing
+ * shade choices map across one-for-one and the artwork keeps its
+ * original depth and contrast structure.
+ *
+ * Derived from --primary, which the accent picker already recomputes per
+ * mode (accent-theme.ts), so these follow light/dark automatically. Only
+ * the tinted parts are remapped — grays, whites and skin tones stay
+ * neutral on purpose, since tinting those turns the art muddy.
+ */
+:root {
+  --illus-50: color-mix(in srgb, var(--primary) 8%, white);
+  --illus-100: color-mix(in srgb, var(--primary) 16%, white);
+  --illus-200: color-mix(in srgb, var(--primary) 30%, white);
+  --illus-300: color-mix(in srgb, var(--primary) 48%, white);
+  --illus-400: color-mix(in srgb, var(--primary) 72%, white);
+  --illus-500: var(--primary);
+  --illus-600: color-mix(in srgb, var(--primary) 86%, black);
+  --illus-700: color-mix(in srgb, var(--primary) 70%, black);
+  --illus-800: color-mix(in srgb, var(--primary) 55%, black);
+  --illus-900: color-mix(in srgb, var(--primary) 40%, black);
+  --illus-950: color-mix(in srgb, var(--primary) 26%, black);
+}
+
 @keyframes float {
 
   0%,
@@ -392,6 +419,29 @@
   color: var(--on-primary-container);
   display: grid;
   place-items: center;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Phone-drawer affordances. Hidden by default and switched on inside the
+   860px block — the sidebar is permanently on screen above it, so a
+   menu button, a close button and a scrim would all be dead chrome.
+
+   Qualified by a parent class (.topbar/.sidebar) rather than bare, so
+   this beats `.icon-btn`'s `display: grid` on specificity. Both rules
+   are 0-1-0 unqualified, and `.icon-btn` is declared later in this file
+   — same-specificity + later-wins meant the plain button leaked onto
+   desktop before this. */
+.topbar .topbar-menu-btn,
+.sidebar .sidebar-close,
+.sidebar-scrim {
+  display: none;
 }
 
 /* Rail mode */
@@ -461,42 +511,6 @@
   color: var(--on-surface-variant);
   font-size: 14px;
   margin: 4px 0 0;
-}
-
-/* Search ("ابحث عن دورة...") */
-.community-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-  max-width: 420px;
-  margin-bottom: 18px;
-}
-
-.community-search .ms {
-  position: absolute;
-  inset-inline-start: 14px;
-  color: var(--on-surface-variant);
-  font-size: 19px;
-  pointer-events: none;
-}
-
-.community-search input {
-  width: 100%;
-  height: 42px;
-  padding-inline-start: 42px;
-  padding-inline-end: 16px;
-  border-radius: calc(999px * var(--radius-scale));
-  border: 1px solid var(--outline-variant);
-  background: var(--surface-container-low);
-  color: var(--on-surface);
-  font-size: 13.5px;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.community-search input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 .community-no-results {
@@ -831,11 +845,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  scrollbar-width: none;
-}
-
-.notif-panel-body::-webkit-scrollbar {
-  display: none;
 }
 
 .notif-panel-msg {
@@ -1099,43 +1108,24 @@ body.shell {
   height: 100%;
 }
 
-/* Scrollbar styling */
+/* Scrollbars are hidden application-wide — every scroll container still
+   scrolls (wheel, touch, keyboard, programmatic), it just draws no track or
+   thumb. Declared once here, globally, instead of per-component: several
+   components used to hide their own bar and the rest inherited a styled
+   one, which is exactly the inconsistency this replaces.
+
+   `scrollbar-width: none` covers Firefox and Chromium 121+; the
+   `::-webkit-scrollbar` rule covers WebKit and older Chromium. Both are
+   needed — neither alone hides the bar on every engine we support. */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--outline-variant) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--outline-variant);
-  border-radius: 0;
-  border: none;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--outline);
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Auto-hide scrollbar for content areas */
-.page {
-  scrollbar-color: transparent transparent;
-}
-
-.page::-webkit-scrollbar-thumb {
-  background: transparent;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 h1,
@@ -1196,56 +1186,85 @@ code {
 
   .main {
     padding: 10px;
-    padding-bottom: 86px;
   }
 
   .sheet {
     border-radius: calc(22px * var(--radius-scale));
   }
 
+  /* Slide-in drawer, not a bottom bar. The bar squeezed every nav item
+     into a 72px strip: with ten entries on the admin side that left ~38px
+     per target with the labels shrunk to 11px, and the profile row and
+     collapse toggle had to be hidden outright to make room. A drawer
+     shows the same vertical list as desktop, at full size, and nothing
+     has to be dropped.
+
+     Anchored to the inline-start edge, which is the right in this RTL
+     document — so `translateX(100%)` parks it off the right of the
+     screen and `translateX(0)` brings it in. */
   .sidebar {
     position: fixed;
-    bottom: 0;
-    top: auto;
-    inset-inline: 0;
-    width: 100% !important;
-    height: 72px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
-    padding: 6px 10px;
-    background: var(--surface-container-high);
-    z-index: 70;
-    box-shadow: 0 -2px 14px rgba(20, 10, 40, 0.14);
-  }
-
-  .sidebar .rail-toggle,
-  .side-footer .profile-item {
-    display: none;
-  }
-
-  .sidebar nav {
-    flex-direction: row;
-    flex: 1;
-    justify-content: space-around;
-    gap: 2px;
-  }
-
-  .nav-item {
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: min(300px, 84vw) !important;
+    height: 100%;
     flex-direction: column;
-    gap: 3px;
-    padding: 7px 12px;
-    font-size: 11px;
-    border-radius: calc(16px * var(--radius-scale));
+    padding: 14px 12px;
+    background: var(--surface-container-high);
+    z-index: 80;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
   }
 
-  .side-footer {
-    margin: 0;
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
 
-  .side-footer .nav-item .lbl {
+  /* The desktop collapse control has no meaning in a drawer. */
+  .sidebar .rail-toggle {
     display: none;
   }
+
+  .sidebar .sidebar-close {
+    display: grid;
+    align-self: flex-start;
+    margin-bottom: 6px;
+  }
+
+  .sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 79;
+    background: var(--scrim);
+  }
+
+  .topbar .topbar-menu-btn {
+    display: grid;
+  }
+}
+
+/* Count badge on a nav item (teacher's pending assistant actions).
+   Distinct from .nav-unread-dot, which only says "something changed" —
+   this one is actionable, so it carries the number. */
+.nav-count-badge {
+  margin-inline-start: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+/* Icon-only rail has no room for a number beside the label. */
+.sidebar.rail .nav-count-badge {
+  display: none;
 }
 
 /* ---------- Buttons ---------- */
@@ -1346,6 +1365,20 @@ code {
   min-height: 96px;
 }
 
+/* Every placeholder in the product is Arabic, so every placeholder is
+   drawn right-to-left. The document is already `dir="rtl"`, which covers
+   most inputs by inheritance — this rule exists for the handful that are
+   explicitly `dir="ltr"` because the *value* they hold is Latin (a UUID
+   pasted off a leaked video, a cover-image URL). Keyed off
+   `:placeholder-shown` so it only applies while the field is empty: the
+   moment the user types, the input reverts to its own direction and the
+   Latin text they entered still reads left-to-right. */
+input:placeholder-shown,
+textarea:placeholder-shown {
+  direction: rtl;
+  text-align: right;
+}
+
 .tf input:focus,
 .tf textarea:focus,
 .tf select:focus,
@@ -1368,6 +1401,35 @@ code {
 
 .tf.invalid input {
   border-color: var(--error);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-inline-end: calc(44px * var(--space-scale));
+}
+
+.password-toggle {
+  position: absolute;
+  inset-inline-end: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: calc(999px * var(--radius-scale));
+  background: none;
+  display: grid;
+  place-items: center;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.password-toggle:hover {
+  background: var(--hover);
 }
 
 /* ---------- Quiz (ported from ui5/) ---------- */
@@ -1656,87 +1718,169 @@ code {
   margin-top: 26px;
 }
 
-/* Decorative brand panel — hidden below the breakpoint (see media query
-   at the bottom of this file), never the only way to reach anything. */
+/* Decorative panel — hidden below the breakpoint (see media query at the
+   end of this block), never the only way to reach anything. Holds the
+   tutor poster (TeacherPoster.tsx). */
 .auth-panel-brand {
   flex: 1 1 50%;
   position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  padding: 64px;
-  background: linear-gradient(155deg, var(--primary) 0%, var(--logo) 100%);
-  color: var(--on-primary);
-}
-
-.auth-brand-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.35;
-  background: var(--tertiary-container);
-}
-
-.auth-brand-blob.blob-1 {
-  width: 320px;
-  height: 320px;
-  top: -80px;
-  inset-inline-end: -100px;
-}
-
-.auth-brand-blob.blob-2 {
-  width: 260px;
-  height: 260px;
-  bottom: -100px;
-  inset-inline-start: -80px;
-  background: var(--secondary-container);
-}
-
-.auth-brand-content {
-  position: relative;
-  z-index: 1;
-  max-width: 420px;
-}
-
-.auth-brand-logo {
-  font-size: 40px;
-  color: var(--on-primary);
-}
-
-.auth-brand-tag {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 14px 0 40px;
-  opacity: 0.95;
-}
-
-.auth-feature-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.auth-feature-list li {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 14.5px;
-  font-weight: 600;
-}
-
-.auth-feature-list .ms {
-  flex: none;
-  width: 40px;
-  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 48px;
+  background: var(--surface-container);
+}
+
+/* ---------- Tutor poster ----------
+   Styled as a printed sheet: a light paper surface with a hard accent
+   header bar, sitting on the panel's own darker surface so it reads as
+   an object pinned to a wall rather than as more page chrome. */
+.poster {
+  width: min(400px, 100%);
+  border-radius: calc(20px * var(--radius-scale));
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-lg);
+}
+
+.poster-head {
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 18px 24px 16px;
+  text-align: center;
+}
+
+.poster-subject {
+  display: block;
+  font-family: var(--heading);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.poster-head-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.poster-identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.poster-figure {
+  flex: none;
+  width: 92px;
+  height: 92px;
+}
+
+.poster-figure-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.poster-titles {
+  min-width: 0;
+}
+
+.poster-eyebrow {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.poster-name {
+  font-family: var(--heading);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--on-surface);
+}
+
+.poster-role {
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.poster-schedule {
+  list-style: none;
+  margin: 0;
+  padding: 0 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Three columns rather than a flex row with `space-between`: the grade
+   names differ in length, and space-between let the day/time columns
+   wander line to line instead of forming a readable timetable. */
+.poster-schedule-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   border-radius: calc(12px * var(--radius-scale));
-  background: rgba(255, 255, 255, 0.16);
-  font-size: 21px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  font-size: 13px;
+}
+
+.poster-schedule-grade {
+  font-weight: 700;
+  color: var(--on-surface);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.poster-schedule-days {
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+
+.poster-schedule-time {
+  font-weight: 700;
+  color: var(--on-primary-container);
+  background: var(--primary-container);
+  padding: 2px 9px;
+  border-radius: calc(999px * var(--radius-scale));
+  white-space: nowrap;
+}
+
+.poster-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 24px 16px;
+  background: var(--surface-container-highest);
+  border-top: 1px solid var(--outline-variant);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.poster-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.poster-contact-item .ms {
+  flex: none;
+  font-size: 18px;
+  color: var(--primary);
 }
 
 @media (max-width: 980px) {
@@ -2215,48 +2359,18 @@ h1.page-title {
   transition: transform 0.3s ease;
 }
 
+/* Cover fallback: Material 3 shape artwork (CourseThumbPlaceholder.tsx).
+   The SVG paints its own background rect, so this element only has to
+   give it a box to fill. */
 .thumb-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--surface-container-high) 0%, var(--primary-container) 100%);
+  background: var(--surface-container-high);
   position: relative;
 }
 
-.thumb-placeholder-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(var(--outline-variant) 1px, transparent 1px);
-  background-size: 14px 14px;
-  opacity: 0.25;
-}
-
-.thumb-placeholder-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.thumb-icon-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--primary);
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow);
-}
-
-.thumb-brand {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: var(--on-surface-variant);
-  opacity: 0.85;
+.thumb-shapes {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* Base course card row legacy compatibility */
@@ -2280,12 +2394,16 @@ h1.page-title {
   flex: none;
 }
 
+/* No inline padding. This carried `padding-right: 6px` from an LTR-first
+   draft, which in an RTL document pads the *leading* edge — so every
+   action row (card footers, page headers, table cells) sat 6px inward
+   from the title and body text above it, and nothing lined up down the
+   start edge of a card. */
 .actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  padding-right: 6px;
 }
 
 /* ---------- Student Browse Course Grid & Cards ---------- */
@@ -2621,7 +2739,14 @@ h1.page-title {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: linear-gradient(135deg, var(--primary-container) 0%, var(--surface-container-low) 70%);
+  /* Flat surface, no accent stripe. The body text inside is
+     `--on-surface`/`--on-surface-variant`, which only has a guaranteed
+     contrast ratio against a `--surface-*` token, so the old
+     `--primary-container → --surface-container-low` gradient made
+     contrast depend on the accent the user picked. The emphasis lives in
+     the badge and the CTA instead — a 3px edge just read as a stray line
+     down the side of the card. */
+  background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
 }
 
@@ -2644,7 +2769,7 @@ h1.page-title {
   align-items: center;
   gap: 6px;
   color: var(--on-primary-container);
-  background: var(--surface);
+  background: var(--primary-container);
   padding: 4px 10px;
   border-radius: calc(999px * var(--radius-scale));
   font-size: 12px;
@@ -2869,11 +2994,6 @@ a.list-item:hover,
   border-bottom: 1px solid var(--outline-variant);
   margin-bottom: 26px;
   overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .tab {
@@ -2977,6 +3097,140 @@ table.mtable {
   font-weight: 700;
 }
 
+/* ---------- Search field ----------
+   Shared by every paginated list (SearchField.tsx). The icon and clear
+   button are absolutely positioned over a normally-padded input rather
+   than laid out as flex siblings, so the input keeps the exact height,
+   focus ring and background of every other `.tf input` on the page. */
+.search-field {
+  max-width: 420px;
+  width: 100%;
+}
+
+.search-field-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-field-box input {
+  padding-inline-start: calc(42px * var(--space-scale));
+  padding-inline-end: calc(40px * var(--space-scale));
+}
+
+/* Chrome draws its own clear "x" inside type=search, which would sit
+   next to ours. */
+.search-field-box input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-field-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  font-size: 20px;
+  color: var(--on-surface-variant);
+  pointer-events: none;
+}
+
+.search-field-clear {
+  position: absolute;
+  inset-inline-end: 6px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--on-surface-variant);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.search-field-clear:hover {
+  background: var(--hover);
+}
+
+.search-field-clear .ms {
+  font-size: 18px;
+}
+
+/* ---------- Pagination ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pager-count {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.pager-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pager-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(10px * var(--radius-scale));
+  background: var(--surface);
+  color: var(--on-surface);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pager-btn:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pager-btn.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.pager-btn .ms {
+  font-size: 20px;
+}
+
+.pager-gap {
+  padding: 0 2px;
+  color: var(--on-surface-variant);
+}
+
+@media (max-width: 640px) {
+  /* On a phone the count line and the controls each want the full width;
+     side by side they collide once the page numbers reach four digits
+     of combined width. */
+  .pager {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pager-controls {
+    justify-content: center;
+  }
+}
+
 /* ---------- Upload zone ---------- */
 .dropzone {
   border: 2px dashed var(--outline-variant);
@@ -3016,6 +3270,37 @@ table.mtable {
   min-width: 0;
 }
 
+/* Teacher-only notice above the player when a video hasn't cleared the
+   AI moderation gate (see StudentLessonPage). */
+.moderation-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: calc(12px * var(--space-scale)) calc(16px * var(--space-scale));
+  border-radius: calc(14px * var(--radius-scale));
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.moderation-banner .ms {
+  flex: none;
+  margin-top: 1px;
+  color: var(--on-surface-variant);
+}
+
+.moderation-banner.rejected {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.moderation-banner.rejected .ms {
+  color: var(--error);
+}
+
 .player {
   aspect-ratio: 16 / 9;
   border-radius: calc(24px * var(--radius-scale));
@@ -3040,6 +3325,81 @@ table.mtable {
 
 .player iframe {
   border: 0;
+}
+
+/* ---------- Locked player (video not yet approved) ----------
+   Replaces the old full-page block: the lesson itself is reachable, only
+   the player is covered. `.player-locked-backdrop` is two solid,
+   heavily-blurred discs over the dark player base — a frosted-glass
+   "there's something under here" cue rather than a flat placeholder,
+   without needing an actual video frame to blur (there isn't one; the
+   video never reached the student). Solid fills + `filter: blur()`
+   rather than a CSS gradient, matching the rest of the app. */
+.player-locked {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  text-align: center;
+  color: #fff;
+}
+
+.player-locked-backdrop {
+  position: absolute;
+  inset: 0;
+  background: #171321;
+  overflow: hidden;
+}
+
+.player-locked-backdrop::before,
+.player-locked-backdrop::after {
+  content: '';
+  position: absolute;
+  width: 55%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(48px);
+}
+
+.player-locked-backdrop::before {
+  inset-inline-start: 8%;
+  top: 10%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.player-locked-backdrop::after {
+  inset-inline-end: 4%;
+  bottom: 6%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.player-locked-icon {
+  position: relative;
+  font-size: 40px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+}
+
+.player-locked-title {
+  position: relative;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.player-locked-message {
+  position: relative;
+  font-size: 13.5px;
+  max-width: 340px;
+  color: rgba(255, 255, 255, 0.78);
 }
 
 @media print {
@@ -3077,7 +3437,11 @@ table.mtable {
   flex-direction: column;
   gap: 6px;
   padding: 8px 14px 10px;
-  background: linear-gradient(to top, rgba(10, 8, 16, 0.88), rgba(10, 8, 16, 0.5) 65%, transparent);
+  /* Flat scrim rather than a fade-to-transparent gradient. It still has to
+     be opaque enough for white control glyphs to stay legible over an
+     arbitrary video frame, so the alpha matches the old gradient's darkest
+     stop rather than its average. */
+  background: rgba(10, 8, 16, 0.82);
 }
 
 .player-controls-seek {
@@ -3417,8 +3781,11 @@ table.mtable {
   color: var(--on-secondary-container);
 }
 
+/* Derived from the success token rather than a literal green: the raw
+   rgba() stayed the same in dark mode, where a 10%-alpha light green over
+   a near-black playlist reads as grey rather than "done". */
 .lesson-nav-item.completed:not(.active) {
-  background: rgba(18, 132, 86, 0.1);
+  background: color-mix(in srgb, var(--success-container) 45%, transparent);
 }
 
 .lesson-nav-item.completed .lead {
@@ -3576,11 +3943,71 @@ table.mtable {
   }
 }
 
-@media (max-width: 480px) {
+/* ---------- Phone layout ----------
+   The product targets two form factors: desktop, and a phone the size of
+   a Pixel 7 (412 × 915 CSS px). Everything below is written against that
+   412px width. The intermediate 1180/860 breakpoints above still exist —
+   they're what makes a resized desktop window degrade sensibly on the way
+   down — but this block is the one that has to be right, because it's a
+   real device rather than a waypoint. */
+@media (max-width: 640px) {
+  /* Two tiles per row, not one: a single stat tile stretched across
+     412px is mostly empty space, and four of them turn the top of every
+     dashboard into a full screen of scrolling before any content. */
   .tiles {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
+  /* Title and actions each get their own row. `.section-head` is
+     `space-between` with no wrap, so a header with three buttons (admin
+     users) squeezed the <h1> down to a couple of characters. */
+  .section-head {
+    flex-wrap: wrap;
+  }
+
+  .section-head>.actions {
+    width: 100%;
+  }
+
+  .section-head>.actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .card {
+    padding: calc(16px * var(--space-scale));
+  }
+
+  .search-field {
+    max-width: none;
+  }
+
+  /* Tables keep their horizontal scroll on a phone — 760px of columns
+     cannot become 380px without either dropping data or shrinking text
+     past readable. Since scrollbars are hidden app-wide, the affordance
+     has to be explicit, hence the hint. `position: sticky` pins it to the
+     start edge so it stays put while the table scrolls beneath it. */
+  .table-wrap::before {
+    content: 'اسحب الجدول أفقيًا لعرض باقي الأعمدة';
+    display: block;
+    position: sticky;
+    inset-inline-start: 0;
+    width: max-content;
+    max-width: 100%;
+    padding: 10px 16px 0;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+  }
+
+  .mtable th,
+  .mtable td {
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 480px) {
   .course-card .row {
     flex-direction: column;
     align-items: stretch;
@@ -3776,6 +4203,25 @@ table.mtable {
   .form-dialog-card {
     padding: 18px;
   }
+}
+
+/* ---------- Developer tools ----------
+   Only ever rendered under `import.meta.env.DEV`. Deliberately styled to
+   look unlike the rest of the product — dashed border, warning tone — so
+   nobody mistakes a simulated payment for a real one in a screenshot. */
+.dev-tools {
+  border: 1px dashed var(--outline);
+  background: var(--surface-container);
+  gap: 12px;
+}
+
+.dev-tools-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--on-surface-variant);
 }
 
 /* ---------- Toast ---------- */
@@ -3986,11 +4432,6 @@ table.mtable {
     position: static;
     flex-direction: row;
     overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .settings-nav::-webkit-scrollbar {
-    display: none;
   }
 
   .settings-nav .nav-item {
@@ -4018,9 +4459,9 @@ table.mtable {
 }
 
 /* A real <input type="color"> filling a proper rounded-square preview —
-   deliberately not a small circle: this is the one and only control for
-   picking the accent (no preset swatches beside it), so it needs to read
-   as a real, substantial form field rather than a decoration. */
+   deliberately not a small circle, so it reads as a real form field
+   rather than a decoration. The preset row below (.accent-suggestions)
+   is the fast path; this is the precise one. */
 .color-picker-swatch {
   position: relative;
   flex: none;
@@ -4041,6 +4482,44 @@ table.mtable {
   cursor: pointer;
   border: none;
   padding: 0;
+}
+
+/* ---------- Accent suggestions ---------- */
+.accent-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accent-suggestions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.accent-suggestion-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--outline-variant);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  transition: transform 0.12s ease;
+}
+
+.accent-suggestion-swatch:hover {
+  transform: scale(1.08);
+}
+
+.accent-suggestion-swatch.selected {
+  border-color: var(--on-surface);
+  box-shadow: 0 0 0 2px var(--surface-container-low), 0 0 0 3px var(--on-surface);
+}
+
+.accent-suggestion-swatch .ms {
+  font-size: 18px;
 }
 
 /* ---------- Corner style preview swatch ---------- */
@@ -4111,21 +4590,69 @@ table.mtable {
   gap: 28px;
 }
 
-.profile-header {
-  display: flex;
+/* Identity block: avatar leading, text stacked beside it and aligned to
+   the same inline edge as every card below, so the page has one text
+   margin instead of one centred heading and one start-aligned body. */
+.profile-identity-card {
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+  border-radius: calc(24px * var(--radius-scale));
+  padding: calc(24px * var(--space-scale));
 }
 
-.profile-header-name {
-  flex: 1;
+.profile-identity-text {
   min-width: 0;
-  text-align: center;
-  font-size: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.profile-identity-name {
+  font-family: var(--heading);
+  font-size: 21px;
   font-weight: 700;
+  line-height: 1.3;
+  color: var(--on-surface);
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.profile-identity-email {
+  font-size: 13.5px;
+  color: var(--on-surface-variant);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-identity-text .chip {
+  margin-top: 6px;
+}
+
+.profile-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.profile-card-sub {
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+}
+
+.profile-nav-title {
+  margin-bottom: 2px;
 }
 
 .profile-avatar-wrap {
@@ -4228,18 +4755,27 @@ table.mtable {
   margin: 0;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .profile-page {
     gap: 22px;
   }
 
-  .profile-header-name {
-    font-size: 17px;
+  /* Stacked and centred on a phone: at 412px the avatar plus a long
+     Arabic name side by side leaves the name about 8 characters wide. */
+  .profile-identity-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .profile-identity-text {
+    align-items: center;
+    width: 100%;
   }
 
   .profile-avatar-lg {
-    width: 72px;
-    height: 72px;
+    width: 76px;
+    height: 76px;
   }
 
   .profile-form-card {

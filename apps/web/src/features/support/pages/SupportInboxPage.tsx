@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
+import { useDebouncedValue } from '../../../shared/hooks/useDebouncedValue'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { SupportInboxSkeleton } from '../components/SupportInboxSkeleton'
 import { TicketStatusBadge } from '../components/TicketStatusBadge'
@@ -21,6 +25,11 @@ const STATUS_FILTERS: { value: SupportTicketStatus | undefined; label: string; c
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
+
+const PAGE_SIZE = 10
+
+/** This page already filters `filteredTickets` itself. */
+const NO_CLIENT_FILTER = () => ''
 
 function getEmptyStateProps(status?: SupportTicketStatus) {
   switch (status) {
@@ -64,7 +73,13 @@ export function SupportInboxPage() {
   const [selectedStatus, setSelectedStatus] = useState<SupportTicketStatus | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: allTickets, isLoading, error, refetch } = useStaffTickets({ search: searchQuery })
+  // Debounced before it reaches the endpoint; the client-side narrowing
+  // below still runs off the live value so typing feels immediate.
+  const debouncedSearch = useDebouncedValue(searchQuery)
+
+  const { data: allTickets, isLoading, error, refetch } = useStaffTickets({
+    search: debouncedSearch,
+  })
 
   const filteredTickets = useMemo(() => {
     let list = allTickets
@@ -84,6 +99,11 @@ export function SupportInboxPage() {
     }
     return list
   }, [allTickets, selectedStatus, searchQuery])
+
+  // This page keeps its own search box (it matches the ticket UUID, which
+  // the shared field's Arabic folding would mangle), so the hook only
+  // paginates — `searchQuery` is passed purely to reset to page 1.
+  const list = usePaginatedList(filteredTickets, NO_CLIENT_FILTER, PAGE_SIZE, searchQuery)
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -116,26 +136,13 @@ export function SupportInboxPage() {
       </div>
 
       <div className="support-controls-section">
-        <div className="support-search-field">
-          <span className="ms search-icon" aria-hidden="true">search</span>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ابحث في طلبات الدعم..."
-            aria-label="ابحث في طلبات الدعم"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="icon-btn clear-search-btn"
-              onClick={() => setSearchQuery('')}
-              aria-label="مسح البحث"
-            >
-              <span className="ms">close</span>
-            </button>
-          )}
-        </div>
+        <SearchField
+          id="support-inbox-search"
+          label="بحث في طلبات الدعم"
+          placeholder="ابحث بعنوان الطلب أو اسم الطالب أو رقم الطلب..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
 
         <div className="support-status-filters" role="tablist" aria-label="تصفية طلبات الدعم">
           {STATUS_FILTERS.map((filter) => {
@@ -173,7 +180,7 @@ export function SupportInboxPage() {
         )
       ) : (
         <div className="support-tickets-list">
-          {filteredTickets.map((ticket) => (
+          {list.pageItems.map((ticket) => (
             <Link
               key={ticket.id}
               to={`${detailPathPrefix}/${ticket.id}`}
@@ -215,6 +222,17 @@ export function SupportInboxPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="طلب"
+        />
       )}
     </>
   )

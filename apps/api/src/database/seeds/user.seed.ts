@@ -114,6 +114,8 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
     );
   }
 
+  await reassignOrphanedCourses(dataSource, teacher.id);
+
   return {
     teacher,
     assistant,
@@ -122,6 +124,37 @@ export async function seedUsers(dataSource: DataSource): Promise<SeededUsers> {
     assistants: [assistant, ...extraAssistants],
     students: [student, ...extraStudents],
   };
+}
+
+/**
+ * The platform is single-teacher by design — `ux_users_single_teacher`
+ * (migration 1785000091000) allows exactly one active `teacher`, and that
+ * same migration demoted every extra teacher an older seed had created
+ * into an `assistant` without moving the courses they owned.
+ *
+ * That left `courses.teacher_id` pointing at an assistant, which is not a
+ * state the app can represent: the owner shows up in the teacher surface
+ * as somebody who cannot actually be a course owner. Re-point any such
+ * course at the one real teacher so the seeded data matches the model.
+ */
+async function reassignOrphanedCourses(
+  dataSource: DataSource,
+  teacherId: string,
+): Promise<void> {
+  const result = await dataSource.query(
+    `UPDATE courses
+        SET teacher_id = $1
+      WHERE teacher_id <> $1
+        AND deleted_at IS NULL
+      RETURNING id`,
+    [teacherId],
+  );
+  const moved = Array.isArray(result) ? result.length : 0;
+  if (moved > 0) {
+    console.log(
+      `    courses:        ${moved} re-pointed to the single teacher (were owned by a demoted account)`,
+    );
+  }
 }
 
 async function upsertUser(

@@ -57,6 +57,7 @@ export function CheckoutPage() {
     createError,
     confirmError,
     paymobError,
+    pay,
     payWithPaymob,
     retryCreate,
   } = useCheckout(courseId ?? '')
@@ -191,17 +192,48 @@ export function CheckoutPage() {
           {isInitiatingPaymob ? 'جاري التحويل إلى صفحة الدفع...' : declined ? 'إعادة المحاولة' : 'ادفع الآن'}
         </button>
 
-        {/* Test-only trigger for the deterministic adapter's decline path
-            (docs/api/sprint3-commerce.md) — there is no real card entry in
-            this sprint's checkout, so this is how the retryable-failure
-            state gets exercised. */}
-        <button
-          className="btn text"
-          onClick={() => navigate(ROUTE_PATHS.STUDENT.BROWSE)}
-        >
-          محاكاة رفض الدفع (تجريبي)
+        <button className="btn text" onClick={() => navigate(ROUTE_PATHS.STUDENT.BROWSE)}>
+          الرجوع للدورات
         </button>
       </div>
+
+      {/* Development-only shortcuts around the payment provider.
+          `POST /checkout/orders/:ref/confirm` takes a `simulate` flag that
+          the deterministic test adapter honours, so both outcomes can be
+          reached without Paymob credentials or a real card — which is the
+          only way to exercise the post-purchase flows (enrollment, the
+          paid-order receipt, the decline retry) locally.
+
+          Gated on import.meta.env.DEV so the block is dropped at build
+          time and can never reach a production bundle. The previous
+          "محاكاة رفض الدفع" button shipped to every user and did not
+          simulate anything — it navigated to /student/browse. */}
+      {import.meta.env.DEV && (
+        <div className="card section dev-tools">
+          <p className="dev-tools-title">
+            <span className="ms sm">construction</span>
+            أدوات المطوّر — لا تظهر في الإصدار النهائي
+          </p>
+          <div className="actions">
+            <button
+              className="btn tonal"
+              onClick={() => void pay('success')}
+              disabled={isConfirming || isInitiatingPaymob}
+            >
+              <span className="ms" aria-hidden="true">check_circle</span>
+              {isConfirming ? 'جارٍ التأكيد...' : 'محاكاة نجاح الدفع'}
+            </button>
+            <button
+              className="btn outlined"
+              onClick={() => void pay('decline')}
+              disabled={isConfirming || isInitiatingPaymob}
+            >
+              <span className="ms" aria-hidden="true">cancel</span>
+              محاكاة رفض الدفع
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }

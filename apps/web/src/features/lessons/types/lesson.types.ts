@@ -1,9 +1,16 @@
 export type LessonProgressStatus = 'not_started' | 'in_progress' | 'completed'
 
+export type VideoModerationStatus = 'pending' | 'approved' | 'rejected'
+
 export interface LessonVideo {
   id: string
-  url: string
+  // Null when the video hasn't cleared moderation. Students always get
+  // null in that case; teachers get the real URL so they can review it.
+  url: string | null
   durationSeconds: number | null
+  moderationStatus: VideoModerationStatus
+  // Teacher-only — the API sends null to students.
+  moderationReason: string | null
 }
 
 export interface LessonProgress {

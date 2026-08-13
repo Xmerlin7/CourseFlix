@@ -27,6 +27,22 @@ const CORNER_PREVIEW_RADIUS: Record<CornerStyle, number> = {
   round: 20,
 }
 
+// A handful of hand-picked hues, not a generated ramp: `useAccentColor`
+// derives the whole Material palette from whatever hex the user gives
+// it, and a random or evenly-spaced set of hues produced several muddy
+// or low-contrast results once run through that derivation. These eight
+// are ones that hold up well as both the default violet's alternatives
+// and across light/dark.
+const SUGGESTED_ACCENTS: Array<{ hex: string; label: string }> = [
+  { hex: '#65558F', label: 'بنفسجي (افتراضي)' },
+  { hex: '#2E5C8A', label: 'أزرق' },
+  { hex: '#1B6B5C', label: 'أخضر مزرق' },
+  { hex: '#2E7D46', label: 'أخضر' },
+  { hex: '#8A6D1B', label: 'كهرماني' },
+  { hex: '#B24A1E', label: 'برتقالي محروق' },
+  { hex: '#A02F5A', label: 'وردي غامق' },
+]
+
 const FONT_LABEL: Record<FontFamily, string> = {
   cairo: 'Cairo',
   tajawal: 'Tajawal',
@@ -131,6 +147,28 @@ export function AppearanceSettingsForm() {
               maxLength={7}
               onChange={(event) => handleHexInputChange(event.target.value)}
             />
+          </div>
+        </div>
+
+        <div className="accent-suggestions">
+          <span className="hint">أو اختار من الاقتراحات</span>
+          <div className="accent-suggestions-row">
+            {SUGGESTED_ACCENTS.map((suggestion) => (
+              <button
+                key={suggestion.hex}
+                type="button"
+                className={`accent-suggestion-swatch${hex.toUpperCase() === suggestion.hex ? ' selected' : ''}`}
+                style={{ background: suggestion.hex }}
+                title={suggestion.label}
+                aria-label={suggestion.label}
+                aria-pressed={hex.toUpperCase() === suggestion.hex}
+                onClick={() => setHex(suggestion.hex)}
+              >
+                {hex.toUpperCase() === suggestion.hex && (
+                  <span className="ms fill" aria-hidden="true">check</span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 

@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { showToast } from '../../../shared/components/Toast'
 import { createSupportTicket, type CreateTicketInput } from '../api/support.api'
 import { CreateTicketDialog } from '../components/CreateTicketDialog'
@@ -23,6 +26,8 @@ const STATUS_FILTERS: { value: SupportTicketStatus | undefined; label: string; c
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
+
+const PAGE_SIZE = 10
 
 function getEmptyStateProps(status?: SupportTicketStatus) {
   switch (status) {
@@ -69,6 +74,13 @@ export function SupportTicketsPage() {
     if (!selectedStatus) return allTickets
     return allTickets.filter((t) => t.status === selectedStatus)
   }, [allTickets, selectedStatus])
+
+  const toHaystack = useCallback(
+    (ticket: (typeof allTickets)[number]) =>
+      `${ticket.subject} ${ticket.courseTitle ?? ''} ${SUPPORT_TICKET_CATEGORY_LABELS[ticket.category]} ${ticket.id}`,
+    [],
+  )
+  const list = usePaginatedList(filteredTickets, toHaystack, PAGE_SIZE)
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -137,9 +149,24 @@ export function SupportTicketsPage() {
         })}
       </div>
 
+      <SearchField
+        id="my-tickets-search"
+        label="بحث في طلباتك"
+        placeholder="ابحث بعنوان الطلب أو الدورة أو رقم الطلب..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {error ? (
         <ErrorState onRetry={refetch} />
-      ) : filteredTickets.length === 0 ? (
+      ) : list.isEmptyResult ? (
+        <EmptyState
+          title="لا توجد نتائج"
+          message="مفيش طلبات مطابقة لبحثك، جرّب كلمة تانية"
+          actionLabel="مسح البحث"
+          onAction={() => list.search('')}
+        />
+      ) : list.pageItems.length === 0 ? (
         <EmptyState
           title={emptyProps.title}
           message={emptyProps.message}
@@ -148,7 +175,7 @@ export function SupportTicketsPage() {
         />
       ) : (
         <div className="support-tickets-list">
-          {filteredTickets.map((ticket) => (
+          {list.pageItems.map((ticket) => (
             <Link
               key={ticket.id}
               to={`/student/support/${ticket.id}`}
@@ -188,7 +215,16 @@ export function SupportTicketsPage() {
         </div>
       )}
 
-
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="طلب"
+        />
+      )}
 
       <CreateTicketDialog
         open={isCreating}

@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { type FormEvent, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { EXAM_GENERATION_STATUS } from '../../../shared/lib/status-labels'
@@ -7,6 +7,8 @@ import { handleChatInputKeyDown } from '../../../shared/utils/chatInput'
 import type { CourseDetail } from '../../courses/types/course.types'
 import { useExamGenerationRequest } from '../hooks/useExamGenerationRequest'
 import { useExamGenerationRequests } from '../hooks/useExamGenerationRequests'
+import { Pagination } from '../../../shared/components/Pagination'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import type {
   ExamDifficulty,
   ExamGenerationRequestSummary,
@@ -63,8 +65,14 @@ function scopeLabel(request: ExamGenerationRequestSummary, course: CourseDetail)
   return lesson ? `درس: ${lesson.title}` : 'درس محذوف'
 }
 
+const PAGE_SIZE = 10
+
+/** Requests are ordered by date, not searched by name. */
+const NO_CLIENT_FILTER = () => ''
+
 export function ExamGenerationManager({ course }: ExamGenerationManagerProps) {
   const requests = useExamGenerationRequests(course.id)
+  const requestList = usePaginatedList(requests.data, NO_CLIENT_FILTER, PAGE_SIZE)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [form, setForm] = useState<RequestForm>(emptyForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -304,7 +312,7 @@ export function ExamGenerationManager({ course }: ExamGenerationManagerProps) {
         <p className="subtitle">لسه مفيش طلبات اختبار بالذكاء الاصطناعي</p>
       ) : (
         <div className="list">
-          {requests.data.map((request) => {
+          {requestList.pageItems.map((request) => {
             const status = EXAM_GENERATION_STATUS[request.status]
             return (
               <button
@@ -334,6 +342,17 @@ export function ExamGenerationManager({ course }: ExamGenerationManagerProps) {
             )
           })}
         </div>
+      )}
+
+      {requestList.hasPages && (
+        <Pagination
+          page={requestList.page}
+          totalPages={requestList.totalPages}
+          onPageChange={requestList.setPage}
+          matchCount={requestList.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="طلب"
+        />
       )}
 
       {selectedRequestId && (

@@ -29,11 +29,20 @@ export interface UpdateCourseFields {
   status?: 'draft' | 'published';
 }
 
+/**
+ * `\p{L}\p{N}` with the `u` flag, not `\w`.
+ *
+ * `\w` is ASCII-only, so the previous `[^\w\s-]` strip deleted every
+ * Arabic character in the title — and this is an Arabic-first product, so
+ * *every* real course slugified to the empty string. The first one took
+ * the empty slug and every one after it collided. Arabic in a URL path is
+ * valid and percent-encodes cleanly, so there's no reason to drop it.
+ */
 function slugify(title: string): string {
   return title
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
     .replace(/[\s_]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .substring(0, 200);
@@ -111,29 +120,42 @@ export class CoursesService {
     courseId: string,
     viewer: AuthenticatedUser,
   ): Promise<CourseDetailResponseDto> {
-    // Non-teacher viewers (students) never see draft lessons here, same
-    // as loadCourseOutline in lessons.service.ts — otherwise a draft
-    // sitting between two published lessons shows up in the student's
-    // own outline as a lesson they can never complete.
+    // Only real students never see draft lessons here, same as
+    // loadCourseOutline in lessons.service.ts — otherwise a draft sitting
+    // between two published lessons shows up in the student's own
+    // outline as a lesson they can never complete. Teachers, the
+    // assistants scoped to them, and admins all need the full outline.
     const course = await this.loadCourseWithSectionsAndLessons(
       courseId,
-      viewer.role !== 'teacher',
+      viewer.role === 'student',
     );
     if (!course) {
       throw new NotFoundException('Course not found.');
     }
 
-    const canEdit = course.teacherId === viewer.id;
+    // Same rule as common/utils/scope-teacher-id: an assistant manages
+    // exactly what their teacher owns. The platform is single-teacher
+    // (ux_users_single_teacher), so an assistant never legitimately owns
+    // a course — the seed re-points any such leftover at the real teacher.
+    const ownerId =
+      viewer.role === 'assistant' ? viewer.managedByTeacherId : viewer.id;
+    const canEdit = ownerId !== null && course.teacherId === ownerId;
 
-    if (viewer.role === 'teacher') {
+    if (viewer.role === 'teacher' || viewer.role === 'assistant') {
       if (!canEdit) {
         throw new ForbiddenException('You do not own this course.');
       }
-    } else {
+    } else if (viewer.role !== 'admin') {
+      // Students only — admins bypass both ownership and enrollment,
+      // same as getCourseDetailForAdmin.
       await this.enrollmentsService.assertStudentEnrolled(viewer.id, courseId);
     }
 
-    return this.toDetailDto(course, canEdit);
+    return this.toDetailDto(
+      course,
+      canEdit,
+      canEdit ? await this.loadVideoModerationByLessonId(course) : undefined,
+    );
   }
 
   // Deliberately not enrollment-gated, unlike getCourseDetail — this is
@@ -151,11 +173,17 @@ export class CoursesService {
 
     let enrolledCourseIds = new Set<string>();
     if (viewer.role === 'student') {
+      // Same entitlement rule as assertStudentEnrolled: a completed course
+      // is still owned, so it must not show a "شراء" button offering to
+      // sell it back to the student who already finished it.
       const enrollments = await this.enrollmentsService.findStudentEnrollments(
         viewer.id,
-        { status: 'active' },
       );
-      enrolledCourseIds = new Set(enrollments.map((e) => e.courseId));
+      enrolledCourseIds = new Set(
+        enrollments
+          .filter((e) => e.status === 'active' || e.status === 'completed')
+          .map((e) => e.courseId),
+      );
     }
 
     return courses.map((course) => ({
@@ -181,7 +209,11 @@ export class CoursesService {
     if (!course) {
       throw new NotFoundException('Course not found.');
     }
-    return this.toDetailDto(course, true);
+    return this.toDetailDto(
+      course,
+      true,
+      await this.loadVideoModerationByLessonId(course),
+    );
   }
 
   async findOwnedCourses(
@@ -237,6 +269,37 @@ export class CoursesService {
     });
   }
 
+  /**
+   * A slug no existing row holds — including soft-deleted ones.
+   *
+   * The old check filtered on `deletedAt: IsNull()` while the unique
+   * index does not, so deleting a course left its slug occupied and the
+   * next course with that title failed on a constraint violation the
+   * service thought it had already avoided.
+   */
+  private async buildUniqueSlug(title: string): Promise<string> {
+    // Empty is reachable for a title made only of punctuation or emoji.
+    const base = slugify(title) || 'course';
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate =
+        attempt === 0
+          ? base
+          : `${base}-${Math.random().toString(36).slice(2, 8)}`;
+      // `withDeleted` is the point of this query — see the docblock.
+      const taken = await this.coursesRepository.findOne({
+        where: { slug: candidate },
+        withDeleted: true,
+        select: { id: true },
+      });
+      if (!taken) return candidate;
+    }
+
+    // Five collisions on a random 6-char suffix means something is very
+    // wrong; a timestamp suffix is guaranteed-ish and beats throwing.
+    return `${base}-${Date.now().toString(36)}`;
+  }
+
   async createCourse(
     teacherId: string,
     fields: {
@@ -246,13 +309,7 @@ export class CoursesService {
       gradeLevel?: string | null;
     },
   ): Promise<CourseEntity> {
-    let slug = slugify(fields.title);
-    const existing = await this.coursesRepository.findOne({
-      where: { slug, deletedAt: IsNull() },
-    });
-    if (existing) {
-      slug = `${slug}-${Date.now().toString(36)}`;
-    }
+    const slug = await this.buildUniqueSlug(fields.title);
 
     const course = this.coursesRepository.create({
       teacherId,
@@ -472,6 +529,13 @@ export class CoursesService {
       return;
     }
 
+    // YouTube videos are gated behind the worker's caption moderation
+    // check (see VideoIngestionProcessor) until it clears them; every
+    // other provider is visible immediately, same as before this gate
+    // existed. Re-evaluated on every URL change, not just creation — a
+    // teacher swapping in a new YouTube link must re-clear moderation.
+    const isYoutube = this.videoIngestionService.detectProvider(videoUrl) === 'youtube';
+
     const video = existingVideo
       ? Object.assign(existingVideo, {
           courseId: lesson.courseId,
@@ -480,6 +544,9 @@ export class CoursesService {
           videoUrl,
           type: 'recorded' as const,
           status: 'recorded' as const,
+          moderationStatus: isYoutube ? ('pending' as const) : ('approved' as const),
+          moderationReason: null,
+          moderationCheckedAt: null,
         })
       : this.videosRepository.create({
           courseId: lesson.courseId,
@@ -490,6 +557,7 @@ export class CoursesService {
           type: 'recorded',
           status: 'recorded',
           durationSeconds: null,
+          moderationStatus: isYoutube ? 'pending' : 'approved',
         });
 
     const savedVideo = await this.videosRepository.save(video);
@@ -565,9 +633,32 @@ export class CoursesService {
       .getOne();
   }
 
+  /**
+   * Moderation state lives on `videos`, not `lessons`, so it has to be
+   * fetched alongside the outline. Only loaded for viewers who can edit
+   * (teacher/assistant) — students have no use for it and the rejection
+   * reason must never reach them.
+   */
+  private async loadVideoModerationByLessonId(
+    course: CourseEntity,
+  ): Promise<Map<string, VideoEntity>> {
+    const lessonIds = (course.sections ?? []).flatMap((section) =>
+      (section.lessons ?? []).map((lesson) => lesson.id),
+    );
+    if (lessonIds.length === 0) {
+      return new Map();
+    }
+
+    const videos = await this.videosRepository.find({
+      where: { lessonId: In(lessonIds), deletedAt: IsNull() },
+    });
+    return new Map(videos.map((video) => [video.lessonId!, video]));
+  }
+
   private toDetailDto(
     course: CourseEntity,
     canEdit: boolean,
+    videosByLessonId: Map<string, VideoEntity> = new Map(),
   ): CourseDetailResponseDto {
     return {
       id: course.id,
@@ -587,13 +678,18 @@ export class CoursesService {
         title: section.title,
         sortOrder: section.sortOrder,
         status: section.status,
-        lessons: (section.lessons ?? []).map((lesson) => ({
-          id: lesson.id,
-          title: lesson.title,
-          videoUrl: lesson.videoUrl,
-          sortOrder: lesson.sortOrder,
-          status: lesson.status,
-        })),
+        lessons: (section.lessons ?? []).map((lesson) => {
+          const video = videosByLessonId.get(lesson.id);
+          return {
+            id: lesson.id,
+            title: lesson.title,
+            videoUrl: lesson.videoUrl,
+            sortOrder: lesson.sortOrder,
+            status: lesson.status,
+            videoModerationStatus: video?.moderationStatus ?? null,
+            videoModerationReason: video?.moderationReason ?? null,
+          };
+        }),
       })),
     };
   }

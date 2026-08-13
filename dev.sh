@@ -663,3 +663,4 @@ case "$COMMAND" in
   status) cmd_status ;;
   logs)   cmd_logs ;;
 esac
+

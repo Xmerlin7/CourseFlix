@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AssistantActionsModule } from '../assistant-actions/assistant-actions.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderItemEntity } from '../commerce/entities/order-item.entity';
 import { OrderEntity } from '../commerce/entities/order.entity';
@@ -17,6 +18,7 @@ import { TeacherService } from './teacher.service';
   // CoursesModule) for TeacherController's AuthGuard to resolve
   // SessionsService within this module's DI context (CF-BUG-001).
   imports: [
+    AssistantActionsModule,
     TypeOrmModule.forFeature([
       UserEntity,
       EnrollmentEntity,

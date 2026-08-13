@@ -4,6 +4,10 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
+import { useDebouncedValue } from '../../../shared/hooks/useDebouncedValue'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { USER_ROLE_LABEL, USER_STATUS_LABEL } from '../lib/user-labels'
 import { useAdminUsers } from '../hooks/useAdminUsers'
@@ -12,6 +16,11 @@ import type { UserStatus } from '../types/admin.types'
 
 type RoleFilter = UserRole | 'all'
 type StatusFilter = UserStatus | 'all'
+
+const PAGE_SIZE = 10
+
+/** The endpoint filters; usePaginatedList must not filter again. */
+const NO_CLIENT_FILTER = () => ''
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -22,11 +31,20 @@ export function AdminUsersPage() {
   const [status, setStatus] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
 
+  // The endpoint does the searching, so the term is debounced before it
+  // reaches the hook — otherwise every keystroke is its own request.
+  const debouncedSearch = useDebouncedValue(search)
+
   const { data, isLoading, error, refetch } = useAdminUsers({
     role: role === 'all' ? undefined : role,
     status: status === 'all' ? undefined : status,
-    search: search.trim() || undefined,
+    search: debouncedSearch.trim() || undefined,
   })
+
+  // `search` is applied by the endpoint (it matches fields the client
+  // never receives), so the hook only paginates here — hence the fourth
+  // argument and the no-op haystack.
+  const list = usePaginatedList(data, NO_CLIENT_FILTER, PAGE_SIZE, debouncedSearch)
 
   return (
     <>
@@ -79,15 +97,13 @@ export function AdminUsersPage() {
         ))}
       </div>
 
-      <div className="tf section" style={{ maxWidth: 360 }}>
-        <label htmlFor="admin-users-search">بحث بالاسم أو البريد أو معرف تتبع الفيديو (ID)</label>
-        <input
-          id="admin-users-search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="اسم، بريد إلكتروني، أو الكود الظاهر على فيديو مسرّب..."
-        />
-      </div>
+      <SearchField
+        id="admin-users-search"
+        label="بحث بالاسم أو البريد أو معرف تتبع الفيديو"
+        placeholder="اسم، بريد إلكتروني، أو كود فيديو مسرّب..."
+        value={search}
+        onChange={setSearch}
+      />
 
       {isLoading && <LoadingState variant="list" />}
 
@@ -103,7 +119,7 @@ export function AdminUsersPage() {
         <EmptyState fullPage title="لا توجد نتائج" message="غيّر الفلاتر أو مصطلح البحث" />
       )}
 
-      {!isLoading && !error && data && data.length > 0 && (
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="table-wrap section">
           <table className="mtable">
             <thead>
@@ -117,7 +133,7 @@ export function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {data.map((user) => {
+              {list.pageItems.map((user) => {
                 const roleLabel = USER_ROLE_LABEL[user.role]
                 const statusLabel = USER_STATUS_LABEL[user.status]
                 return (
@@ -147,6 +163,17 @@ export function AdminUsersPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!isLoading && !error && list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="مستخدم"
+        />
       )}
     </>
   )

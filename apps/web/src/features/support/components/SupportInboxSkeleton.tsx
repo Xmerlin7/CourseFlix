@@ -7,8 +7,12 @@ export function SupportInboxSkeleton() {
         <div className="skeleton" style={{ height: 28, width: 200, borderRadius: 8 }} />
       </div>
 
+      <div className="tf search-field section">
+        <div className="skeleton" style={{ height: 13, width: 160, borderRadius: 6, marginBottom: 7 }} />
+        <div className="skeleton" style={{ height: 44, width: '100%', borderRadius: 14 }} />
+      </div>
+
       <div className="flex" style={{ gap: 10, marginBottom: 16 }}>
-        <div className="skeleton" style={{ height: 40, width: '100%', maxWidth: 320, borderRadius: 12 }} />
         <div className="skeleton" style={{ height: 40, width: 140, borderRadius: 12 }} />
         <div className="skeleton" style={{ height: 40, width: 140, borderRadius: 12 }} />
       </div>

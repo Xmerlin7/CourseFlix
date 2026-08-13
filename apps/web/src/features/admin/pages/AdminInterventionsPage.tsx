@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { showToast } from '../../../shared/components/Toast'
 import { useAdminInterventions } from '../hooks/useAdminInterventions'
@@ -11,7 +14,7 @@ import {
   deleteAdminIntervention,
   updateAdminInterventionStatus,
 } from '../api/admin-interventions.api'
-import type { InterventionStatus } from '../types/admin.types'
+import type { InterventionStatus, AdminInterventionListItem } from '../types/admin.types'
 
 const RULE_LABELS: Record<string, string> = {
   low_quiz_score: 'نتيجة اختبار منخفضة',
@@ -20,6 +23,8 @@ const RULE_LABELS: Record<string, string> = {
 }
 
 type StatusFilter = InterventionStatus | 'all'
+
+const PAGE_SIZE = 10
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -33,6 +38,9 @@ export function AdminInterventionsPage() {
   const { data, isLoading, error, refetch } = useAdminInterventions({
     status: status === 'all' ? undefined : status,
   })
+
+  const toHaystack = useCallback((item: AdminInterventionListItem) => `${item.studentName} ${item.teacherName} ${item.weakConcept} ${RULE_LABELS[item.ruleKey] ?? item.ruleKey}`, [])
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
 
   async function handleToggleStatus(id: string, current: InterventionStatus) {
     setBusyId(id)
@@ -90,6 +98,14 @@ export function AdminInterventionsPage() {
         </p>
       )}
 
+      <SearchField
+        id="admin-interventions-search"
+        label="بحث في التنبيهات"
+        placeholder="ابحث باسم الطالب أو المفهوم..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {isLoading && <LoadingState variant="list" />}
 
       {!isLoading && error && (
@@ -100,7 +116,11 @@ export function AdminInterventionsPage() {
         <EmptyState fullPage title="لا توجد تنبيهات" message="مفيش تنبيهات مطابقة للفلتر الحالي" />
       )}
 
-      {!isLoading && !error && data && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState fullPage title="لا توجد نتائج" message="مفيش نتائج مطابقة لبحثك، جرّب كلمة تانية" />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="table-wrap section">
           <table className="mtable">
             <thead>
@@ -114,7 +134,7 @@ export function AdminInterventionsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.map((item) => (
+              {list.pageItems.map((item) => (
                 <tr key={item.id}>
                   <td>{item.studentName}</td>
                   <td>{item.teacherName}</td>
@@ -155,6 +175,17 @@ export function AdminInterventionsPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!isLoading && !error && list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="تنبيه"
+        />
       )}
 
       <ConfirmModal

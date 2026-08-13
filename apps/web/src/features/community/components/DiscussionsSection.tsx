@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
@@ -22,6 +24,11 @@ const STATUS_FILTERS: { value: DiscussionStatusFilter; label: string }[] = [
   { value: 'mine', label: 'أسئلتي' },
 ]
 
+const PAGE_SIZE = 10
+
+/** The endpoint already filters — don't filter twice. */
+const NO_CLIENT_FILTER = () => ''
+
 export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -35,6 +42,10 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { data, isLoading, error, refetch } = useDiscussions(courseId, { status, search })
+
+  // The search box above posts its term to the endpoint, so the hook only
+  // paginates; `search` is passed so a new term returns to page 1.
+  const list = usePaginatedList(data, NO_CLIENT_FILTER, PAGE_SIZE, search)
 
   async function handleAsk(input: { title: string; body: string; tags: string[]; attachment: File | null }) {
     setIsSubmitting(true)
@@ -75,25 +86,33 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
       </div>
 
       <div className="support-controls-section" style={{ marginBottom: 20 }}>
-        <form onSubmit={handleSearchSubmit} className="support-search-field" style={{ margin: 0 }}>
-          <span className="ms search-icon" aria-hidden="true">search</span>
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="ابحث في المناقشات..."
-            aria-label="ابحث في المناقشات"
-          />
-          {searchInput && (
-            <button
-              type="button"
-              className="icon-btn clear-search-btn"
-              onClick={clearSearch}
-              aria-label="مسح البحث"
-            >
-              <span className="ms">close</span>
-            </button>
-          )}
+        {/* Shares SearchField's classes rather than the component itself:
+            this box submits on Enter (the endpoint does the searching, so
+            firing per keystroke would be a request per character), and
+            SearchField is a controlled live-filter input. Same markup, so
+            it looks identical to every other search box in the app. */}
+        <form onSubmit={handleSearchSubmit} className="tf search-field" style={{ margin: 0 }}>
+          <label htmlFor="discussions-search">بحث في المناقشات</label>
+          <div className="search-field-box">
+            <span className="ms search-field-icon" aria-hidden="true">search</span>
+            <input
+              id="discussions-search"
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="اكتب كلمة واضغط Enter للبحث..."
+            />
+            {searchInput && (
+              <button
+                type="button"
+                className="search-field-clear"
+                onClick={clearSearch}
+                aria-label="مسح البحث"
+              >
+                <span className="ms">close</span>
+              </button>
+            )}
+          </div>
         </form>
 
         <div className="support-status-filters" role="tablist" aria-label="تصفية المناقشات">
@@ -136,11 +155,24 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
           />
         )
       ) : (
-        <div className="support-tickets-list">
-          {data.map((thread) => (
-            <DiscussionCard key={thread.id} thread={thread} to={`${detailPathPrefix}/${thread.id}`} />
-          ))}
-        </div>
+        <>
+          <div className="support-tickets-list">
+            {list.pageItems.map((thread) => (
+              <DiscussionCard key={thread.id} thread={thread} to={`${detailPathPrefix}/${thread.id}`} />
+            ))}
+          </div>
+
+          {list.hasPages && (
+            <Pagination
+              page={list.page}
+              totalPages={list.totalPages}
+              onPageChange={list.setPage}
+              matchCount={list.matchCount}
+              pageSize={PAGE_SIZE}
+              itemLabel="مناقشة"
+            />
+          )}
+        </>
       )}
 
       <AskQuestionDialog
