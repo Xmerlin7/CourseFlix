@@ -28,6 +28,21 @@ export const handlers = [
 
   http.post(apiUrl("/auth/logout"), () => HttpResponse.json({ success: true })),
 
+  http.get(apiUrl("/public/auth-poster"), () =>
+    HttpResponse.json({
+      featuredCourseId: "course-1",
+      isFallback: false,
+      course: {
+        id: "course-1",
+        title: "الفيزياء الحديثة",
+        description: "مراجعة منظمة للطلاب قبل الامتحان.",
+        coverImageUrl: null,
+        gradeLevel: "الثالث الثانوي",
+        teacherName: "محمد عبدالرحمن",
+      },
+    }),
+  ),
+
   http.get(apiUrl("/courses/:courseId/announcements"), () => HttpResponse.json([])),
   http.get(apiUrl("/courses/:courseId/discussions"), () => HttpResponse.json([])),
 
