@@ -404,6 +404,44 @@ export const handlers = [
     }),
   ),
 
+  http.get(apiUrl("/teacher/quota"), () =>
+    HttpResponse.json({
+      monthlyAllowance: 100,
+      totalCredits: 100,
+      usedCredits: 25,
+      remainingCredits: 75,
+      percentUsed: 25,
+      resetAt: "2099-01-01T00:00:00.000Z",
+    }),
+  ),
+
+  http.get(apiUrl("/admin/quotas"), () =>
+    HttpResponse.json([
+      {
+        teacherId: "teacher-1",
+        teacherName: "معلم الفيزياء",
+        teacherEmail: "teacher@courseflix.local",
+        monthlyAllowance: 100,
+        totalCredits: 100,
+        usedCredits: 25,
+        remainingCredits: 75,
+        percentUsed: 25,
+        resetAt: "2099-01-01T00:00:00.000Z",
+      },
+    ]),
+  ),
+
+  http.post(apiUrl("/admin/quotas/:teacherId/top-up"), () =>
+    HttpResponse.json({
+      monthlyAllowance: 100,
+      totalCredits: 150,
+      usedCredits: 25,
+      remainingCredits: 125,
+      percentUsed: 17,
+      resetAt: "2099-01-01T00:00:00.000Z",
+    }),
+  ),
+
   http.delete(apiUrl("/admin/users/:userId"), () => new HttpResponse(null, { status: 204 })),
   http.delete(apiUrl("/admin/users/:userId/hard"), () => new HttpResponse(null, { status: 204 })),
 ];

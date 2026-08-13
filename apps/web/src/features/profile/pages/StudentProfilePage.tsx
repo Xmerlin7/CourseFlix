@@ -6,6 +6,7 @@ import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { showToast } from '../../../shared/components/Toast'
 import { APP_VERSION } from '../../../shared/lib/app-version'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { TeacherQuotaCard } from '../../teacher-billing/components/TeacherQuotaCard'
 import { updateProfile, uploadAvatar } from '../api/profile.api'
 import { AvatarPickerModal } from '../components/AvatarPickerModal'
 import type { UserRole } from '../../auth/types/auth.types'
@@ -237,6 +238,10 @@ export function StudentProfilePage() {
           </div>
         )}
       </form>
+
+      {/* Billing is teacher-only — assistants are blocked server-side on
+          the quota route and never reach this branch anyway. */}
+      {currentUser.role === 'teacher' && <TeacherQuotaCard />}
 
       <section className="section profile-nav-list">
         <h3 className="profile-card-title profile-nav-title">اختصارات</h3>

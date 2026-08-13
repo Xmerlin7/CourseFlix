@@ -11,6 +11,7 @@ import { useDebouncedValue } from '../../../shared/hooks/useDebouncedValue'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { USER_ROLE_LABEL, USER_STATUS_LABEL } from '../lib/user-labels'
 import { useAdminUsers } from '../hooks/useAdminUsers'
+import { useAdminQuotas } from '../../teacher-billing/hooks/useAdminQuotas'
 import type { UserRole } from '../../auth/types/auth.types'
 import type { UserStatus } from '../types/admin.types'
 
@@ -40,6 +41,11 @@ export function AdminUsersPage() {
     status: status === 'all' ? undefined : status,
     search: debouncedSearch.trim() || undefined,
   })
+
+  // Quota is a separate endpoint (admins only); joined client-side by
+  // teacher id so the users list stays one source of truth.
+  const { data: quotas } = useAdminQuotas()
+  const quotaByTeacherId = new Map((quotas ?? []).map((quota) => [quota.teacherId, quota]))
 
   // `search` is applied by the endpoint (it matches fields the client
   // never receives), so the hook only paginates here — hence the fourth
@@ -128,6 +134,7 @@ export function AdminUsersPage() {
                 <th>ID</th>
                 <th>الدور</th>
                 <th>الحالة</th>
+                <th>الحصة</th>
                 <th>آخر دخول</th>
                 <th>تاريخ الإنشاء</th>
               </tr>
@@ -136,6 +143,7 @@ export function AdminUsersPage() {
               {list.pageItems.map((user) => {
                 const roleLabel = USER_ROLE_LABEL[user.role]
                 const statusLabel = USER_STATUS_LABEL[user.status]
+                const quota = quotaByTeacherId.get(user.id)
                 return (
                   <tr key={user.id}>
                     <td>
@@ -154,6 +162,20 @@ export function AdminUsersPage() {
                     </td>
                     <td>
                       <span className={`chip ${statusLabel.chip}`}>{statusLabel.label}</span>
+                    </td>
+                    <td>
+                      {quota ? (
+                        <span
+                          className={`chip ${quota.percentUsed >= 80 ? 'red' : 'outline'}`}
+                          title={`المستخدم: ${quota.usedCredits} من ${quota.totalCredits} — متبقي ${quota.remainingCredits}`}
+                        >
+                          <bdi>
+                            {quota.remainingCredits}/{quota.totalCredits}
+                          </bdi>
+                        </span>
+                      ) : (
+                        <span className="meta">—</span>
+                      )}
                     </td>
                     <td>{user.lastLoginAt ? formatDate(user.lastLoginAt) : 'لم يسجل دخول بعد'}</td>
                     <td>{formatDate(user.createdAt)}</td>

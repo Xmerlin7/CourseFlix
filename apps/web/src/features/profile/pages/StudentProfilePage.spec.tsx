@@ -191,6 +191,36 @@ describe('StudentProfilePage', () => {
     expect(supportRow).toHaveAttribute('aria-disabled', 'true')
   })
 
+  it('shows the AI-credit quota card for a teacher, with the remaining balance', async () => {
+    renderPage({
+      auth: {
+        user: {
+          id: 'teacher-1',
+          email: 'teacher@example.com',
+          fullName: 'محمد عبدالرحمن',
+          role: 'teacher',
+          avatarUrl: null,
+        },
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+        register: vi.fn(),
+        verifyOtp: vi.fn(),
+        updateUser: vi.fn(),
+      },
+    })
+
+    expect(screen.getByText('حصتك الشهرية')).toBeInTheDocument()
+    expect(await screen.findByText('75')).toBeInTheDocument()
+    expect(screen.getByText(/بيتجدد أول كل شهر/)).toBeInTheDocument()
+  })
+
+  it('never shows the quota card to a student', () => {
+    renderPage()
+
+    expect(screen.queryByText('حصتك الشهرية')).not.toBeInTheDocument()
+  })
+
   it('never deletes immediately — requires confirming a destructive-action dialog first', async () => {
     const user = userEvent.setup()
     renderPage()
