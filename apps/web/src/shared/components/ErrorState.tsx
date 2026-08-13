@@ -24,10 +24,16 @@ export function ErrorState({
 
       {/* Text content */}
       <div className="space-y-2.5 max-w-md">
-        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 leading-snug">
+      {/* Design-system tokens, not Tailwind grays: every other heading and
+          body copy in the app is `--on-surface`/`--on-surface-variant`,
+          which the theme redefines per mode and the accent picker tunes.
+          The `text-gray-800 dark:text-gray-100` pair these carried was a
+          near-miss of both, so the error screens rendered in a slightly
+          different grey from the pages they interrupt. */}
+        <h3 className="text-2xl font-bold leading-snug" style={{ color: 'var(--on-surface)' }}>
           {title}
         </h3>
-        <p className="text-base text-gray-500 dark:text-gray-400 leading-relaxed">
+        <p className="text-base leading-relaxed" style={{ color: 'var(--on-surface-variant)' }}>
           {message}
         </p>
       </div>

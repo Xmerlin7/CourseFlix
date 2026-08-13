@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
 import { showToast } from '../../../shared/components/Toast'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import type { CourseDetail } from '../../courses/types/course.types'
 import {
   createTeacherQuiz,
@@ -101,8 +104,13 @@ function isValidQuestion(question: QuestionDraft): boolean {
   )
 }
 
+const PAGE_SIZE = 10
+
 export function TeacherQuizManager({ course }: TeacherQuizManagerProps) {
   const [quizzes, setQuizzes] = useState<TeacherQuiz[]>([])
+
+  const toHaystack = useCallback((quiz: TeacherQuiz) => quiz.title, [])
+  const list = usePaginatedList(quizzes, toHaystack, PAGE_SIZE)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [busyQuizId, setBusyQuizId] = useState<string | null>(null)
@@ -428,8 +436,21 @@ export function TeacherQuizManager({ course }: TeacherQuizManagerProps) {
       ) : quizzes.length === 0 ? (
         <p className="subtitle">لسه مفيش اختبارات في الكورس ده</p>
       ) : (
-        <div className="list">
-          {quizzes.map((quiz) => (
+        <>
+          <SearchField
+            id="teacher-quizzes-search"
+            label="بحث في الاختبارات"
+            placeholder="ابحث باسم الاختبار..."
+            value={list.query}
+            onChange={list.search}
+          />
+
+          {list.isEmptyResult && (
+            <p className="subtitle">مفيش اختبارات مطابقة لبحثك، جرّب كلمة تانية</p>
+          )}
+
+          <div className="list">
+            {list.pageItems.map((quiz) => (
             <div key={quiz.id} className="list-item">
               <span className="lead">
                 <span className="ms">quiz</span>
@@ -457,8 +478,20 @@ export function TeacherQuizManager({ course }: TeacherQuizManagerProps) {
                 </button>
               </span>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {list.hasPages && (
+            <Pagination
+              page={list.page}
+              totalPages={list.totalPages}
+              onPageChange={list.setPage}
+              matchCount={list.matchCount}
+              pageSize={PAGE_SIZE}
+              itemLabel="اختبار"
+            />
+          )}
+        </>
       )}
       <ConfirmModal
         open={deleteTargetQuiz !== null}

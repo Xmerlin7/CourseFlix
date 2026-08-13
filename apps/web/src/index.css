@@ -3698,8 +3698,11 @@ table.mtable {
   color: var(--on-secondary-container);
 }
 
+/* Derived from the success token rather than a literal green: the raw
+   rgba() stayed the same in dark mode, where a 10%-alpha light green over
+   a near-black playlist reads as grey rather than "done". */
 .lesson-nav-item.completed:not(.active) {
-  background: rgba(18, 132, 86, 0.1);
+  background: color-mix(in srgb, var(--success-container) 45%, transparent);
 }
 
 .lesson-nav-item.completed .lead {
