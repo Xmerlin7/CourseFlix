@@ -123,7 +123,7 @@ export function TeacherStudentsPage() {
         </div>
       </section>
 
-      <div className="tf section" style={{ maxWidth: 360 }}>
+      <div className="tf search-field section">
         <label htmlFor="teacher-students-id-search">البحث بمعرف تتبع الفيديو (ID)</label>
         <input
           id="teacher-students-id-search"

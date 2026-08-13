@@ -22,10 +22,14 @@ export function TeacherStudentsSkeleton() {
         ))}
       </section>
 
-      <div className="tf section" style={{ maxWidth: 360 }}>
-        <div className="skeleton" style={{ height: 13, width: 200, borderRadius: 6, marginBottom: 7 }} />
-        <div className="skeleton" style={{ height: 44, width: '100%', borderRadius: 14 }} />
-      </div>
+      {/* Two search fields on this page: the server-side ID lookup and
+          the client-side name/email box added with pagination. */}
+      {[200, 150].map((labelWidth) => (
+        <div key={labelWidth} className="tf search-field section">
+          <div className="skeleton" style={{ height: 13, width: labelWidth, borderRadius: 6, marginBottom: 7 }} />
+          <div className="skeleton" style={{ height: 44, width: '100%', borderRadius: 14 }} />
+        </div>
+      ))}
 
       <div className="actions section">
         {Array.from({ length: 3 }).map((_, i) => (
