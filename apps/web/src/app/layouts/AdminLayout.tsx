@@ -26,6 +26,7 @@ export function AdminLayout({ children }: PropsWithChildren) {
       <Sidebar
         role="admin"
         userName={user?.fullName ?? ''}
+        avatarUrl={user?.avatarUrl}
         activePath={location.pathname}
         onLogout={() => void handleLogout()}
         isRail={isRail}

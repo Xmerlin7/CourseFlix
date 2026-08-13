@@ -4,6 +4,7 @@ import { ROUTE_PATHS } from '../../app/routes/route-paths'
 export type SidebarProps = {
   role: 'student' | 'teacher' | 'admin' | 'assistant'
   userName: string
+  avatarUrl?: string | null
   activePath: string
   onLogout?: () => void
   isOpen?: boolean
@@ -97,6 +98,7 @@ const COMMUNITY_PATH = ROUTE_PATHS.STUDENT.COMMUNITY
 export function Sidebar({
   role,
   userName,
+  avatarUrl,
   onLogout,
   isOpen = true,
   isRail = false,
@@ -169,14 +171,14 @@ export function Sidebar({
             className={({ isActive }) => `nav-item profile-item${isActive ? ' active' : ''}`}
           >
             <span className="avatar">
-              <span className="ms">person</span>
+              {avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ms">person</span>}
             </span>
             <span className="lbl">{userName}</span>
           </NavLink>
         ) : (
           <div className="nav-item profile-item" title={userName}>
             <span className="avatar">
-              <span className="ms">person</span>
+              {avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ms">person</span>}
             </span>
             <span className="lbl">{userName}</span>
           </div>

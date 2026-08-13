@@ -40,6 +40,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 interface PendingMessage {
   localId: string
   authorName: string
+  authorAvatarUrl: string | null
   isStaffReply: boolean
   body: string
   createdAt: string
@@ -49,6 +50,7 @@ interface PendingMessage {
 interface RenderableMessage {
   key: string
   authorName: string
+  authorAvatarUrl: string | null
   isStaffReply: boolean
   body: string
   createdAt: string
@@ -79,6 +81,7 @@ export function SupportTicketDetailPage() {
     ...(data?.messages ?? []).map((message) => ({
       key: message.id,
       authorName: message.authorName,
+      authorAvatarUrl: message.authorAvatarUrl,
       isStaffReply: message.isStaffReply,
       body: message.body,
       createdAt: message.createdAt,
@@ -86,6 +89,7 @@ export function SupportTicketDetailPage() {
     ...confirmedExtra.map((message) => ({
       key: message.id,
       authorName: message.authorName,
+      authorAvatarUrl: message.authorAvatarUrl,
       isStaffReply: message.isStaffReply,
       body: message.body,
       createdAt: message.createdAt,
@@ -95,6 +99,7 @@ export function SupportTicketDetailPage() {
           {
             key: pending.localId,
             authorName: pending.authorName,
+            authorAvatarUrl: pending.authorAvatarUrl,
             isStaffReply: pending.isStaffReply,
             body: pending.body,
             createdAt: pending.createdAt,
@@ -138,6 +143,7 @@ export function SupportTicketDetailPage() {
     setPending({
       localId: `pending-${Date.now()}`,
       authorName: user?.fullName ?? (isStaff ? 'فريق الدعم' : 'أنت'),
+      authorAvatarUrl: user?.avatarUrl ?? null,
       isStaffReply: isStaff,
       body,
       createdAt: new Date().toISOString(),
@@ -257,6 +263,7 @@ export function SupportTicketDetailPage() {
               <MessageBubble
                 key={message.key}
                 authorName={message.authorName}
+                authorAvatarUrl={message.authorAvatarUrl}
                 isStaffReply={message.isStaffReply}
                 body={message.body}
                 createdAt={message.createdAt}

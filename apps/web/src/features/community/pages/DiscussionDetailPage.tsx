@@ -138,7 +138,13 @@ export function DiscussionDetailPage() {
             )}
           </div>
           <div className="discussion-author-badge">
-            <span className="ms sm" aria-hidden="true">account_circle</span>
+            {data.author.avatarUrl ? (
+              <span className="avatar" style={{ width: 20, height: 20 }}>
+                <img src={data.author.avatarUrl} alt="" />
+              </span>
+            ) : (
+              <span className="ms sm" aria-hidden="true">account_circle</span>
+            )}
             <span>{data.author.fullName}</span>
             {data.author.role === 'teacher' && <span className="chip sm primary">المدرس</span>}
           </div>
@@ -227,9 +233,15 @@ export function DiscussionDetailPage() {
               >
                 <div className="support-card-top" style={{ alignItems: 'center' }}>
                   <div className="discussion-author-badge">
-                    <span className="ms sm" aria-hidden="true">
-                      {isTeacherReply ? 'verified_user' : 'account_circle'}
-                    </span>
+                    {reply.author.avatarUrl ? (
+                      <span className="avatar" style={{ width: 20, height: 20 }}>
+                        <img src={reply.author.avatarUrl} alt="" />
+                      </span>
+                    ) : (
+                      <span className="ms sm" aria-hidden="true">
+                        {isTeacherReply ? 'verified_user' : 'account_circle'}
+                      </span>
+                    )}
                     <span>{reply.author.fullName}</span>
                     {roleLabel(reply.author.role) && (
                       <span className="chip sm primary">{roleLabel(reply.author.role)}</span>

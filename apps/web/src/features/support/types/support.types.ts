@@ -21,6 +21,7 @@ export interface SupportTicketListItem {
 export interface SupportMessage {
   id: string
   authorName: string
+  authorAvatarUrl: string | null
   isStaffReply: boolean
   body: string
   createdAt: string

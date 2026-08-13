@@ -33,9 +33,15 @@ export function DiscussionCard({ thread, to }: DiscussionCardProps) {
           )}
         </div>
         <div className="discussion-author-badge">
-          <span className="ms sm" aria-hidden="true">
-            {isTeacher ? 'verified_user' : 'account_circle'}
-          </span>
+          {thread.author.avatarUrl ? (
+            <span className="avatar" style={{ width: 20, height: 20 }}>
+              <img src={thread.author.avatarUrl} alt="" />
+            </span>
+          ) : (
+            <span className="ms sm" aria-hidden="true">
+              {isTeacher ? 'verified_user' : 'account_circle'}
+            </span>
+          )}
           <span>{thread.author.fullName}</span>
           {isTeacher && <span className="chip sm primary">المدرس</span>}
         </div>
