@@ -48,7 +48,14 @@ function FacelessTeacher() {
 
       {/* Disc the figure is cropped into. */}
       <circle cx="80" cy="80" r="80" fill="var(--primary-container)" />
+      {/* Painted back to front, so each layer tucks under the next: the
+          neck disappears into the jacket, the jacket under the collar,
+          the collar under the tie. Drawing the neck last (the obvious
+          order, chin downward) left a skin-coloured block sitting on top
+          of the shirt. */}
       <g clipPath="url(#poster-figure-clip)">
+        {/* Neck. */}
+        <rect x="70" y="84" width="20" height="26" rx="10" fill="#DDB089" />
         {/* Jacket / shoulders. */}
         <path
           d="M22 160 C22 122 47 104 80 104 C113 104 138 122 138 160 Z"
@@ -59,8 +66,6 @@ function FacelessTeacher() {
         {/* Tie. */}
         <path d="M80 130 L87 141 L80 160 L73 141 Z" fill="var(--tertiary-container)" />
 
-        {/* Neck. */}
-        <rect x="70" y="84" width="20" height="26" rx="10" fill="#DDB089" />
         {/* Ears. */}
         <circle cx="52" cy="66" r="5.5" fill="#DDB089" />
         <circle cx="108" cy="66" r="5.5" fill="#DDB089" />
