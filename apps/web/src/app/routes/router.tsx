@@ -308,6 +308,14 @@ export const router = createBrowserRouter([
         element: <StudentLayout />,
         children: [
           {
+            // Bare /student is a real destination — the sidebar logo and any
+            // hand-typed URL land here. Without an index route it matched
+            // the layout with no child and rendered an empty page. Admin
+            // already had this; student and teacher did not.
+            index: true,
+            element: <Navigate to={ROUTE_PATHS.STUDENT.DASHBOARD} replace />,
+          },
+          {
             path: ROUTE_PATHS.STUDENT.DASHBOARD,
             element: (
               <SuspenseWrapper fallback={<StudentHomeSkeleton />}>
@@ -470,6 +478,14 @@ export const router = createBrowserRouter([
         element: <TeacherLayout />,
         children: [
           {
+            // Bare /teacher is a real destination — the sidebar logo and any
+            // hand-typed URL land here. Without an index route it matched
+            // the layout with no child and rendered an empty page. Admin
+            // already had this; student and teacher did not.
+            index: true,
+            element: <Navigate to={ROUTE_PATHS.TEACHER.DASHBOARD} replace />,
+          },
+          {
             path: ROUTE_PATHS.TEACHER.DASHBOARD,
             element: (
               <SuspenseWrapper fallback={<TeacherDashboardSkeleton />}>
@@ -531,6 +547,16 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<SettingsSkeleton />}>
                 <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            // Same page component for every role — it reads `user.role`
+            // for the badge and shortcut list. See StudentProfilePage.
+            path: ROUTE_PATHS.TEACHER.PROFILE,
+            element: (
+              <SuspenseWrapper fallback={<StudentProfileSkeleton />}>
+                <StudentProfilePage />
               </SuspenseWrapper>
             ),
           },
@@ -760,6 +786,16 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<SettingsSkeleton />}>
                 <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            // Same page component for every role — it reads `user.role`
+            // for the badge and shortcut list. See StudentProfilePage.
+            path: ROUTE_PATHS.ADMIN.PROFILE,
+            element: (
+              <SuspenseWrapper fallback={<StudentProfileSkeleton />}>
+                <StudentProfilePage />
               </SuspenseWrapper>
             ),
           },

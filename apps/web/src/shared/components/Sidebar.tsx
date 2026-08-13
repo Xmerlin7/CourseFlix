@@ -11,9 +11,10 @@ export type SidebarProps = {
   isRail?: boolean
   onToggle?: () => void
   onToggleRail?: () => void
-  // Only StudentLayout passes this today (the only role with a Profile
-  // page so far) — omitted, the identity row stays the plain, non-
-  // interactive display it's always been for teacher/admin/assistant.
+  // Every layout passes this now that all four roles have a profile
+  // page. Left optional so a layout that genuinely has nowhere to send
+  // the user still renders the identity row as plain, non-interactive
+  // text rather than a dead link.
   profilePath?: string
   // Unread activity indicators — student-only for now. A small dot
   // appears next to the nav item when the flag is true.
@@ -29,10 +30,10 @@ type NavItem = { path: string; label: string; icon: string }
 // dropped the user on the 404 page. They come back as each owner's slice
 // ships, not before.
 //
-// Settings and Notifications are deliberately NOT linked here even
-// though both routes/pages still exist and work fine — just no sidebar
-// entry point for now. Remove this comment and re-add their NavItem
-// entries below to bring them back.
+// Settings sits at the end of every list rather than only behind the
+// topbar gear: on a phone the topbar is above the fold but the gear is a
+// 24px target among three others, and it was the one piece of navigation
+// with no entry in the menu itself.
 const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.STUDENT.BROWSE, label: 'استكشف الدورات', icon: 'explore' },
@@ -40,6 +41,7 @@ const studentNavItems: NavItem[] = [
   { path: ROUTE_PATHS.STUDENT.INTERVENTIONS, label: 'نقاط تحتاج مراجعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.STUDENT.SUPPORT, label: 'الدعم الفني', icon: 'support_agent' },
   { path: ROUTE_PATHS.STUDENT.COMMUNITY, label: 'المجتمع', icon: 'groups' },
+  { path: ROUTE_PATHS.STUDENT.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 const teacherNavItems: NavItem[] = [
@@ -53,6 +55,7 @@ const teacherNavItems: NavItem[] = [
   // Deliberately NOT in the assistant-exclusion list below — assistants
   // are meant to help triage support tickets too, see SupportStaffRoleGuard.
   { path: ROUTE_PATHS.TEACHER.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
+  { path: ROUTE_PATHS.TEACHER.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 // Assistants share the teacher's course/student surface but not
@@ -82,6 +85,7 @@ const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG, label: 'سجل الإشعارات', icon: 'history' },
   { path: ROUTE_PATHS.ADMIN.AGENT_LOGS, label: 'سجل الوكلاء', icon: 'smart_toy' },
   { path: ROUTE_PATHS.ADMIN.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
+  { path: ROUTE_PATHS.ADMIN.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
 const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {
@@ -161,9 +165,9 @@ export function Sidebar({
       </nav>
 
       <div className="side-footer">
-        {/* Links to the Profile page when one exists for this role
-            (student only, for now) — otherwise stays the plain,
-            non-interactive identity display it's always been. */}
+        {/* The identity row doubles as the link to this role's profile
+            page. All four roles have one; the non-link branch is the
+            fallback for a layout that doesn't pass a path. */}
         {profilePath ? (
           <NavLink
             to={profilePath}

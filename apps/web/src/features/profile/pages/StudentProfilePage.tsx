@@ -8,14 +8,65 @@ import { APP_VERSION } from '../../../shared/lib/app-version'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { updateProfile, uploadAvatar } from '../api/profile.api'
 import { AvatarPickerModal } from '../components/AvatarPickerModal'
+import type { UserRole } from '../../auth/types/auth.types'
 
+const ROLE_LABEL: Record<UserRole, string> = {
+  student: 'طالب',
+  teacher: 'معلم',
+  assistant: 'مساعد المعلم',
+  admin: 'مسؤول المنصة',
+}
+
+interface Shortcut {
+  to: string
+  label: string
+  icon: string
+}
+
+/**
+ * Where each role's profile page can send them. Kept per-role rather than
+ * one shared list because the destinations genuinely differ — a teacher
+ * has no "دوراتي" in the student sense, and an admin has neither.
+ */
+const SHORTCUTS_BY_ROLE: Record<UserRole, Shortcut[]> = {
+  student: [
+    { to: ROUTE_PATHS.STUDENT.COURSES, label: 'دوراتي', icon: 'menu_book' },
+    { to: ROUTE_PATHS.STUDENT.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
+    { to: ROUTE_PATHS.STUDENT.SETTINGS, label: 'الإعدادات', icon: 'settings' },
+  ],
+  teacher: [
+    { to: ROUTE_PATHS.TEACHER.COURSES, label: 'دوراتي', icon: 'menu_book' },
+    { to: ROUTE_PATHS.TEACHER.STUDENTS, label: 'الطلاب', icon: 'groups' },
+    { to: ROUTE_PATHS.TEACHER.NOTIFICATIONS, label: 'الإشعارات', icon: 'notifications' },
+    { to: ROUTE_PATHS.TEACHER.SETTINGS, label: 'الإعدادات', icon: 'settings' },
+  ],
+  assistant: [
+    { to: ROUTE_PATHS.TEACHER.COURSES, label: 'الدورات', icon: 'menu_book' },
+    { to: ROUTE_PATHS.TEACHER.STUDENTS, label: 'الطلاب', icon: 'groups' },
+    { to: ROUTE_PATHS.TEACHER.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
+    { to: ROUTE_PATHS.TEACHER.SETTINGS, label: 'الإعدادات', icon: 'settings' },
+  ],
+  admin: [
+    { to: ROUTE_PATHS.ADMIN.USERS, label: 'المستخدمون', icon: 'manage_accounts' },
+    { to: ROUTE_PATHS.ADMIN.COURSES, label: 'الدورات', icon: 'menu_book' },
+    { to: ROUTE_PATHS.ADMIN.SETTINGS, label: 'الإعدادات', icon: 'settings' },
+  ],
+}
+
+/**
+ * The profile page for every role, not just students — the file keeps its
+ * original name because that's what the router and its spec import.
+ * Everything role-specific (the badge, the shortcut list, whether the
+ * "purchases" row shows at all) comes off `user.role`.
+ */
 export function StudentProfilePage() {
   const { user, logout, updateUser } = useAuth()
   const navigate = useNavigate()
 
-  // `user` is guaranteed non-null here — this route only renders inside
-  // RequireRole("student"), which already redirects to /login otherwise.
+  // `user` is guaranteed non-null here — every route that renders this
+  // page sits inside a RequireRole, which redirects to /login otherwise.
   const currentUser = user!
+  const isStudent = currentUser.role === 'student'
 
   const [fullName, setFullName] = useState(currentUser.fullName)
   const [isSavingName, setIsSavingName] = useState(false)
@@ -124,14 +175,18 @@ export function StudentProfilePage() {
           <p className="profile-identity-email">
             <bdi>{currentUser.email}</bdi>
           </p>
-          <span className="chip">طالب</span>
+          <span className="chip">{ROLE_LABEL[currentUser.role]}</span>
         </div>
       </section>
 
       <form className="card profile-form-card" onSubmit={(e) => void handleSaveName(e)}>
         <div className="profile-card-head">
           <h3 className="profile-card-title">البيانات الأساسية</h3>
-          <p className="profile-card-sub">اسمك كما يظهر لمعلمك وفي المناقشات.</p>
+          <p className="profile-card-sub">
+            {isStudent
+              ? 'اسمك كما يظهر لمعلمك وفي المناقشات.'
+              : 'اسمك كما يظهر لباقي المستخدمين على المنصة.'}
+          </p>
         </div>
 
         <div className={`tf${nameError ? ' invalid' : ''}`}>
@@ -155,7 +210,11 @@ export function StudentProfilePage() {
         <div className="tf" style={{ marginBottom: 0 }}>
           <label>البريد الإلكتروني</label>
           <input type="email" value={currentUser.email} disabled readOnly />
-          <span className="hint">لتغيير البريد الإلكتروني، تواصل مع معلمك.</span>
+          <span className="hint">
+            {isStudent
+              ? 'لتغيير البريد الإلكتروني، تواصل مع معلمك.'
+              : 'لتغيير البريد الإلكتروني، تواصل مع مسؤول المنصة.'}
+          </span>
         </div>
 
         {isNameDirty && (
@@ -182,58 +241,38 @@ export function StudentProfilePage() {
       <section className="section profile-nav-list">
         <h3 className="profile-card-title profile-nav-title">اختصارات</h3>
 
-        <Link to={ROUTE_PATHS.STUDENT.COURSES} className="list-item hoverable">
-          <span className="lead">
-            <span className="ms">menu_book</span>
-          </span>
-          <span className="body">
-            <span className="t">دوراتي</span>
-          </span>
-          <span className="end">
-            <span className="ms">chevron_left</span>
-          </span>
-        </Link>
+        {SHORTCUTS_BY_ROLE[currentUser.role].map((shortcut) => (
+          <Link key={shortcut.to} to={shortcut.to} className="list-item hoverable">
+            <span className="lead">
+              <span className="ms">{shortcut.icon}</span>
+            </span>
+            <span className="body">
+              <span className="t">{shortcut.label}</span>
+            </span>
+            <span className="end">
+              <span className="ms">chevron_left</span>
+            </span>
+          </Link>
+        ))}
 
-        <Link to={ROUTE_PATHS.STUDENT.NOTIFICATIONS} className="list-item hoverable">
-          <span className="lead">
-            <span className="ms">notifications</span>
-          </span>
-          <span className="body">
-            <span className="t">الإشعارات</span>
-          </span>
-          <span className="end">
-            <span className="ms">chevron_left</span>
-          </span>
-        </Link>
-
-        {/* "مشترياتي" and "تواصل مع الدعم" have no backing route/API yet
-            (no student-facing purchase-history list endpoint, no support
-            contact channel anywhere in the app) — shown disabled rather
-            than either omitted (they're real, requested product surfaces)
-            or wired to a fake destination. */}
-        <div className="list-item profile-nav-disabled" aria-disabled="true">
-          <span className="lead">
-            <span className="ms">receipt_long</span>
-          </span>
-          <span className="body">
-            <span className="t">مشترياتي</span>
-          </span>
-          <span className="end">
-            <span className="chip outline">قريبًا</span>
-          </span>
-        </div>
-
-        <div className="list-item profile-nav-disabled" aria-disabled="true">
-          <span className="lead">
-            <span className="ms">support_agent</span>
-          </span>
-          <span className="body">
-            <span className="t">تواصل مع الدعم</span>
-          </span>
-          <span className="end">
-            <span className="chip outline">قريبًا</span>
-          </span>
-        </div>
+        {/* "مشترياتي" has no backing route/API yet — there's no
+            student-facing purchase-history endpoint. Shown disabled
+            rather than omitted (it's a real, requested surface) or wired
+            to a fake destination. Students only: nobody else buys
+            anything. */}
+        {isStudent && (
+          <div className="list-item profile-nav-disabled" aria-disabled="true">
+            <span className="lead">
+              <span className="ms">receipt_long</span>
+            </span>
+            <span className="body">
+              <span className="t">مشترياتي</span>
+            </span>
+            <span className="end">
+              <span className="chip outline">قريبًا</span>
+            </span>
+          </div>
+        )}
       </section>
 
       <footer className="profile-footer">
