@@ -1,10 +1,16 @@
+import { useCallback } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { Link } from 'react-router'
 import { NOTIFICATION_TYPE } from '../../../shared/lib/status-labels'
 import { useNotifications } from '../hooks/useNotifications'
 import { NotificationsSkeleton } from '../components/NotificationsSkeleton'
 import type { NotificationType } from '../types/notification.types'
+
+const PAGE_SIZE = 10
 
 const STATUS_OPTIONS: Array<{ label: string; value: 'all' | 'unread' | 'read' }> = [
   { label: 'الكل', value: 'all' },
@@ -35,6 +41,13 @@ export function NotificationsPage() {
     refetch,
   } = useNotifications()
   const unreadCount = data.filter((notification) => !notification.isRead).length
+
+  const toHaystack = useCallback(
+    (notification: (typeof data)[number]) =>
+      `${notification.title} ${notification.message}`,
+    [],
+  )
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
 
   return (
     <>
@@ -86,6 +99,14 @@ export function NotificationsPage() {
         ))}
       </div>
 
+      <SearchField
+        id="notifications-search"
+        label="بحث في الإشعارات"
+        placeholder="ابحث في عناوين الإشعارات ونصّها..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {isLoading && <NotificationsSkeleton />}
 
       {!isLoading && error && <ErrorState onRetry={refetch} />}
@@ -98,9 +119,17 @@ export function NotificationsPage() {
         />
       )}
 
-      {!isLoading && !error && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState
+          variant="notifications"
+          title="لا توجد نتائج"
+          message="مفيش إشعارات مطابقة لبحثك، جرّب كلمة تانية"
+        />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="list">
-          {data.map((notification) => {
+          {list.pageItems.map((notification) => {
             const meta = NOTIFICATION_TYPE[notification.type]
             const miniQuizPath =
               notification.relatedEntityType === 'mini_quiz' && notification.relatedEntityId
@@ -145,6 +174,17 @@ export function NotificationsPage() {
             )
           })}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="إشعار"
+        />
       )}
     </>
   )

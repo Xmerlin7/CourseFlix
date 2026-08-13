@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { Pagination } from '../../../shared/components/Pagination'
+import { SearchField } from '../../../shared/components/SearchField'
+import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
@@ -9,6 +12,8 @@ import { CourseThumb } from '../../courses/components/CourseThumb'
 import { useTeacherCourses } from '../hooks/useTeacherCourses'
 import { TeacherCoursesSkeleton } from '../components/TeacherCoursesSkeleton'
 import type { CourseStatus } from '../../courses/types/course.types'
+
+const PAGE_SIZE = 9
 
 const STATUS_OPTIONS: Array<{ label: string; value: CourseStatus | '' }> = [
   { label: 'الكل', value: '' },
@@ -23,6 +28,13 @@ export function TeacherCoursesPage() {
   const { data, isLoading, error, refetch } = useTeacherCourses({
     status: status || undefined,
   })
+
+  const toHaystack = useCallback(
+    (course: (typeof data)[number]) => `${course.title} ${course.gradeLevel ?? ''}`,
+    [],
+  )
+  // A multiple of three keeps the three-column grid's last row full.
+  const list = usePaginatedList(data, toHaystack, PAGE_SIZE)
 
   return (
     <>
@@ -55,6 +67,14 @@ export function TeacherCoursesPage() {
         ))}
       </div>
 
+      <SearchField
+        id="teacher-courses-search"
+        label="بحث في دوراتك"
+        placeholder="ابحث باسم الدورة أو الصف الدراسي..."
+        value={list.query}
+        onChange={list.search}
+      />
+
       {isLoading && <TeacherCoursesSkeleton />}
 
       {!isLoading &&
@@ -71,9 +91,17 @@ export function TeacherCoursesPage() {
         />
       )}
 
-      {!isLoading && !error && data.length > 0 && (
+      {!isLoading && !error && list.isEmptyResult && (
+        <EmptyState
+          variant="courses"
+          title="لا توجد نتائج"
+          message="مفيش دورات مطابقة لبحثك، جرّب كلمة تانية"
+        />
+      )}
+
+      {!isLoading && !error && list.pageItems.length > 0 && (
         <div className="grid-3">
-          {data.map((course) => {
+          {list.pageItems.map((course) => {
             const courseStatus = COURSE_STATUS[course.status]
 
             return (
@@ -97,6 +125,17 @@ export function TeacherCoursesPage() {
             )
           })}
         </div>
+      )}
+
+      {list.hasPages && (
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          onPageChange={list.setPage}
+          matchCount={list.matchCount}
+          pageSize={PAGE_SIZE}
+          itemLabel="دورة"
+        />
       )}
     </>
   )
