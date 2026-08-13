@@ -1683,51 +1683,111 @@ textarea:placeholder-shown {
   }
 }
 
-/* ---------- Auth shell: split-screen login/register ---------- */
+/* ---------- Auth shell: immersive mesh login/register ---------- */
 .auth-shell {
   min-height: 100vh;
-  display: flex;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, #0F766E 10%, var(--surface)) 0%, var(--surface) 46%),
-    var(--surface);
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vw, 56px);
+  overflow: hidden;
+  background: #061417;
   letter-spacing: 0;
+  isolation: isolate;
+}
+
+.auth-mesh {
+  position: absolute;
+  inset: -18%;
+  z-index: -3;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(20, 184, 166, 0.82), transparent 25%),
+    radial-gradient(circle at 80% 16%, rgba(244, 114, 182, 0.58), transparent 24%),
+    radial-gradient(circle at 68% 82%, rgba(245, 158, 11, 0.66), transparent 28%),
+    radial-gradient(circle at 24% 78%, rgba(56, 189, 248, 0.58), transparent 26%),
+    linear-gradient(135deg, #07181C 0%, #171233 48%, #2A180B 100%);
+  filter: blur(24px) saturate(1.15);
+  animation: auth-mesh-shift 15s ease-in-out infinite alternate;
+}
+
+.auth-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.18), transparent 48%);
+  background-size: 44px 44px, 44px 44px, 100% 100%;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 80%, transparent 100%);
+  opacity: 0.52;
+}
+
+.auth-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(6, 20, 23, 0.22), rgba(6, 20, 23, 0.46)),
+    radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.5) 78%);
+  pointer-events: none;
 }
 
 .auth-panel-form {
-  flex: 1 1 50%;
+  width: min(460px, 100%);
   min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-container-low) 72%, transparent), var(--surface));
+  padding: 0;
+  background: transparent;
 }
 
 .auth-form-inner {
-  width: min(420px, 100%);
+  width: min(460px, 100%);
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  padding: clamp(24px, 4vw, 38px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: calc(8px * var(--radius-scale));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58)),
+    color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.72) inset;
+  backdrop-filter: blur(24px) saturate(1.15);
+}
+
+:root.dark .auth-form-inner {
+  background:
+    linear-gradient(180deg, rgba(26, 22, 32, 0.82), rgba(26, 22, 32, 0.62)),
+    color-mix(in srgb, var(--surface) 80%, transparent);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .auth-form-logo {
   font-size: 30px;
   text-align: center;
   margin-bottom: 20px;
+  color: white;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.26);
 }
 
 .auth-course-strip {
-  display: none;
+  display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 24px;
   padding: 10px 12px;
-  border: 1px solid var(--outline-variant);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: calc(8px * var(--radius-scale));
-  background: color-mix(in srgb, var(--surface-container-low) 82%, white);
-  box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.26);
+  box-shadow: 0 10px 32px rgba(8, 21, 24, 0.16);
+  backdrop-filter: blur(16px);
 }
 
 .auth-course-strip-icon {
@@ -1738,7 +1798,7 @@ textarea:placeholder-shown {
   place-items: center;
   border-radius: 50%;
   color: #0F766E;
-  background: color-mix(in srgb, #0F766E 14%, var(--surface));
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .auth-course-strip strong,
@@ -1760,31 +1820,33 @@ textarea:placeholder-shown {
 
 .foot {
   text-align: center;
-  color: var(--on-surface-variant);
+  color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
   font-size: 12.5px;
   margin-top: 26px;
 }
 
-/* Decorative panel — hidden below the breakpoint (see media query at the
-   end of this block), never the only way to reach anything. Holds the
-   tutor poster (TeacherPoster.tsx). */
 .auth-panel-brand {
-  flex: 1 1 50%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
-  overflow: hidden;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, #0F766E 26%, var(--surface-container)) 0%, var(--surface-container) 44%, color-mix(in srgb, #B45309 16%, var(--surface-container)) 100%);
+  position: absolute;
+  inset-inline-start: clamp(24px, 6vw, 92px);
+  bottom: clamp(26px, 7vh, 86px);
+  width: min(360px, 31vw);
+  display: block;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.auth-floating-poster .poster-stage {
+  pointer-events: auto;
 }
 
 /* ---------- Interactive auth course poster ---------- */
 .poster-stage {
   --poster-x: 0;
   --poster-y: 0;
-  width: min(460px, 100%);
+  width: 100%;
   position: relative;
   display: grid;
   place-items: center;
@@ -1794,11 +1856,11 @@ textarea:placeholder-shown {
 
 .poster-light {
   position: absolute;
-  inset: -20%;
+  inset: -28%;
   background:
-    radial-gradient(circle at calc(50% + (var(--poster-x) * 26%)) calc(48% + (var(--poster-y) * 26%)), rgba(255, 255, 255, 0.48), transparent 30%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 42%);
-  opacity: 0.9;
+    radial-gradient(circle at calc(50% + (var(--poster-x) * 28%)) calc(48% + (var(--poster-y) * 28%)), rgba(255, 255, 255, 0.34), transparent 34%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 44%);
+  opacity: 0.88;
   pointer-events: none;
   z-index: -1;
 }
@@ -1806,13 +1868,13 @@ textarea:placeholder-shown {
 .poster-grid-lines {
   position: absolute;
   inset: -24px;
-  border: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   background-image:
-    linear-gradient(color-mix(in srgb, var(--on-surface) 8%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--on-surface) 8%, transparent) 1px, transparent 1px);
-  background-size: 34px 34px;
+    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 28px 28px;
   transform: translate3d(calc(var(--poster-x) * -12px), calc(var(--poster-y) * -12px), 0);
-  opacity: 0.42;
+  opacity: 0.34;
   pointer-events: none;
   z-index: -1;
 }
@@ -1821,11 +1883,13 @@ textarea:placeholder-shown {
   width: 100%;
   border-radius: calc(8px * var(--radius-scale));
   overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--outline-variant);
+  color: white;
+  background: rgba(15, 23, 42, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   box-shadow:
-    0 20px 54px rgba(11, 38, 33, 0.24),
-    0 2px 0 rgba(255, 255, 255, 0.55) inset;
+    0 24px 70px rgba(0, 0, 0, 0.36),
+    0 1px 0 rgba(255, 255, 255, 0.34) inset;
+  backdrop-filter: blur(18px) saturate(1.15);
   transform:
     rotateX(calc(var(--poster-y) * -7deg))
     rotateY(calc(var(--poster-x) * 9deg))
@@ -1839,18 +1903,18 @@ textarea:placeholder-shown {
 
 .poster-hero {
   position: relative;
-  height: 210px;
+  height: 168px;
   overflow: hidden;
   background:
-    linear-gradient(135deg, color-mix(in srgb, #0F766E 24%, var(--surface-container)), color-mix(in srgb, #B45309 16%, var(--surface-container-high)));
+    linear-gradient(135deg, rgba(20, 184, 166, 0.44), rgba(245, 158, 11, 0.36));
 }
 
 .poster-cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.04) translate3d(calc(var(--poster-x) * -7px), calc(var(--poster-y) * -7px), 0);
-  filter: saturate(1.08) contrast(1.02);
+  transform: scale(1.05) translate3d(calc(var(--poster-x) * -7px), calc(var(--poster-y) * -7px), 0);
+  filter: saturate(1.1) contrast(1.04);
   transition: transform 0.2s ease;
 }
 
@@ -1860,41 +1924,42 @@ textarea:placeholder-shown {
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 10px;
-  color: color-mix(in srgb, #0F766E 78%, var(--on-surface));
+  gap: 8px;
+  color: white;
   background:
-    linear-gradient(135deg, color-mix(in srgb, #0F766E 20%, var(--surface-container-low)), color-mix(in srgb, #B45309 18%, var(--surface-container-high))),
-    var(--surface-container);
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.26), transparent 30%),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.64), rgba(245, 158, 11, 0.52));
 }
 
 .poster-cover-fallback .ms {
-  font-size: 58px;
+  font-size: 50px;
 }
 
 .poster-cover-fallback strong {
   font-family: var(--heading);
-  font-size: 34px;
+  font-size: 32px;
 }
 
 .poster-hero-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, transparent 20%, rgba(0, 0, 0, 0.52)),
-    linear-gradient(90deg, rgba(15, 118, 110, 0.28), transparent 46%);
+    linear-gradient(180deg, transparent 12%, rgba(6, 20, 23, 0.72)),
+    linear-gradient(90deg, rgba(15, 118, 110, 0.2), transparent 48%);
 }
 
 .poster-live-badge {
   position: absolute;
-  top: 16px;
-  inset-inline-start: 16px;
+  top: 14px;
+  inset-inline-start: 14px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   color: white;
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(15, 23, 42, 0.48);
   backdrop-filter: blur(10px);
   font-size: 12px;
   font-weight: 800;
@@ -1904,51 +1969,51 @@ textarea:placeholder-shown {
   font-size: 17px;
 }
 
-.poster-head {
-  margin-bottom: 16px;
+.poster-body {
+  padding: 18px 20px 20px;
 }
 
-.poster-body {
-  padding: 22px 24px 24px;
+.poster-head {
+  margin-bottom: 14px;
 }
 
 .poster-subject {
   display: block;
   font-family: var(--heading);
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 700;
   line-height: 1.18;
-  color: var(--on-surface);
+  color: white;
   overflow-wrap: anywhere;
 }
 
 .poster-head-note {
   display: inline-flex;
-  margin-bottom: 6px;
-  color: #0F766E;
-  font-size: 13px;
+  margin-bottom: 5px;
+  color: #99F6E4;
+  font-size: 12px;
   font-weight: 800;
 }
 
 .poster-identity {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border: 1px solid var(--outline-variant);
+  gap: 10px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: calc(8px * var(--radius-scale));
-  background: var(--surface-container-low);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .poster-teacher-icon {
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #B45309;
-  background: color-mix(in srgb, #B45309 16%, var(--surface));
+  color: #FDE68A;
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .poster-titles {
@@ -1956,25 +2021,25 @@ textarea:placeholder-shown {
 }
 
 .poster-eyebrow {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--on-surface-variant);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .poster-name {
   font-family: var(--heading);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--on-surface);
+  color: white;
   overflow-wrap: anywhere;
 }
 
 .poster-description {
-  margin: 16px 0;
+  margin: 14px 0;
   min-height: 3.2em;
-  color: var(--on-surface-variant);
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13.5px;
   font-weight: 600;
   line-height: 1.6;
 }
@@ -1985,15 +2050,15 @@ textarea:placeholder-shown {
   padding: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
 }
 
 .poster-stats li {
   min-width: 0;
-  padding: 10px 8px;
+  padding: 9px 7px;
   border-radius: calc(8px * var(--radius-scale));
-  border: 1px solid var(--outline-variant);
-  background: var(--surface-container-low);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.1);
   text-align: center;
 }
 
@@ -2003,31 +2068,31 @@ textarea:placeholder-shown {
 }
 
 .poster-stats strong {
-  color: var(--on-surface);
-  font-size: 13px;
+  color: white;
+  font-size: 12.5px;
 }
 
 .poster-stats span {
   margin-top: 2px;
-  color: var(--on-surface-variant);
-  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
   font-weight: 700;
 }
 
 .poster-progress {
-  margin-top: 18px;
+  margin-top: 16px;
   display: grid;
   gap: 7px;
   font-size: 12px;
   font-weight: 800;
-  color: var(--on-surface-variant);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .poster-progress-track {
   height: 9px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--surface-container-high);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .poster-progress-track span {
@@ -2035,38 +2100,45 @@ textarea:placeholder-shown {
   width: 72%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #0F766E, #B45309);
+  background: linear-gradient(90deg, #5EEAD4, #FBBF24);
   animation: auth-progress-glow 2.8s ease-in-out infinite;
 }
 
 .auth-shell .tf input,
 .auth-shell .tf textarea,
 .auth-shell .tf select {
+  background: rgba(255, 255, 255, 0.68);
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+:root.dark .auth-shell .tf input,
+:root.dark .auth-shell .tf textarea,
+:root.dark .auth-shell .tf select {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .auth-shell .tf input:hover,
 .auth-shell .tf textarea:hover,
 .auth-shell .tf select:hover {
-  border-color: color-mix(in srgb, #0F766E 52%, var(--outline));
+  border-color: color-mix(in srgb, #14B8A6 58%, var(--outline));
 }
 
 .auth-shell .tf input:focus,
 .auth-shell .tf textarea:focus,
 .auth-shell .tf select:focus {
-  box-shadow: 0 0 0 4px color-mix(in srgb, #0F766E 18%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, #14B8A6 22%, transparent);
   transform: translateY(-1px);
 }
 
 .auth-shell .btn.big {
-  box-shadow: 0 10px 26px color-mix(in srgb, var(--primary) 24%, transparent);
+  box-shadow: 0 10px 30px rgba(20, 184, 166, 0.26);
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
 
 .auth-shell .btn.big:hover:not(:disabled) {
   transform: translateY(-2px);
   filter: saturate(1.06);
-  box-shadow: 0 14px 32px color-mix(in srgb, var(--primary) 30%, transparent);
+  box-shadow: 0 14px 36px rgba(20, 184, 166, 0.32);
 }
 
 .auth-shell .wizard-step {
@@ -2080,12 +2152,28 @@ textarea:placeholder-shown {
   padding: 28px;
   border-radius: calc(8px * var(--radius-scale));
   background:
-    linear-gradient(145deg, color-mix(in srgb, #0F766E 18%, var(--surface-container)) 0%, var(--surface-container) 50%, color-mix(in srgb, #B45309 12%, var(--surface-container)) 100%);
+    radial-gradient(circle at 24% 24%, rgba(20, 184, 166, 0.56), transparent 30%),
+    radial-gradient(circle at 78% 70%, rgba(245, 158, 11, 0.46), transparent 34%),
+    linear-gradient(135deg, #07181C, #171233);
   overflow: hidden;
 }
 
 .auth-settings-preview .poster-stage {
   width: min(390px, 100%);
+}
+
+@keyframes auth-mesh-shift {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(2%, 2%, 0) scale(1.06) rotate(4deg);
+  }
+
+  100% {
+    transform: translate3d(1%, -2%, 0) scale(1.03) rotate(-3deg);
+  }
 }
 
 @keyframes auth-step-in {
@@ -2111,22 +2199,31 @@ textarea:placeholder-shown {
   }
 }
 
+@media (max-width: 1180px) {
+  .auth-panel-brand {
+    width: min(320px, 30vw);
+    inset-inline-start: 22px;
+    opacity: 0.82;
+  }
+}
+
 @media (max-width: 980px) {
+  .auth-shell {
+    min-height: 100svh;
+    padding: 22px 16px;
+  }
+
   .auth-panel-brand {
     display: none;
   }
 
   .auth-panel-form {
-    flex-basis: 100%;
-    padding: 34px 18px;
-  }
-
-  .auth-course-strip {
-    display: flex;
+    width: 100%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .auth-mesh,
   .poster,
   .poster-cover-img,
   .auth-shell .tf input,
