@@ -111,7 +111,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
             type="text"
             inputMode="numeric"
             id="reset-code"
-            placeholder="000000"
+            placeholder="أدخل الرمز المكوّن من ٦ أرقام"
             autoComplete="one-time-code"
             autoFocus
             required
@@ -126,7 +126,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
           <input
             type="password"
             id="reset-password"
-            placeholder="********"
+            placeholder="٨ أحرف على الأقل"
             autoComplete="new-password"
             required
             minLength={8}
@@ -140,7 +140,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
           <input
             type="password"
             id="reset-confirm"
-            placeholder="********"
+            placeholder="٨ أحرف على الأقل"
             autoComplete="new-password"
             required
             minLength={8}
@@ -172,7 +172,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
         <input
           type="email"
           id="reset-email"
-          placeholder="name@example.com"
+          placeholder="أدخل بريدك الإلكتروني"
           autoComplete="email"
           required
           value={email}

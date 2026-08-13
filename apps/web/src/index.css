@@ -1357,6 +1357,20 @@ code {
   min-height: 96px;
 }
 
+/* Every placeholder in the product is Arabic, so every placeholder is
+   drawn right-to-left. The document is already `dir="rtl"`, which covers
+   most inputs by inheritance — this rule exists for the handful that are
+   explicitly `dir="ltr"` because the *value* they hold is Latin (a UUID
+   pasted off a leaked video, a cover-image URL). Keyed off
+   `:placeholder-shown` so it only applies while the field is empty: the
+   moment the user types, the input reverts to its own direction and the
+   Latin text they entered still reads left-to-right. */
+input:placeholder-shown,
+textarea:placeholder-shown {
+  direction: rtl;
+  text-align: right;
+}
+
 .tf input:focus,
 .tf textarea:focus,
 .tf select:focus,
@@ -1696,87 +1710,169 @@ code {
   margin-top: 26px;
 }
 
-/* Decorative brand panel — hidden below the breakpoint (see media query
-   at the bottom of this file), never the only way to reach anything. */
+/* Decorative panel — hidden below the breakpoint (see media query at the
+   end of this block), never the only way to reach anything. Holds the
+   tutor poster (TeacherPoster.tsx). */
 .auth-panel-brand {
   flex: 1 1 50%;
   position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  padding: 64px;
-  background: linear-gradient(155deg, var(--primary) 0%, var(--logo) 100%);
-  color: var(--on-primary);
-}
-
-.auth-brand-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.35;
-  background: var(--tertiary-container);
-}
-
-.auth-brand-blob.blob-1 {
-  width: 320px;
-  height: 320px;
-  top: -80px;
-  inset-inline-end: -100px;
-}
-
-.auth-brand-blob.blob-2 {
-  width: 260px;
-  height: 260px;
-  bottom: -100px;
-  inset-inline-start: -80px;
-  background: var(--secondary-container);
-}
-
-.auth-brand-content {
-  position: relative;
-  z-index: 1;
-  max-width: 420px;
-}
-
-.auth-brand-logo {
-  font-size: 40px;
-  color: var(--on-primary);
-}
-
-.auth-brand-tag {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 14px 0 40px;
-  opacity: 0.95;
-}
-
-.auth-feature-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.auth-feature-list li {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 14.5px;
-  font-weight: 600;
-}
-
-.auth-feature-list .ms {
-  flex: none;
-  width: 40px;
-  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 48px;
+  background: var(--surface-container);
+}
+
+/* ---------- Tutor poster ----------
+   Styled as a printed sheet: a light paper surface with a hard accent
+   header bar, sitting on the panel's own darker surface so it reads as
+   an object pinned to a wall rather than as more page chrome. */
+.poster {
+  width: min(400px, 100%);
+  border-radius: calc(20px * var(--radius-scale));
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-lg);
+}
+
+.poster-head {
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 18px 24px 16px;
+  text-align: center;
+}
+
+.poster-subject {
+  display: block;
+  font-family: var(--heading);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.poster-head-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.poster-identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.poster-figure {
+  flex: none;
+  width: 92px;
+  height: 92px;
+}
+
+.poster-figure-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.poster-titles {
+  min-width: 0;
+}
+
+.poster-eyebrow {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.poster-name {
+  font-family: var(--heading);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--on-surface);
+}
+
+.poster-role {
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.poster-schedule {
+  list-style: none;
+  margin: 0;
+  padding: 0 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Three columns rather than a flex row with `space-between`: the grade
+   names differ in length, and space-between let the day/time columns
+   wander line to line instead of forming a readable timetable. */
+.poster-schedule-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   border-radius: calc(12px * var(--radius-scale));
-  background: rgba(255, 255, 255, 0.16);
-  font-size: 21px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  font-size: 13px;
+}
+
+.poster-schedule-grade {
+  font-weight: 700;
+  color: var(--on-surface);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.poster-schedule-days {
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+
+.poster-schedule-time {
+  font-weight: 700;
+  color: var(--on-primary-container);
+  background: var(--primary-container);
+  padding: 2px 9px;
+  border-radius: calc(999px * var(--radius-scale));
+  white-space: nowrap;
+}
+
+.poster-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 24px 16px;
+  background: var(--surface-container-highest);
+  border-top: 1px solid var(--outline-variant);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.poster-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.poster-contact-item .ms {
+  flex: none;
+  font-size: 18px;
+  color: var(--primary);
 }
 
 @media (max-width: 980px) {

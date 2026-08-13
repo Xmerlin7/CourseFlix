@@ -129,7 +129,7 @@ export function LoginForm() {
         <input
           type="email"
           id="email"
-          placeholder="name@example.com"
+          placeholder="أدخل بريدك الإلكتروني"
           autoComplete="email"
           required
           value={email}
@@ -140,7 +140,7 @@ export function LoginForm() {
       <PasswordField
         id="password"
         label="كلمة المرور"
-        placeholder="********"
+        placeholder="أدخل كلمة المرور"
         autoComplete="current-password"
         minLength={8}
         value={password}

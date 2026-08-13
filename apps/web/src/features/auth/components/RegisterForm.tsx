@@ -221,7 +221,7 @@ export function RegisterForm() {
             <input
               type="email"
               id="email"
-              placeholder="name@example.com"
+              placeholder="أدخل بريدك الإلكتروني"
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -240,7 +240,7 @@ export function RegisterForm() {
           <PasswordField
             id="password"
             label="كلمة المرور"
-            placeholder="********"
+            placeholder="٨ أحرف على الأقل"
             autoComplete="new-password"
             autoFocus
             value={password}
@@ -252,7 +252,7 @@ export function RegisterForm() {
           <PasswordField
             id="confirmPassword"
             label="تأكيد كلمة المرور"
-            placeholder="********"
+            placeholder="٨ أحرف على الأقل"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={setConfirmPassword}
