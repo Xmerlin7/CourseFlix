@@ -274,7 +274,11 @@ export function StudentLessonPage() {
   // 1. It is a teacher preview.
   // 2. It is the first lesson in the course.
   // 3. It is already completed.
-  // 4. All preceding lessons in the course are 100% completed.
+  // 4. It has already been started — you can always return to a lesson
+  //    you were let into before, otherwise finishing a later lesson out
+  //    of order would lock you out of your own in-progress one (which is
+  //    exactly where the resume CTA points).
+  // 5. All preceding lessons in the course are 100% completed.
   const unlockedLessonIds = new Set<string>()
   if (isTeacher) {
     courseLessons.forEach((l) => unlockedLessonIds.add(l.id))
@@ -287,8 +291,10 @@ export function StudentLessonPage() {
         l.id === data.id
           ? isCurrentCompleted
           : l.progressStatus === 'completed' || (l.watchedPercentage ?? 0) >= 100
+      const isLStarted =
+        l.progressStatus === 'in_progress' || (l.watchedPercentage ?? 0) > 0
 
-      if (allPreviousCompleted || isLCompleted) {
+      if (allPreviousCompleted || isLCompleted || isLStarted) {
         unlockedLessonIds.add(l.id)
       }
 
@@ -298,11 +304,17 @@ export function StudentLessonPage() {
     }
   }
 
+  // Reachable by a stale bookmark or a hand-typed URL — the resume link
+  // itself always targets the first incomplete lesson now (see
+  // getCourseProgressSummaries). Never dead-end here: offer the course
+  // page, which lists every lesson and shows what's still locked.
   if (!isTeacher && data && !unlockedLessonIds.has(data.id)) {
     return (
       <ForbiddenState
         title="هذا الدرس مغلق حاليًا"
-        message="أكمل مشاهدة الدرس الحالي بنسبة 100% لفتح الدرس التالي."
+        message="أكمل الدروس السابقة بنسبة 100% لفتح هذا الدرس."
+        onGoBack={() => navigate(coursePath)}
+        goBackLabel="العودة لصفحة الدورة"
       />
     )
   }

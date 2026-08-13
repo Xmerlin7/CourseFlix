@@ -179,13 +179,15 @@ export class LessonsService {
    * rows `getLessonDetail`/`loadCourseLessonProgress` already use — no
    * parallel progress store, just a different projection of it.
    *
-   * "Current lesson" priority mirrors the student-facing resume flow:
-   * 1) a lesson still `in_progress` (earliest in course order, i.e. the one
-   *    the student hasn't finished yet), 2) otherwise the most recently
-   *    completed lesson (there's no `updated_at` on content_progress to
-   *    rank multiple in-progress rows by recency, so `completedAt` is the
-   *    only real timestamp available), 3) otherwise the first lesson, if
-   *    the course has never been started.
+   * "Current lesson" is the earliest lesson in course order the student
+   * hasn't completed — partially watched, or never opened at all. That
+   * deliberately matches the client's sequential-unlock rule
+   * (StudentLessonPage), so the resume target is always a lesson the
+   * student can actually open; it's null once the course is finished.
+   *
+   * `lastCompletedLesson` stays separate and is ranked by `completedAt`
+   * (the only real timestamp on content_progress) — it answers "what did
+   * they last finish" for activity feeds, not "where do they resume".
    */
   async getCourseProgressSummaries(
     studentId: string,
@@ -240,18 +242,16 @@ export class LessonsService {
       const totalLessonsCount = courseLessons.length;
 
       let completedLessonsCount = 0;
-      let inProgressLesson: CourseCurrentLesson | null = null;
+      let firstIncompleteLesson: CourseCurrentLesson | null = null;
+      let lastInProgressLesson: CourseCurrentLesson | null = null;
       let lastCompletedLesson: CourseCurrentLesson | null = null;
       let lastCompletedAt: Date | null = null;
 
       for (const lesson of courseLessons) {
         const video = videoByLessonId.get(lesson.id)!;
         const progress = progressByVideoId.get(video.id);
-        if (!progress) {
-          continue;
-        }
 
-        if (progress.status === 'completed') {
+        if (progress?.status === 'completed') {
           completedLessonsCount += 1;
           if (
             !lastCompletedAt ||
@@ -264,8 +264,28 @@ export class LessonsService {
               lastVideoPosition: progress.lastVideoPosition ?? 0,
             };
           }
-        } else if (progress.status === 'in_progress' && !inProgressLesson) {
-          inProgressLesson = {
+          continue;
+        }
+
+        // Anything not completed is a resume candidate — including a
+        // lesson with no `content_progress` row at all. Those used to be
+        // skipped outright, so a never-opened lesson sitting mid-course
+        // was invisible here while still blocking the client's
+        // sequential unlocking, and the resume link pointed past it at a
+        // lesson the student could not actually open.
+        if (!firstIncompleteLesson) {
+          firstIncompleteLesson = {
+            id: lesson.id,
+            title: lesson.title,
+            lastVideoPosition: progress?.lastVideoPosition ?? 0,
+          };
+        }
+
+        // Furthest lesson they've actually started. Overwritten as the
+        // loop advances, so this ends up holding the last one in course
+        // order — "the lesson I'm working through" for the resume CTA.
+        if (progress?.status === 'in_progress') {
+          lastInProgressLesson = {
             id: lesson.id,
             title: lesson.title,
             lastVideoPosition: progress.lastVideoPosition ?? 0,
@@ -273,22 +293,13 @@ export class LessonsService {
         }
       }
 
-      let currentLesson: CourseCurrentLesson | null = null;
-      if (inProgressLesson) {
-        currentLesson = inProgressLesson;
-      } else if (
-        completedLessonsCount > 0 &&
-        completedLessonsCount < totalLessonsCount
-      ) {
-        currentLesson = lastCompletedLesson;
-      } else if (completedLessonsCount === 0 && totalLessonsCount > 0) {
-        const first = courseLessons[0];
-        currentLesson = {
-          id: first.id,
-          title: first.title,
-          lastVideoPosition: 0,
-        };
-      }
+      // Resume where they actually left off: the furthest lesson already
+      // in progress, falling back to the earliest untouched one when
+      // nothing is mid-watch. Both are openable — sequential unlocking
+      // admits any started lesson plus the first incomplete one — so this
+      // can't land on a locked lesson. Null means the course is finished.
+      const currentLesson: CourseCurrentLesson | null =
+        lastInProgressLesson ?? firstIncompleteLesson;
 
       summaries.set(courseId, {
         totalLessonsCount,

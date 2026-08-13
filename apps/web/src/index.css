@@ -2189,6 +2189,28 @@ h1.page-title {
   padding: calc(16px * var(--space-scale));
   border: 1px solid var(--outline-variant);
   gap: 0;
+  position: relative;
+}
+
+/* Covers the whole card so clicking anywhere but the CTA opens the
+   course overview. Kept as a real <a> (not an onClick) so middle-click,
+   ctrl-click and focus/Enter all behave like a normal link. */
+.student-card-overlay-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.student-card-overlay-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Lifted above the overlay so the resume button keeps its own target. */
+.student-card-footer {
+  position: relative;
+  z-index: 2;
 }
 
 .student-course-card.active-learning-card {

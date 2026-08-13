@@ -16,8 +16,12 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
   const isSuspended = enrollment.status === 'suspended'
 
   const currentLessonId = enrollment.currentLesson?.id
+  const coursePath = `/student/courses/${enrollment.courseId}`
+  // The CTA resumes the lesson; the card body around it opens the course
+  // overview instead, so browsing the course is never a side effect of
+  // wanting to keep watching (and vice versa).
   const actionTarget = isSuspended || isCompleted || !currentLessonId
-    ? `/student/courses/${enrollment.courseId}`
+    ? coursePath
     : `/student/lessons/${currentLessonId}`
 
   let ctaLabel = 'ابدأ الآن'
@@ -29,6 +33,15 @@ export function StudentCourseCard({ enrollment, isPrimaryActive = false }: Stude
 
   return (
     <article className={`card lift student-course-card${isPrimaryActive ? ' active-learning-card' : ''}`}>
+      {/* Stretched overlay link: makes the whole card open the course
+          overview without nesting the CTA inside another <a>, which is
+          invalid HTML and breaks keyboard navigation. The CTA sits above
+          it via z-index, so it keeps its own destination. */}
+      <Link
+        to={coursePath}
+        className="student-card-overlay-link"
+        aria-label={`تفاصيل دورة ${enrollment.courseTitle ?? ''}`}
+      />
       <div className="student-card-thumb-wrapper">
         <CourseThumb coverImageUrl={enrollment.coverImageUrl} alt={enrollment.courseTitle ?? ''} />
         {isPrimaryActive && (
