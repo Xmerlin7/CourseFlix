@@ -7,6 +7,7 @@ import { Sidebar } from '../../shared/components/Sidebar'
 import { FloatingAssistant } from '../../shared/components/FloatingAssistant'
 import { Topbar } from '../../shared/components/Topbar'
 import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
+import { useStudentSidebarUnread } from '../../shared/hooks/useStudentSidebarUnread'
 import { usePendingActionCount } from '../../features/assistant-actions/hooks/usePendingActionCount'
 import { ROUTE_PATHS } from '../routes/route-paths'
 
@@ -22,6 +23,7 @@ export function TeacherLayout({ children }: PropsWithChildren) {
   // Assistants don't review anything, so they don't poll for a count.
   const pendingActionCount = usePendingActionCount(user?.role === 'teacher')
   const unreadCount = useUnreadNotificationsCount()
+  const { communityHasUnread, supportHasUnread } = useStudentSidebarUnread()
 
   async function handleLogout() {
     await logout()
@@ -43,6 +45,8 @@ export function TeacherLayout({ children }: PropsWithChildren) {
         isMobileOpen={isNavOpen}
         onCloseMobile={() => setIsNavOpen(false)}
         profilePath={ROUTE_PATHS.TEACHER.PROFILE}
+        communityHasUnread={communityHasUnread}
+        supportHasUnread={supportHasUnread}
         pendingActionCount={pendingActionCount}
       />
 

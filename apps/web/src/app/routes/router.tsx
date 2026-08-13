@@ -106,6 +106,12 @@ const StudentCommunityPage = lazy(() =>
 const StudentCourseCommunityPage = lazy(() =>
   import('../../features/community/pages/StudentCourseCommunityPage').then((m) => ({ default: m.StudentCourseCommunityPage }))
 )
+const TeacherCommunityPage = lazy(() =>
+  import('../../features/community/pages/TeacherCommunityPage').then((m) => ({ default: m.TeacherCommunityPage }))
+)
+const TeacherCourseCommunityPage = lazy(() =>
+  import('../../features/community/pages/TeacherCourseCommunityPage').then((m) => ({ default: m.TeacherCourseCommunityPage }))
+)
 const SupportTicketsPage = lazy(() =>
   import('../../features/support/pages/SupportTicketsPage').then((m) => ({ default: m.SupportTicketsPage }))
 )
@@ -572,6 +578,22 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<StudentProfileSkeleton />}>
                 <StudentProfilePage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.COMMUNITY,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <TeacherCommunityPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.COMMUNITY_COURSE,
+            element: (
+              <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
+                <TeacherCourseCommunityPage />
               </SuspenseWrapper>
             ),
           },
