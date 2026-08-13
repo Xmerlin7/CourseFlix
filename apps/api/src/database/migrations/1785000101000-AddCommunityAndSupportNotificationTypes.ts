@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * `announcement` already exists and is reused as-is for new teacher
  * posts, so no new value is needed for that.
  */
-export class AddCommunityAndSupportNotificationTypes1785000101000
-  implements MigrationInterface
-{
+export class AddCommunityAndSupportNotificationTypes1785000101000 implements MigrationInterface {
   name = 'AddCommunityAndSupportNotificationTypes1785000101000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

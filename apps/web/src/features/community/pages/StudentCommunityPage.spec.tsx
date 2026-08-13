@@ -122,7 +122,7 @@ describe('StudentCommunityPage', () => {
 
     expect(await screen.findByText('الفيزياء')).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('ابحث عن دورة'), 'كيمياء')
+    await user.type(screen.getByLabelText('بحث عن دورة'), 'كيمياء')
 
     expect(screen.getByText('الكيمياء العضوية')).toBeInTheDocument()
     expect(screen.queryByText('الفيزياء')).not.toBeInTheDocument()

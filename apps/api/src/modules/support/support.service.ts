@@ -200,9 +200,12 @@ export class SupportService {
       .createQueryBuilder('t')
       .where('t.deletedAt IS NULL');
 
-    if (filters.status) qb.andWhere('t.status = :status', { status: filters.status });
-    if (filters.category) qb.andWhere('t.category = :category', { category: filters.category });
-    if (filters.courseId) qb.andWhere('t.courseId = :courseId', { courseId: filters.courseId });
+    if (filters.status)
+      qb.andWhere('t.status = :status', { status: filters.status });
+    if (filters.category)
+      qb.andWhere('t.category = :category', { category: filters.category });
+    if (filters.courseId)
+      qb.andWhere('t.courseId = :courseId', { courseId: filters.courseId });
     if (filters.search) {
       qb.andWhere('(t.subject ILIKE :search OR t.description ILIKE :search)', {
         search: `%${filters.search}%`,
@@ -273,7 +276,9 @@ export class SupportService {
       );
     }
 
-    const author = await this.usersRepository.findOne({ where: { id: user.id } });
+    const author = await this.usersRepository.findOne({
+      where: { id: user.id },
+    });
     return {
       id: message.id,
       authorName: author?.fullName ?? 'مستخدم محذوف',
@@ -296,7 +301,8 @@ export class SupportService {
 
     ticket.status = dto.status;
     ticket.assignedTo = ticket.assignedTo ?? user.id;
-    ticket.resolvedAt = dto.status === 'resolved' ? new Date() : ticket.resolvedAt;
+    ticket.resolvedAt =
+      dto.status === 'resolved' ? new Date() : ticket.resolvedAt;
     ticket.closedAt = dto.status === 'closed' ? new Date() : ticket.closedAt;
     await this.ticketsRepository.save(ticket);
 
@@ -329,7 +335,11 @@ export class SupportService {
   }
 
   private isSupportStaff(user: AuthenticatedUser): boolean {
-    return user.role === 'admin' || user.role === 'teacher' || user.role === 'assistant';
+    return (
+      user.role === 'admin' ||
+      user.role === 'teacher' ||
+      user.role === 'assistant'
+    );
   }
 
   // A student may only ever see their own ticket, by ID — never another
@@ -385,7 +395,9 @@ export class SupportService {
 
     const studentIds = Array.from(new Set(tickets.map((t) => t.studentId)));
     const courseIds = Array.from(
-      new Set(tickets.map((t) => t.courseId).filter((id): id is string => !!id)),
+      new Set(
+        tickets.map((t) => t.courseId).filter((id): id is string => !!id),
+      ),
     );
 
     const [students, courses] = await Promise.all([
@@ -409,7 +421,9 @@ export class SupportService {
       category: t.category,
       subject: t.subject,
       status: t.status,
-      courseTitle: t.courseId ? (coursesById.get(t.courseId)?.title ?? null) : null,
+      courseTitle: t.courseId
+        ? (coursesById.get(t.courseId)?.title ?? null)
+        : null,
       studentName: studentsById.get(t.studentId)?.fullName ?? 'مستخدم محذوف',
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),

@@ -32,7 +32,7 @@ describe('EnrollmentsService', () => {
     it('accepts both active and completed enrollments, but not suspended ones', async () => {
       enrollmentsRepository.findOne.mockResolvedValue({
         id: 'enrollment-1',
-      } as EnrollmentEntity);
+      });
 
       await enrollmentsService.assertStudentEnrolled('student-1', 'course-1');
 

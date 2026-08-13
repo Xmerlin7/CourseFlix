@@ -7,7 +7,9 @@ import { Sidebar } from '../../shared/components/Sidebar'
 import { FloatingAssistant } from '../../shared/components/FloatingAssistant'
 import { Topbar } from '../../shared/components/Topbar'
 import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
+import { useStudentSidebarUnread } from '../../shared/hooks/useStudentSidebarUnread'
 import { usePendingActionCount } from '../../features/assistant-actions/hooks/usePendingActionCount'
+import { useTeacherQuota } from '../../features/teacher-billing/hooks/useTeacherQuota'
 import { ROUTE_PATHS } from '../routes/route-paths'
 
 export function TeacherLayout({ children }: PropsWithChildren) {
@@ -22,6 +24,10 @@ export function TeacherLayout({ children }: PropsWithChildren) {
   // Assistants don't review anything, so they don't poll for a count.
   const pendingActionCount = usePendingActionCount(user?.role === 'teacher')
   const unreadCount = useUnreadNotificationsCount()
+  const { communityHasUnread, supportHasUnread } = useStudentSidebarUnread()
+  // The quota API route is teacher-only; the assistant gets 403 there, so
+  // the chip is gated on the role just like the review badge above.
+  const quota = useTeacherQuota(user?.role === 'teacher')
 
   async function handleLogout() {
     await logout()
@@ -43,6 +49,8 @@ export function TeacherLayout({ children }: PropsWithChildren) {
         isMobileOpen={isNavOpen}
         onCloseMobile={() => setIsNavOpen(false)}
         profilePath={ROUTE_PATHS.TEACHER.PROFILE}
+        communityHasUnread={communityHasUnread}
+        supportHasUnread={supportHasUnread}
         pendingActionCount={pendingActionCount}
       />
 
@@ -54,6 +62,8 @@ export function TeacherLayout({ children }: PropsWithChildren) {
             notificationsPath={ROUTE_PATHS.TEACHER.NOTIFICATIONS}
             onSettingsClick={() => navigate(ROUTE_PATHS.TEACHER.SETTINGS)}
             onLogoClick={() => navigate(ROUTE_PATHS.TEACHER.DASHBOARD)}
+            quota={isAssistant ? null : quota}
+            onQuotaClick={() => navigate(ROUTE_PATHS.TEACHER.PROFILE)}
           />
 
           <div className="page">{children ?? <Outlet />}</div>

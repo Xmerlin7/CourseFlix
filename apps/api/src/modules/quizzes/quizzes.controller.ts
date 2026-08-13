@@ -104,7 +104,10 @@ export class QuizzesController {
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<TeacherQuizResponse[]> {
-    return this.quizzesService.listCourseQuizzes(courseId, scopeTeacherId(user));
+    return this.quizzesService.listCourseQuizzes(
+      courseId,
+      scopeTeacherId(user),
+    );
   }
 
   @Patch('teacher/quizzes/:quizId')

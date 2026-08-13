@@ -9,6 +9,6 @@ export class OtpVerifyDto {
   @Matches(/^\d{6}$/, { message: 'code must be exactly 6 digits' })
   code!: string;
 
-  @IsIn(['login', 'register', 'google_oauth'])
-  purpose!: 'login' | 'register' | 'google_oauth';
+  @IsIn(['register', 'google_oauth'])
+  purpose!: 'register' | 'google_oauth';
 }

@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { seedUsers } from './seeds/user.seed';
+import { seedTeacherQuota } from './seeds/teacher-quota.seed';
 import { seedCourse } from './seeds/course.seed';
 import { seedEnrollment, seedEnrollments } from './seeds/enrollment.seed';
 import { seedDocuments } from './seeds/document.seed';
@@ -13,6 +14,7 @@ import { clearTransactionalDemoState } from './seeds/transactional-reset.seed';
 export interface SeedSummary {
   primaryTeacherEmail: string;
   assistantCount: number;
+  quotaCredits: number;
   primaryAssistantEmail: string;
   studentCount: number;
   primaryStudentEmail: string;
@@ -52,6 +54,10 @@ export async function runSeed(
 
   const { teacher, assistant, assistants, student, students } =
     await seedUsers(dataSource);
+
+  await seedTeacherQuota(dataSource, teacher.id);
+
+  const quota = await seedTeacherQuota(dataSource, teacher.id);
 
   const { course, section, lessons, courses } = await seedCourse(
     dataSource,
@@ -95,6 +101,7 @@ export async function runSeed(
   return {
     primaryTeacherEmail: teacher.email,
     assistantCount: assistants.length,
+    quotaCredits: quota.totalCredits,
     primaryAssistantEmail: assistant.email,
     studentCount: students.length,
     primaryStudentEmail: student.email,
@@ -125,6 +132,7 @@ export function printSeedSummary(summary: SeedSummary, heading: string): void {
   console.log(
     `  assistants:     ${summary.assistantCount} (primary: ${summary.primaryAssistantEmail})`,
   );
+  console.log(`  teacher quota:  ${summary.quotaCredits} AI credits`);
   console.log(
     `  students:       ${summary.studentCount} (primary: ${summary.primaryStudentEmail})`,
   );

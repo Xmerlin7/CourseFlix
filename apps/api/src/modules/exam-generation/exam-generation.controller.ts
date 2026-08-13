@@ -37,7 +37,10 @@ export class ExamGenerationController {
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.examGenerationService.listForCourse(courseId, scopeTeacherId(user));
+    return this.examGenerationService.listForCourse(
+      courseId,
+      scopeTeacherId(user),
+    );
   }
 
   @Get('teacher/exam-generation-requests/:requestId')
@@ -45,7 +48,10 @@ export class ExamGenerationController {
     @Param('requestId') requestId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.examGenerationService.getRequest(requestId, scopeTeacherId(user));
+    return this.examGenerationService.getRequest(
+      requestId,
+      scopeTeacherId(user),
+    );
   }
 
   @Post('teacher/exam-generation-requests/:requestId/accept')

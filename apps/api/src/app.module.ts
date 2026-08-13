@@ -30,6 +30,7 @@ import { SessionsModule } from './modules/sessions/sessions.module';
 import { StudentModule } from './modules/student/student.module';
 import { SupportModule } from './modules/support/support.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
+import { TeacherBillingModule } from './modules/teacher-billing/teacher-billing.module';
 import { UsersModule } from './modules/users/users.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { RetrievalModule } from './modules/retrieval/retrieval.module';
@@ -62,7 +63,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
       type: 'postgres',
       url: process.env.DATABASE_URL,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: false,
       port: 5432,
       ssl: isLocalDatabaseUrl ? false : true,
       extra: isLocalDatabaseUrl
@@ -84,6 +85,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     EnrollmentsModule,
     StudentModule,
     TeacherModule,
+    TeacherBillingModule,
     AssistantActionsModule,
     DocumentsModule,
     AttachmentsModule,

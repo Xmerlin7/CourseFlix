@@ -10,6 +10,8 @@ import { showToast } from '../../../shared/components/Toast'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { USER_ROLE_LABEL, USER_STATUS_LABEL } from '../lib/user-labels'
 import { useAdminUserDetail } from '../hooks/useAdminUserDetail'
+import { useAdminQuotas } from '../../teacher-billing/hooks/useAdminQuotas'
+import { TopUpQuotaModal } from '../../teacher-billing/components/TopUpQuotaModal'
 import { AdminSendNotificationForm } from '../components/AdminSendNotificationForm'
 import {
   hardDeleteAdminUser,
@@ -38,6 +40,10 @@ export function AdminUserDetailPage() {
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const { data, isLoading, error, refetch } = useAdminUserDetail(userId ?? '')
+  const isTeacher = data?.role === 'teacher' && !!userId
+  const { data: quotas, refetch: refetchQuotas } = useAdminQuotas(isTeacher)
+  const teacherQuota = quotas?.find((quota) => quota.teacherId === userId) ?? null
+  const [isTopUpOpen, setIsTopUpOpen] = useState(false)
 
   const [fullName, setFullName] = useState('')
   const [isSyncedName, setIsSyncedName] = useState(false)
@@ -185,6 +191,72 @@ export function AdminUserDetailPage() {
           <span className="num">{data.dependentRecordCounts.orders}</span>
         </div>
       </div>
+
+      {isTeacher && (
+        <div className="card section">
+          <div className="profile-card-head">
+            <h3 className="profile-card-title">حصة المساعد الذكي</h3>
+            <p className="profile-card-sub">
+              رصيد الـ AI الشهري — الشحن يُضاف فوق الرصيد الحالي
+            </p>
+          </div>
+
+          {teacherQuota ? (
+            <>
+              <div className="quota-numbers">
+                <div className="tile">
+                  <span className="lead-ic">
+                    <span className="ms">bolt</span>
+                  </span>
+                  <span className="lbl">متبقي</span>
+                  <span className="num">
+                    <bdi>{teacherQuota.remainingCredits}</bdi>
+                  </span>
+                </div>
+                <div className="tile">
+                  <span className="lead-ic">
+                    <span className="ms">all_inbox</span>
+                  </span>
+                  <span className="lbl">رصيد الشهر</span>
+                  <span className="num">
+                    <bdi>{teacherQuota.totalCredits}</bdi>
+                  </span>
+                </div>
+                <div className="tile">
+                  <span className="lead-ic">
+                    <span className="ms">account_balance_wallet</span>
+                  </span>
+                  <span className="lbl">مستخدم</span>
+                  <span className="num">
+                    <bdi>{teacherQuota.usedCredits}</bdi>
+                  </span>
+                </div>
+              </div>
+
+              <div className="progress quota-progress" aria-hidden="true">
+                <div className="bar" style={{ width: `${teacherQuota.percentUsed}%` }} />
+              </div>
+              <p className="meta">
+                استهلك المعلم <bdi>{teacherQuota.percentUsed}%</bdi> من رصيده — بيتجدد أول كل شهر
+              </p>
+            </>
+          ) : (
+            <p className="meta">لا توجد حصة لهذا المعلم بعد — الشحن هيُنشئها تلقائياً.</p>
+          )}
+
+          <div className="actions" style={{ marginTop: 12 }}>
+            <button
+              type="button"
+              className="btn"
+              disabled={isSaving}
+              onClick={() => setIsTopUpOpen(true)}
+            >
+              <span className="ms">add_card</span>
+              شحن الحصة
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="detail-grid section">
         <form
@@ -338,6 +410,15 @@ export function AdminUserDetailPage() {
         isLoading={isSaving}
         onConfirm={() => void handleConfirmRoleChange()}
         onCancel={() => setTargetRole(null)}
+      />
+
+      <TopUpQuotaModal
+        open={isTopUpOpen}
+        teacherId={data.id}
+        teacherName={data.fullName}
+        quota={teacherQuota}
+        onSuccess={refetchQuotas}
+        onClose={() => setIsTopUpOpen(false)}
       />
     </>
   )

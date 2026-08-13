@@ -534,7 +534,8 @@ export class CoursesService {
     // other provider is visible immediately, same as before this gate
     // existed. Re-evaluated on every URL change, not just creation — a
     // teacher swapping in a new YouTube link must re-clear moderation.
-    const isYoutube = this.videoIngestionService.detectProvider(videoUrl) === 'youtube';
+    const isYoutube =
+      this.videoIngestionService.detectProvider(videoUrl) === 'youtube';
 
     const video = existingVideo
       ? Object.assign(existingVideo, {
@@ -544,7 +545,9 @@ export class CoursesService {
           videoUrl,
           type: 'recorded' as const,
           status: 'recorded' as const,
-          moderationStatus: isYoutube ? ('pending' as const) : ('approved' as const),
+          moderationStatus: isYoutube
+            ? ('pending' as const)
+            : ('approved' as const),
           moderationReason: null,
           moderationCheckedAt: null,
         })

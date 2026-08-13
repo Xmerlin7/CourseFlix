@@ -60,7 +60,7 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<LoginResult | OtpResponse> {
+  async login(loginDto: LoginDto): Promise<LoginResult> {
     const user = await this.usersService.findByEmail(loginDto.email);
 
     if (!user || user.status !== 'active') {
@@ -72,18 +72,6 @@ export class AuthService {
       (await argon2.verify(user.passwordHash, loginDto.password));
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid email or password.');
-    }
-
-    // Two-step login: the password is correct, but instead of opening a
-    // session we email a login OTP that must be redeemed via otp/verify.
-    // No session and no cookie are created here.
-    if (loginDto.requireOtp) {
-      const code = await this.otpService.issue(user.id, user.email, 'login');
-      return {
-        message: 'Password correct. Check your email for your login code.',
-        email: user.email,
-        ...this.devCode(code),
-      };
     }
 
     return this.buildLoginResult(user);
@@ -190,10 +178,13 @@ export class AuthService {
     };
   }
 
-  /** Passwordless login: emails a login OTP to an active account. */
+  /**
+   * Re-sends an OTP for a flow that already mailed one: 'register' for an
+   * unverified registration, 'google_oauth' after the Google callback.
+   */
   async requestOtp(
     email: string,
-    purpose: 'login' | 'register' | 'google_oauth' = 'login',
+    purpose: 'register' | 'google_oauth',
   ): Promise<OtpResponse> {
     const user = await this.usersService.findByEmail(email);
 
@@ -221,52 +212,34 @@ export class AuthService {
       };
     }
 
-    if (purpose === 'google_oauth') {
-      // Resend after the Google callback already mailed a code. Same generic
-      // response for unknown/inactive accounts so the endpoint can't be used
-      // to enumerate registered emails — only an active account gets a code.
-      if (user && user.status === 'active') {
-        const code = await this.otpService.issue(
-          user.id,
-          user.email,
-          'google_oauth',
-        );
-        return {
-          message: 'Check your email for your Google sign-in code.',
-          email: user.email,
-          ...this.devCode(code),
-        };
-      }
-
+    // purpose === 'google_oauth'. Resend after the Google callback already
+    // mailed a code. Same generic response for unknown/inactive accounts so
+    // the endpoint can't be used to enumerate registered emails — only an
+    // active account gets a code.
+    if (user && user.status === 'active') {
+      const code = await this.otpService.issue(
+        user.id,
+        user.email,
+        'google_oauth',
+      );
       return {
         message: 'Check your email for your Google sign-in code.',
-        email: email.trim().toLowerCase(),
-      };
-    }
-
-    // Generic success regardless of whether the account exists so the
-    // endpoint can't be used to enumerate registered emails.
-    if (user && user.status === 'active') {
-      const code = await this.otpService.issue(user.id, user.email, 'login');
-      return {
-        message: 'Check your email for your login code.',
         email: user.email,
         ...this.devCode(code),
       };
     }
 
     return {
-      message: 'Check your email for your login code.',
+      message: 'Check your email for your Google sign-in code.',
       email: email.trim().toLowerCase(),
     };
   }
 
   /**
-   * Redeems an OTP. For purpose 'login' it's passwordless authentication;
-   * for purpose 'google_oauth' it completes the Google sign-in that paused
-   * at a code; for purpose 'register' it verifies the account email,
-   * activates the user, then authenticates. A session is issued and returned
-   * either way.
+   * Redeems an OTP. For purpose 'google_oauth' it completes the Google
+   * sign-in that paused at a code; for purpose 'register' it verifies the
+   * account email, activates the user, then authenticates. A session is
+   * issued and returned either way.
    */
   async verifyOtp(dto: OtpVerifyDto): Promise<LoginResult> {
     const user = await this.usersService.findByEmail(dto.email);
@@ -274,10 +247,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired code.');
     }
 
-    if (dto.purpose === 'login' || dto.purpose === 'google_oauth') {
-      if (user.status !== 'active') {
-        throw new UnauthorizedException('Invalid or expired code.');
-      }
+    if (dto.purpose === 'google_oauth' && user.status !== 'active') {
+      throw new UnauthorizedException('Invalid or expired code.');
     }
 
     await this.otpService.verify(user.id, dto.purpose, dto.code);

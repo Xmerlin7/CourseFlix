@@ -6,8 +6,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type OtpPurpose =
-  'login' | 'register' | 'password_reset' | 'google_oauth';
+// 'login' (two-step/passwordless login) was removed in favour of a direct
+// password session; the value stays in the DB enum for pre-existing rows.
+export type OtpPurpose = 'register' | 'password_reset' | 'google_oauth';
 
 @Entity('otp_codes')
 @Index(['userId', 'purpose', 'createdAt'])

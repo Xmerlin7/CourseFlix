@@ -11,9 +11,6 @@ export interface AuthUser {
 export interface LoginPayload {
   email: string;
   password: string;
-  // Two-step login: when true, a correct password emails a login OTP and
-  // the user signs in via `verifyOtp` (purpose 'login') — no session yet.
-  requireOtp?: boolean;
 }
 
 export interface RegisterPayload {
@@ -36,11 +33,11 @@ export interface OtpResponse {
   accountStatus?: "pending" | "active" | "unknown";
 }
 
-export type OtpPurpose = 'login' | 'register' | 'google_oauth';
+export type OtpPurpose = 'register' | 'google_oauth';
 
 export interface OtpRequestPayload {
   email: string;
-  purpose?: OtpPurpose;
+  purpose: OtpPurpose;
 }
 
 export interface OtpVerifyPayload {

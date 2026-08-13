@@ -1,4 +1,8 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import type { GoogleProfile } from '../auth/auth.service';
 
@@ -35,9 +39,9 @@ export class OAuthService {
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     return Boolean(
       clientId &&
-        clientSecret &&
-        clientId !== 'replace-me' &&
-        clientSecret !== 'replace-me',
+      clientSecret &&
+      clientId !== 'replace-me' &&
+      clientSecret !== 'replace-me',
     );
   }
 
@@ -121,6 +125,10 @@ export class OAuthService {
 
   /** Where the browser is sent back to after the OAuth dance. */
   getRedirectBaseUrl(): string {
-    return process.env.OAUTH_REDIRECT_URL ?? process.env.WEB_ORIGIN ?? 'http://localhost:5173';
+    return (
+      process.env.OAUTH_REDIRECT_URL ??
+      process.env.WEB_ORIGIN ??
+      'http://localhost:5173'
+    );
   }
 }

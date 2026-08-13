@@ -23,8 +23,8 @@ export type SidebarProps = {
   // the user still renders the identity row as plain, non-interactive
   // text rather than a dead link.
   profilePath?: string
-  // Unread activity indicators — student-only for now. A small dot
-  // appears next to the nav item when the flag is true.
+  // Unread activity indicators. A small dot appears next to the nav item
+  // when the current role has new community/support activity.
   communityHasUnread?: boolean
   supportHasUnread?: boolean
   /** Teacher only: assistant actions waiting on their review. */
@@ -51,6 +51,7 @@ const studentNavItems: NavItem[] = [
 const teacherNavItems: NavItem[] = [
   { path: ROUTE_PATHS.TEACHER.DASHBOARD, label: 'الرئيسية', icon: 'home' },
   { path: ROUTE_PATHS.TEACHER.COURSES, label: 'دوراتي', icon: 'menu_book' },
+  { path: ROUTE_PATHS.TEACHER.COMMUNITY, label: 'المجتمع', icon: 'groups' },
   { path: ROUTE_PATHS.TEACHER.STUDENTS, label: 'الطلاب', icon: 'groups' },
   { path: ROUTE_PATHS.TEACHER.AGENT_LOGS, label: 'سجل الوكيل', icon: 'smart_toy' },
   { path: ROUTE_PATHS.TEACHER.INTERVENTIONS, label: 'تقارير المتابعة', icon: 'monitoring' },
@@ -100,9 +101,17 @@ const NAV_ITEMS_BY_ROLE: Record<SidebarProps['role'], NavItem[]> = {
   assistant: assistantNavItems,
 }
 
-// Paths that have a per-item unread dot for the student role.
-const SUPPORT_PATH = ROUTE_PATHS.STUDENT.SUPPORT
-const COMMUNITY_PATH = ROUTE_PATHS.STUDENT.COMMUNITY
+const SUPPORT_PATH_BY_ROLE: Partial<Record<SidebarProps['role'], string>> = {
+  student: ROUTE_PATHS.STUDENT.SUPPORT,
+  teacher: ROUTE_PATHS.TEACHER.SUPPORT,
+  assistant: ROUTE_PATHS.TEACHER.SUPPORT,
+}
+
+const COMMUNITY_PATH_BY_ROLE: Partial<Record<SidebarProps['role'], string>> = {
+  student: ROUTE_PATHS.STUDENT.COMMUNITY,
+  teacher: ROUTE_PATHS.TEACHER.COMMUNITY,
+  assistant: ROUTE_PATHS.TEACHER.COMMUNITY,
+}
 
 export function Sidebar({
   role,
@@ -143,9 +152,8 @@ export function Sidebar({
   }
 
   function getUnreadDot(itemPath: string): boolean {
-    if (role !== 'student') return false
-    if (itemPath === SUPPORT_PATH) return supportHasUnread
-    if (itemPath === COMMUNITY_PATH) return communityHasUnread
+    if (itemPath === SUPPORT_PATH_BY_ROLE[role]) return supportHasUnread
+    if (itemPath === COMMUNITY_PATH_BY_ROLE[role]) return communityHasUnread
     return false
   }
 

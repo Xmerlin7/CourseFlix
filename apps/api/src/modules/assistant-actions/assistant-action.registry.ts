@@ -61,7 +61,8 @@ export const ASSISTANT_ACTIONS: Record<string, ActionDefinition> = {
   // ── Courses ──
   'POST /api/v1/teacher/courses': {
     label: 'إنشاء دورة',
-    describe: ({ body }) => `إنشاء دورة ${quoted(text(body, 'title'), 'جديدة')}`,
+    describe: ({ body }) =>
+      `إنشاء دورة ${quoted(text(body, 'title'), 'جديدة')}`,
     run: (d, { body, teacherId }) =>
       d.teacherService.createCourse(teacherId, body as never),
   },
@@ -70,7 +71,7 @@ export const ASSISTANT_ACTIONS: Record<string, ActionDefinition> = {
     describe: ({ body }) =>
       `تعديل بيانات دورة ${quoted(text(body, 'title'), '')}`.trim(),
     run: (d, { params, body, teacherId }) =>
-      d.teacherService.updateCourse(params.courseId, teacherId, body as never),
+      d.teacherService.updateCourse(params.courseId, teacherId, body),
   },
   'DELETE /api/v1/teacher/courses/:courseId': {
     label: 'حذف دورة',
@@ -91,11 +92,7 @@ export const ASSISTANT_ACTIONS: Record<string, ActionDefinition> = {
     describe: ({ body }) =>
       `تعديل قسم ${quoted(text(body, 'title'), '')}`.trim(),
     run: (d, { params, body, teacherId }) =>
-      d.teacherService.updateSection(
-        params.sectionId,
-        teacherId,
-        body as never,
-      ),
+      d.teacherService.updateSection(params.sectionId, teacherId, body),
   },
   'DELETE /api/v1/teacher/sections/:sectionId': {
     label: 'حذف قسم',
@@ -126,7 +123,7 @@ export const ASSISTANT_ACTIONS: Record<string, ActionDefinition> = {
     describe: ({ body }) =>
       `تعديل درس ${quoted(text(body, 'title'), '')}`.trim(),
     run: (d, { params, body, teacherId }) =>
-      d.teacherService.updateLesson(params.lessonId, teacherId, body as never),
+      d.teacherService.updateLesson(params.lessonId, teacherId, body),
   },
   'DELETE /api/v1/teacher/lessons/:lessonId': {
     label: 'حذف درس',

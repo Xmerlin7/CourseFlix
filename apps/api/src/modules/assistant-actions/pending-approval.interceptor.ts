@@ -96,7 +96,9 @@ export class PendingApprovalInterceptor implements NestInterceptor {
    * exactly that prefix, so the two together rebuild the key the registry
    * is written in.
    */
-  private routePattern(request: Request & { route?: { path?: string } }): string {
+  private routePattern(
+    request: Request & { route?: { path?: string } },
+  ): string {
     const tail = request.route?.path ?? '';
     const base = request.baseUrl ?? '';
     const joined = `${base}${tail === '/' ? '' : tail}`;

@@ -10,6 +10,7 @@ import { QuizEntity } from '../quizzes/entities/quiz.entity';
 import { QuestionEntity } from '../quizzes/entities/question.entity';
 import { QuizQuestionEntity } from '../quizzes/entities/quiz-question.entity';
 import { SessionsModule } from '../sessions/sessions.module';
+import { TeacherBillingModule } from '../teacher-billing/teacher-billing.module';
 import { QuizGenerationRequestEntity } from './entities/quiz-generation-request.entity';
 import { QuizGenerationFeedbackEntity } from './entities/quiz-generation-feedback.entity';
 import { ExamGenerationController } from './exam-generation.controller';
@@ -33,6 +34,7 @@ import { ExamGenerationService } from './exam-generation.service';
     JobsModule,
     EnrollmentsModule,
     NotificationsModule,
+    TeacherBillingModule,
   ],
   controllers: [ExamGenerationController],
   providers: [ExamGenerationService],

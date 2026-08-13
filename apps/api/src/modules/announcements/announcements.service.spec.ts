@@ -12,7 +12,9 @@ import { AnnouncementsService } from './announcements.service';
 import { PostAttachmentEntity } from './entities/post-attachment.entity';
 import { PostEntity } from './entities/post.entity';
 
-function makeUser(overrides: Partial<AuthenticatedUser> = {}): AuthenticatedUser {
+function makeUser(
+  overrides: Partial<AuthenticatedUser> = {},
+): AuthenticatedUser {
   return {
     id: 'teacher-1',
     email: 'teacher@example.com',
@@ -49,9 +51,16 @@ describe('AnnouncementsService', () => {
     filesRepository = { find: jest.fn().mockResolvedValue([]) };
     coursesRepository = { findOne: jest.fn().mockResolvedValue(course) };
     enrollmentsRepository = {
-      find: jest.fn().mockResolvedValue([{ studentId: 'student-1' }, { studentId: 'student-2' }]),
+      find: jest
+        .fn()
+        .mockResolvedValue([
+          { studentId: 'student-1' },
+          { studentId: 'student-2' },
+        ]),
     };
-    enrollmentsService = { assertStudentEnrolled: jest.fn().mockResolvedValue(undefined) };
+    enrollmentsService = {
+      assertStudentEnrolled: jest.fn().mockResolvedValue(undefined),
+    };
     attachmentsService = { saveAttachment: jest.fn() };
     notifications = { notify: jest.fn().mockResolvedValue(undefined) };
 
@@ -59,10 +68,19 @@ describe('AnnouncementsService', () => {
       providers: [
         AnnouncementsService,
         { provide: getRepositoryToken(PostEntity), useValue: postsRepository },
-        { provide: getRepositoryToken(PostAttachmentEntity), useValue: attachmentsJoinRepository },
+        {
+          provide: getRepositoryToken(PostAttachmentEntity),
+          useValue: attachmentsJoinRepository,
+        },
         { provide: getRepositoryToken(FileEntity), useValue: filesRepository },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
-        { provide: getRepositoryToken(EnrollmentEntity), useValue: enrollmentsRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
+        {
+          provide: getRepositoryToken(EnrollmentEntity),
+          useValue: enrollmentsRepository,
+        },
         { provide: EnrollmentsService, useValue: enrollmentsService },
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: NOTIFICATION_PRODUCER_PORT, useValue: notifications },
@@ -107,9 +125,13 @@ describe('AnnouncementsService', () => {
 
   it('rejects a student trying to post an announcement', async () => {
     await expect(
-      service.createAnnouncement('course-1', makeUser({ id: 'student-1', role: 'student' }), {
-        content: 'محتوى',
-      }),
+      service.createAnnouncement(
+        'course-1',
+        makeUser({ id: 'student-1', role: 'student' }),
+        {
+          content: 'محتوى',
+        },
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -129,7 +151,10 @@ describe('AnnouncementsService', () => {
     const pinned = await service.togglePin('post-1', makeUser());
     expect(pinned.isPinned).toBe(true);
 
-    postsRepository.findOne.mockResolvedValue({ ...post, pinnedAt: new Date() });
+    postsRepository.findOne.mockResolvedValue({
+      ...post,
+      pinnedAt: new Date(),
+    });
     const unpinned = await service.togglePin('post-1', makeUser());
     expect(unpinned.isPinned).toBe(false);
   });

@@ -50,6 +50,8 @@ export const ROUTE_PATHS = {
     PROFILE: '/teacher/profile',
     ASSISTANT_ACTIONS: '/teacher/assistant-actions',
     DISCUSSION_DETAIL: '/teacher/discussions/:threadId',
+    COMMUNITY: '/teacher/community',
+    COMMUNITY_COURSE: '/teacher/community/:courseId',
     SUPPORT: '/teacher/support',
     SUPPORT_DETAIL: '/teacher/support/:ticketId',
   },

@@ -2568,6 +2568,84 @@ h1.page-title {
   min-width: 6px;
 }
 
+/* ---------- Teacher AI-credit quota (topbar chip + profile/admin cards) ---------- */
+.quota-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 calc(12px * var(--space-scale));
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(999px * var(--radius-scale));
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.quota-chip:hover {
+  background: var(--hover);
+}
+
+.quota-chip .ms {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.quota-chip-label {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+}
+
+.quota-chip-numbers {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quota-chip.warn {
+  border-color: var(--error);
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+
+.quota-chip.warn .ms {
+  color: var(--error);
+}
+
+.quota-chip.warn .quota-chip-label {
+  color: var(--on-error-container);
+}
+
+/* Shared number row for the quota cards (profile + admin user detail). */
+.quota-numbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.quota-numbers .tile {
+  margin: 0;
+}
+
+.quota-progress {
+  margin-bottom: 10px;
+}
+
+.quota-warning {
+  color: var(--error);
+}
+
+@media (max-width: 480px) {
+  .quota-numbers {
+    grid-template-columns: 1fr;
+  }
+
+  .quota-chip-label {
+    display: none;
+  }
+}
+
 /* ---------- Student "دوراتي" cards & Continue Learning ---------- */
 @keyframes pulse-dot {
 
