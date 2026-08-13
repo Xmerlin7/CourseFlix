@@ -866,11 +866,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  scrollbar-width: none;
-}
-
-.notif-panel-body::-webkit-scrollbar {
-  display: none;
 }
 
 .notif-panel-msg {
@@ -1134,43 +1129,24 @@ body.shell {
   height: 100%;
 }
 
-/* Scrollbar styling */
+/* Scrollbars are hidden application-wide — every scroll container still
+   scrolls (wheel, touch, keyboard, programmatic), it just draws no track or
+   thumb. Declared once here, globally, instead of per-component: several
+   components used to hide their own bar and the rest inherited a styled
+   one, which is exactly the inconsistency this replaces.
+
+   `scrollbar-width: none` covers Firefox and Chromium 121+; the
+   `::-webkit-scrollbar` rule covers WebKit and older Chromium. Both are
+   needed — neither alone hides the bar on every engine we support. */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--outline-variant) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--outline-variant);
-  border-radius: 0;
-  border: none;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--outline);
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Auto-hide scrollbar for content areas */
-.page {
-  scrollbar-color: transparent transparent;
-}
-
-.page::-webkit-scrollbar-thumb {
-  background: transparent;
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 h1,
@@ -2279,48 +2255,18 @@ h1.page-title {
   transition: transform 0.3s ease;
 }
 
+/* Cover fallback: Material 3 shape artwork (CourseThumbPlaceholder.tsx).
+   The SVG paints its own background rect, so this element only has to
+   give it a box to fill. */
 .thumb-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--surface-container-high) 0%, var(--primary-container) 100%);
+  background: var(--surface-container-high);
   position: relative;
 }
 
-.thumb-placeholder-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(var(--outline-variant) 1px, transparent 1px);
-  background-size: 14px 14px;
-  opacity: 0.25;
-}
-
-.thumb-placeholder-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.thumb-icon-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--primary);
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow);
-}
-
-.thumb-brand {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: var(--on-surface-variant);
-  opacity: 0.85;
+.thumb-shapes {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* Base course card row legacy compatibility */
@@ -2685,8 +2631,15 @@ h1.page-title {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: linear-gradient(135deg, var(--primary-container) 0%, var(--surface-container-low) 70%);
+  /* Flat surface + a single accent edge, not a gradient wash: the body text
+     inside is `--on-surface`/`--on-surface-variant`, which only has a
+     guaranteed contrast ratio against a `--surface-*` token. The old
+     `--primary-container → --surface-container-low` gradient meant the
+     left-hand text sat on an accent the user picks, so contrast changed
+     with the accent. The stripe carries the emphasis instead. */
+  background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
+  border-inline-start: 3px solid var(--primary);
 }
 
 .continue-learning-info {
@@ -2708,7 +2661,7 @@ h1.page-title {
   align-items: center;
   gap: 6px;
   color: var(--on-primary-container);
-  background: var(--surface);
+  background: var(--primary-container);
   padding: 4px 10px;
   border-radius: calc(999px * var(--radius-scale));
   font-size: 12px;
@@ -2933,11 +2886,6 @@ a.list-item:hover,
   border-bottom: 1px solid var(--outline-variant);
   margin-bottom: 26px;
   overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .tab {
@@ -3172,7 +3120,11 @@ table.mtable {
   flex-direction: column;
   gap: 6px;
   padding: 8px 14px 10px;
-  background: linear-gradient(to top, rgba(10, 8, 16, 0.88), rgba(10, 8, 16, 0.5) 65%, transparent);
+  /* Flat scrim rather than a fade-to-transparent gradient. It still has to
+     be opaque enough for white control glyphs to stay legible over an
+     arbitrary video frame, so the alpha matches the old gradient's darkest
+     stop rather than its average. */
+  background: rgba(10, 8, 16, 0.82);
 }
 
 .player-controls-seek {
@@ -4081,11 +4033,6 @@ table.mtable {
     position: static;
     flex-direction: row;
     overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .settings-nav::-webkit-scrollbar {
-    display: none;
   }
 
   .settings-nav .nav-item {

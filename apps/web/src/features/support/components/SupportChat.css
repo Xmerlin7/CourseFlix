@@ -727,7 +727,6 @@
   overflow-x: auto;
   padding-bottom: 4px;
   margin-bottom: 0;
-  scrollbar-width: thin;
 }
 
 
@@ -919,11 +918,6 @@
   padding-bottom: 14px;
   margin-bottom: 22px;
   overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.course-detail-tabs::-webkit-scrollbar {
-  display: none;
 }
 
 .course-detail-tab-btn {
