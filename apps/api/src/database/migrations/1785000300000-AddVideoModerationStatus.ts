@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * Guarded (`IF NOT EXISTS` / duplicate_object catch) per this repo's
  * convention for coexisting with `synchronize: true` in app.module.ts.
  */
-export class AddVideoModerationStatus1785000300000
-  implements MigrationInterface
-{
+export class AddVideoModerationStatus1785000300000 implements MigrationInterface {
   name = 'AddVideoModerationStatus1785000300000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -7,7 +7,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AssistantActionEntity } from './entities/assistant-action.entity';
-import { findActionDefinition, type ReplayDeps } from './assistant-action.registry';
+import {
+  findActionDefinition,
+  type ReplayDeps,
+} from './assistant-action.registry';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UserEntity } from '../users/entities/user.entity';
 
@@ -171,7 +174,9 @@ export class AssistantActionsService {
     await this.notifications.notify({
       userId: action.assistantId,
       type: 'system',
-      title: action.executionError ? 'تمت الموافقة لكن التنفيذ فشل' : 'تمت الموافقة على إجراءك',
+      title: action.executionError
+        ? 'تمت الموافقة لكن التنفيذ فشل'
+        : 'تمت الموافقة على إجراءك',
       message: action.executionError
         ? `${action.summary} — وافق المعلم لكن تعذر التنفيذ: ${action.executionError}`
         : `${action.summary} — تم التنفيذ بنجاح.`,

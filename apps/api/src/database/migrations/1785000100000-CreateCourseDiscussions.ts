@@ -21,9 +21,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * exist yet), so the FK is added via ALTER TABLE once both tables
  * exist.
  */
-export class CreateCourseDiscussions1785000100000
-  implements MigrationInterface
-{
+export class CreateCourseDiscussions1785000100000 implements MigrationInterface {
   name = 'CreateCourseDiscussions1785000100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -104,9 +102,7 @@ export class CreateCourseDiscussions1785000100000
     await queryRunner.query(
       `DROP TABLE IF EXISTS "discussion_thread_attachments";`,
     );
-    await queryRunner.query(
-      `DROP TABLE IF EXISTS "discussion_helpful_votes";`,
-    );
+    await queryRunner.query(`DROP TABLE IF EXISTS "discussion_helpful_votes";`);
     await queryRunner.query(`
       ALTER TABLE "discussion_threads" DROP CONSTRAINT IF EXISTS "fk_discussion_threads_accepted_reply_id";
     `);

@@ -28,7 +28,11 @@ export class OtpService {
   ) {}
 
   /** Issues a new code for the user, emails it, and returns the plaintext. */
-  async issue(userId: string, email: string, purpose: OtpPurpose): Promise<string> {
+  async issue(
+    userId: string,
+    email: string,
+    purpose: OtpPurpose,
+  ): Promise<string> {
     const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
     const codeHash = await argon2.hash(code);
 
@@ -46,7 +50,11 @@ export class OtpService {
   }
 
   /** Throws unless `code` matches any of the user's unconsumed codes. */
-  async verify(userId: string, purpose: OtpPurpose, code: string): Promise<void> {
+  async verify(
+    userId: string,
+    purpose: OtpPurpose,
+    code: string,
+  ): Promise<void> {
     const records = await this.otpRepository.find({
       where: { userId, purpose, consumedAt: IsNull() },
       order: { createdAt: 'DESC' },
@@ -61,13 +69,19 @@ export class OtpService {
     // Retire codes that outlived their usefulness so the table can't grow
     // forever from repeated resends.
     for (const record of records) {
-      if (record.expiresAt.getTime() <= now || record.attempts >= MAX_ATTEMPTS) {
+      if (
+        record.expiresAt.getTime() <= now ||
+        record.attempts >= MAX_ATTEMPTS
+      ) {
         await this.consume(record.id);
       }
     }
 
     for (const record of records) {
-      if (record.expiresAt.getTime() <= now || record.attempts >= MAX_ATTEMPTS) {
+      if (
+        record.expiresAt.getTime() <= now ||
+        record.attempts >= MAX_ATTEMPTS
+      ) {
         continue;
       }
       const matches = await argon2.verify(record.codeHash, code);

@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import { NOTIFICATION_PRODUCER_PORT } from '../../common/ports/notification-producer.port';
@@ -13,7 +17,9 @@ import { SupportTicketAttachmentEntity } from './entities/support-ticket-attachm
 import { SupportTicketEntity } from './entities/support-ticket.entity';
 import { SupportService } from './support.service';
 
-function makeUser(overrides: Partial<AuthenticatedUser> = {}): AuthenticatedUser {
+function makeUser(
+  overrides: Partial<AuthenticatedUser> = {},
+): AuthenticatedUser {
   return {
     id: 'student-1',
     email: 'student@example.com',
@@ -75,24 +81,39 @@ describe('SupportService', () => {
     filesRepository = { find: jest.fn().mockResolvedValue([]) };
     coursesRepository = { find: jest.fn().mockResolvedValue([]) };
     usersRepository = {
-      find: jest.fn().mockResolvedValue([{ id: 'student-1', fullName: 'الطالب' }]),
-      findOne: jest.fn().mockResolvedValue({ id: 'student-1', fullName: 'الطالب' }),
+      find: jest
+        .fn()
+        .mockResolvedValue([{ id: 'student-1', fullName: 'الطالب' }]),
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: 'student-1', fullName: 'الطالب' }),
     };
-    enrollmentsService = { assertStudentEnrolled: jest.fn().mockResolvedValue(undefined) };
+    enrollmentsService = {
+      assertStudentEnrolled: jest.fn().mockResolvedValue(undefined),
+    };
     attachmentsService = { saveAttachment: jest.fn() };
     notifications = { notify: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         SupportService,
-        { provide: getRepositoryToken(SupportTicketEntity), useValue: ticketsRepository },
-        { provide: getRepositoryToken(SupportMessageEntity), useValue: messagesRepository },
+        {
+          provide: getRepositoryToken(SupportTicketEntity),
+          useValue: ticketsRepository,
+        },
+        {
+          provide: getRepositoryToken(SupportMessageEntity),
+          useValue: messagesRepository,
+        },
         {
           provide: getRepositoryToken(SupportTicketAttachmentEntity),
           useValue: attachmentsJoinRepository,
         },
         { provide: getRepositoryToken(FileEntity), useValue: filesRepository },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
         { provide: EnrollmentsService, useValue: enrollmentsService },
         { provide: AttachmentsService, useValue: attachmentsService },
@@ -122,10 +143,16 @@ describe('SupportService', () => {
       expect(result.subject).toBe('الفيديو بيتوقف');
       expect(result.status).toBe('open');
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'admin-1', type: 'support_ticket_update' }),
+        expect.objectContaining({
+          userId: 'admin-1',
+          type: 'support_ticket_update',
+        }),
       );
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'teacher-1', type: 'support_ticket_update' }),
+        expect.objectContaining({
+          userId: 'teacher-1',
+          type: 'support_ticket_update',
+        }),
       );
     });
 
@@ -141,11 +168,19 @@ describe('SupportService', () => {
 
     it('rejects an empty subject or description', async () => {
       await expect(
-        service.createTicket(makeUser(), { category: 'technical', subject: '  ', description: 'وصف' }),
+        service.createTicket(makeUser(), {
+          category: 'technical',
+          subject: '  ',
+          description: 'وصف',
+        }),
       ).rejects.toThrow('عنوان الطلب مطلوب.');
 
       await expect(
-        service.createTicket(makeUser(), { category: 'technical', subject: 'عنوان', description: '  ' }),
+        service.createTicket(makeUser(), {
+          category: 'technical',
+          subject: 'عنوان',
+          description: '  ',
+        }),
       ).rejects.toThrow('وصف المشكلة مطلوب.');
     });
 
@@ -161,7 +196,10 @@ describe('SupportService', () => {
         courseId: 'course-1',
       });
 
-      expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledWith('student-1', 'course-1');
+      expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledWith(
+        'student-1',
+        'course-1',
+      );
     });
   });
 
@@ -169,13 +207,19 @@ describe('SupportService', () => {
     it('lets the owning student view their own ticket', async () => {
       ticketsRepository.findOne.mockResolvedValue({ ...baseTicket });
 
-      const result = await service.getTicket('ticket-1', makeUser({ id: 'student-1' }));
+      const result = await service.getTicket(
+        'ticket-1',
+        makeUser({ id: 'student-1' }),
+      );
 
       expect(result.id).toBe('ticket-1');
     });
 
-    it('rejects a different student from viewing someone else\'s ticket', async () => {
-      ticketsRepository.findOne.mockResolvedValue({ ...baseTicket, studentId: 'student-1' });
+    it("rejects a different student from viewing someone else's ticket", async () => {
+      ticketsRepository.findOne.mockResolvedValue({
+        ...baseTicket,
+        studentId: 'student-1',
+      });
 
       await expect(
         service.getTicket('ticket-1', makeUser({ id: 'student-2' })),
@@ -186,17 +230,25 @@ describe('SupportService', () => {
       ticketsRepository.findOne.mockResolvedValue({ ...baseTicket });
 
       await expect(
-        service.getTicket('ticket-1', makeUser({ id: 'admin-1', role: 'admin' })),
+        service.getTicket(
+          'ticket-1',
+          makeUser({ id: 'admin-1', role: 'admin' }),
+        ),
       ).resolves.toMatchObject({ id: 'ticket-1' });
       await expect(
-        service.getTicket('ticket-1', makeUser({ id: 'assistant-1', role: 'assistant' })),
+        service.getTicket(
+          'ticket-1',
+          makeUser({ id: 'assistant-1', role: 'assistant' }),
+        ),
       ).resolves.toMatchObject({ id: 'ticket-1' });
     });
 
     it('throws NotFoundException for a missing ticket', async () => {
       ticketsRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getTicket('missing', makeUser())).rejects.toThrow(NotFoundException);
+      await expect(service.getTicket('missing', makeUser())).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -207,28 +259,44 @@ describe('SupportService', () => {
         Promise.resolve({ ...input, id: 'message-1', createdAt: new Date() }),
       );
 
-      const staff = makeUser({ id: 'teacher-1', role: 'teacher', fullName: 'المدرس' });
-      const result = await service.addMessage('ticket-1', staff, { body: 'جربنا إعادة المعالجة' });
+      const staff = makeUser({
+        id: 'teacher-1',
+        role: 'teacher',
+        fullName: 'المدرس',
+      });
+      const result = await service.addMessage('ticket-1', staff, {
+        body: 'جربنا إعادة المعالجة',
+      });
 
       expect(result.isStaffReply).toBe(true);
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'student-1', type: 'support_ticket_update' }),
+        expect.objectContaining({
+          userId: 'student-1',
+          type: 'support_ticket_update',
+        }),
       );
     });
 
     it('rejects a message from a student who does not own the ticket', async () => {
-      ticketsRepository.findOne.mockResolvedValue({ ...baseTicket, studentId: 'student-1' });
+      ticketsRepository.findOne.mockResolvedValue({
+        ...baseTicket,
+        studentId: 'student-1',
+      });
 
       await expect(
-        service.addMessage('ticket-1', makeUser({ id: 'student-2' }), { body: 'رد' }),
+        service.addMessage('ticket-1', makeUser({ id: 'student-2' }), {
+          body: 'رد',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('updateStatus', () => {
-    it('lets support staff change a ticket\'s status', async () => {
+    it("lets support staff change a ticket's status", async () => {
       ticketsRepository.findOne.mockResolvedValue({ ...baseTicket });
-      ticketsRepository.save.mockImplementation((input) => Promise.resolve(input));
+      ticketsRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
 
       const result = await service.updateStatus(
         'ticket-1',
@@ -238,7 +306,10 @@ describe('SupportService', () => {
 
       expect(result.status).toBe('resolved');
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'student-1', type: 'support_ticket_update' }),
+        expect.objectContaining({
+          userId: 'student-1',
+          type: 'support_ticket_update',
+        }),
       );
     });
 
@@ -246,7 +317,9 @@ describe('SupportService', () => {
       ticketsRepository.findOne.mockResolvedValue({ ...baseTicket });
 
       await expect(
-        service.updateStatus('ticket-1', makeUser({ id: 'student-1' }), { status: 'resolved' }),
+        service.updateStatus('ticket-1', makeUser({ id: 'student-1' }), {
+          status: 'resolved',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
   });

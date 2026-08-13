@@ -9,18 +9,10 @@ import {
 } from 'typeorm';
 
 export type SupportTicketCategory =
-  | 'technical'
-  | 'course'
-  | 'payment'
-  | 'account'
-  | 'other';
+  'technical' | 'course' | 'payment' | 'account' | 'other';
 
 export type SupportTicketStatus =
-  | 'open'
-  | 'in_progress'
-  | 'waiting_for_student'
-  | 'resolved'
-  | 'closed';
+  'open' | 'in_progress' | 'waiting_for_student' | 'resolved' | 'closed';
 
 /**
  * `studentId`/`courseId`/`assignedTo` are plain UUID columns (no

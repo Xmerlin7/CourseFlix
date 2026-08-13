@@ -14,7 +14,9 @@ import { DiscussionReplyEntity } from './entities/discussion-reply.entity';
 import { DiscussionThreadAttachmentEntity } from './entities/discussion-thread-attachment.entity';
 import { DiscussionThreadEntity } from './entities/discussion-thread.entity';
 
-function makeUser(overrides: Partial<AuthenticatedUser> = {}): AuthenticatedUser {
+function makeUser(
+  overrides: Partial<AuthenticatedUser> = {},
+): AuthenticatedUser {
   return {
     id: 'user-1',
     email: 'user@example.com',
@@ -106,22 +108,36 @@ describe('DiscussionsService', () => {
     filesRepository = { find: jest.fn().mockResolvedValue([]) };
     coursesRepository = { findOne: jest.fn().mockResolvedValue(course) };
     usersRepository = { find: jest.fn().mockResolvedValue([]) };
-    enrollmentsService = { assertStudentEnrolled: jest.fn().mockResolvedValue(undefined) };
+    enrollmentsService = {
+      assertStudentEnrolled: jest.fn().mockResolvedValue(undefined),
+    };
     attachmentsService = { saveAttachment: jest.fn() };
     notifications = { notify: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         DiscussionsService,
-        { provide: getRepositoryToken(DiscussionThreadEntity), useValue: threadsRepository },
-        { provide: getRepositoryToken(DiscussionReplyEntity), useValue: repliesRepository },
-        { provide: getRepositoryToken(DiscussionHelpfulVoteEntity), useValue: helpfulVotesRepository },
+        {
+          provide: getRepositoryToken(DiscussionThreadEntity),
+          useValue: threadsRepository,
+        },
+        {
+          provide: getRepositoryToken(DiscussionReplyEntity),
+          useValue: repliesRepository,
+        },
+        {
+          provide: getRepositoryToken(DiscussionHelpfulVoteEntity),
+          useValue: helpfulVotesRepository,
+        },
         {
           provide: getRepositoryToken(DiscussionThreadAttachmentEntity),
           useValue: attachmentsJoinRepository,
         },
         { provide: getRepositoryToken(FileEntity), useValue: filesRepository },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
         { provide: EnrollmentsService, useValue: enrollmentsService },
         { provide: AttachmentsService, useValue: attachmentsService },
@@ -137,9 +153,14 @@ describe('DiscussionsService', () => {
       const qb = makeQueryBuilder([baseThread]);
       threadsRepository.createQueryBuilder.mockReturnValue(qb);
 
-      const result = await service.listThreads('course-1', makeUser(), { status: 'all' });
+      const result = await service.listThreads('course-1', makeUser(), {
+        status: 'all',
+      });
 
-      expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledWith('user-1', 'course-1');
+      expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledWith(
+        'user-1',
+        'course-1',
+      );
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe(baseThread.title);
     });
@@ -158,7 +179,9 @@ describe('DiscussionsService', () => {
       const qb = makeQueryBuilder([]);
       threadsRepository.createQueryBuilder.mockReturnValue(qb);
 
-      await service.listThreads('course-1', makeUser(), { status: 'unanswered' });
+      await service.listThreads('course-1', makeUser(), {
+        status: 'unanswered',
+      });
 
       expect(qb.andWhere).toHaveBeenCalledWith('t.acceptedReplyId IS NULL');
     });
@@ -201,8 +224,14 @@ describe('DiscussionsService', () => {
 
   describe('createThread', () => {
     it('lets an enrolled student ask a question', async () => {
-      threadsRepository.save.mockImplementation((input) => Promise.resolve({ ...baseThread, ...input, id: 'thread-1' }));
-      threadsRepository.findOne.mockResolvedValue({ ...baseThread, title: 'سؤال جديد', body: 'تفاصيل السؤال' });
+      threadsRepository.save.mockImplementation((input) =>
+        Promise.resolve({ ...baseThread, ...input, id: 'thread-1' }),
+      );
+      threadsRepository.findOne.mockResolvedValue({
+        ...baseThread,
+        title: 'سؤال جديد',
+        body: 'تفاصيل السؤال',
+      });
       repliesRepository.find.mockResolvedValue([]);
       attachmentsJoinRepository.find.mockResolvedValue([]);
 
@@ -212,36 +241,54 @@ describe('DiscussionsService', () => {
         tags: [],
       });
 
-      expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledWith('user-1', 'course-1');
+      expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledWith(
+        'user-1',
+        'course-1',
+      );
       expect(result.title).toBe('سؤال جديد');
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'teacher-1', relatedEntityType: 'discussion_thread' }),
+        expect.objectContaining({
+          userId: 'teacher-1',
+          relatedEntityType: 'discussion_thread',
+        }),
       );
     });
 
     it('rejects a teacher trying to ask a question', async () => {
       await expect(
-        service.createThread('course-1', makeUser({ id: 'teacher-1', role: 'teacher' }), {
-          title: 'سؤال',
-          body: 'تفاصيل',
-          tags: [],
-        }),
+        service.createThread(
+          'course-1',
+          makeUser({ id: 'teacher-1', role: 'teacher' }),
+          {
+            title: 'سؤال',
+            body: 'تفاصيل',
+            tags: [],
+          },
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
 
     it('rejects an empty title or body', async () => {
       await expect(
-        service.createThread('course-1', makeUser(), { title: '   ', body: 'تفاصيل', tags: [] }),
+        service.createThread('course-1', makeUser(), {
+          title: '   ',
+          body: 'تفاصيل',
+          tags: [],
+        }),
       ).rejects.toThrow('عنوان السؤال مطلوب.');
 
       await expect(
-        service.createThread('course-1', makeUser(), { title: 'عنوان', body: '   ', tags: [] }),
+        service.createThread('course-1', makeUser(), {
+          title: 'عنوان',
+          body: '   ',
+          tags: [],
+        }),
       ).rejects.toThrow('تفاصيل السؤال مطلوبة.');
     });
   });
 
   describe('createReply', () => {
-    it('records the replying user\'s role on the reply', async () => {
+    it("records the replying user's role on the reply", async () => {
       threadsRepository.findOne.mockResolvedValue(baseThread);
       repliesRepository.save.mockImplementation((input) =>
         Promise.resolve({ ...input, id: 'reply-1', createdAt: new Date() }),
@@ -250,8 +297,14 @@ describe('DiscussionsService', () => {
         { id: 'teacher-1', fullName: 'المدرس', avatarUrl: null },
       ]);
 
-      const teacher = makeUser({ id: 'teacher-1', role: 'teacher', fullName: 'المدرس' });
-      const result = await service.createReply('thread-1', teacher, { body: 'إليك الشرح' });
+      const teacher = makeUser({
+        id: 'teacher-1',
+        role: 'teacher',
+        fullName: 'المدرس',
+      });
+      const result = await service.createReply('thread-1', teacher, {
+        body: 'إليك الشرح',
+      });
 
       expect(result.author.role).toBe('teacher');
       expect(repliesRepository.save).toHaveBeenCalledWith(
@@ -259,18 +312,23 @@ describe('DiscussionsService', () => {
       );
       // The thread author (a different user) gets notified of the reply.
       expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'student-1', type: 'discussion_reply' }),
+        expect.objectContaining({
+          userId: 'student-1',
+          type: 'discussion_reply',
+        }),
       );
     });
 
-    it('rejects a reply from a student not enrolled in the thread\'s course', async () => {
+    it("rejects a reply from a student not enrolled in the thread's course", async () => {
       threadsRepository.findOne.mockResolvedValue(baseThread);
       enrollmentsService.assertStudentEnrolled.mockRejectedValue(
         new ForbiddenException('You are not enrolled in this course.'),
       );
 
       await expect(
-        service.createReply('thread-1', makeUser({ id: 'other-student' }), { body: 'رد' }),
+        service.createReply('thread-1', makeUser({ id: 'other-student' }), {
+          body: 'رد',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -294,10 +352,16 @@ describe('DiscussionsService', () => {
         body: 'الشرح',
         createdAt: new Date(),
       });
-      threadsRepository.save.mockImplementation((input) => Promise.resolve(input));
+      threadsRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
       repliesRepository.find.mockResolvedValue([]);
 
-      await service.acceptAnswer('thread-1', 'reply-1', makeUser({ id: 'student-1' }));
+      await service.acceptAnswer(
+        'thread-1',
+        'reply-1',
+        makeUser({ id: 'student-1' }),
+      );
 
       expect(threadsRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({ acceptedReplyId: 'reply-1' }),
@@ -308,7 +372,11 @@ describe('DiscussionsService', () => {
       threadsRepository.findOne.mockResolvedValue({ ...baseThread });
 
       await expect(
-        service.acceptAnswer('thread-1', 'reply-1', makeUser({ id: 'someone-else' })),
+        service.acceptAnswer(
+          'thread-1',
+          'reply-1',
+          makeUser({ id: 'someone-else' }),
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
   });
@@ -321,13 +389,23 @@ describe('DiscussionsService', () => {
       const result = await service.toggleHelpful('thread-1', makeUser());
 
       expect(helpfulVotesRepository.save).toHaveBeenCalled();
-      expect(threadsRepository.increment).toHaveBeenCalledWith({ id: 'thread-1' }, 'helpfulCount', 1);
+      expect(threadsRepository.increment).toHaveBeenCalledWith(
+        { id: 'thread-1' },
+        'helpfulCount',
+        1,
+      );
       expect(result.isHelpfulByMe).toBe(true);
     });
 
     it('removes an existing helpful vote (toggle off)', async () => {
-      threadsRepository.findOne.mockResolvedValue({ ...baseThread, helpfulCount: 1 });
-      helpfulVotesRepository.findOne.mockResolvedValue({ threadId: 'thread-1', userId: 'user-1' });
+      threadsRepository.findOne.mockResolvedValue({
+        ...baseThread,
+        helpfulCount: 1,
+      });
+      helpfulVotesRepository.findOne.mockResolvedValue({
+        threadId: 'thread-1',
+        userId: 'user-1',
+      });
 
       const result = await service.toggleHelpful('thread-1', makeUser());
 

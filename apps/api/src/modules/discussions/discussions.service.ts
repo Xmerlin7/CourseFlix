@@ -9,7 +9,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { NOTIFICATION_PRODUCER_PORT } from '../../common/ports/notification-producer.port';
 import type { NotificationProducerPort } from '../../common/ports/notification-producer.port';
-import type { AuthenticatedUser, UserRole } from '../auth/interfaces/authenticated-user.interface';
+import type {
+  AuthenticatedUser,
+  UserRole,
+} from '../auth/interfaces/authenticated-user.interface';
 import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UserEntity } from '../users/entities/user.entity';
@@ -69,8 +72,7 @@ export interface DiscussionReplyResponse {
   createdAt: string;
 }
 
-export interface DiscussionThreadDetailResponse
-  extends DiscussionThreadListItemResponse {
+export interface DiscussionThreadDetailResponse extends DiscussionThreadListItemResponse {
   body: string;
   attachments: DiscussionAttachmentResponse[];
   replies: DiscussionReplyResponse[];
@@ -155,7 +157,9 @@ export class DiscussionsService {
       );
     }
 
-    qb.orderBy('t.isPinned', 'DESC').addOrderBy('t.createdAt', 'DESC').take(100);
+    qb.orderBy('t.isPinned', 'DESC')
+      .addOrderBy('t.createdAt', 'DESC')
+      .take(100);
 
     const threads = await qb.getMany();
     const authors = await this.loadAuthors(threads.map((t) => t.authorId));
@@ -395,7 +399,11 @@ export class DiscussionsService {
 
     if (existing) {
       await this.helpfulVotesRepository.delete({ threadId, userId: user.id });
-      await this.threadsRepository.decrement({ id: threadId }, 'helpfulCount', 1);
+      await this.threadsRepository.decrement(
+        { id: threadId },
+        'helpfulCount',
+        1,
+      );
       return {
         isHelpfulByMe: false,
         helpfulCount: Math.max(0, thread.helpfulCount - 1),
@@ -548,9 +556,7 @@ export class DiscussionsService {
     return normalized;
   }
 
-  private async loadAuthors(
-    ids: string[],
-  ): Promise<Map<string, UserEntity>> {
+  private async loadAuthors(ids: string[]): Promise<Map<string, UserEntity>> {
     const uniqueIds = Array.from(new Set(ids));
     if (uniqueIds.length === 0) return new Map();
     const users = await this.usersRepository.find({

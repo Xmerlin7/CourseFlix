@@ -42,14 +42,18 @@ export class DocumentsController {
       throw new BadRequestException('لم يتم إرفاق أي ملف.');
     }
 
-    return this.documentsService.uploadDocument(courseId, scopeTeacherId(user), {
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      buffer: file.buffer,
-      sizeBytes: file.size,
-      sectionId: sectionId || undefined,
-      lessonId: lessonId || undefined,
-    });
+    return this.documentsService.uploadDocument(
+      courseId,
+      scopeTeacherId(user),
+      {
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        buffer: file.buffer,
+        sizeBytes: file.size,
+        sectionId: sectionId || undefined,
+        lessonId: lessonId || undefined,
+      },
+    );
   }
 
   @Get('teacher/courses/:courseId/documents')
@@ -57,7 +61,10 @@ export class DocumentsController {
     @Param('courseId') courseId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.documentsService.listCourseDocuments(courseId, scopeTeacherId(user));
+    return this.documentsService.listCourseDocuments(
+      courseId,
+      scopeTeacherId(user),
+    );
   }
 
   @Post('teacher/documents/:documentId/retry')
@@ -65,6 +72,9 @@ export class DocumentsController {
     @Param('documentId') documentId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.documentsService.retryDocument(documentId, scopeTeacherId(user));
+    return this.documentsService.retryDocument(
+      documentId,
+      scopeTeacherId(user),
+    );
   }
 }

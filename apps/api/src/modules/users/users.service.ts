@@ -282,7 +282,10 @@ export class UsersService {
   }
 
   // Password reset flow — the reset OTP is verified before this is called.
-  async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
+  async updatePasswordHash(
+    userId: string,
+    passwordHash: string,
+  ): Promise<void> {
     await this.usersRepository.update(
       { id: userId, deletedAt: IsNull() },
       { passwordHash },

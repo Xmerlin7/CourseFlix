@@ -55,7 +55,9 @@ export class AddEmailVerificationAndOtp1785000100000 implements MigrationInterfa
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_otp_codes_user_purpose";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_otp_codes_user_purpose";`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "otp_codes";`);
     await queryRunner.query(`DROP TYPE IF EXISTS "otp_purpose";`);
     await queryRunner.query(
