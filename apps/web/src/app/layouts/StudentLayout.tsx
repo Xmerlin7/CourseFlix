@@ -27,6 +27,7 @@ export function StudentLayout({ children }: PropsWithChildren) {
       <Sidebar
         role="student"
         userName={user?.fullName ?? ''}
+        avatarUrl={user?.avatarUrl}
         activePath={location.pathname}
         onLogout={() => void handleLogout()}
         isRail={isRail}

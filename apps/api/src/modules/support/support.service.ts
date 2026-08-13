@@ -43,6 +43,7 @@ export interface SupportStaffSummary {
 export interface SupportMessageResponse {
   id: string;
   authorName: string;
+  authorAvatarUrl: string | null;
   isStaffReply: boolean;
   body: string;
   createdAt: string;
@@ -276,6 +277,7 @@ export class SupportService {
     return {
       id: message.id,
       authorName: author?.fullName ?? 'مستخدم محذوف',
+      authorAvatarUrl: author?.avatarUrl ?? null,
       isStaffReply: message.isStaffReply,
       body: message.body,
       createdAt: message.createdAt.toISOString(),
@@ -431,7 +433,7 @@ export class SupportService {
     const authors = authorIds.length
       ? await this.usersRepository.find({
           where: { id: In(authorIds) },
-          select: { id: true, fullName: true },
+          select: { id: true, fullName: true, avatarUrl: true },
         })
       : [];
     const authorsById = new Map(authors.map((a) => [a.id, a]));
@@ -453,6 +455,7 @@ export class SupportService {
       messages: messages.map((m) => ({
         id: m.id,
         authorName: authorsById.get(m.authorId)?.fullName ?? 'مستخدم محذوف',
+        authorAvatarUrl: authorsById.get(m.authorId)?.avatarUrl ?? null,
         isStaffReply: m.isStaffReply,
         body: m.body,
         createdAt: m.createdAt.toISOString(),
