@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AssistantActionsModule } from '../assistant-actions/assistant-actions.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { InterventionsModule } from '../interventions/interventions.module';
@@ -15,6 +16,7 @@ import { GradingService } from './grading.service';
 
 @Module({
   imports: [
+    AssistantActionsModule,
     TypeOrmModule.forFeature([
       QuestionEntity,
       QuizEntity,

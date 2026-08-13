@@ -17,7 +17,43 @@ async function parseResponse<T>(response: Response): Promise<T> {
     return undefined as T
   }
 
-  return response.json() as Promise<T>
+  const payload = (await response.json()) as unknown
+  notifyIfPendingApproval(payload)
+  return payload as T
+}
+
+/**
+ * Assistant writes never execute — the API parks them for the teacher and
+ * answers with `{ pendingApproval: true, message }` where the created or
+ * updated resource would normally be.
+ *
+ * The toast fires here, once, rather than in each of the ~20 call sites
+ * that can be parked. Every one of those already shows its own "saved"
+ * toast on success, so without this an assistant would be told their edit
+ * was saved when nothing had happened at all.
+ *
+ * Deliberately fire-and-forget and untyped: callers keep their existing
+ * return type and simply receive a body whose fields are absent, which is
+ * why the pages that care also render the pending banner.
+ */
+function notifyIfPendingApproval(payload: unknown): void {
+  if (
+    typeof payload !== 'object' ||
+    payload === null ||
+    (payload as { pendingApproval?: unknown }).pendingApproval !== true
+  ) {
+    return
+  }
+
+  const message = (payload as { message?: unknown }).message
+  void import('../components/Toast').then(({ showToast }) => {
+    showToast(
+      typeof message === 'string'
+        ? message
+        : 'تم إرسال طلبك للمعلم — سيُنفَّذ بعد موافقته.',
+      'success',
+    )
+  })
 }
 
 async function request<T>(

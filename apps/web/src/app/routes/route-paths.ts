@@ -48,6 +48,7 @@ export const ROUTE_PATHS = {
     ANALYTICS: '/teacher/analytics',
     SETTINGS: '/teacher/settings',
     PROFILE: '/teacher/profile',
+    ASSISTANT_ACTIONS: '/teacher/assistant-actions',
     DISCUSSION_DETAIL: '/teacher/discussions/:threadId',
     SUPPORT: '/teacher/support',
     SUPPORT_DETAIL: '/teacher/support/:ticketId',

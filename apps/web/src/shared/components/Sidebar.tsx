@@ -27,6 +27,8 @@ export type SidebarProps = {
   // appears next to the nav item when the flag is true.
   communityHasUnread?: boolean
   supportHasUnread?: boolean
+  /** Teacher only: assistant actions waiting on their review. */
+  pendingActionCount?: number
 }
 
 type NavItem = { path: string; label: string; icon: string }
@@ -62,6 +64,9 @@ const teacherNavItems: NavItem[] = [
   // Deliberately NOT in the assistant-exclusion list below — assistants
   // are meant to help triage support tickets too, see SupportStaffRoleGuard.
   { path: ROUTE_PATHS.TEACHER.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
+  // Both roles see this, with different meanings: the teacher reviews
+  // what their assistants parked, the assistant tracks their own.
+  { path: ROUTE_PATHS.TEACHER.ASSISTANT_ACTIONS, label: 'طلبات المساعدين', icon: 'rule' },
   { path: ROUTE_PATHS.TEACHER.SETTINGS, label: 'الإعدادات', icon: 'settings' },
 ]
 
@@ -120,6 +125,7 @@ export function Sidebar({
   profilePath,
   communityHasUnread = false,
   supportHasUnread = false,
+  pendingActionCount = 0,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
 
@@ -136,6 +142,12 @@ export function Sidebar({
   }, [isMobileOpen, onCloseMobile])
 
   if (!isOpen) return null
+
+  function getBadgeCount(itemPath: string): number {
+    return itemPath === ROUTE_PATHS.TEACHER.ASSISTANT_ACTIONS
+      ? pendingActionCount
+      : 0
+  }
 
   function getUnreadDot(itemPath: string): boolean {
     if (role !== 'student') return false
@@ -179,6 +191,7 @@ export function Sidebar({
       <nav>
         {navItems.map((item) => {
           const hasUnread = getUnreadDot(item.path)
+          const badgeCount = getBadgeCount(item.path)
           return (
             // NavLink, not <a href>: an anchor did a full document load on
             // every nav click, remounting the app and flashing the login
@@ -193,6 +206,11 @@ export function Sidebar({
                 <>
                   <span className={`ms${isActive ? ' fill' : ''}`}>{item.icon}</span>
                   <span className="lbl">{item.label}</span>
+                  {badgeCount > 0 && (
+                    <span className="nav-count-badge" aria-label={`${badgeCount} بانتظار المراجعة`}>
+                      {badgeCount}
+                    </span>
+                  )}
                   {hasUnread && (
                     <span
                       className="nav-unread-dot"

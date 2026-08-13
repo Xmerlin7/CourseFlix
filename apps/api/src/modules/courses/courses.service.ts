@@ -29,11 +29,20 @@ export interface UpdateCourseFields {
   status?: 'draft' | 'published';
 }
 
+/**
+ * `\p{L}\p{N}` with the `u` flag, not `\w`.
+ *
+ * `\w` is ASCII-only, so the previous `[^\w\s-]` strip deleted every
+ * Arabic character in the title — and this is an Arabic-first product, so
+ * *every* real course slugified to the empty string. The first one took
+ * the empty slug and every one after it collided. Arabic in a URL path is
+ * valid and percent-encodes cleanly, so there's no reason to drop it.
+ */
 function slugify(title: string): string {
   return title
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
     .replace(/[\s_]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .substring(0, 200);
@@ -260,6 +269,37 @@ export class CoursesService {
     });
   }
 
+  /**
+   * A slug no existing row holds — including soft-deleted ones.
+   *
+   * The old check filtered on `deletedAt: IsNull()` while the unique
+   * index does not, so deleting a course left its slug occupied and the
+   * next course with that title failed on a constraint violation the
+   * service thought it had already avoided.
+   */
+  private async buildUniqueSlug(title: string): Promise<string> {
+    // Empty is reachable for a title made only of punctuation or emoji.
+    const base = slugify(title) || 'course';
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate =
+        attempt === 0
+          ? base
+          : `${base}-${Math.random().toString(36).slice(2, 8)}`;
+      // `withDeleted` is the point of this query — see the docblock.
+      const taken = await this.coursesRepository.findOne({
+        where: { slug: candidate },
+        withDeleted: true,
+        select: { id: true },
+      });
+      if (!taken) return candidate;
+    }
+
+    // Five collisions on a random 6-char suffix means something is very
+    // wrong; a timestamp suffix is guaranteed-ish and beats throwing.
+    return `${base}-${Date.now().toString(36)}`;
+  }
+
   async createCourse(
     teacherId: string,
     fields: {
@@ -269,13 +309,7 @@ export class CoursesService {
       gradeLevel?: string | null;
     },
   ): Promise<CourseEntity> {
-    let slug = slugify(fields.title);
-    const existing = await this.coursesRepository.findOne({
-      where: { slug, deletedAt: IsNull() },
-    });
-    if (existing) {
-      slug = `${slug}-${Date.now().toString(36)}`;
-    }
+    const slug = await this.buildUniqueSlug(fields.title);
 
     const course = this.coursesRepository.create({
       teacherId,

@@ -89,6 +89,11 @@ const NotificationsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('../../features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
+const AssistantActionsPage = lazy(() =>
+  import('../../features/assistant-actions/pages/AssistantActionsPage').then((m) => ({
+    default: m.AssistantActionsPage,
+  }))
+)
 const StudentProfilePage = lazy(() =>
   import('../../features/profile/pages/StudentProfilePage').then((m) => ({ default: m.StudentProfilePage }))
 )
@@ -547,6 +552,16 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<SettingsSkeleton />}>
                 <SettingsPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            // Teacher reviews here; assistant sees the same page filtered
+            // to their own submissions (scoped server-side).
+            path: ROUTE_PATHS.TEACHER.ASSISTANT_ACTIONS,
+            element: (
+              <SuspenseWrapper>
+                <AssistantActionsPage />
               </SuspenseWrapper>
             ),
           },

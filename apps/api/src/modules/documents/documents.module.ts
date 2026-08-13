@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AssistantActionsModule } from '../assistant-actions/assistant-actions.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { memoryStorage } from 'multer';
@@ -20,6 +21,7 @@ import {
 
 @Module({
   imports: [
+    AssistantActionsModule,
     TypeOrmModule.forFeature([
       DocumentEntity,
       FileEntity,

@@ -7,6 +7,7 @@ import { Sidebar } from '../../shared/components/Sidebar'
 import { FloatingAssistant } from '../../shared/components/FloatingAssistant'
 import { Topbar } from '../../shared/components/Topbar'
 import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
+import { usePendingActionCount } from '../../features/assistant-actions/hooks/usePendingActionCount'
 import { ROUTE_PATHS } from '../routes/route-paths'
 
 export function TeacherLayout({ children }: PropsWithChildren) {
@@ -18,6 +19,8 @@ export function TeacherLayout({ children }: PropsWithChildren) {
   // they're different controls on different breakpoints, and sharing one
   // flag meant collapsing on desktop also armed the phone drawer.
   const [isNavOpen, setIsNavOpen] = useState(false)
+  // Assistants don't review anything, so they don't poll for a count.
+  const pendingActionCount = usePendingActionCount(user?.role === 'teacher')
   const unreadCount = useUnreadNotificationsCount()
 
   async function handleLogout() {
@@ -40,6 +43,7 @@ export function TeacherLayout({ children }: PropsWithChildren) {
         isMobileOpen={isNavOpen}
         onCloseMobile={() => setIsNavOpen(false)}
         profilePath={ROUTE_PATHS.TEACHER.PROFILE}
+        pendingActionCount={pendingActionCount}
       />
 
       <div className="main">
