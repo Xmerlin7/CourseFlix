@@ -529,8 +529,8 @@ describe('CommerceService', () => {
     });
   });
 
-  describe('findCourseIdByPaymobOrderId', () => {
-    it('maps a paymob order id to the purchased course', async () => {
+  describe('findOrderContextByPaymobOrderId', () => {
+    it('maps a paymob order id to the paid order and course', async () => {
       paymentsRepository.findOne = jest.fn().mockResolvedValue({
         id: 'payment-1',
         orderId,
@@ -546,15 +546,30 @@ describe('CommerceService', () => {
         },
       ]);
 
-      const course = await commerceService.findCourseIdByPaymobOrderId('9001');
-      expect(course).toBe(courseId);
+      const context =
+        await commerceService.findOrderContextByPaymobOrderId('9001');
+      expect(context).toEqual({ orderId, courseId });
     });
 
     it('returns null when no paymob attempt matches', async () => {
       paymentsRepository.findOne = jest.fn().mockResolvedValue(null);
 
-      const course = await commerceService.findCourseIdByPaymobOrderId('9999');
-      expect(course).toBeNull();
+      const context =
+        await commerceService.findOrderContextByPaymobOrderId('9999');
+      expect(context).toBeNull();
+    });
+
+    it('returns null when the paid order has no course item', async () => {
+      paymentsRepository.findOne = jest.fn().mockResolvedValue({
+        id: 'payment-1',
+        orderId,
+        paymobOrderId: '9001',
+      });
+      orderItemsRepository.find.mockResolvedValue([]);
+
+      const context =
+        await commerceService.findOrderContextByPaymobOrderId('9001');
+      expect(context).toBeNull();
     });
   });
 
