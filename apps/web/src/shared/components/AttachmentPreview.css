@@ -76,6 +76,36 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
 }
 
+/* ---------- Large Feed Image (YouTube Community Post Style) ---------- */
+.attachment-image-wrapper--feed {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 520px;
+  border-radius: calc(14px * var(--radius-scale));
+  background: var(--surface-container-low);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attachment-image-wrapper--feed:hover {
+  transform: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.attachment-image-wrapper--feed .attachment-image-thumb {
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  object-fit: contain;
+  border-radius: inherit;
+}
+
+.attachment-image-wrapper--feed .attachment-image-overlay .ms {
+  font-size: 32px;
+}
+
 /* ---------- Compact File Attachment Card ---------- */
 .attachment-file-card {
   display: flex;

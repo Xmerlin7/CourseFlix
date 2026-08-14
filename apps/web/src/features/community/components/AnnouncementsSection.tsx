@@ -104,8 +104,8 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
 
   return (
     <section className="section" aria-label="إعلانات الدورة" style={{ marginBottom: 8 }}>
-      <div className="announcements-container">
-        <div className="announcements-header">
+      <div className="announcements-feed">
+        <div className="announcements-feed-header">
           <h2>
             <span className="ms" aria-hidden="true">campaign</span>
             الإعلانات
@@ -119,7 +119,7 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
         </div>
 
         {isComposing && (
-          <form className="announcement-compose-card" onSubmit={handleCreate}>
+          <form className="announcement-compose-post" onSubmit={handleCreate}>
             <div className="tf" style={{ marginBottom: 0 }}>
               <label htmlFor="new-announcement">نص الإعلان</label>
               <textarea
@@ -128,7 +128,7 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
                 onChange={(event) => setContent(event.target.value)}
                 rows={3}
                 maxLength={5000}
-                placeholder="اكتب تفاصيل الإعلان..."
+                placeholder="اكتب تفاصيل الإعلان هنا..."
                 disabled={isSubmitting}
                 required
               />
@@ -160,9 +160,9 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
             message="ستظهر إعلانات المدرس هنا عند نشرها"
           />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {data.map((announcement) => (
-              <AnnouncementCard
+              <AnnouncementPostCard
                 key={announcement.id}
                 announcement={announcement}
                 isEditing={editingId === announcement.id}
@@ -197,7 +197,7 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
   )
 }
 
-interface AnnouncementCardProps {
+interface AnnouncementPostCardProps {
   announcement: Announcement
   isEditing: boolean
   editContent: string
@@ -210,7 +210,7 @@ interface AnnouncementCardProps {
   isSubmitting: boolean
 }
 
-function AnnouncementCard({
+function AnnouncementPostCard({
   announcement,
   isEditing,
   editContent,
@@ -221,55 +221,68 @@ function AnnouncementCard({
   onDelete,
   onTogglePin,
   isSubmitting,
-}: AnnouncementCardProps) {
+}: AnnouncementPostCardProps) {
   return (
-    <div className={`announcement-card-item${announcement.isPinned ? ' is-pinned' : ''}`}>
-      <div className="announcement-card-header">
-        <div className="announcement-card-meta">
+    <article className={`announcement-yt-post${announcement.isPinned ? ' is-pinned' : ''}`}>
+      <header className="announcement-yt-header">
+        <div className="announcement-yt-author">
+          <div className="announcement-yt-avatar" aria-hidden="true">
+            <span className="ms">school</span>
+          </div>
+          <div className="announcement-yt-author-info">
+            <div className="announcement-yt-author-name">
+              <span>مدرس المادة</span>
+              <span className="ms sm announcement-yt-verified" aria-label="موثق">
+                verified
+              </span>
+            </div>
+            <time className="announcement-yt-time" dateTime={announcement.createdAt}>
+              {formatDate(announcement.createdAt)}
+            </time>
+          </div>
+        </div>
+
+        <div className="announcement-yt-actions">
           {announcement.isPinned && (
-            <span className="announcement-pin-tag">
+            <span className="announcement-yt-pinned-chip">
               <span className="ms" aria-hidden="true">push_pin</span>
               مثبت
             </span>
           )}
-          <span className="announcement-date-text">
-            <span className="ms" aria-hidden="true">schedule</span>
-            {formatDate(announcement.createdAt)}
-          </span>
-        </div>
 
-        {announcement.canManage && (
-          <div className="announcement-actions-group">
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={onTogglePin}
-              title={announcement.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
-              aria-label={announcement.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
-            >
-              <span className="ms">{announcement.isPinned ? 'keep_off' : 'push_pin'}</span>
-            </button>
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={onStartEdit}
-              title="تعديل"
-              aria-label="تعديل"
-            >
-              <span className="ms">edit</span>
-            </button>
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={onDelete}
-              title="حذف"
-              aria-label="حذف"
-            >
-              <span className="ms">delete</span>
-            </button>
-          </div>
-        )}
-      </div>
+          {announcement.canManage && (
+            <>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={onTogglePin}
+                title={announcement.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
+                aria-label={announcement.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
+              >
+                <span className="ms">{announcement.isPinned ? 'keep_off' : 'push_pin'}</span>
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={onStartEdit}
+                title="تعديل"
+                aria-label="تعديل"
+              >
+                <span className="ms">edit</span>
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={onDelete}
+                title="حذف"
+                aria-label="حذف"
+              >
+                <span className="ms">delete</span>
+              </button>
+            </>
+          )}
+        </div>
+      </header>
 
       {isEditing ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -291,14 +304,18 @@ function AnnouncementCard({
           </div>
         </div>
       ) : (
-        <p className="announcement-content-text">{announcement.content}</p>
+        <p className="announcement-yt-content">{announcement.content}</p>
       )}
 
       {announcement.attachments.length > 0 && (
-        <div className="announcement-attachments-box">
-          <AttachmentPreviewList attachments={announcement.attachments} layout="horizontal" />
+        <div className="announcement-yt-media">
+          <AttachmentPreviewList
+            attachments={announcement.attachments}
+            variant="feed"
+            layout="vertical"
+          />
         </div>
       )}
-    </div>
+    </article>
   )
 }

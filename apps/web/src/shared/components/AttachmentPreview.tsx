@@ -86,10 +86,15 @@ function formatBytes(bytes?: string | number): string | null {
 
 export interface AttachmentPreviewProps {
   attachment: AttachmentItemData
+  variant?: 'compact' | 'feed'
   className?: string
 }
 
-export function AttachmentPreview({ attachment, className = '' }: AttachmentPreviewProps) {
+export function AttachmentPreview({
+  attachment,
+  variant = 'compact',
+  className = '',
+}: AttachmentPreviewProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const [imageError, setImageError] = useState(false)
 
@@ -100,10 +105,11 @@ export function AttachmentPreview({ attachment, className = '' }: AttachmentPrev
   const sizeFormatted = formatBytes(attachment.sizeBytes)
 
   if (isImage) {
+    const feedModifier = variant === 'feed' ? 'attachment-image-wrapper--feed' : ''
     return (
       <>
         <div
-          className={`attachment-image-wrapper ${className}`.trim()}
+          className={`attachment-image-wrapper ${feedModifier} ${className}`.trim()}
           onClick={() => setIsLightboxOpen(true)}
           role="button"
           tabIndex={0}
@@ -168,12 +174,14 @@ export function AttachmentPreview({ attachment, className = '' }: AttachmentPrev
 export interface AttachmentPreviewListProps {
   attachments: AttachmentItemData[]
   layout?: 'vertical' | 'horizontal'
+  variant?: 'compact' | 'feed'
   className?: string
 }
 
 export function AttachmentPreviewList({
   attachments,
   layout = 'vertical',
+  variant = 'compact',
   className = '',
 }: AttachmentPreviewListProps) {
   if (!attachments || attachments.length === 0) return null
@@ -183,7 +191,7 @@ export function AttachmentPreviewList({
       className={`attachment-preview-list attachment-preview-list--${layout} ${className}`.trim()}
     >
       {attachments.map((att) => (
-        <AttachmentPreview key={att.id} attachment={att} />
+        <AttachmentPreview key={att.id} attachment={att} variant={variant} />
       ))}
     </div>
   )
