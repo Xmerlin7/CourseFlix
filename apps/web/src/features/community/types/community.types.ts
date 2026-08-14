@@ -17,6 +17,7 @@ export interface DiscussionThreadListItem {
   id: string
   courseId: string
   title: string
+  body?: string
   author: DiscussionAuthorSummary
   tags: string[]
   replyCount: number

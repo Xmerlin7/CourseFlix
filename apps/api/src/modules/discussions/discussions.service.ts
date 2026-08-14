@@ -54,6 +54,7 @@ export interface DiscussionThreadListItemResponse {
   id: string;
   courseId: string;
   title: string;
+  body: string;
   author: DiscussionAuthorSummary;
   tags: string[];
   replyCount: number;
@@ -228,13 +229,11 @@ export class DiscussionsService {
     }
     const course = await this.assertCanAccessCourse(user, courseId);
 
-    const title = input.title.trim();
-    const body = input.body.trim();
-    if (!title) throw new BadRequestException('عنوان السؤال مطلوب.');
+    const body = (input.body || '').trim();
     if (!body) throw new BadRequestException('تفاصيل السؤال مطلوبة.');
-    if (title.length > MAX_TITLE_LENGTH) {
-      throw new BadRequestException('عنوان السؤال طويل جدًا.');
-    }
+    const rawTitle = (input.title || '').trim();
+    const title = (rawTitle || body).slice(0, MAX_TITLE_LENGTH);
+
     if (body.length > MAX_BODY_LENGTH) {
       throw new BadRequestException('تفاصيل السؤال طويلة جدًا.');
     }
@@ -600,6 +599,7 @@ export class DiscussionsService {
       id: thread.id,
       courseId: thread.courseId,
       title: thread.title,
+      body: thread.body,
       author: this.resolveAuthor(thread.authorId, thread.authorRole, authors),
       tags: thread.tags,
       replyCount: thread.replyCount,
