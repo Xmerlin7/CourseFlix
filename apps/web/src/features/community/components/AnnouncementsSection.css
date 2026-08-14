@@ -71,6 +71,25 @@
   background: linear-gradient(180deg, rgba(103, 58, 183, 0.03) 0%, var(--surface) 100%);
 }
 
+/* Notification deep-link focus: a short-lived ring so the reader lands on
+   the exact announcement instead of scanning the whole feed. */
+.announcement-yt-post.is-highlighted {
+  animation: announcement-focus-ring 2.4s ease-out 1;
+}
+
+@keyframes announcement-focus-ring {
+  0% {
+    border-color: rgba(103, 58, 183, 0.7);
+    box-shadow: 0 0 0 4px rgba(103, 58, 183, 0.18);
+    background: rgba(103, 58, 183, 0.06);
+  }
+  100% {
+    border-color: rgba(103, 58, 183, 0.35);
+    box-shadow: 0 0 0 0 rgba(103, 58, 183, 0);
+    background: var(--surface);
+  }
+}
+
 .announcement-yt-post.is-pinned::before {
   content: '';
   position: absolute;

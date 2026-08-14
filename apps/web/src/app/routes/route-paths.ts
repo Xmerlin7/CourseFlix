@@ -31,6 +31,7 @@ export const ROUTE_PATHS = {
     SUPPORT_DETAIL: '/student/support/:ticketId',
     COMMUNITY: '/student/community',
     COMMUNITY_COURSE: '/student/community/:courseId',
+    ANNOUNCEMENT_DETAIL: '/student/announcements/:postId',
   },
 
   TEACHER: {
@@ -52,6 +53,7 @@ export const ROUTE_PATHS = {
     DISCUSSION_DETAIL: '/teacher/discussions/:threadId',
     COMMUNITY: '/teacher/community',
     COMMUNITY_COURSE: '/teacher/community/:courseId',
+    ANNOUNCEMENT_DETAIL: '/teacher/announcements/:postId',
     SUPPORT: '/teacher/support',
     SUPPORT_DETAIL: '/teacher/support/:ticketId',
   },

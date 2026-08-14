@@ -125,10 +125,13 @@ export function resolveNotificationTarget(
       return isAdmin
         ? null
         : {
-            path: isStudent
-              ? ROUTE_PATHS.STUDENT.COMMUNITY
-              : ROUTE_PATHS.TEACHER.COMMUNITY,
-            actionLabel: 'افتح المجتمع',
+            path: withId(
+              isStudent
+                ? ROUTE_PATHS.STUDENT.ANNOUNCEMENT_DETAIL
+                : ROUTE_PATHS.TEACHER.ANNOUNCEMENT_DETAIL,
+              relatedEntityId,
+            ),
+            actionLabel: 'افتح الإعلان',
             actionIcon: 'campaign',
           }
 

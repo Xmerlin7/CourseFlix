@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AttachmentPicker } from '../../../shared/components/AttachmentPicker'
 import { AttachmentPreviewList } from '../../../shared/components/AttachmentPreview'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
@@ -23,9 +23,12 @@ function formatDate(iso: string): string {
 interface AnnouncementsSectionProps {
   courseId: string
   canManage: boolean
+  /** Post to focus on (notification deep link). Scrolls it into view and
+   *  flashes a highlight ring once the feed loads. */
+  highlightPostId?: string
 }
 
-export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSectionProps) {
+export function AnnouncementsSection({ courseId, canManage, highlightPostId }: AnnouncementsSectionProps) {
   const { data, isLoading, error, refetch } = useAnnouncements(courseId)
   const [isComposing, setIsComposing] = useState(false)
   const [content, setContent] = useState('')
@@ -34,6 +37,12 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
   const [editContent, setEditContent] = useState('')
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (isLoading || !highlightPostId || data.length === 0) return
+    const element = document.getElementById(`announcement-${highlightPostId}`)
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [isLoading, highlightPostId, data])
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault()
@@ -165,6 +174,7 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
               <AnnouncementPostCard
                 key={announcement.id}
                 announcement={announcement}
+                isHighlighted={highlightPostId === announcement.id}
                 isEditing={editingId === announcement.id}
                 editContent={editContent}
                 onStartEdit={() => {
@@ -199,6 +209,7 @@ export function AnnouncementsSection({ courseId, canManage }: AnnouncementsSecti
 
 interface AnnouncementPostCardProps {
   announcement: Announcement
+  isHighlighted?: boolean
   isEditing: boolean
   editContent: string
   onEditChange: (value: string) => void
@@ -212,6 +223,7 @@ interface AnnouncementPostCardProps {
 
 function AnnouncementPostCard({
   announcement,
+  isHighlighted = false,
   isEditing,
   editContent,
   onEditChange,
@@ -223,7 +235,12 @@ function AnnouncementPostCard({
   isSubmitting,
 }: AnnouncementPostCardProps) {
   return (
-    <article className={`announcement-yt-post${announcement.isPinned ? ' is-pinned' : ''}`}>
+    <article
+      id={`announcement-${announcement.id}`}
+      className={`announcement-yt-post${announcement.isPinned ? ' is-pinned' : ''}${
+        isHighlighted ? ' is-highlighted' : ''
+      }`}
+    >
       <header className="announcement-yt-header">
         <div className="announcement-yt-author">
           <div className="announcement-yt-avatar" aria-hidden="true">
