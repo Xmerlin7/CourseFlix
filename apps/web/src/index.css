@@ -1685,6 +1685,7 @@ textarea:placeholder-shown {
 
 /* ---------- Auth shell: immersive mesh login/register ---------- */
 .auth-shell {
+  --auth-mesh-accent: #22D3EE;
   --auth-pointer-x: 50%;
   --auth-pointer-y: 50%;
   --auth-pointer-px: 50%;
@@ -1737,12 +1738,12 @@ textarea:placeholder-shown {
   left: var(--auth-pointer-x);
   top: var(--auth-pointer-y);
   z-index: 0;
-  width: 300px;
-  height: 300px;
+  width: 170px;
+  height: 170px;
   border-radius: 50%;
   background:
-    radial-gradient(circle, color-mix(in srgb, var(--primary-container) 24%, transparent) 0%, color-mix(in srgb, var(--primary) 12%, transparent) 38%, transparent 70%);
-  filter: blur(10px);
+    radial-gradient(circle, color-mix(in srgb, var(--auth-mesh-accent) 22%, transparent) 0%, color-mix(in srgb, var(--primary-container) 10%, transparent) 42%, transparent 72%);
+  filter: blur(8px);
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, -50%) scale(0.82);
@@ -1750,7 +1751,7 @@ textarea:placeholder-shown {
 }
 
 .auth-shell[data-pointer="active"] .auth-pointer-aura {
-  opacity: 0.78;
+  opacity: 0.46;
   transform: translate(-50%, -50%) scale(1);
 }
 
@@ -1760,7 +1761,7 @@ textarea:placeholder-shown {
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at var(--auth-pointer-x) var(--auth-pointer-y), color-mix(in srgb, var(--primary-container) 18%, transparent), transparent 24%),
+    radial-gradient(circle at var(--auth-pointer-x) var(--auth-pointer-y), color-mix(in srgb, var(--auth-mesh-accent) 12%, transparent), transparent 14%),
     radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 24%),
     radial-gradient(circle at 54% 82%, color-mix(in srgb, var(--tertiary-container) 24%, transparent), transparent 30%),
     linear-gradient(180deg, rgba(8, 18, 38, 0.18), rgba(8, 9, 20, 0.56));
