@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/hooks/useAuth'
 import { TeacherQuotaCard } from '../../teacher-billing/components/TeacherQuotaCard'
 import { updateProfile, uploadAvatar } from '../api/profile.api'
 import { AvatarPickerModal } from '../components/AvatarPickerModal'
+import { TeacherWhatsappContactForm } from '../components/TeacherWhatsappContactForm'
 import type { UserRole } from '../../auth/types/auth.types'
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -68,6 +69,7 @@ export function StudentProfilePage() {
   // page sits inside a RequireRole, which redirects to /login otherwise.
   const currentUser = user!
   const isStudent = currentUser.role === 'student'
+  const isTeacher = currentUser.role === 'teacher'
 
   const [fullName, setFullName] = useState(currentUser.fullName)
   const [isSavingName, setIsSavingName] = useState(false)
@@ -238,6 +240,8 @@ export function StudentProfilePage() {
           </div>
         )}
       </form>
+
+      {isTeacher && <TeacherWhatsappContactForm />}
 
       {/* Billing is teacher-only — assistants are blocked server-side on
           the quota route and never reach this branch anyway. */}

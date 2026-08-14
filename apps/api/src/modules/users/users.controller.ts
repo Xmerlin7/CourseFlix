@@ -40,6 +40,7 @@ export class UsersController {
       role: updated.role,
       fullName: updated.fullName,
       avatarUrl: updated.avatarUrl,
+      whatsappNumber: updated.whatsappNumber,
       managedByTeacherId: updated.managedByTeacherId,
     };
   }
@@ -61,6 +62,7 @@ export class UsersController {
       role: updated.role,
       fullName: updated.fullName,
       avatarUrl: updated.avatarUrl,
+      whatsappNumber: updated.whatsappNumber,
       managedByTeacherId: updated.managedByTeacherId,
     };
   }

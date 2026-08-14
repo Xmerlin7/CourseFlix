@@ -30,34 +30,45 @@ export function useVideoQaChat(videoId: string): UseVideoQaChatResult {
       setLastFailedQuestion(null)
 
       const localId = `local-${Date.now()}`
-      setMessages((current) => [...current, { id: localId, role: 'student', text: question }])
+      const pendingId = `${localId}-pending`
+      setMessages((current) => [
+        ...current,
+        { id: localId, role: 'student', text: question },
+        { id: pendingId, role: 'assistant', text: '', pending: true },
+      ])
 
       try {
         const response = await askVideoQuestion(videoId, { question })
-        setMessages((current) => [
-          ...current,
-          {
-            id: `${localId}-answer`,
-            role: 'assistant',
-            text: response.answer,
-            status: response.status,
-            citations: response.citations,
-          },
-        ])
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === pendingId
+              ? {
+                  id: pendingId,
+                  role: 'assistant',
+                  text: response.answer,
+                  status: response.status,
+                  citations: response.citations,
+                }
+              : message,
+          ),
+        )
       } catch (caughtError) {
         const apiError =
           caughtError instanceof ApiError ? caughtError : new ApiError('Unknown error', 0)
         setError(apiError)
         setLastFailedQuestion(question)
-        setMessages((current) => [
-          ...current,
-          {
-            id: `${localId}-failed`,
-            role: 'assistant',
-            text: 'تعذر إرسال السؤال، حاول مرة أخرى',
-            failed: true,
-          },
-        ])
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === pendingId
+              ? {
+                  id: pendingId,
+                  role: 'assistant',
+                  text: 'تعذر إرسال السؤال، حاول مرة أخرى',
+                  failed: true,
+                }
+              : message,
+          ),
+        )
       } finally {
         setIsSending(false)
       }

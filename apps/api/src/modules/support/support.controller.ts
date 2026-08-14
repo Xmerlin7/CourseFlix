@@ -107,6 +107,7 @@ export class SupportController {
   @Get('staff/tickets')
   @UseGuards(SupportStaffRoleGuard)
   listStaffTickets(
+    @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: string,
     @Query('category') category?: string,
     @Query('courseId') courseId?: string,
@@ -122,7 +123,7 @@ export class SupportController {
       courseId: courseId || undefined,
       search: search?.trim() || undefined,
     };
-    return this.supportService.listStaffTickets(filters);
+    return this.supportService.listStaffTickets(filters, user);
   }
 
   // Reachable by the owning student or any support staff — resolved in

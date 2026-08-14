@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getUnreadNotificationsCount } from '../api/notifications.api'
+import { UNREAD_NOTIFICATIONS_CHANGED_EVENT } from '../utils/notificationEvents'
 
 const POLL_INTERVAL_MS = 30000
 
@@ -25,10 +26,17 @@ export function useUnreadNotificationsCount(): number {
     }
 
     void load()
+
+    function handleUnreadChange() {
+      void load()
+    }
+
+    window.addEventListener(UNREAD_NOTIFICATIONS_CHANGED_EVENT, handleUnreadChange)
     const timer = setInterval(() => void load(), POLL_INTERVAL_MS)
 
     return () => {
       cancelled = true
+      window.removeEventListener(UNREAD_NOTIFICATIONS_CHANGED_EVENT, handleUnreadChange)
       clearInterval(timer)
     }
   }, [])

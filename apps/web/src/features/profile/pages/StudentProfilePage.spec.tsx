@@ -179,7 +179,7 @@ describe('StudentProfilePage', () => {
     expect(apiCalled).toBe(false)
   })
 
-  it('renders working links for the real nav targets and disabled rows for the ones with no backing page', () => {
+  it('renders working links for the real nav targets and the disabled purchase row', () => {
     renderPage()
 
     expect(screen.getByRole('link', { name: /دوراتي/ })).toHaveAttribute('href', '/student/courses')
@@ -187,8 +187,6 @@ describe('StudentProfilePage', () => {
 
     const purchasesRow = screen.getByText('مشترياتي').closest('.list-item')
     expect(purchasesRow).toHaveAttribute('aria-disabled', 'true')
-    const supportRow = screen.getByText('تواصل مع الدعم').closest('.list-item')
-    expect(supportRow).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('shows the AI-credit quota card for a teacher, with the remaining balance', async () => {
@@ -213,6 +211,51 @@ describe('StudentProfilePage', () => {
     expect(screen.getByText('حصتك الشهرية')).toBeInTheDocument()
     expect(await screen.findByText('75')).toBeInTheDocument()
     expect(screen.getByText(/بيتجدد أول كل شهر/)).toBeInTheDocument()
+  })
+
+  it('lets a teacher save the WhatsApp number that controls the student floating button', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.patch(`${env.apiBaseUrl}/users/me/profile`, async ({ request }) => {
+        const body = (await request.json()) as { whatsappNumber?: string | null }
+        return HttpResponse.json({
+          id: 'teacher-1',
+          email: 'teacher@example.com',
+          fullName: 'محمد عبدالرحمن',
+          role: 'teacher',
+          avatarUrl: null,
+          whatsappNumber: body.whatsappNumber ? '201001112233' : null,
+        })
+      }),
+    )
+
+    const updateUser = vi.fn()
+    renderPage({
+      auth: {
+        user: {
+          id: 'teacher-1',
+          email: 'teacher@example.com',
+          fullName: 'محمد عبدالرحمن',
+          role: 'teacher',
+          avatarUrl: null,
+          whatsappNumber: null,
+        },
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+        register: vi.fn(),
+        verifyOtp: vi.fn(),
+        updateUser,
+      },
+    })
+
+    await user.type(screen.getByLabelText('رقم واتساب'), '01001112233')
+    await user.click(screen.getByRole('button', { name: 'حفظ رقم واتساب' }))
+
+    expect(await screen.findByText('اتحفظ رقم واتساب بنجاح')).toBeInTheDocument()
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({ whatsappNumber: '201001112233' }),
+    ))
   })
 
   it('never shows the quota card to a student', () => {

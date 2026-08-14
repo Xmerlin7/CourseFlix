@@ -5,6 +5,7 @@ import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
 import { addTicketMessage, updateTicketStatus } from '../api/support.api'
 import { AttachmentCard } from '../components/AttachmentCard'
 import { MessageBubble, type MessagePendingStatus } from '../components/MessageBubble'
@@ -76,6 +77,12 @@ export function SupportTicketDetailPage() {
   const [confirmedExtra, setConfirmedExtra] = useState<SupportMessage[]>([])
   const [pending, setPending] = useState<PendingMessage | null>(null)
   const messagesRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (data) {
+      emitUnreadCountChanged()
+    }
+  }, [data?.id])
 
   const renderList: RenderableMessage[] = [
     ...(data?.messages ?? []).map((message) => ({

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router'
 import { useAnalyticsQuestion } from '../../features/analytics/hooks/useAnalyticsQuestion'
 import type { AnalyticsQuestionResponse } from '../../features/analytics/types/analytics.types'
 import { getLesson } from '../../features/lessons/api/lessons.api'
+import { AiThinkingIndicator } from '../../features/tutor/components/AiThinkingIndicator'
 import { CitationList } from '../../features/tutor/components/CitationList'
 import { useTutorChat } from '../../features/tutor/hooks/useTutorChat'
 import { handleChatInputKeyDown } from '../utils/chatInput'
@@ -16,6 +17,7 @@ interface TeacherChatMessage {
   role: 'teacher' | 'assistant'
   text: string
   failed?: boolean
+  pending?: boolean
 }
 
 function extractStudentCourseId(pathname: string) {
@@ -205,21 +207,25 @@ function StudentFloatingAssistant({ courseId }: { courseId: string }) {
           messages.map((message) => (
             <article
               key={message.id}
-              className={`floating-chat-bubble ${message.role === 'student' ? 'from-user' : 'from-assistant'}`}
+              className={`floating-chat-bubble ${message.role === 'student' ? 'from-user' : 'from-assistant'}${message.pending ? ' is-thinking' : ''}`}
             >
-              <span className="ms sm">{message.role === 'student' ? 'person' : 'smart_toy'}</span>
-              <div>
-                <p>{message.text}</p>
-                {message.status === 'no_answer' && <span className="mini-chip">بدون مصادر</span>}
-                {!message.failed && message.status === 'answered' && (
-                  <CitationList citations={message.citations ?? []} />
-                )}
-              </div>
+              {message.pending ? (
+                <AiThinkingIndicator />
+              ) : (
+                <>
+                  <span className="ms sm">{message.role === 'student' ? 'person' : 'smart_toy'}</span>
+                  <div className="ai-answer-enter">
+                    <p>{message.text}</p>
+                    {message.status === 'no_answer' && <span className="mini-chip">بدون مصادر</span>}
+                    {!message.failed && message.status === 'answered' && (
+                      <CitationList citations={message.citations ?? []} />
+                    )}
+                  </div>
+                </>
+              )}
             </article>
           ))
         )}
-
-        {isSending && <p className="floating-assistant-empty">المساعد بيجهز الرد...</p>}
         {error && !isSending && (
           <button type="button" className="floating-retry" onClick={() => void retryLast()}>
             إعادة إرسال آخر سؤال
@@ -275,25 +281,33 @@ function TeacherFloatingAssistant() {
     if (!question || isLoading) return
 
     const localId = Date.now()
+    const pendingId = `assistant-pending-${localId}`
     setDraft('')
-    setMessages((current) => [...current, { id: `teacher-${localId}`, role: 'teacher', text: question }])
-
-    const response = await ask(question)
     setMessages((current) => [
       ...current,
-      response
-        ? {
-            id: `assistant-${localId}`,
-            role: 'assistant',
-            text: summarizeAnalyticsResponse(response),
-          }
-        : {
-            id: `assistant-failed-${localId}`,
-            role: 'assistant',
-            text: 'تعذر إرسال السؤال، حاول مرة أخرى',
-            failed: true,
-          },
+      { id: `teacher-${localId}`, role: 'teacher', text: question },
+      { id: pendingId, role: 'assistant', text: '', pending: true },
     ])
+
+    const response = await ask(question)
+    setMessages((current) =>
+      current.map((message) =>
+        message.id === pendingId
+          ? response
+            ? {
+                id: pendingId,
+                role: 'assistant',
+                text: summarizeAnalyticsResponse(response),
+              }
+            : {
+                id: pendingId,
+                role: 'assistant',
+                text: 'تعذر إرسال السؤال، حاول مرة أخرى',
+                failed: true,
+              }
+          : message,
+      ),
+    )
   }
 
   return (
@@ -307,15 +321,19 @@ function TeacherFloatingAssistant() {
               key={message.id}
               className={`floating-chat-bubble ${message.role === 'teacher' ? 'from-user' : 'from-assistant'}${
                 message.failed ? ' failed' : ''
-              }`}
+              }${message.pending ? ' is-thinking' : ''}`}
             >
-              <span className="ms sm">{message.role === 'teacher' ? 'person' : 'smart_toy'}</span>
-              <p>{message.text}</p>
+              {message.pending ? (
+                <AiThinkingIndicator />
+              ) : (
+                <>
+                  <span className="ms sm">{message.role === 'teacher' ? 'person' : 'smart_toy'}</span>
+                  <p className="ai-answer-enter">{message.text}</p>
+                </>
+              )}
             </article>
           ))
         )}
-
-        {isLoading && <p className="floating-assistant-empty">جاري المعالجة...</p>}
       </div>
 
       <form className="floating-assistant-form" onSubmit={(event) => void handleSubmit(event)}>

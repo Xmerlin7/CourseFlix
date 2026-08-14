@@ -24,6 +24,30 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
   })
 }
 
+if (typeof HTMLCanvasElement !== 'undefined') {
+  const getCanvasContext = (contextId: string) => {
+    if (contextId !== '2d') return null
+    return {
+      arc: () => {},
+      beginPath: () => {},
+      clearRect: () => {},
+      createRadialGradient: () => ({
+        addColorStop: () => {},
+      }),
+      fill: () => {},
+      lineTo: () => {},
+      moveTo: () => {},
+      restore: () => {},
+      save: () => {},
+      setTransform: () => {},
+      stroke: () => {},
+    } as unknown as CanvasRenderingContext2D
+  }
+  ;(HTMLCanvasElement.prototype as unknown as {
+    getContext: (contextId: string) => CanvasRenderingContext2D | null
+  }).getContext = getCanvasContext
+}
+
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())

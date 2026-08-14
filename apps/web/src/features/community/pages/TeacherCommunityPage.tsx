@@ -1,14 +1,9 @@
-import { useCallback } from 'react'
-import { Link } from 'react-router'
-import { ErrorState } from '../../../shared/components/ErrorState'
-import { Pagination } from '../../../shared/components/Pagination'
-import { SearchField } from '../../../shared/components/SearchField'
-import { usePaginatedList } from '../../../shared/hooks/usePaginatedList'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
-import { CourseThumb } from '../../courses/components/CourseThumb'
+import { ErrorState } from '../../../shared/components/ErrorState'
 import { useTeacherCourses } from '../../teacher/hooks/useTeacherCourses'
-import type { TeacherCourse } from '../../teacher/types/teacher.types'
+import { useStudentCommunitySummary } from '../../student/hooks/useStudentCommunitySummary'
 import { StudentCommunitySkeleton } from '../components/StudentCommunitySkeleton'
+import { CommunityCourseList, type CommunityCourseItem } from '../components/CommunityCourseList'
 
 const PAGE_SIZE = 10
 
@@ -17,10 +12,37 @@ function buildCommunityPath(courseId: string): string {
 }
 
 export function TeacherCommunityPage() {
-  const { data: courses, isLoading, error, refetch } = useTeacherCourses()
+  const { data: coursesData, isLoading, error, refetch } = useTeacherCourses()
+  const { data: summaries } = useStudentCommunitySummary()
 
-  const toHaystack = useCallback((course: TeacherCourse) => course.title, [])
-  const list = usePaginatedList(courses ?? [], toHaystack, PAGE_SIZE)
+  const summaryByCourseId = new Map((summaries ?? []).map((item) => [item.courseId, item]))
+
+  const courses: CommunityCourseItem[] = (coursesData ?? [])
+    .sort((a, b) => {
+      const aSum = summaryByCourseId.get(a.id)
+      const bSum = summaryByCourseId.get(b.id)
+      const aUnread = aSum?.unreadCount ?? 0
+      const bUnread = bSum?.unreadCount ?? 0
+      if (aUnread > 0 && bUnread === 0) return -1
+      if (bUnread > 0 && aUnread === 0) return 1
+      if (aUnread > 0 && bUnread > 0 && aUnread !== bUnread) {
+        return bUnread - aUnread
+      }
+      const aTime = aSum?.lastActivityAt
+      const bTime = bSum?.lastActivityAt
+      if (aTime && bTime) return bTime.localeCompare(aTime)
+      if (aTime) return -1
+      if (bTime) return 1
+      return 0
+    })
+    .map((course) => ({
+      id: course.id,
+      title: course.title,
+      to: buildCommunityPath(course.id),
+      coverImageUrl: course.coverImageUrl,
+      gradeLevel: course.gradeLevel,
+      summary: summaryByCourseId.get(course.id),
+    }))
 
   if (isLoading) return <StudentCommunitySkeleton />
 
@@ -42,66 +64,15 @@ export function TeacherCommunityPage() {
           <p className="community-empty-message">أنشئ دورة أو انشرها ليظهر مجتمعها هنا</p>
         </div>
       ) : (
-        <>
-          <SearchField
-            id="teacher-community-search"
-            label="بحث عن دورة"
-            placeholder="ابحث باسم الدورة..."
-            value={list.query}
-            onChange={list.search}
-          />
-
-          {list.pageItems.length === 0 ? (
-            <p className="community-no-results">مفيش دورات مطابقة لبحثك.</p>
-          ) : (
-            <div className="community-list">
-              {list.pageItems.map((course) => (
-                <TeacherCommunityCourseRow key={course.id} course={course} />
-              ))}
-            </div>
-          )}
-
-          {list.hasPages && (
-            <Pagination
-              page={list.page}
-              totalPages={list.totalPages}
-              onPageChange={list.setPage}
-              matchCount={list.matchCount}
-              pageSize={PAGE_SIZE}
-              itemLabel="دورة"
-            />
-          )}
-        </>
+        <CommunityCourseList
+          courses={courses}
+          searchId="teacher-community-search"
+          searchLabel="بحث عن دورة"
+          searchPlaceholder="ابحث باسم الدورة..."
+          noResultsMessage="مفيش دورات مطابقة لبحثك."
+          pageSize={PAGE_SIZE}
+        />
       )}
     </div>
-  )
-}
-
-function TeacherCommunityCourseRow({ course }: { course: TeacherCourse }) {
-  return (
-    <Link to={buildCommunityPath(course.id)} className="community-row">
-      <div className="community-row-avatar">
-        <CourseThumb coverImageUrl={course.coverImageUrl} alt={course.title} />
-      </div>
-
-      <div className="community-row-main">
-        <div className="community-row-line1">
-          <span className="community-row-title">{course.title}</span>
-          <span className="community-row-time">
-            {course.status === 'published' ? 'منشورة' : 'مسودة'}
-          </span>
-        </div>
-
-        {course.gradeLevel && (
-          <div className="community-row-line2">
-            <span className="community-row-grade">{course.gradeLevel}</span>
-          </div>
-        )}
-
-        <div className="community-row-line3">
-          <span className="community-row-preview">افتح المناقشات والإعلانات الخاصة بالدورة</span>
-        </div>
-      </div>
-    </Link>
   )
 }

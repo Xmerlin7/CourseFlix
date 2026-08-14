@@ -6,6 +6,7 @@ export interface AuthUser {
   role: UserRole;
   fullName: string;
   avatarUrl: string | null;
+  whatsappNumber?: string | null;
 }
 
 export interface LoginPayload {

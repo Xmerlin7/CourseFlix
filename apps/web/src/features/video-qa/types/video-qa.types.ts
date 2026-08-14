@@ -35,4 +35,5 @@ export interface VideoQaChatMessage {
   status?: VideoQaAnswerStatus
   citations?: VideoQaCitation[]
   failed?: boolean
+  pending?: boolean
 }

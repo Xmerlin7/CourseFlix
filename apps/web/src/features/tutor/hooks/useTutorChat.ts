@@ -76,23 +76,28 @@ export function useTutorChat(courseId: string): UseTutorChatResult {
       setLastFailedMessage(null);
 
       const localId = `local-${Date.now()}`;
+      const pendingId = `pending-${Date.now()}`;
       setMessages((current) => [
         ...current,
         { id: localId, role: "student", text: message },
+        { id: pendingId, role: "assistant", text: "", pending: true },
       ]);
 
       try {
         const response = await sendTutorMessage(courseId, { message });
-        setMessages((current) => [
-          ...current,
-          {
-            id: response.messageId,
-            role: "assistant",
-            text: response.answer,
-            status: response.status,
-            citations: response.citations,
-          },
-        ]);
+        setMessages((current) =>
+          current.map((chatMessage) =>
+            chatMessage.id === pendingId
+              ? {
+                  id: pendingId,
+                  role: "assistant",
+                  text: response.answer,
+                  status: response.status,
+                  citations: response.citations,
+                }
+              : chatMessage,
+          ),
+        );
       } catch (caughtError) {
         const apiError =
           caughtError instanceof ApiError
@@ -100,15 +105,18 @@ export function useTutorChat(courseId: string): UseTutorChatResult {
             : new ApiError("Unknown error", 0);
         setError(apiError);
         setLastFailedMessage(message);
-        setMessages((current) => [
-          ...current,
-          {
-            id: `failed-${Date.now()}`,
-            role: "assistant",
-            text: "تعذر إرسال السؤال، حاول مرة أخرى",
-            failed: true,
-          },
-        ]);
+        setMessages((current) =>
+          current.map((chatMessage) =>
+            chatMessage.id === pendingId
+              ? {
+                  id: pendingId,
+                  role: "assistant",
+                  text: "تعذر إرسال السؤال، حاول مرة أخرى",
+                  failed: true,
+                }
+              : chatMessage,
+          ),
+        );
       } finally {
         setIsSending(false);
       }

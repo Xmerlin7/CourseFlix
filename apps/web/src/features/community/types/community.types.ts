@@ -17,6 +17,7 @@ export interface DiscussionThreadListItem {
   id: string
   courseId: string
   title: string
+  body?: string
   author: DiscussionAuthorSummary
   tags: string[]
   replyCount: number
@@ -25,6 +26,7 @@ export interface DiscussionThreadListItem {
   isPinned: boolean
   isAnswered: boolean
   createdAt: string
+  hasUnread?: boolean
 }
 
 export interface DiscussionReply {
@@ -33,6 +35,7 @@ export interface DiscussionReply {
   body: string
   isAccepted: boolean
   createdAt: string
+  isUnread?: boolean
 }
 
 export interface DiscussionThreadDetail extends DiscussionThreadListItem {

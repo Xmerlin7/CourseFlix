@@ -97,12 +97,17 @@ export class PaymobController {
       return fallback('/student/courses');
     }
 
-    const courseId = await this.commerceService.findCourseIdByPaymobOrderId(
+    const context = await this.commerceService.findOrderContextByPaymobOrderId(
       String(query.order ?? ''),
     );
-    if (!courseId) {
+    if (!context) {
       return fallback('/student/courses');
     }
-    return fallback(`/student/courses/${courseId}`);
+    // Route the browser to the checkout receipt page (which shows the
+    // "تم الدفع بنجاح" state for a paid order), passing our internal order
+    // id so the page can fetch the paid receipt.
+    return fallback(
+      `/student/checkout/${context.courseId}?order=${context.orderId}`,
+    );
   }
 }

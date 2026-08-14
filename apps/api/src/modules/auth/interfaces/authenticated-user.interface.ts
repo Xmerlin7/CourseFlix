@@ -6,6 +6,8 @@ export interface AuthenticatedUser {
   role: UserRole;
   fullName: string;
   avatarUrl: string | null;
+  // Teacher-only public contact setting; omitted/null for other roles.
+  whatsappNumber?: string | null;
   // Only set for role: 'assistant' — the teacher they're scoped to.
   managedByTeacherId: string | null;
 }

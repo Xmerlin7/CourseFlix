@@ -305,7 +305,13 @@ export class AuthService {
   private async buildLoginResult(
     user: Pick<
       UserEntity,
-      'id' | 'email' | 'role' | 'fullName' | 'avatarUrl' | 'managedByTeacherId'
+      | 'id'
+      | 'email'
+      | 'role'
+      | 'fullName'
+      | 'avatarUrl'
+      | 'whatsappNumber'
+      | 'managedByTeacherId'
     >,
   ): Promise<LoginResult> {
     const { token, session } = await this.sessionsService.createSession(
@@ -322,7 +328,13 @@ export class AuthService {
   private toAuthenticatedUser(
     user: Pick<
       UserEntity,
-      'id' | 'email' | 'role' | 'fullName' | 'avatarUrl' | 'managedByTeacherId'
+      | 'id'
+      | 'email'
+      | 'role'
+      | 'fullName'
+      | 'avatarUrl'
+      | 'whatsappNumber'
+      | 'managedByTeacherId'
     >,
   ): AuthenticatedUser {
     return {
@@ -331,6 +343,7 @@ export class AuthService {
       role: user.role,
       fullName: user.fullName,
       avatarUrl: user.avatarUrl,
+      whatsappNumber: user.whatsappNumber,
       managedByTeacherId: user.managedByTeacherId,
     };
   }

@@ -8,6 +8,7 @@ import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UserEntity } from '../users/entities/user.entity';
 import { FileEntity } from '../documents/entities/file.entity';
+import { NotificationEntity } from '../notifications/entities/notification.entity';
 import { DiscussionsService } from './discussions.service';
 import { DiscussionHelpfulVoteEntity } from './entities/discussion-helpful-vote.entity';
 import { DiscussionReplyEntity } from './entities/discussion-reply.entity';
@@ -108,11 +109,16 @@ describe('DiscussionsService', () => {
     filesRepository = { find: jest.fn().mockResolvedValue([]) };
     coursesRepository = { findOne: jest.fn().mockResolvedValue(course) };
     usersRepository = { find: jest.fn().mockResolvedValue([]) };
+    notificationsRepository = { find: jest.fn().mockResolvedValue([]) };
     enrollmentsService = {
       assertStudentEnrolled: jest.fn().mockResolvedValue(undefined),
     };
     attachmentsService = { saveAttachment: jest.fn() };
-    notifications = { notify: jest.fn().mockResolvedValue(undefined) };
+    notifications = {
+      notify: jest.fn().mockResolvedValue(undefined),
+      markEntityRead: jest.fn().mockResolvedValue(1),
+      markEntitiesRead: jest.fn().mockResolvedValue(1),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -139,6 +145,10 @@ describe('DiscussionsService', () => {
           useValue: coursesRepository,
         },
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
+        {
+          provide: getRepositoryToken(NotificationEntity),
+          useValue: notificationsRepository,
+        },
         { provide: EnrollmentsService, useValue: enrollmentsService },
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: NOTIFICATION_PRODUCER_PORT, useValue: notifications },
@@ -163,6 +173,21 @@ describe('DiscussionsService', () => {
       );
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe(baseThread.title);
+      expect(result[0].hasUnread).toBe(false);
+    });
+
+    it('marks hasUnread as true when there is an unread notification for the thread', async () => {
+      const qb = makeQueryBuilder([baseThread]);
+      threadsRepository.createQueryBuilder.mockReturnValue(qb);
+      notificationsRepository.find.mockResolvedValueOnce([
+        { relatedEntityId: baseThread.id, isRead: false },
+      ]);
+
+      const result = await service.listThreads('course-1', makeUser(), {
+        status: 'all',
+      });
+
+      expect(result[0].hasUnread).toBe(true);
     });
 
     it('rejects a student who is not enrolled in the course', async () => {
@@ -341,30 +366,79 @@ describe('DiscussionsService', () => {
     });
   });
 
-  describe('acceptAnswer', () => {
-    it('lets the question author mark a reply as the accepted answer', async () => {
+  describe('acceptAnswer & unacceptAnswer', () => {
+    it('lets the question author mark multiple replies as accepted answers', async () => {
       threadsRepository.findOne.mockResolvedValue({ ...baseThread });
-      repliesRepository.findOne.mockResolvedValue({
+      const reply1 = {
         id: 'reply-1',
         threadId: 'thread-1',
         authorId: 'teacher-1',
         authorRole: 'teacher',
-        body: 'الشرح',
+        body: 'الشرح الأول',
+        isAccepted: false,
         createdAt: new Date(),
-      });
+      };
+      repliesRepository.findOne.mockResolvedValue(reply1);
+      repliesRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
       threadsRepository.save.mockImplementation((input) =>
         Promise.resolve(input),
       );
-      repliesRepository.find.mockResolvedValue([]);
+      repliesRepository.find.mockResolvedValue([
+        { ...reply1, isAccepted: true },
+        {
+          id: 'reply-2',
+          threadId: 'thread-1',
+          authorId: 'student-2',
+          authorRole: 'student',
+          body: 'الشرح الثاني',
+          isAccepted: true,
+          createdAt: new Date(),
+        },
+      ]);
 
-      await service.acceptAnswer(
+      const result = await service.acceptAnswer(
         'thread-1',
         'reply-1',
         makeUser({ id: 'student-1' }),
       );
 
+      expect(repliesRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'reply-1', isAccepted: true }),
+      );
       expect(threadsRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({ acceptedReplyId: 'reply-1' }),
+      );
+      expect(result.replies[0].isAccepted).toBe(true);
+      expect(result.replies[1].isAccepted).toBe(true);
+    });
+
+    it('lets the question author unaccept a specific reply', async () => {
+      threadsRepository.findOne.mockResolvedValue({ ...baseThread, acceptedReplyId: 'reply-1' });
+      repliesRepository.findOne
+        .mockResolvedValueOnce({
+          id: 'reply-1',
+          threadId: 'thread-1',
+          authorId: 'teacher-1',
+          isAccepted: true,
+        })
+        .mockResolvedValueOnce(null);
+      repliesRepository.save.mockImplementation((input) => Promise.resolve(input));
+      threadsRepository.save.mockImplementation((input) => Promise.resolve(input));
+      repliesRepository.find.mockResolvedValue([]);
+
+      await service.unacceptAnswer(
+        'thread-1',
+        makeUser({ id: 'student-1' }),
+        'reply-1',
+      );
+
+      expect(repliesRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'reply-1', isAccepted: false }),
+      );
+      expect(threadsRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ acceptedReplyId: null }),
       );
     });
 
@@ -411,6 +485,37 @@ describe('DiscussionsService', () => {
 
       expect(helpfulVotesRepository.delete).toHaveBeenCalled();
       expect(result.isHelpfulByMe).toBe(false);
+    });
+  });
+
+  describe('markCourseDiscussionsRead', () => {
+    it('marks all thread notifications for the course as read', async () => {
+      threadsRepository.find = jest
+        .fn()
+        .mockResolvedValue([{ id: 'thread-1' }, { id: 'thread-2' }]);
+
+      const result = await service.markCourseDiscussionsRead(
+        'course-1',
+        makeUser({ id: 'student-1' }),
+      );
+
+      expect(notifications.markEntitiesRead).toHaveBeenCalledWith(
+        'student-1',
+        'discussion_thread',
+        ['thread-1', 'thread-2'],
+      );
+      expect(result).toEqual({ updated: 1 });
+    });
+
+    it('returns 0 when there are no threads in the course', async () => {
+      threadsRepository.find = jest.fn().mockResolvedValue([]);
+
+      const result = await service.markCourseDiscussionsRead(
+        'course-1',
+        makeUser({ id: 'student-1' }),
+      );
+
+      expect(result).toEqual({ updated: 0 });
     });
   });
 });

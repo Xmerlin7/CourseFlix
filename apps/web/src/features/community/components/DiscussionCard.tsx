@@ -5,6 +5,12 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+function roleLabel(role: DiscussionThreadListItem['author']['role']): string | null {
+  if (role === 'teacher') return 'المدرس'
+  if (role === 'assistant') return 'مساعد المدرس'
+  return null
+}
+
 interface DiscussionCardProps {
   thread: DiscussionThreadListItem
   to: string
@@ -12,11 +18,21 @@ interface DiscussionCardProps {
 
 export function DiscussionCard({ thread, to }: DiscussionCardProps) {
   const isTeacher = thread.author.role === 'teacher' || thread.author.role === 'assistant'
+  const authorRole = roleLabel(thread.author.role)
 
   return (
-    <Link to={to} className="card support-ticket-card lift discussion-card">
+    <Link
+      to={to}
+      className={`card support-ticket-card lift discussion-card${thread.hasUnread ? ' unread' : ''}`}
+    >
       <div className="support-card-top">
         <div className="support-card-meta">
+          {thread.hasUnread && (
+            <span className="unread-badge-pill" aria-label="نشاط جديد">
+              <span className="unread-dot" aria-hidden="true" />
+              <span>جديد</span>
+            </span>
+          )}
           <span className={`chip ${thread.isAnswered ? 'green' : 'outline'} sm`}>
             <span className="ms sm" aria-hidden="true">
               {thread.isAnswered ? 'check_circle' : 'help'}
@@ -43,11 +59,11 @@ export function DiscussionCard({ thread, to }: DiscussionCardProps) {
             </span>
           )}
           <span>{thread.author.fullName}</span>
-          {isTeacher && <span className="chip sm primary">المدرس</span>}
+          {authorRole && <span className="chip sm primary">{authorRole}</span>}
         </div>
       </div>
 
-      <h3 className="support-card-title">{thread.title}</h3>
+      <h3 className="support-card-title">{thread.body || thread.title}</h3>
 
       {thread.tags.length > 0 && (
         <div className="discussion-card-tags" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>

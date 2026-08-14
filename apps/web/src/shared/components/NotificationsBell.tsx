@@ -176,7 +176,7 @@ export function NotificationsBell({ notificationCount, viewAllPath }: Notificati
                   <Link
                     key={item.id}
                     to={target.path}
-                    className="list-item hoverable notif-item"
+                    className={`list-item hoverable notif-item ${item.isRead ? 'read' : 'unread'}`}
                     onClick={onOpen}
                   >
                     {body}
@@ -185,7 +185,7 @@ export function NotificationsBell({ notificationCount, viewAllPath }: Notificati
                   <button
                     key={item.id}
                     type="button"
-                    className="list-item hoverable notif-item"
+                    className={`list-item hoverable notif-item ${item.isRead ? 'read' : 'unread'}`}
                     onClick={() => {
                       if (!item.isRead) void handleMarkRead(item.id)
                     }}

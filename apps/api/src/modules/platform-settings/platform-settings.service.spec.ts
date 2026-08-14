@@ -4,7 +4,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { CourseEntity } from '../courses/entities/course.entity';
 import { PlatformSettingEntity } from './entities/platform-setting.entity';
 import {
+  AUTH_POSTER_CUSTOMIZATION_KEY,
   AUTH_POSTER_FEATURED_COURSE_KEY,
+  DEFAULT_AUTH_POSTER_CUSTOMIZATION,
   PlatformSettingsService,
 } from './platform-settings.service';
 
@@ -36,7 +38,10 @@ describe('PlatformSettingsService', () => {
           provide: getRepositoryToken(PlatformSettingEntity),
           useValue: settingsRepository,
         },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
       ],
     }).compile();
 
@@ -79,6 +84,7 @@ describe('PlatformSettingsService', () => {
         teacherName: course.teacher.fullName,
       },
       isFallback: false,
+      customization: DEFAULT_AUTH_POSTER_CUSTOMIZATION,
     });
   });
 
@@ -96,7 +102,9 @@ describe('PlatformSettingsService', () => {
   });
 
   it('saves a published active course as the featured auth poster course', async () => {
-    coursesRepository.findOne.mockResolvedValueOnce(course).mockResolvedValueOnce(course);
+    coursesRepository.findOne
+      .mockResolvedValueOnce(course)
+      .mockResolvedValueOnce(course);
     settingsRepository.findOne.mockResolvedValue({
       key: AUTH_POSTER_FEATURED_COURSE_KEY,
       value: course.id,
@@ -117,5 +125,65 @@ describe('PlatformSettingsService', () => {
       BadRequestException,
     );
     expect(settingsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('scopes a teacher poster update to that teacher own published course', async () => {
+    coursesRepository.findOne
+      .mockResolvedValueOnce(course)
+      .mockResolvedValueOnce(course);
+    settingsRepository.findOne.mockResolvedValue({
+      key: AUTH_POSTER_FEATURED_COURSE_KEY,
+      value: course.id,
+    });
+
+    await service.updateAuthPoster(course.id, 'teacher-1');
+
+    expect(coursesRepository.findOne).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: course.id,
+          teacherId: 'teacher-1',
+          status: 'published',
+        }),
+      }),
+    );
+    expect(settingsRepository.save).toHaveBeenCalledWith({
+      key: AUTH_POSTER_FEATURED_COURSE_KEY,
+      value: course.id,
+    });
+  });
+
+  it('saves customized poster text with the teacher course selection', async () => {
+    const customization = {
+      ...DEFAULT_AUTH_POSTER_CUSTOMIZATION,
+      studyPlanValue: '2 weeks',
+      studyPlanLabel: 'مدة الخطة',
+    };
+    coursesRepository.findOne
+      .mockResolvedValueOnce(course)
+      .mockResolvedValueOnce(course);
+    settingsRepository.findOne
+      .mockResolvedValueOnce({
+        key: AUTH_POSTER_FEATURED_COURSE_KEY,
+        value: course.id,
+      })
+      .mockResolvedValueOnce({
+        key: AUTH_POSTER_CUSTOMIZATION_KEY,
+        value: JSON.stringify(customization),
+      });
+
+    const result = await service.updateAuthPoster(
+      course.id,
+      'teacher-1',
+      customization,
+    );
+
+    expect(settingsRepository.save).toHaveBeenCalledWith({
+      key: AUTH_POSTER_CUSTOMIZATION_KEY,
+      value: JSON.stringify(customization),
+    });
+    expect(result.customization.studyPlanValue).toBe('2 weeks');
+    expect(result.customization.studyPlanLabel).toBe('مدة الخطة');
   });
 });

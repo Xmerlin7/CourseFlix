@@ -69,6 +69,42 @@ describe("StudentAssistantPage", () => {
     expect(screen.getByText(/صفحة 2/)).toBeInTheDocument();
   });
 
+  it("shows a CourseFlex AI thinking message until the response arrives", async () => {
+    let releaseResponse = () => {};
+    const responseGate = new Promise<void>((resolve) => {
+      releaseResponse = resolve;
+    });
+
+    server.use(
+      http.post(`${env.apiBaseUrl}/courses/:courseId/tutor/messages`, async () => {
+        await responseGate;
+        return HttpResponse.json({
+          messageId: "delayed-answer-1",
+          status: "answered",
+          answer: "وصل الرد بعد انتهاء التفكير.",
+          citations: [],
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(await waitForQuestionInput(), "اشرح الفكرة");
+    await user.click(screen.getByRole("button", { name: /إرسال السؤال/ }));
+
+    expect(
+      await screen.findByRole("status", { name: "المساعد الذكي يحضّر الرد" }),
+    ).toBeInTheDocument();
+
+    releaseResponse();
+
+    expect(await screen.findByText("وصل الرد بعد انتهاء التفكير.")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("status", { name: "المساعد الذكي يحضّر الرد" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders no citations for the no-answer state", async () => {
     server.use(
       http.post(`${env.apiBaseUrl}/courses/:courseId/tutor/messages`, () =>

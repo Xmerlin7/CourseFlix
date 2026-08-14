@@ -56,6 +56,48 @@ describe('FloatingAssistant', () => {
     expect(screen.getByText(/التسجيلات النشطة: 14/)).toBeInTheDocument()
   })
 
+  it('shows the AI thinking message inside the teacher assistant until analytics arrive', async () => {
+    let releaseResponse = () => {}
+    const responseGate = new Promise<void>((resolve) => {
+      releaseResponse = resolve
+    })
+
+    server.use(
+      http.post(`${env.apiBaseUrl}/teacher/analytics/questions`, async () => {
+        await responseGate
+        return HttpResponse.json({
+          status: 'success',
+          intent: 'student_count',
+          result: {
+            activeStudentCount: 12,
+            enrollmentCount: 14,
+            dateRange: { from: null, to: null },
+          },
+        })
+      }),
+    )
+
+    const user = userEvent.setup()
+    renderWithProviders(<FloatingAssistant role="teacher" />, {
+      initialEntries: ['/teacher/dashboard'],
+    })
+
+    await user.click(screen.getByRole('button', { name: 'افتح مساعد التحليلات' }))
+    await user.type(screen.getByLabelText('سؤالك لمساعد التحليلات'), 'عندي كام طالب؟')
+    await user.click(screen.getByRole('button', { name: 'إرسال السؤال' }))
+
+    expect(
+      await screen.findByRole('status', { name: 'المساعد الذكي يحضّر الرد' }),
+    ).toBeInTheDocument()
+
+    releaseResponse()
+
+    expect(await screen.findByText(/الطلاب النشطون: 12/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('status', { name: 'المساعد الذكي يحضّر الرد' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('sends question on Enter in student floating panel', async () => {
     const user = userEvent.setup()
 

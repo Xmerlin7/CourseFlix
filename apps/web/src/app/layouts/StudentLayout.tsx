@@ -5,6 +5,7 @@ import { useAuth } from '../../features/auth/hooks/useAuth'
 import { useUnreadNotificationsCount } from '../../features/notifications/hooks/useUnreadNotificationsCount'
 import { Sidebar } from '../../shared/components/Sidebar'
 import { FloatingAssistant } from '../../shared/components/FloatingAssistant'
+import { TeacherWhatsappButton } from '../../shared/components/TeacherWhatsappButton'
 import { Topbar } from '../../shared/components/Topbar'
 import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
 import { useStudentSidebarUnread } from '../../shared/hooks/useStudentSidebarUnread'
@@ -59,6 +60,7 @@ export function StudentLayout({ children }: PropsWithChildren) {
       </div>
 
       <FloatingAssistant role="student" />
+      <TeacherWhatsappButton />
     </div>
   )
 }

@@ -86,7 +86,7 @@ describe('DiscussionsSection', () => {
 
     await screen.findByText('قانون كولوم مش واضح')
 
-    await user.type(screen.getByPlaceholderText('ابحث في المناقشات...'), 'لا يوجد نتيجة')
+    await user.type(screen.getByLabelText('بحث في المناقشات'), 'لا يوجد نتيجة')
     await user.keyboard('{Enter}')
 
     expect(await screen.findByText('لم نجد أي مناقشات مطابقة لبحثك')).toBeInTheDocument()
@@ -117,14 +117,16 @@ describe('DiscussionsSection', () => {
 
     await user.click(screen.getByRole('button', { name: /اسأل سؤال/ }))
     const dialog = await screen.findByRole('dialog', { hidden: true })
-    await user.type(within(dialog).getByLabelText('عنوان السؤال'), 'مشكلة في حل المسألة الثالثة')
-    await user.type(within(dialog).getByLabelText('تفاصيل السؤال'), 'مش عارف أكمل الحل')
+    await user.type(within(dialog).getByLabelText('اكتب سؤالك'), 'مشكلة في حل المسألة الثالثة: مش عارف أكمل الحل')
     await user.click(within(dialog).getByRole('button', { name: 'نشر السؤال' }))
 
     await waitFor(() => {
       expect(posted).not.toBeNull()
     })
-    expect(posted).toEqual({ title: 'مشكلة في حل المسألة الثالثة', body: 'مش عارف أكمل الحل' })
+    expect(posted).toEqual({
+      title: 'مشكلة في حل المسألة الثالثة: مش عارف أكمل الحل',
+      body: 'مشكلة في حل المسألة الثالثة: مش عارف أكمل الحل',
+    })
   })
 
   it('does not show the "ask a question" button for a teacher viewer', async () => {

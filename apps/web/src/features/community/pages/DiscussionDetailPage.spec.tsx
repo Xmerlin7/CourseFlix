@@ -98,6 +98,37 @@ describe('DiscussionDetailPage', () => {
     expect(await screen.findByText('إجابة مقبولة')).toBeInTheDocument()
   })
 
+  it('lets the question author unaccept an accepted reply', async () => {
+    let isAccepted = true
+    server.use(
+      http.get(`${env.apiBaseUrl}/discussions/thread-1`, () =>
+        HttpResponse.json({
+          ...threadDetail,
+          isAnswered: isAccepted,
+          replies: [{ ...threadDetail.replies[0], isAccepted }],
+        }),
+      ),
+    )
+    server.use(
+      http.delete(`${env.apiBaseUrl}/discussions/thread-1/accept/reply-1`, () => {
+        isAccepted = false
+        return HttpResponse.json({
+          ...threadDetail,
+          isAnswered: false,
+          replies: [{ ...threadDetail.replies[0], isAccepted: false }],
+        })
+      }),
+    )
+
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('إجابة مقبولة')
+    await user.click(screen.getByRole('button', { name: 'إلغاء الاعتماد' }))
+
+    expect(await screen.findByRole('button', { name: 'اعتماد كإجابة' })).toBeInTheDocument()
+  })
+
   it('does not offer the accept-answer action to someone other than the question author', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/discussions/thread-1`, () =>
@@ -131,7 +162,7 @@ describe('DiscussionDetailPage', () => {
     expect(await screen.findByText('الكيمياء.pdf')).toBeInTheDocument()
   })
 
-  it('renders a compact empty state when there are no replies', async () => {
+  it('does not render an empty state illustration when there are zero replies', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/discussions/thread-1`, () =>
         HttpResponse.json({ ...threadDetail, replies: [] }),
@@ -140,8 +171,8 @@ describe('DiscussionDetailPage', () => {
 
     renderPage()
 
-    expect(await screen.findByText('لا توجد ردود بعد')).toBeInTheDocument()
-    expect(screen.getByText('كن أول من يجيب على هذا السؤال.')).toBeInTheDocument()
+    expect(await screen.findByText('الردود (0)')).toBeInTheDocument()
+    expect(screen.queryByText('لا توجد ردود بعد')).not.toBeInTheDocument()
   })
 })
 

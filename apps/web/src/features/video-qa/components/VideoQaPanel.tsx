@@ -3,6 +3,7 @@ import { handleChatInputKeyDown } from '../../../shared/utils/chatInput'
 import { useVideoQaChat } from '../hooks/useVideoQaChat'
 import { useVideoQaStatus } from '../hooks/useVideoQaStatus'
 import type { VideoQaTranscriptStatus } from '../types/video-qa.types'
+import { AiThinkingIndicator } from '../../tutor/components/AiThinkingIndicator'
 import { VideoQaCitationList } from './VideoQaCitationList'
 
 interface VideoQaPanelProps {
@@ -103,36 +104,38 @@ export function VideoQaPanel({ videoId, canSeek, onSeek }: VideoQaPanelProps) {
                         padding: 12,
                       }}
                     >
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                        <span className="lead" style={{ width: 32, height: 32, flex: 'none' }}>
-                          <span className="ms sm">
-                            {message.role === 'student' ? 'person' : 'smart_toy'}
-                          </span>
-                        </span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 13.5 }}>
-                            {message.text}
-                          </p>
-                          {message.status === 'no_answer' && (
-                            <span className="chip outline" style={{ marginTop: 8 }}>
-                              بدون مصادر
+                      {message.pending ? (
+                        <AiThinkingIndicator />
+                      ) : (
+                        <div className="ai-answer-enter" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                          <span className="lead" style={{ width: 32, height: 32, flex: 'none' }}>
+                            <span className="ms sm">
+                              {message.role === 'student' ? 'person' : 'smart_toy'}
                             </span>
-                          )}
-                          {!message.failed && message.status === 'answered' && (
-                            <VideoQaCitationList
-                              citations={message.citations ?? []}
-                              canSeek={canSeek}
-                              onSeek={onSeek}
-                            />
-                          )}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 13.5 }}>
+                              {message.text}
+                            </p>
+                            {message.status === 'no_answer' && (
+                              <span className="chip outline" style={{ marginTop: 8 }}>
+                                بدون مصادر
+                              </span>
+                            )}
+                            {!message.failed && message.status === 'answered' && (
+                              <VideoQaCitationList
+                                citations={message.citations ?? []}
+                                canSeek={canSeek}
+                                onSeek={onSeek}
+                              />
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </article>
                   ))}
                 </div>
               )}
-
-              {isSending && <span className="meta">المساعد بيجهز الرد...</span>}
 
               {error && !isSending && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

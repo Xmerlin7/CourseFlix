@@ -21,21 +21,25 @@ import { CreateEnrollmentDto } from '../enrollments/dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from '../enrollments/dto/update-enrollment.dto';
 import { StudentService } from './student.service';
 
+import { scopeTeacherId } from '../../common/utils/scope-teacher-id';
+
 interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
 }
 
 @Controller('api/v1/student')
-@UseGuards(AuthGuard, StudentRoleGuard)
+@UseGuards(AuthGuard)
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
   @Get('dashboard')
+  @UseGuards(StudentRoleGuard)
   getDashboard(@Req() request: AuthenticatedRequest) {
     return this.studentService.getDashboard(this.requireStudentId(request));
   }
 
   @Get('enrollments')
+  @UseGuards(StudentRoleGuard)
   getEnrollments(
     @Req() request: AuthenticatedRequest,
     @Query('status') status?: string,
@@ -48,13 +52,13 @@ export class StudentController {
   }
 
   @Get('community/summary')
-  getCommunitySummary(@Req() request: AuthenticatedRequest) {
-    return this.studentService.getCommunitySummary(
-      this.requireStudentId(request),
-    );
+  getCommunitySummary(@CurrentUser() user: AuthenticatedUser) {
+    const effectiveUserId = scopeTeacherId(user);
+    return this.studentService.getCommunitySummary(effectiveUserId);
   }
 
   @Post('enroll')
+  @UseGuards(StudentRoleGuard)
   @HttpCode(HttpStatus.CREATED)
   async enroll(
     @Body() dto: CreateEnrollmentDto,
@@ -64,6 +68,7 @@ export class StudentController {
   }
 
   @Get('enrollments/:enrollmentId')
+  @UseGuards(StudentRoleGuard)
   async getEnrollment(
     @Param('enrollmentId') enrollmentId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -72,6 +77,7 @@ export class StudentController {
   }
 
   @Patch('enrollments/:enrollmentId')
+  @UseGuards(StudentRoleGuard)
   async updateEnrollment(
     @Param('enrollmentId') enrollmentId: string,
     @Body() dto: UpdateEnrollmentDto,
@@ -85,6 +91,7 @@ export class StudentController {
   }
 
   @Delete('enrollments/:enrollmentId')
+  @UseGuards(StudentRoleGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async unenroll(
     @Param('enrollmentId') enrollmentId: string,

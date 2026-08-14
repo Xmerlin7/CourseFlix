@@ -49,6 +49,9 @@ export class UserEntity {
   @Column({ name: 'avatar_url', type: 'text', nullable: true })
   avatarUrl!: string | null;
 
+  @Column({ name: 'whatsapp_number', type: 'text', nullable: true })
+  whatsappNumber!: string | null;
+
   @Column({
     type: 'enum',
     enum: ['active', 'suspended', 'inactive'],

@@ -27,6 +27,9 @@ export class DiscussionReplyEntity {
   @Column({ type: 'text' })
   body!: string;
 
+  @Column({ name: 'is_accepted', type: 'boolean', default: false })
+  isAccepted!: boolean;
+
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;
 

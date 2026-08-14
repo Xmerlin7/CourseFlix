@@ -20,6 +20,8 @@ export class AdminAuthPosterController {
   updateAuthPoster(@Body() dto: UpdateAuthPosterDto) {
     return this.platformSettingsService.updateAuthPoster(
       dto.featuredCourseId,
+      undefined,
+      dto.customization,
     );
   }
 }

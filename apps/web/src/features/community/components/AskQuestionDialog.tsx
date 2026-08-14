@@ -5,7 +5,7 @@ import { ApiError } from '../../../shared/api/api-error'
 interface AskQuestionDialogProps {
   open: boolean
   isSubmitting: boolean
-  onSubmit: (input: { title: string; body: string; tags: string[]; attachment: File | null }) => Promise<void>
+  onSubmit: (input: { title?: string; body: string; tags: string[]; attachment: File | null }) => Promise<void>
   onClose: () => void
 }
 
@@ -13,7 +13,6 @@ const MAX_TAGS = 5
 
 export function AskQuestionDialog({ open, isSubmitting, onSubmit, onClose }: AskQuestionDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
@@ -29,7 +28,6 @@ export function AskQuestionDialog({ open, isSubmitting, onSubmit, onClose }: Ask
 
   function resetAndClose() {
     if (isSubmitting) return
-    setTitle('')
     setBody('')
     setTagInput('')
     setTags([])
@@ -66,13 +64,14 @@ export function AskQuestionDialog({ open, isSubmitting, onSubmit, onClose }: Ask
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    if (!title.trim() || !body.trim()) {
-      setError('العنوان والتفاصيل مطلوبين.')
+    const trimmedBody = body.trim()
+    if (!trimmedBody) {
+      setError('يرجى كتابة سؤالك.')
       return
     }
     setError(null)
     try {
-      await onSubmit({ title: title.trim(), body: body.trim(), tags, attachment })
+      await onSubmit({ body: trimmedBody, tags, attachment })
       resetAndClose()
     } catch (err) {
       setError(
@@ -102,24 +101,13 @@ export function AskQuestionDialog({ open, isSubmitting, onSubmit, onClose }: Ask
         </div>
 
         <div className="tf">
-          <label htmlFor="question-title">عنوان السؤال</label>
-          <input
-            id="question-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            disabled={isSubmitting}
-            maxLength={200}
-            required
-          />
-        </div>
-
-        <div className="tf">
-          <label htmlFor="question-body">تفاصيل السؤال</label>
+          <label htmlFor="question-body">اكتب سؤالك</label>
           <textarea
             id="question-body"
             value={body}
             onChange={(event) => setBody(event.target.value)}
             disabled={isSubmitting}
+            placeholder="اكتب سؤالك بالتفصيل..."
             rows={5}
             maxLength={10000}
             required
@@ -135,7 +123,7 @@ export function AskQuestionDialog({ open, isSubmitting, onSubmit, onClose }: Ask
             onKeyDown={handleTagKeyDown}
             onBlur={addTag}
             disabled={isSubmitting || tags.length >= MAX_TAGS}
-            placeholder="اكتب وسم واضغط Enter"
+            placeholder="اكتب وسم..."
           />
         </div>
 
