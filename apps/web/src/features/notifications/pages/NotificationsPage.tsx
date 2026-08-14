@@ -174,13 +174,13 @@ export function NotificationsPage() {
               <Link
                 key={notification.id}
                 to={target.path}
-                className="list-item"
+                className={`list-item hoverable ${notification.isRead ? 'read' : 'unread'}`}
                 onClick={handleRowClick}
               >
                 {row}
               </Link>
             ) : (
-              <div key={notification.id} className="list-item">
+              <div key={notification.id} className={`list-item ${notification.isRead ? 'read' : 'unread'}`}>
                 {row}
               </div>
             )
