@@ -8,7 +8,6 @@ import { env } from '../../../shared/lib/env'
 import { server } from '../../../testing/mocks/server'
 import { renderWithProviders } from '../../../testing/renderWithProviders'
 import { CheckoutPage } from './CheckoutPage'
-
 function renderPage(courseId = 'course-1') {
   return renderWithProviders(
     <Routes>
@@ -167,5 +166,49 @@ describe('CheckoutPage', () => {
     })
     expect(screen.queryByText('boom')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /إعادة المحاولة/ })).toBeInTheDocument()
+  })
+
+  it('fetches the paid receipt when returning from a successful Paymob payment', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/orders/order-1`, () =>
+        HttpResponse.json(
+          pendingOrder({
+            status: 'paid',
+            paymentStatus: 'paid',
+            paidAt: '2026-08-04T10:05:00.000Z',
+          }),
+        ),
+      ),
+    )
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/student/checkout/:courseId" element={<CheckoutPage />} />
+      </Routes>,
+      { initialEntries: ['/student/checkout/course-1?order=order-1'] },
+    )
+
+    expect(await screen.findByText('تم الدفع بنجاح')).toBeInTheDocument()
+    expect(screen.getByText(/order-1/)).toBeInTheDocument()
+    const start = screen.getByRole('link', { name: /بدء التعلم/ })
+    expect(start).toHaveAttribute('href', '/student/courses/course-1')
+  })
+
+  it('shows the checkout form for a pending order passed via the order query param', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/orders/order-1`, () =>
+        HttpResponse.json(pendingOrder()),
+      ),
+    )
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/student/checkout/:courseId" element={<CheckoutPage />} />
+      </Routes>,
+      { initialEntries: ['/student/checkout/course-1?order=order-1'] },
+    )
+
+    expect(await screen.findByText('الميكانيكا الكلاسيكية')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'ادفع الآن' })).toBeInTheDocument()
   })
 })
