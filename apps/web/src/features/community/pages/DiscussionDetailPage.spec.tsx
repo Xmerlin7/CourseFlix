@@ -131,7 +131,7 @@ describe('DiscussionDetailPage', () => {
     expect(await screen.findByText('الكيمياء.pdf')).toBeInTheDocument()
   })
 
-  it('renders a compact empty state when there are no replies', async () => {
+  it('does not render an empty state illustration when there are zero replies', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/discussions/thread-1`, () =>
         HttpResponse.json({ ...threadDetail, replies: [] }),
@@ -140,8 +140,8 @@ describe('DiscussionDetailPage', () => {
 
     renderPage()
 
-    expect(await screen.findByText('لا توجد ردود بعد')).toBeInTheDocument()
-    expect(screen.getByText('كن أول من يجيب على هذا السؤال.')).toBeInTheDocument()
+    expect(await screen.findByText('الردود (0)')).toBeInTheDocument()
+    expect(screen.queryByText('لا توجد ردود بعد')).not.toBeInTheDocument()
   })
 })
 

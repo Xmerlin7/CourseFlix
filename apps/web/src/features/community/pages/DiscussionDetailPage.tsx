@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
@@ -61,6 +60,16 @@ export function DiscussionDetailPage() {
       showToast('تعذر إرسال الرد', 'error')
     } finally {
       setIsReplying(false)
+    }
+  }
+
+  function handleReplyKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      if (replyBody.trim() && !isReplying) {
+        const form = event.currentTarget.form
+        if (form) form.requestSubmit()
+      }
     }
   }
 
@@ -220,13 +229,7 @@ export function DiscussionDetailPage() {
         )}
       </div>
 
-      {data.replies.length === 0 ? (
-        <EmptyState
-          variant="replies"
-          title="لا توجد ردود بعد"
-          message="كن أول من يجيب على هذا السؤال."
-        />
-      ) : (
+      {data.replies.length > 0 && (
         <div className="discussion-reply-list">
           {data.replies.map((reply) => {
             const isTeacherReply = reply.author.role === 'teacher' || reply.author.role === 'assistant'
@@ -288,7 +291,8 @@ export function DiscussionDetailPage() {
             id="reply-body"
             value={replyBody}
             onChange={(event) => setReplyBody(event.target.value)}
-            placeholder="اكتب توضيحك أو إجابتك هنا..."
+            onKeyDown={handleReplyKeyDown}
+            placeholder="اكتب توضيحك أو إجابتك هنا... (اضغط Enter للإرسال)"
             rows={2}
             maxLength={10000}
             disabled={isReplying}
