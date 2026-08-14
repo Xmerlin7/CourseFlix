@@ -26,10 +26,11 @@ export function DiscussionReplyRow({
 
   return (
     <div
-      className={`discussion-reply-row${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}`}
+      className={`discussion-reply-row${reply.isUnread ? ' unread' : ''}${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}`}
     >
       <div className="discussion-reply-header">
         <div className="discussion-reply-author">
+          {reply.isUnread && <span className="unread-dot" aria-label="غير مقروء" />}
           {reply.author.avatarUrl ? (
             <span className="avatar discussion-reply-avatar">
               <img src={reply.author.avatarUrl} alt="" />

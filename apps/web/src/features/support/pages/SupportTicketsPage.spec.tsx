@@ -62,6 +62,22 @@ describe('SupportTicketsPage', () => {
     const link = await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')
     const card = link.closest('a')!
     expect(within(card).getByText('مفتوح')).toBeInTheDocument()
+    expect(card).not.toHaveClass('unread')
+  })
+
+  it('renders unread ticket card with unread class and new indicator badge', async () => {
+    server.use(
+      http.get(`${env.apiBaseUrl}/support/tickets`, () =>
+        HttpResponse.json([{ ...sampleTicket, hasUnread: true }]),
+      ),
+    )
+
+    renderPage()
+
+    const link = await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')
+    const card = link.closest('a')!
+    expect(card).toHaveClass('unread')
+    expect(within(card).getByText('جديد')).toBeInTheDocument()
   })
 
 

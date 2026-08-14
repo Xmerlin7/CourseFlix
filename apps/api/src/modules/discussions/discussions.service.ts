@@ -18,6 +18,7 @@ import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UserEntity } from '../users/entities/user.entity';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { FileEntity } from '../documents/entities/file.entity';
+import { NotificationEntity } from '../notifications/entities/notification.entity';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { DiscussionHelpfulVoteEntity } from './entities/discussion-helpful-vote.entity';
 import { DiscussionReplyEntity } from './entities/discussion-reply.entity';
@@ -63,6 +64,7 @@ export interface DiscussionThreadListItemResponse {
   isPinned: boolean;
   isAnswered: boolean;
   createdAt: string;
+  hasUnread: boolean;
 }
 
 export interface DiscussionReplyResponse {
@@ -121,6 +123,8 @@ export class DiscussionsService {
     private readonly coursesRepository: Repository<CourseEntity>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(NotificationEntity)
+    private readonly notificationsRepository: Repository<NotificationEntity>,
     private readonly enrollmentsService: EnrollmentsService,
     private readonly attachmentsService: AttachmentsService,
     @Inject(NOTIFICATION_PRODUCER_PORT)
@@ -163,13 +167,33 @@ export class DiscussionsService {
       .take(100);
 
     const threads = await qb.getMany();
-    const authors = await this.loadAuthors(threads.map((t) => t.authorId));
-    const helpfulThreadIds = await this.loadHelpfulThreadIds(
-      user.id,
-      threads.map((t) => t.id),
+    const threadIds = threads.map((t) => t.id);
+    const [authors, helpfulThreadIds, unreadNotifs] = await Promise.all([
+      this.loadAuthors(threads.map((t) => t.authorId)),
+      this.loadHelpfulThreadIds(user.id, threadIds),
+      threadIds.length
+        ? this.notificationsRepository.find({
+            where: {
+              userId: user.id,
+              isRead: false,
+              relatedEntityType: 'discussion_thread',
+              relatedEntityId: In(threadIds),
+              deletedAt: IsNull(),
+            },
+            select: { relatedEntityId: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const unreadThreadIds = new Set(
+      unreadNotifs
+        .map((n) => n.relatedEntityId)
+        .filter((id): id is string => !!id),
     );
 
-    return threads.map((t) => this.toListItem(t, authors, helpfulThreadIds));
+    return threads.map((t) =>
+      this.toListItem(t, authors, helpfulThreadIds, unreadThreadIds),
+    );
   }
 
   async getThread(
@@ -622,6 +646,7 @@ export class DiscussionsService {
     thread: DiscussionThreadEntity,
     authors: Map<string, UserEntity>,
     helpfulThreadIds: Set<string>,
+    unreadThreadIds?: Set<string>,
   ): DiscussionThreadListItemResponse {
     return {
       id: thread.id,
@@ -636,6 +661,7 @@ export class DiscussionsService {
       isPinned: thread.isPinned,
       isAnswered: thread.acceptedReplyId !== null,
       createdAt: thread.createdAt.toISOString(),
+      hasUnread: unreadThreadIds?.has(thread.id) ?? false,
     };
   }
 }

@@ -8,6 +8,7 @@ import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UserEntity } from '../users/entities/user.entity';
 import { FileEntity } from '../documents/entities/file.entity';
+import { NotificationEntity } from '../notifications/entities/notification.entity';
 import { DiscussionsService } from './discussions.service';
 import { DiscussionHelpfulVoteEntity } from './entities/discussion-helpful-vote.entity';
 import { DiscussionReplyEntity } from './entities/discussion-reply.entity';
@@ -108,6 +109,7 @@ describe('DiscussionsService', () => {
     filesRepository = { find: jest.fn().mockResolvedValue([]) };
     coursesRepository = { findOne: jest.fn().mockResolvedValue(course) };
     usersRepository = { find: jest.fn().mockResolvedValue([]) };
+    notificationsRepository = { find: jest.fn().mockResolvedValue([]) };
     enrollmentsService = {
       assertStudentEnrolled: jest.fn().mockResolvedValue(undefined),
     };
@@ -143,6 +145,10 @@ describe('DiscussionsService', () => {
           useValue: coursesRepository,
         },
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
+        {
+          provide: getRepositoryToken(NotificationEntity),
+          useValue: notificationsRepository,
+        },
         { provide: EnrollmentsService, useValue: enrollmentsService },
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: NOTIFICATION_PRODUCER_PORT, useValue: notifications },
@@ -167,6 +173,21 @@ describe('DiscussionsService', () => {
       );
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe(baseThread.title);
+      expect(result[0].hasUnread).toBe(false);
+    });
+
+    it('marks hasUnread as true when there is an unread notification for the thread', async () => {
+      const qb = makeQueryBuilder([baseThread]);
+      threadsRepository.createQueryBuilder.mockReturnValue(qb);
+      notificationsRepository.find.mockResolvedValueOnce([
+        { relatedEntityId: baseThread.id, isRead: false },
+      ]);
+
+      const result = await service.listThreads('course-1', makeUser(), {
+        status: 'all',
+      });
+
+      expect(result[0].hasUnread).toBe(true);
     });
 
     it('rejects a student who is not enrolled in the course', async () => {
