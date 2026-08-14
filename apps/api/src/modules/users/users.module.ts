@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { memoryStorage } from 'multer';
 import { SessionsModule } from '../sessions/sessions.module';
 import { UserEntity } from './entities/user.entity';
-import { PublicTeacherContactController } from './public-teacher-contact.controller';
+import { StudentTeacherContactController } from './student-teacher-contact.controller';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
@@ -21,7 +21,7 @@ import { UsersService } from './users.service';
     // memoryStorage() for the PDF checksum/magic-byte check.
     MulterModule.register({ storage: memoryStorage() }),
   ],
-  controllers: [UsersController, PublicTeacherContactController],
+  controllers: [UsersController, StudentTeacherContactController],
   providers: [UsersService],
   exports: [UsersService],
 })

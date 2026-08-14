@@ -36,6 +36,8 @@ export interface UploadedAvatarFile {
 
 const MAX_AVATAR_BYTES = 5_242_880; // 5 MiB — a profile photo, not a document.
 const EGYPT_COUNTRY_CODE = '20';
+const WHATSAPP_DEFAULT_MESSAGE =
+  'مرحبًا، أريد الاستفسار عن الكورس على CourseFlex.';
 
 // Declared mimetype alone is never trusted (same discipline as
 // documents.service.ts's PDF magic-byte check) — each entry's magic
@@ -274,7 +276,9 @@ export class UsersService {
 
   private createWhatsappHref(value: string | null): string | null {
     if (!value) return null;
-    return `https://wa.me/${value}`;
+    return `https://wa.me/${value}?text=${encodeURIComponent(
+      WHATSAPP_DEFAULT_MESSAGE,
+    )}`;
   }
 
   async getSettings(userId: string): Promise<UserSettingsResponse> {
