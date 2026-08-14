@@ -10,6 +10,10 @@ export async function createOrder(payload: CreateOrderRequest): Promise<Order> {
   return httpClient.post<Order>('/checkout/orders', payload)
 }
 
+export async function getOrder(orderId: string): Promise<Order> {
+  return httpClient.get<Order>(`/orders/${orderId}`)
+}
+
 export async function confirmOrder(
   orderId: string,
   payload: ConfirmOrderRequest = {},
