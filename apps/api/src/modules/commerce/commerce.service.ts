@@ -229,11 +229,13 @@ export class CommerceService {
 
   /**
    * Maps a Paymob order id (the only identifier the browser GET redirect
-   * carries) back to the course id the student paid for.
+   * carries) back to the paid order: our internal order id plus the course
+   * id the student paid for. Used to route the browser to the checkout
+   * receipt page after a successful payment.
    */
-  async findCourseIdByPaymobOrderId(
+  async findOrderContextByPaymobOrderId(
     paymobOrderId: string,
-  ): Promise<string | null> {
+  ): Promise<{ orderId: string; courseId: string } | null> {
     const payment = await this.paymentsRepository.findOne({
       where: { paymobOrderId, method: 'paymob' },
     });
@@ -241,7 +243,11 @@ export class CommerceService {
       return null;
     }
     const items = await this.loadItems(payment.orderId);
-    return items[0]?.courseId ?? null;
+    const courseId = items[0]?.courseId ?? null;
+    if (!courseId) {
+      return null;
+    }
+    return { orderId: payment.orderId, courseId };
   }
 
   /**
