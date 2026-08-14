@@ -72,7 +72,7 @@ describe('StudentCommunityPage', () => {
     expect(await screen.findByText(/تواصل مع زملائك في كل دورة/)).toBeInTheDocument()
   })
 
-  it('renders a row for each active enrollment with grade, preview, and unread badge', async () => {
+  it('renders a row with grade, preview, and unread count badge', async () => {
     mockEnrollments([chemistryEnrollment])
     mockSummary([
       {
@@ -91,27 +91,30 @@ describe('StudentCommunityPage', () => {
 
     const row = screen.getByText('الكيمياء العضوية').closest('a')
     expect(row).toHaveAttribute('href', '/student/community/course-1')
+    expect(row).toHaveClass('unread')
   })
 
-  it('falls back to a neutral message when a course has no community activity yet', async () => {
+  it('shows grade but no preview when a course has no community activity', async () => {
     mockEnrollments([chemistryEnrollment])
     mockSummary([{ courseId: 'course-1', preview: null, lastActivityAt: null, unreadCount: 0 }])
     renderPage()
 
-    expect(await screen.findByText('لا توجد رسائل جديدة')).toBeInTheDocument()
-    expect(screen.queryByText(/^\d+$/)).not.toBeInTheDocument()
+    expect(await screen.findByText('الكيمياء العضوية')).toBeInTheDocument()
+    expect(screen.getByText('الصف الأول الثانوي')).toBeInTheDocument()
+    const row = screen.getByText('الكيمياء العضوية').closest('a')
+    expect(row).not.toHaveClass('unread')
   })
 
-  it('sorts courses by most recent community activity first', async () => {
+  it('sorts unread courses first, followed by recently active courses', async () => {
     mockEnrollments([chemistryEnrollment, physicsEnrollment])
     mockSummary([
-      { courseId: 'course-1', preview: 'قديم', lastActivityAt: '2026-08-01T10:00:00Z', unreadCount: 0 },
-      { courseId: 'course-2', preview: 'جديد', lastActivityAt: '2026-08-12T10:00:00Z', unreadCount: 0 },
+      { courseId: 'course-1', preview: 'غير مقروء', lastActivityAt: '2026-08-01T10:00:00Z', unreadCount: 2 },
+      { courseId: 'course-2', preview: 'مقروء ولكن أحدث', lastActivityAt: '2026-08-12T10:00:00Z', unreadCount: 0 },
     ])
     renderPage()
 
     const titles = (await screen.findAllByText(/الكيمياء العضوية|الفيزياء/)).map((el) => el.textContent)
-    expect(titles).toEqual(['الفيزياء', 'الكيمياء العضوية'])
+    expect(titles).toEqual(['الكيمياء العضوية', 'الفيزياء'])
   })
 
   it('filters the course list by the search input', async () => {
