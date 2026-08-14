@@ -18,6 +18,7 @@ interface NetworkNode {
 const FALLBACK_PRIMARY: Rgb = [101, 85, 143]
 const FALLBACK_PRIMARY_CONTAINER: Rgb = [233, 221, 255]
 const FALLBACK_SURFACE: Rgb = [254, 251, 255]
+const FALLBACK_ACCENT: Rgb = [34, 211, 238]
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -66,39 +67,53 @@ function getPalette(canvas: HTMLCanvasElement) {
     primary: parseCssColor(styles.getPropertyValue('--primary'), FALLBACK_PRIMARY),
     primaryContainer: parseCssColor(styles.getPropertyValue('--primary-container'), FALLBACK_PRIMARY_CONTAINER),
     surface: parseCssColor(styles.getPropertyValue('--surface'), FALLBACK_SURFACE),
+    accent: parseCssColor(styles.getPropertyValue('--auth-mesh-accent'), FALLBACK_ACCENT),
   }
 }
 
 function getNodeCount(width: number) {
-  if (width < 560) return 42
-  if (width < 980) return 58
-  return 74
+  if (width < 560) return 54
+  if (width < 980) return 72
+  return 94
 }
 
 function getConnectionDistance(width: number) {
-  if (width < 560) return 108
-  if (width < 980) return 132
-  return 156
+  if (width < 560) return 124
+  if (width < 980) return 154
+  return 184
 }
 
 function getPointerRadius(width: number) {
-  if (width < 560) return 118
-  if (width < 980) return 148
-  return 176
+  if (width < 560) return 142
+  if (width < 980) return 174
+  return 208
 }
 
 function createNodes(count: number, width: number, height: number): NetworkNode[] {
+  const aspect = width / Math.max(1, height)
+  const columns = Math.max(4, Math.ceil(Math.sqrt(count * aspect)))
+  const rows = Math.max(3, Math.ceil(count / columns))
+  const cellWidth = width / columns
+  const cellHeight = height / rows
+  const cells = Array.from({ length: columns * rows }, (_, index) => ({
+    column: index % columns,
+    row: Math.floor(index / columns),
+  })).sort(() => Math.random() - 0.5)
+
   return Array.from({ length: count }, (_, index) => {
-    const prominent = index % 13 === 0
+    const { column, row } = cells[index]
+    const prominent = index % 11 === 0
+    const jitterX = (Math.random() - 0.5) * cellWidth * 0.72
+    const jitterY = (Math.random() - 0.5) * cellHeight * 0.72
 
     return {
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.18,
-      vy: (Math.random() - 0.5) * 0.14,
+      x: clamp(column * cellWidth + cellWidth * 0.5 + jitterX, 16, width - 16),
+      y: clamp(row * cellHeight + cellHeight * 0.5 + jitterY, 16, height - 16),
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: (Math.random() - 0.5) * 0.1,
       phase: Math.random() * Math.PI * 2,
-      radius: prominent ? 2.2 + Math.random() * 0.7 : 1.2 + Math.random() * 0.8,
-      opacity: prominent ? 0.54 + Math.random() * 0.16 : 0.32 + Math.random() * 0.2,
+      radius: prominent ? 2.55 + Math.random() * 0.85 : 1.35 + Math.random() * 0.85,
+      opacity: prominent ? 0.64 + Math.random() * 0.14 : 0.4 + Math.random() * 0.2,
       prominent,
       polarity: index % 3 === 0 ? 1 : -1,
       pointerForce: 0,
@@ -197,8 +212,8 @@ export function AuthMeshCanvas() {
             const force = Math.pow(1 - distance / pointerRadius, 2)
             const direction = node.polarity
             node.pointerForce = force
-            node.x += (dx / distance) * force * 0.42 * direction * delta
-            node.y += (dy / distance) * force * 0.34 * direction * delta
+            node.x += (dx / distance) * force * 0.58 * direction * delta
+            node.y += (dy / distance) * force * 0.46 * direction * delta
           }
         }
 
@@ -233,23 +248,41 @@ export function AuthMeshCanvas() {
 
           const proximity = 1 - distance / connectionDistance
           const pointerBoost = Math.max(a.pointerForce, b.pointerForce)
-          const alpha = Math.pow(proximity, 1.7) * 0.2 + pointerBoost * 0.08
+          const alpha = Math.pow(proximity, 1.55) * 0.32 + pointerBoost * 0.14
 
           meshContext.beginPath()
           meshContext.moveTo(a.x, a.y)
           meshContext.lineTo(b.x, b.y)
-          meshContext.lineWidth = 0.55 + proximity * 0.38 + pointerBoost * 0.35
+          meshContext.lineWidth = 0.62 + proximity * 0.44 + pointerBoost * 0.44
           meshContext.strokeStyle = rgba(palette.primaryContainer, alpha)
           meshContext.stroke()
         }
       }
 
       if (pointer.active && !reducedMotion) {
-        const radius = getPointerRadius(width) * 1.18
+        const cursorLinkDistance = getPointerRadius(width) * 0.78
+
+        for (const node of nodes) {
+          const dx = pointer.x - node.x
+          const dy = pointer.y - node.y
+          const distance = Math.hypot(dx, dy)
+
+          if (distance > cursorLinkDistance) continue
+
+          const proximity = 1 - distance / cursorLinkDistance
+          meshContext.beginPath()
+          meshContext.moveTo(pointer.x, pointer.y)
+          meshContext.lineTo(node.x, node.y)
+          meshContext.lineWidth = 0.45 + proximity * 0.42
+          meshContext.strokeStyle = rgba(palette.accent, Math.pow(proximity, 1.9) * 0.16)
+          meshContext.stroke()
+        }
+
+        const radius = getPointerRadius(width) * 0.58
         const gradient = meshContext.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, radius)
-        gradient.addColorStop(0, rgba(palette.primaryContainer, 0.12))
-        gradient.addColorStop(0.42, rgba(palette.primary, 0.055))
-        gradient.addColorStop(1, rgba(palette.primary, 0))
+        gradient.addColorStop(0, rgba(palette.accent, 0.09))
+        gradient.addColorStop(0.44, rgba(palette.primaryContainer, 0.035))
+        gradient.addColorStop(1, rgba(palette.accent, 0))
         meshContext.fillStyle = gradient
         meshContext.beginPath()
         meshContext.arc(pointer.x, pointer.y, radius, 0, Math.PI * 2)
@@ -263,14 +296,14 @@ export function AuthMeshCanvas() {
 
         if (node.prominent || node.pointerForce > 0.08) {
           meshContext.beginPath()
-          meshContext.arc(node.x, node.y, radius * 4.6, 0, Math.PI * 2)
-          meshContext.fillStyle = rgba(palette.primary, 0.045 + node.pointerForce * 0.08)
+          meshContext.arc(node.x, node.y, radius * 4.8, 0, Math.PI * 2)
+          meshContext.fillStyle = rgba(node.pointerForce > 0.08 ? palette.accent : palette.primary, 0.052 + node.pointerForce * 0.12)
           meshContext.fill()
         }
 
         meshContext.beginPath()
         meshContext.arc(node.x, node.y, radius, 0, Math.PI * 2)
-        meshContext.fillStyle = rgba(node.prominent ? palette.surface : palette.primaryContainer, nodeAlpha)
+        meshContext.fillStyle = rgba(node.pointerForce > 0.1 ? palette.accent : node.prominent ? palette.surface : palette.primaryContainer, nodeAlpha)
         meshContext.fill()
       }
 
