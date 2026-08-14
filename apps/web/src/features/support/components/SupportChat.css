@@ -1116,76 +1116,65 @@
   --bubble-bg: var(--surface-container-low);
   --bubble-border: var(--outline-variant);
   position: relative;
-  max-width: min(88%, 780px);
+  max-width: min(85%, 720px);
   width: fit-content;
-  min-width: min(340px, 100%);
+  min-width: min(280px, 100%);
   padding: 10px 16px 8px 16px;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--bubble-bg);
   border: 1px solid var(--bubble-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Telegram / WhatsApp curved speech tail - Incoming (other users) */
 .discussion-reply-row--other .discussion-reply-bubble {
-  border-start-start-radius: 3px;
+  border-start-start-radius: 2px;
 }
 
-.discussion-reply-row--other .discussion-reply-bubble::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  inset-inline-start: -8px;
-  width: 0;
-  height: 0;
-  border-top: 10px solid var(--bubble-border);
-  border-inline-end: 8px solid transparent;
-  pointer-events: none;
-}
-
-.discussion-reply-row--other .discussion-reply-bubble::after {
-  content: '';
-  position: absolute;
-  top: 1px;
-  inset-inline-start: -7px;
-  width: 0;
-  height: 0;
-  border-top: 9px solid var(--bubble-bg);
-  border-inline-end: 7px solid transparent;
-  pointer-events: none;
-}
-
-/* Telegram / WhatsApp curved speech tail - Outgoing (current user) */
 .discussion-reply-row--me .discussion-reply-bubble {
   --bubble-bg: color-mix(in srgb, var(--primary) 12%, var(--surface));
   --bubble-border: color-mix(in srgb, var(--primary) 30%, var(--outline-variant));
-  border-start-end-radius: 3px;
+  border-start-end-radius: 2px;
 }
 
-.discussion-reply-row--me .discussion-reply-bubble::before {
-  content: '';
+/* Telegram / WhatsApp SVG curved speech tail */
+.discussion-reply-tail {
   position: absolute;
-  top: 0;
-  inset-inline-end: -8px;
-  width: 0;
-  height: 0;
-  border-top: 10px solid var(--bubble-border);
-  border-inline-start: 8px solid transparent;
+  top: -1px;
+  width: 9px;
+  height: 16px;
   pointer-events: none;
+  overflow: visible;
+  z-index: 2;
 }
 
-.discussion-reply-row--me .discussion-reply-bubble::after {
-  content: '';
-  position: absolute;
-  top: 1px;
-  inset-inline-end: -7px;
-  width: 0;
-  height: 0;
-  border-top: 9px solid var(--bubble-bg);
-  border-inline-start: 7px solid transparent;
-  pointer-events: none;
+.discussion-reply-tail .tail-fill {
+  fill: var(--bubble-bg);
+}
+
+.discussion-reply-tail .tail-top-stroke {
+  stroke: var(--bubble-border);
+  stroke-width: 1px;
+  fill: none;
+}
+
+.discussion-reply-tail .tail-curve-stroke {
+  stroke: var(--bubble-border);
+  stroke-width: 1px;
+  fill: none;
+}
+
+/* Incoming tail (avatar on the right in RTL) */
+.discussion-reply-row--other .discussion-reply-tail {
+  inset-inline-start: -8.5px;
+  transform: scaleX(-1);
+}
+
+/* Outgoing tail (avatar on the left in RTL) */
+.discussion-reply-row--me .discussion-reply-tail {
+  inset-inline-end: -8.5px;
+  transform: scaleX(1);
 }
 
 .discussion-reply-row.unread .discussion-reply-bubble {
@@ -1205,6 +1194,10 @@
 .discussion-reply-row--accepted .discussion-reply-bubble {
   --bubble-bg: color-mix(in srgb, var(--success-container) 35%, var(--surface));
   --bubble-border: color-mix(in srgb, #10b981 45%, var(--outline-variant));
+}
+
+.discussion-reply-row--teacher .discussion-reply-bubble {
+  --bubble-border: color-mix(in srgb, var(--primary) 35%, var(--outline-variant));
 }
 
 .discussion-reply-row--teacher .discussion-reply-bubble {

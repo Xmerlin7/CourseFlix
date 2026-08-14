@@ -32,23 +32,33 @@ export function DiscussionReplyRow({
     <div
       className={`discussion-reply-row${reply.isUnread ? ' unread' : ''}${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}${isMe ? ' discussion-reply-row--me' : ' discussion-reply-row--other'}`}
     >
-      {!isMe && (
-        <div className="discussion-reply-avatar-col">
-          {reply.author.avatarUrl ? (
-            <span className="avatar discussion-reply-avatar">
-              <img src={reply.author.avatarUrl} alt="" />
+      <div className="discussion-reply-avatar-col">
+        {reply.author.avatarUrl ? (
+          <span className="avatar discussion-reply-avatar">
+            <img src={reply.author.avatarUrl} alt="" />
+          </span>
+        ) : (
+          <span className="discussion-reply-avatar-placeholder">
+            <span className="ms sm" aria-hidden="true">
+              {isTeacherReply ? 'verified_user' : 'account_circle'}
             </span>
-          ) : (
-            <span className="discussion-reply-avatar-placeholder">
-              <span className="ms sm" aria-hidden="true">
-                {isTeacherReply ? 'verified_user' : 'account_circle'}
-              </span>
-            </span>
-          )}
-        </div>
-      )}
+          </span>
+        )}
+      </div>
 
       <div className="discussion-reply-bubble">
+        <svg
+          className="discussion-reply-tail"
+          viewBox="0 0 9 16"
+          width="9"
+          height="16"
+          aria-hidden="true"
+        >
+          <path d="M 0,0 L 9,0 L 9,14 C 8,6 4,1 0,0 Z" className="tail-fill" />
+          <path d="M 0,0 L 9,0" className="tail-top-stroke" />
+          <path d="M 0,0 C 4,1 8,6 9,14" className="tail-curve-stroke" />
+        </svg>
+
         <div className="discussion-reply-header">
           <div className="discussion-reply-author">
             {reply.isUnread && <span className="unread-dot" aria-label="غير مقروء" />}
@@ -100,22 +110,6 @@ export function DiscussionReplyRow({
           </span>
         </div>
       </div>
-
-      {isMe && (
-        <div className="discussion-reply-avatar-col">
-          {reply.author.avatarUrl ? (
-            <span className="avatar discussion-reply-avatar">
-              <img src={reply.author.avatarUrl} alt="" />
-            </span>
-          ) : (
-            <span className="discussion-reply-avatar-placeholder">
-              <span className="ms sm" aria-hidden="true">
-                {isTeacherReply ? 'verified_user' : 'account_circle'}
-              </span>
-            </span>
-          )}
-        </div>
-      )}
     </div>
   )
 }
