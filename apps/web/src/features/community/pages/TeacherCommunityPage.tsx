@@ -152,12 +152,8 @@ function TeacherCommunityCourseRow({
         {/* Line 1: course name + timestamp */}
         <div className="community-row-line1">
           <span className="community-row-title">{course.title}</span>
-          {summary?.lastActivityAt ? (
+          {summary?.lastActivityAt && (
             <span className="community-row-time">{formatActivityTime(summary.lastActivityAt)}</span>
-          ) : (
-            <span className="community-row-time">
-              {course.status === 'published' ? 'منشورة' : 'مسودة'}
-            </span>
           )}
         </div>
 
@@ -168,11 +164,11 @@ function TeacherCommunityCourseRow({
         </div>
 
         {/* Line 3: latest message preview */}
-        <div className="community-row-line3">
-          <span className="community-row-preview">
-            {summary?.preview ?? 'افتح المناقشات والإعلانات الخاصة بالدورة'}
-          </span>
-        </div>
+        {summary?.preview && (
+          <div className="community-row-line3">
+            <span className="community-row-preview">{summary.preview}</span>
+          </div>
+        )}
       </div>
     </Link>
   )
