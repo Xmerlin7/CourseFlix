@@ -101,13 +101,14 @@ describe('SupportTicketDetailPage', () => {
     await waitFor(() => expect(newStatus).toBe('in_progress'))
   })
 
-  it('shows a friendly compact empty state when there are no messages yet', async () => {
+  it('does not render chat panel when there are no messages yet', async () => {
     server.use(http.get(`${env.apiBaseUrl}/support/tickets/ticket-1`, () => HttpResponse.json(ticketDetail)))
 
     renderPage(studentAuth)
 
-    expect(await screen.findByText('أهلاً بيك')).toBeInTheDocument()
-    expect(screen.getByText('تم استلام طلب الدعم. هنراجع طلبك ونرد عليك هنا.')).toBeInTheDocument()
+    expect(await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')).toBeInTheDocument()
+    expect(screen.queryByText('أهلاً بيك')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
   it('renders student and support messages with visually distinct bubble styles', async () => {

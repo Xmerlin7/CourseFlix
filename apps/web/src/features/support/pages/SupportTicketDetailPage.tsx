@@ -179,18 +179,10 @@ export function SupportTicketDetailPage() {
         )}
       </div>
 
-      <div className="support-chat-panel">
-        <div className="support-chat-messages" ref={messagesRef}>
-          {renderList.length === 0 ? (
-            <div className="support-chat-empty">
-              <span style={{ fontSize: 26 }} aria-hidden="true">👋</span>
-              <strong style={{ fontSize: 15, marginTop: 4 }}>أهلاً بيك</strong>
-              <p style={{ margin: 0, fontSize: 13.5, color: 'var(--on-surface-variant)' }}>
-                تم استلام طلب الدعم. هنراجع طلبك ونرد عليك هنا.
-              </p>
-            </div>
-          ) : (
-            renderList.map((message, index) => (
+      {renderList.length > 0 && (
+        <div className="support-chat-panel">
+          <div className="support-chat-messages" ref={messagesRef}>
+            {renderList.map((message, index) => (
               <MessageBubble
                 key={message.key}
                 authorName={message.authorName}
@@ -200,10 +192,10 @@ export function SupportTicketDetailPage() {
                 createdAt={message.createdAt}
                 showHeader={shouldShowHeader(renderList, index)}
               />
-            ))
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
