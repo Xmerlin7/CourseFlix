@@ -5,6 +5,7 @@ import { uuid } from '../../../shared/lib/uuid'
 import {
   confirmOrder,
   createOrder,
+  getOrder,
   initiatePaymob,
 } from '../api/checkout.api'
 import type { Order, PaymentSimulation } from '../types/checkout.types'
@@ -29,7 +30,10 @@ function makeIdempotencyKey(courseId: string): string {
   return `checkout-${courseId}-${uuid()}`
 }
 
-export function useCheckout(courseId: string): UseCheckoutResult {
+export function useCheckout(
+  courseId: string,
+  existingOrderId?: string | null,
+): UseCheckoutResult {
   const [order, setOrder] = useState<Order | null>(null)
   const [isCreating, setIsCreating] = useState(true)
   const [isConfirming, setIsConfirming] = useState(false)
@@ -45,11 +49,36 @@ export function useCheckout(courseId: string): UseCheckoutResult {
 
   useEffect(() => {
     const controller = new AbortController()
-    const idempotencyKey = makeIdempotencyKey(courseId)
 
     setIsCreating(true)
     setCreateError(null)
     setOrder(null)
+
+    // After a real Paymob success the browser lands here with the paid
+    // order id (see the API's GET webhook redirect); fetch the receipt
+    // instead of opening a brand-new draft for an already-owned course.
+    if (existingOrderId) {
+      getOrder(existingOrderId)
+        .then((fetched) => {
+          if (!controller.signal.aborted) {
+            setOrder(fetched)
+          }
+        })
+        .catch((err) => {
+          if (!controller.signal.aborted) {
+            const apiError = err instanceof ApiError ? err : new ApiError('Unknown error', 0)
+            setCreateError(apiError)
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setIsCreating(false)
+          }
+        })
+      return () => controller.abort()
+    }
+
+    const idempotencyKey = makeIdempotencyKey(courseId)
 
     pushDataLayerEvent('checkout_start', { courseId })
 
@@ -77,7 +106,7 @@ export function useCheckout(courseId: string): UseCheckoutResult {
       })
 
     return () => controller.abort()
-  }, [courseId, attempt])
+  }, [courseId, attempt, existingOrderId])
 
   const pay = useCallback(
     async (simulate: PaymentSimulation = 'success') => {
@@ -135,7 +164,8 @@ export function useCheckout(courseId: string): UseCheckoutResult {
       })
       // Full-page navigation to Paymob's hosted iframe page. On completion
       // Paymob redirects the browser back to the API's GET webhook, which
-      // routes to the paid course page (success) or /student/courses (decline).
+      // routes to the checkout receipt page (success) or /student/courses
+      // (decline).
       window.location.href = paymentUrl
     } catch (err) {
       const apiError = err instanceof ApiError ? err : new ApiError('Unknown error', 0)
