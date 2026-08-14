@@ -7,14 +7,16 @@ import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
-import { updateTicketStatus } from '../api/support.api'
-import { MessageBubble } from '../components/MessageBubble'
+import { addTicketMessage, updateTicketStatus } from '../api/support.api'
+import { MessageBubble, type MessagePendingStatus } from '../components/MessageBubble'
+import { MessageComposer } from '../components/MessageComposer'
 import '../components/SupportChat.css'
 import { SupportTicketDetailSkeleton } from '../components/SupportTicketDetailSkeleton'
 import { TicketStatusBadge } from '../components/TicketStatusBadge'
+import { TypingIndicator } from '../components/TypingIndicator'
 import { useTicket } from '../hooks/useTicket'
 import { SUPPORT_TICKET_CATEGORY_LABELS } from '../lib/support-status-labels'
-import type { SupportTicketStatus } from '../types/support.types'
+import type { SupportMessage, SupportTicketStatus } from '../types/support.types'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
@@ -36,6 +38,16 @@ const CATEGORY_ICONS: Record<string, string> = {
   other: 'more_horiz',
 }
 
+interface PendingMessage {
+  localId: string
+  authorName: string
+  authorAvatarUrl: string | null
+  isStaffReply: boolean
+  body: string
+  createdAt: string
+  status: MessagePendingStatus
+}
+
 interface RenderableMessage {
   key: string
   authorName: string
@@ -43,6 +55,7 @@ interface RenderableMessage {
   isStaffReply: boolean
   body: string
   createdAt: string
+  pendingStatus?: MessagePendingStatus
 }
 
 function shouldShowHeader(list: RenderableMessage[], index: number): boolean {
@@ -59,7 +72,10 @@ export function SupportTicketDetailPage() {
   const backPath = isStaff ? (user?.role === 'admin' ? '/admin/support' : '/teacher/support') : '/student/support'
 
   const { data, isLoading, error, refetch } = useTicket(ticketId ?? '')
+  const [messageBody, setMessageBody] = useState('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [confirmedExtra, setConfirmedExtra] = useState<SupportMessage[]>([])
+  const [pending, setPending] = useState<PendingMessage | null>(null)
   const messagesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -68,20 +84,43 @@ export function SupportTicketDetailPage() {
     }
   }, [data?.id])
 
-  const renderList: RenderableMessage[] = (data?.messages ?? []).map((message) => ({
-    key: message.id,
-    authorName: message.authorName,
-    authorAvatarUrl: message.authorAvatarUrl,
-    isStaffReply: message.isStaffReply,
-    body: message.body,
-    createdAt: message.createdAt,
-  }))
+  const renderList: RenderableMessage[] = [
+    ...(data?.messages ?? []).map((message) => ({
+      key: message.id,
+      authorName: message.authorName,
+      authorAvatarUrl: message.authorAvatarUrl,
+      isStaffReply: message.isStaffReply,
+      body: message.body,
+      createdAt: message.createdAt,
+    })),
+    ...confirmedExtra.map((message) => ({
+      key: message.id,
+      authorName: message.authorName,
+      authorAvatarUrl: message.authorAvatarUrl,
+      isStaffReply: message.isStaffReply,
+      body: message.body,
+      createdAt: message.createdAt,
+    })),
+    ...(pending
+      ? [
+          {
+            key: pending.localId,
+            authorName: pending.authorName,
+            authorAvatarUrl: pending.authorAvatarUrl,
+            isStaffReply: pending.isStaffReply,
+            body: pending.body,
+            createdAt: pending.createdAt,
+            pendingStatus: pending.status,
+          },
+        ]
+      : []),
+  ]
 
   useEffect(() => {
     if (messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight
     }
-  }, [renderList.length])
+  }, [renderList.length, pending?.status])
 
   if (isLoading) return <SupportTicketDetailSkeleton />
 
@@ -92,6 +131,43 @@ export function SupportTicketDetailPage() {
   }
 
   if (!data) return <NotFoundState />
+
+  async function trySend(ticketIdValue: string, body: string) {
+    try {
+      const created = await addTicketMessage(ticketIdValue, body)
+      setConfirmedExtra((current) => [...current, created])
+      setPending(null)
+    } catch {
+      setPending((current) => (current ? { ...current, status: 'failed' } : current))
+      showToast('تعذر إرسال الرد', 'error')
+    }
+  }
+
+  function handleComposerSubmit() {
+    const body = messageBody.trim()
+    if (!body || pending || !ticketId) return
+    setMessageBody('')
+    setPending({
+      localId: `pending-${Date.now()}`,
+      authorName: user?.fullName ?? (isStaff ? 'فريق الدعم' : 'أنت'),
+      authorAvatarUrl: user?.avatarUrl ?? null,
+      isStaffReply: isStaff,
+      body,
+      createdAt: new Date().toISOString(),
+      status: 'sending',
+    })
+    void trySend(ticketId, body)
+  }
+
+  function handleRetry() {
+    if (!pending || !ticketId) return
+    setPending({ ...pending, status: 'sending' })
+    void trySend(ticketId, pending.body)
+  }
+
+  function handleDismissFailed() {
+    setPending(null)
+  }
 
   async function handleStatusChange(status: SupportTicketStatus) {
     if (!ticketId) return
@@ -106,6 +182,8 @@ export function SupportTicketDetailPage() {
       setIsUpdatingStatus(false)
     }
   }
+
+  const isClosed = data.status === 'closed'
 
   return (
     <div style={{ maxWidth: 880, margin: '0 auto', width: '100%' }}>
@@ -179,8 +257,8 @@ export function SupportTicketDetailPage() {
         )}
       </div>
 
-      {renderList.length > 0 && (
-        <div className="support-chat-panel">
+      <div className="support-chat-panel">
+        {renderList.length > 0 && (
           <div className="support-chat-messages" ref={messagesRef}>
             {renderList.map((message, index) => (
               <MessageBubble
@@ -191,11 +269,33 @@ export function SupportTicketDetailPage() {
                 body={message.body}
                 createdAt={message.createdAt}
                 showHeader={shouldShowHeader(renderList, index)}
+                pendingStatus={message.pendingStatus}
+                onRetry={message.pendingStatus === 'failed' ? handleRetry : undefined}
+                onDismiss={message.pendingStatus === 'failed' ? handleDismissFailed : undefined}
               />
             ))}
+
+            {pending?.status === 'sending' && (
+              <TypingIndicator variant={isStaff ? 'student' : 'support'} />
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {isClosed ? (
+          <div className="support-chat-closed-notice">
+            <span className="ms" aria-hidden="true">lock</span>
+            تم إغلاق هذا الطلب، ولا يمكن إرسال ردود جديدة.
+          </div>
+        ) : (
+          <MessageComposer
+            value={messageBody}
+            onChange={setMessageBody}
+            onSubmit={handleComposerSubmit}
+            disabled={pending !== null}
+            isSending={pending?.status === 'sending'}
+          />
+        )}
+      </div>
     </div>
   )
 }

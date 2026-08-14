@@ -48,20 +48,36 @@ function renderPage(auth: AuthContextValue, path = '/student/support/ticket-1', 
 }
 
 describe('SupportTicketDetailPage', () => {
-  it('lets the owning student view their own ticket in read-only mode without reply composer', async () => {
+  it('lets the owning student view their own ticket and send a reply', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/support/tickets/ticket-1`, () => HttpResponse.json(ticketDetail)),
     )
+    let posted: string | null = null
+    server.use(
+      http.post(`${env.apiBaseUrl}/support/tickets/ticket-1/messages`, async ({ request }) => {
+        const body = (await request.json()) as { body: string }
+        posted = body.body
+        return HttpResponse.json({
+          id: 'msg-1',
+          authorName: 'محمد',
+          isStaffReply: false,
+          body: posted,
+          createdAt: '2026-01-01T11:00:00Z',
+        })
+      }),
+    )
 
+    const user = userEvent.setup()
     renderPage(studentAuth)
 
     expect(await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')).toBeInTheDocument()
     // Student sees a read-only status badge, not the staff status selector.
     expect(screen.queryByLabelText('الحالة')).not.toBeInTheDocument()
 
-    // The reply composer must NOT be rendered (read-only view)
-    expect(screen.queryByLabelText('اكتب ردًا')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'إرسال' })).not.toBeInTheDocument()
+    await user.type(screen.getByLabelText('اكتب ردًا'), 'لسه بتحصل المشكلة')
+    await user.click(screen.getByRole('button', { name: 'إرسال' }))
+
+    await waitFor(() => expect(posted).toBe('لسه بتحصل المشكلة'))
   })
 
   it('shows a forbidden state when the ticket belongs to another student', async () => {
@@ -99,16 +115,6 @@ describe('SupportTicketDetailPage', () => {
     await user.selectOptions(statusSelect, 'in_progress')
 
     await waitFor(() => expect(newStatus).toBe('in_progress'))
-  })
-
-  it('does not render chat panel when there are no messages yet', async () => {
-    server.use(http.get(`${env.apiBaseUrl}/support/tickets/ticket-1`, () => HttpResponse.json(ticketDetail)))
-
-    renderPage(studentAuth)
-
-    expect(await screen.findByText('الفيديو بيتوقف عند الدقيقة 15')).toBeInTheDocument()
-    expect(screen.queryByText('أهلاً بيك')).not.toBeInTheDocument()
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
   it('renders student and support messages with visually distinct bubble styles', async () => {
