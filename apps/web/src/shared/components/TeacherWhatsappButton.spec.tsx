@@ -16,11 +16,11 @@ describe('TeacherWhatsappButton', () => {
 
   it('links students to the configured teacher WhatsApp number', async () => {
     server.use(
-      http.get(`${env.apiBaseUrl}/public/teacher-contact`, () =>
+      http.get(`${env.apiBaseUrl}/student/teacher-contact`, () =>
         HttpResponse.json({
           teacherName: 'محمد عبدالرحمن',
           whatsappNumber: '201001112233',
-          whatsappHref: 'https://wa.me/201001112233',
+          whatsappHref: 'https://wa.me/201001112233?text=hello',
         }),
       ),
     )
@@ -28,6 +28,6 @@ describe('TeacherWhatsappButton', () => {
     render(<TeacherWhatsappButton />)
 
     const link = await screen.findByRole('link', { name: /محمد عبدالرحمن/ })
-    expect(link).toHaveAttribute('href', 'https://wa.me/201001112233')
+    expect(link).toHaveAttribute('href', 'https://wa.me/201001112233?text=hello')
   })
 })

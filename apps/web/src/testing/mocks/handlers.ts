@@ -43,7 +43,7 @@ export const handlers = [
     }),
   ),
 
-  http.get(apiUrl("/public/teacher-contact"), () =>
+  http.get(apiUrl("/student/teacher-contact"), () =>
     HttpResponse.json({
       teacherName: "معلم الفيزياء",
       whatsappNumber: null,

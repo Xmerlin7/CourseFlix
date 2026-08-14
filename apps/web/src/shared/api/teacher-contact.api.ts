@@ -7,5 +7,5 @@ export interface TeacherContact {
 }
 
 export function getTeacherContact(): Promise<TeacherContact> {
-  return httpClient.get<TeacherContact>('/public/teacher-contact')
+  return httpClient.get<TeacherContact>('/student/teacher-contact')
 }

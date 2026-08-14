@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { TeacherWhatsappContactForm } from '../../profile/components/TeacherWhatsappContactForm'
 import { AdminAuthPosterSettingsForm } from '../components/AdminAuthPosterSettingsForm'
 import { AppearanceSettingsForm } from '../components/AppearanceSettingsForm'
 import { ExperienceSettingsForm } from '../components/ExperienceSettingsForm'
 import { NotificationSettingsForm } from '../components/NotificationSettingsForm'
 
-type SettingsTab = 'appearance' | 'experience' | 'notifications' | 'auth-poster'
+type SettingsTab = 'appearance' | 'experience' | 'notifications' | 'student-contact' | 'auth-poster'
 
 const TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
   { value: 'appearance', label: 'المظهر', icon: 'palette' },
@@ -18,10 +19,19 @@ const ADMIN_TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
   { value: 'auth-poster', label: 'واجهة الدخول', icon: 'login' },
 ]
 
+const TEACHER_TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
+  { value: 'student-contact', label: 'تواصل الطلاب', icon: 'forum' },
+]
+
 export function SettingsPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
-  const tabs = user?.role === 'admin' ? [...TABS, ...ADMIN_TABS] : TABS
+  const tabs =
+    user?.role === 'admin'
+      ? [...TABS, ...ADMIN_TABS]
+      : user?.role === 'teacher'
+        ? [...TABS, ...TEACHER_TABS]
+        : TABS
 
   return (
     <>
@@ -47,6 +57,7 @@ export function SettingsPage() {
           {activeTab === 'appearance' && <AppearanceSettingsForm />}
           {activeTab === 'experience' && <ExperienceSettingsForm />}
           {activeTab === 'notifications' && <NotificationSettingsForm />}
+          {activeTab === 'student-contact' && <TeacherWhatsappContactForm />}
           {activeTab === 'auth-poster' && <AdminAuthPosterSettingsForm />}
         </div>
       </div>

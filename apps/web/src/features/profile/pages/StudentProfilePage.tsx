@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/hooks/useAuth'
 import { TeacherQuotaCard } from '../../teacher-billing/components/TeacherQuotaCard'
 import { updateProfile, uploadAvatar } from '../api/profile.api'
 import { AvatarPickerModal } from '../components/AvatarPickerModal'
+import { TeacherWhatsappContactForm } from '../components/TeacherWhatsappContactForm'
 import type { UserRole } from '../../auth/types/auth.types'
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -74,11 +75,6 @@ export function StudentProfilePage() {
   const [isSavingName, setIsSavingName] = useState(false)
   const [nameError, setNameError] = useState<string | null>(null)
 
-  const [whatsappNumber, setWhatsappNumber] = useState(currentUser.whatsappNumber ?? '')
-  const [savedWhatsappNumber, setSavedWhatsappNumber] = useState(currentUser.whatsappNumber ?? '')
-  const [isSavingWhatsapp, setIsSavingWhatsapp] = useState(false)
-  const [whatsappError, setWhatsappError] = useState<string | null>(null)
-
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false)
   const [isSavingAvatar, setIsSavingAvatar] = useState(false)
 
@@ -86,13 +82,6 @@ export function StudentProfilePage() {
 
   const isNameDirty = fullName.trim() !== currentUser.fullName
   const isNameValid = fullName.trim().length >= 2 && fullName.trim().length <= 150
-  const normalizedWhatsappInput = whatsappNumber.trim()
-  const isWhatsappDirty = normalizedWhatsappInput !== savedWhatsappNumber
-  const isWhatsappValid =
-    normalizedWhatsappInput.length === 0 ||
-    (/^[+\d\s().-]+$/.test(normalizedWhatsappInput) &&
-      normalizedWhatsappInput.replace(/\D/g, '').length >= 8 &&
-      normalizedWhatsappInput.replace(/\D/g, '').length <= 15)
 
   async function handleSaveName(event: React.FormEvent) {
     event.preventDefault()
@@ -110,31 +99,6 @@ export function StudentProfilePage() {
       showToast(err instanceof ApiError ? 'حصل خطأ أثناء الحفظ' : 'حصل خطأ غير متوقع', 'error')
     } finally {
       setIsSavingName(false)
-    }
-  }
-
-  async function handleSaveWhatsapp(event: React.FormEvent) {
-    event.preventDefault()
-    if (!isTeacher || !isWhatsappDirty || !isWhatsappValid) return
-
-    setIsSavingWhatsapp(true)
-    setWhatsappError(null)
-    try {
-      const updated = await updateProfile({
-        whatsappNumber: normalizedWhatsappInput.length > 0 ? normalizedWhatsappInput : null,
-      })
-      updateUser(updated)
-      setWhatsappNumber(updated.whatsappNumber ?? '')
-      setSavedWhatsappNumber(updated.whatsappNumber ?? '')
-      showToast(
-        updated.whatsappNumber ? 'اتحفظ رقم واتساب بنجاح' : 'تم إخفاء زر واتساب من الطلاب',
-        'success',
-      )
-    } catch (err) {
-      setWhatsappError('تعذر حفظ رقم واتساب، تأكد من الرقم وحاول مرة أخرى')
-      showToast(err instanceof ApiError ? 'حصل خطأ أثناء الحفظ' : 'حصل خطأ غير متوقع', 'error')
-    } finally {
-      setIsSavingWhatsapp(false)
     }
   }
 
@@ -277,61 +241,7 @@ export function StudentProfilePage() {
         )}
       </form>
 
-      {isTeacher && (
-        <form className="card profile-form-card" onSubmit={(event) => void handleSaveWhatsapp(event)}>
-          <div className="profile-card-head">
-            <h3 className="profile-card-title">زر واتساب للطلاب</h3>
-            <p className="profile-card-sub">
-              يظهر زر عائم للطلاب فقط عند إضافة رقم واتساب صالح.
-            </p>
-          </div>
-
-          <div className={`tf${whatsappError ? ' invalid' : ''}`}>
-            <label htmlFor="profile-whatsapp-number">رقم واتساب</label>
-            <input
-              id="profile-whatsapp-number"
-              type="tel"
-              dir="ltr"
-              inputMode="tel"
-              value={whatsappNumber}
-              onChange={(event) => {
-                setWhatsappNumber(event.target.value)
-                setWhatsappError(null)
-              }}
-              placeholder="201012345678"
-              disabled={isSavingWhatsapp}
-              aria-describedby="profile-whatsapp-hint"
-            />
-            <span id="profile-whatsapp-hint" className="hint">
-              اتركه فارغًا لإخفاء زر واتساب. يفضل كتابة الرقم بصيغة دولية.
-            </span>
-            {!isWhatsappValid && (
-              <span className="error-text">اكتب رقم واتساب صحيح أو اترك الحقل فارغًا.</span>
-            )}
-            {whatsappError && <span className="error-text">{whatsappError}</span>}
-          </div>
-
-          {isWhatsappDirty && (
-            <div className="profile-form-actions">
-              <button
-                type="button"
-                className="btn text"
-                onClick={() => {
-                  setWhatsappNumber(savedWhatsappNumber)
-                  setWhatsappError(null)
-                }}
-                disabled={isSavingWhatsapp}
-              >
-                تراجع
-              </button>
-              <button type="submit" className="btn" disabled={isSavingWhatsapp || !isWhatsappValid}>
-                {isSavingWhatsapp && <span className="ms spin">progress_activity</span>}
-                {isSavingWhatsapp ? 'جارٍ الحفظ...' : 'حفظ رقم واتساب'}
-              </button>
-            </div>
-          )}
-        </form>
-      )}
+      {isTeacher && <TeacherWhatsappContactForm />}
 
       {/* Billing is teacher-only — assistants are blocked server-side on
           the quota route and never reach this branch anyway. */}
