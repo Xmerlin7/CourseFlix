@@ -1030,6 +1030,39 @@
   align-self: end;
 }
 
+.teacher-whatsapp-fab {
+  position: fixed;
+  inset-inline-start: clamp(18px, 3vw, 34px);
+  bottom: 24px;
+  z-index: 90;
+  min-width: 58px;
+  height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: #128C7E;
+  color: white;
+  box-shadow: var(--shadow-lg);
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+}
+
+.teacher-whatsapp-fab:hover,
+.teacher-whatsapp-fab:focus-visible {
+  color: white;
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(18, 140, 126, 0.34);
+}
+
+.teacher-whatsapp-fab .ms {
+  font-size: 23px;
+}
+
 @media (max-width: 480px) {
   .notif-panel {
     position: fixed;
@@ -1048,6 +1081,13 @@
   .floating-assistant-panel {
     width: auto;
     height: min(520px, calc(100vh - 170px));
+  }
+
+  .teacher-whatsapp-fab {
+    inset-inline-start: 12px;
+    bottom: 22px;
+    height: 52px;
+    padding: 0 14px;
   }
 }
 
