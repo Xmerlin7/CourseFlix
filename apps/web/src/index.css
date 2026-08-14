@@ -1698,32 +1698,36 @@ textarea:placeholder-shown {
   padding: clamp(20px, 4vw, 56px);
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 110%, rgba(245, 197, 164, 0.72), transparent 30%),
-    linear-gradient(135deg, #102A43 0%, #101224 44%, #070B18 100%);
+    radial-gradient(circle at 50% 108%, color-mix(in srgb, var(--primary-container) 38%, transparent), transparent 34%),
+    radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--primary) 24%, transparent), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 34%, #071018) 0%, #111423 48%, #080A12 100%);
   letter-spacing: 0;
   isolation: isolate;
 }
 
 .auth-mesh-canvas {
-  position: fixed;
+  position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: -3;
+  z-index: 0;
   display: block;
+  opacity: 0.82;
+  pointer-events: none;
 }
 
 .auth-grid {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-    radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.18), transparent 48%);
+    linear-gradient(color-mix(in srgb, var(--primary-container) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--primary-container) 12%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--surface) 12%, transparent), transparent 48%);
   background-size: 44px 44px, 44px 44px, 100% 100%;
   mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 80%, transparent 100%);
-  opacity: 0.52;
+  opacity: 0.28;
+  pointer-events: none;
   transform: translate3d(calc(var(--auth-pointer-nx) * -18px), calc(var(--auth-pointer-ny) * -18px), 0);
   transition: transform 0.18s ease-out;
 }
@@ -1732,12 +1736,12 @@ textarea:placeholder-shown {
   position: fixed;
   left: var(--auth-pointer-x);
   top: var(--auth-pointer-y);
-  z-index: -1;
-  width: 340px;
-  height: 340px;
+  z-index: 0;
+  width: 300px;
+  height: 300px;
   border-radius: 50%;
   background:
-    radial-gradient(circle, rgba(103, 245, 255, 0.28) 0%, rgba(103, 245, 255, 0.12) 32%, transparent 68%);
+    radial-gradient(circle, color-mix(in srgb, var(--primary-container) 24%, transparent) 0%, color-mix(in srgb, var(--primary) 12%, transparent) 38%, transparent 70%);
   filter: blur(10px);
   opacity: 0;
   pointer-events: none;
@@ -1746,7 +1750,7 @@ textarea:placeholder-shown {
 }
 
 .auth-shell[data-pointer="active"] .auth-pointer-aura {
-  opacity: 1;
+  opacity: 0.78;
   transform: translate(-50%, -50%) scale(1);
 }
 
@@ -1754,11 +1758,11 @@ textarea:placeholder-shown {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
   background:
-    radial-gradient(circle at var(--auth-pointer-x) var(--auth-pointer-y), rgba(103, 245, 255, 0.28), transparent 22%),
-    radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.18), transparent 24%),
-    radial-gradient(circle at 54% 82%, rgba(255, 212, 180, 0.38), transparent 28%),
+    radial-gradient(circle at var(--auth-pointer-x) var(--auth-pointer-y), color-mix(in srgb, var(--primary-container) 18%, transparent), transparent 24%),
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 24%),
+    radial-gradient(circle at 54% 82%, color-mix(in srgb, var(--tertiary-container) 24%, transparent), transparent 30%),
     linear-gradient(180deg, rgba(8, 18, 38, 0.18), rgba(8, 9, 20, 0.56));
   pointer-events: none;
 }
@@ -1767,9 +1771,9 @@ textarea:placeholder-shown {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   background:
-    linear-gradient(90deg, rgba(6, 20, 23, 0.08), rgba(6, 20, 23, 0.34)),
+    linear-gradient(90deg, rgba(6, 20, 23, 0.1), rgba(6, 20, 23, 0.4)),
     radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.44) 82%);
   pointer-events: none;
 }
@@ -1780,6 +1784,8 @@ textarea:placeholder-shown {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 2;
   padding: 0;
   background: transparent;
 }
