@@ -14,3 +14,13 @@ export async function updateAdminAuthPoster(
 ): Promise<AuthPosterContent> {
   return httpClient.patch<AuthPosterContent>('/admin/auth-poster', payload)
 }
+
+export async function getTeacherAuthPoster(): Promise<AuthPosterContent> {
+  return httpClient.get<AuthPosterContent>('/teacher/auth-poster')
+}
+
+export async function updateTeacherAuthPoster(
+  payload: UpdateAuthPosterPayload,
+): Promise<AuthPosterContent> {
+  return httpClient.patch<AuthPosterContent>('/teacher/auth-poster', payload)
+}
