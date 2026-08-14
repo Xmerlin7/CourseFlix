@@ -363,9 +363,14 @@ export class StudentService {
   ): Promise<StudentCommunitySummaryItem[]> {
     const enrollments =
       await this.enrollmentsService.findStudentEnrollments(studentId);
-    const courseIds = enrollments
+    let courseIds = enrollments
       .filter((e) => e.status === 'active' || e.status === 'completed')
       .map((e) => e.courseId);
+
+    if (courseIds.length === 0) {
+      const ownedCourses = await this.coursesService.findOwnedCourses(studentId);
+      courseIds = ownedCourses.map((c) => c.id);
+    }
 
     if (courseIds.length === 0) return [];
 
