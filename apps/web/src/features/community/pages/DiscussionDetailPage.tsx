@@ -111,15 +111,15 @@ export function DiscussionDetailPage() {
   }
 
   return (
-    <div style={{ maxWidth: 880, margin: '0 auto', width: '100%' }}>
-      <div style={{ marginBottom: 16 }}>
+    <div style={{ maxWidth: 840, margin: '0 auto', width: '100%' }}>
+      <div style={{ marginBottom: 10 }}>
         <Link to={coursePath} className="btn tonal sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span className="ms sm" aria-hidden="true">arrow_forward</span>
           العودة للمجتمع
         </Link>
       </div>
 
-      <div className="card discussion-question-card" style={{ gap: 10, marginBottom: 20 }}>
+      <div className="card discussion-question-card" style={{ gap: 8, marginBottom: 16 }}>
         <div className="support-card-top" style={{ alignItems: 'center' }}>
           <div className="support-card-meta">
             <span className={`chip ${data.isAnswered ? 'green' : 'outline'} sm`}>
@@ -150,21 +150,21 @@ export function DiscussionDetailPage() {
           </div>
         </div>
 
-        <h1 className="page-title" style={{ fontSize: 21, margin: 0, overflowWrap: 'anywhere' }}>
+        <h1 className="page-title" style={{ fontSize: 19, margin: '2px 0 0', overflowWrap: 'anywhere' }}>
           {data.title}
         </h1>
 
-        <div className="support-card-info" style={{ fontSize: 12.5, color: 'var(--on-surface-variant)' }}>
+        <div className="support-card-info" style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
           <span className="support-card-info-item">
             <span className="ms sm" aria-hidden="true">schedule</span>
             {formatDate(data.createdAt)}
           </span>
         </div>
 
-        <p className="discussion-body-text">{data.body}</p>
+        <p className="discussion-body-text" style={{ margin: '4px 0 0' }}>{data.body}</p>
 
         {data.attachments.length > 0 && (
-          <div className="discussion-attachments-list">
+          <div className="discussion-attachments-list" style={{ marginTop: 4 }}>
             {data.attachments.map((file) => {
               const cleanName = sanitizeFilename(file.fileName)
               return (
@@ -185,7 +185,7 @@ export function DiscussionDetailPage() {
         )}
 
         {data.tags.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
             {data.tags.map((tag) => (
               <span key={tag} className="chip outline sm">
                 #{tag}
@@ -194,7 +194,7 @@ export function DiscussionDetailPage() {
           </div>
         )}
 
-        <div className="discussion-question-actions">
+        <div className="discussion-question-actions" style={{ marginTop: 6 }}>
           <button
             type="button"
             className={`btn outline sm${data.isHelpfulByMe ? ' active' : ''}`}
@@ -213,8 +213,13 @@ export function DiscussionDetailPage() {
         </div>
       </div>
 
-      <div className="section-head" style={{ marginBottom: 12 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>الردود ({data.replies.length})</h2>
+      <div className="section-head" style={{ marginBottom: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>الردود ({data.replies.length})</h2>
+        {data.canAccept && data.isAnswered && (
+          <button type="button" className="btn outline sm" onClick={handleUnaccept} style={{ fontSize: 12, padding: '4px 10px' }}>
+            التراجع عن الإجابة المعتمدة
+          </button>
+        )}
       </div>
 
       {data.replies.length === 0 ? (
@@ -277,30 +282,22 @@ export function DiscussionDetailPage() {
         </div>
       )}
 
-      {data.canAccept && data.isAnswered && (
-        <div style={{ marginBottom: 24 }}>
-          <button type="button" className="btn outline sm" onClick={handleUnaccept}>
-            التراجع عن الإجابة المعتمدة
-          </button>
-        </div>
-      )}
-
-      <form onSubmit={handleReply} className="card discussion-reply-composer" style={{ gap: 12 }}>
+      <form onSubmit={handleReply} className="discussion-reply-composer" style={{ gap: 8 }}>
         <div className="tf" style={{ marginBottom: 0 }}>
-          <label htmlFor="reply-body" style={{ fontWeight: 600, fontSize: 14 }}>اكتب ردًا...</label>
+          <label htmlFor="reply-body" style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>اكتب ردًا...</label>
           <textarea
             id="reply-body"
             value={replyBody}
             onChange={(event) => setReplyBody(event.target.value)}
             placeholder="اكتب توضيحك أو إجابتك هنا..."
-            rows={3}
+            rows={2}
             maxLength={10000}
             disabled={isReplying}
             required
           />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="submit" className="btn primary" disabled={isReplying || !replyBody.trim()}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+          <button type="submit" className="btn primary sm" disabled={isReplying || !replyBody.trim()}>
             {isReplying && <span className="ms spin" aria-hidden="true">progress_activity</span>}
             {isReplying ? 'جارٍ الإرسال...' : 'إرسال الرد'}
           </button>
