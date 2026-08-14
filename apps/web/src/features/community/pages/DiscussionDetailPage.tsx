@@ -284,25 +284,43 @@ export function DiscussionDetailPage() {
         </div>
       )}
 
-      <form onSubmit={handleReply} className="discussion-reply-composer" style={{ gap: 8 }}>
-        <div className="tf" style={{ marginBottom: 0 }}>
-          <label htmlFor="reply-body" style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>اكتب ردًا...</label>
-          <textarea
-            id="reply-body"
-            value={replyBody}
-            onChange={(event) => setReplyBody(event.target.value)}
-            onKeyDown={handleReplyKeyDown}
-            placeholder="اكتب توضيحك أو إجابتك هنا... (اضغط Enter للإرسال)"
-            rows={2}
-            maxLength={10000}
-            disabled={isReplying}
-            required
-          />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-          <button type="submit" className="btn primary sm" disabled={isReplying || !replyBody.trim()}>
-            {isReplying && <span className="ms spin" aria-hidden="true">progress_activity</span>}
-            {isReplying ? 'جارٍ الإرسال...' : 'إرسال الرد'}
+      <form onSubmit={handleReply} className="discussion-reply-composer" style={{ marginTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, width: '100%' }}>
+          <div className="tf" style={{ flex: 1, marginBottom: 0 }}>
+            <textarea
+              id="reply-body"
+              value={replyBody}
+              onChange={(event) => setReplyBody(event.target.value)}
+              onKeyDown={handleReplyKeyDown}
+              placeholder="اكتب توضيحك أو إجابتك هنا... (اضغط Enter للإرسال)"
+              rows={2}
+              maxLength={10000}
+              disabled={isReplying}
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn primary"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              flexShrink: 0,
+              display: 'grid',
+              placeItems: 'center',
+              padding: 0,
+              marginBottom: 2,
+            }}
+            disabled={isReplying || !replyBody.trim()}
+            aria-label="إرسال الرد"
+            title="إرسال الرد"
+          >
+            {isReplying ? (
+              <span className="ms spin" aria-hidden="true">progress_activity</span>
+            ) : (
+              <span className="ms" style={{ transform: 'scaleX(-1)', fontSize: 20 }} aria-hidden="true">send</span>
+            )}
           </button>
         </div>
       </form>
