@@ -39,11 +39,12 @@ demo-logins.md
 # Editors and OS
 .DS_Store
 .idea/
+.claude/
 .vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
+.vscode/extensions.json
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
 
 # Local dev launcher logs (./dev.sh)
 /.dev-logs/

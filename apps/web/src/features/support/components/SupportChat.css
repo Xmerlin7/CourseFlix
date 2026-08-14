@@ -1017,7 +1017,7 @@
 }
 
 .discussion-reply-row--teacher {
-  border-inline-start: 3px solid var(--primary);
+  /* No side accent line */
 }
 
 .discussion-reply-header {

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
@@ -15,14 +14,15 @@ import {
   unacceptAnswer,
 } from '../api/community.api'
 import { DiscussionDetailSkeleton } from '../components/DiscussionDetailSkeleton'
+import { DiscussionReplyComposer } from '../components/DiscussionReplyComposer'
+import { DiscussionReplyRow } from '../components/DiscussionReplyRow'
 import { useDiscussion } from '../hooks/useDiscussion'
-import type { DiscussionReply } from '../types/community.types'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-function roleLabel(role: DiscussionReply['author']['role']): string | null {
+function roleLabel(role: 'student' | 'teacher' | 'assistant' | 'admin'): string | null {
   if (role === 'teacher') return 'المدرس'
   if (role === 'assistant') return 'مساعد المدرس'
   return null
@@ -49,8 +49,9 @@ export function DiscussionDetailPage() {
   const coursePath =
     user?.role === 'student' ? `/student/courses/${data.courseId}` : `/teacher/courses/${data.courseId}`
 
-  async function handleReply(event: React.FormEvent) {
-    event.preventDefault()
+  const authorRole = roleLabel(data.author.role)
+
+  async function handleReply() {
     if (!replyBody.trim() || !threadId) return
     setIsReplying(true)
     try {
@@ -143,10 +144,12 @@ export function DiscussionDetailPage() {
                 <img src={data.author.avatarUrl} alt="" />
               </span>
             ) : (
-              <span className="ms sm" aria-hidden="true">account_circle</span>
+              <span className="ms sm" aria-hidden="true">
+                {authorRole ? 'verified_user' : 'account_circle'}
+              </span>
             )}
             <span>{data.author.fullName}</span>
-            {data.author.role === 'teacher' && <span className="chip sm primary">المدرس</span>}
+            {authorRole && <span className="chip sm primary">{authorRole}</span>}
           </div>
         </div>
 
@@ -220,88 +223,25 @@ export function DiscussionDetailPage() {
         )}
       </div>
 
-      {data.replies.length === 0 ? (
-        <EmptyState
-          variant="replies"
-          title="لا توجد ردود بعد"
-          message="كن أول من يجيب على هذا السؤال."
-        />
-      ) : (
+      {data.replies.length > 0 && (
         <div className="discussion-reply-list">
-          {data.replies.map((reply) => {
-            const isTeacherReply = reply.author.role === 'teacher' || reply.author.role === 'assistant'
-            return (
-              <div
-                key={reply.id}
-                className={`discussion-reply-row${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}`}
-              >
-                <div className="discussion-reply-header">
-                  <div className="discussion-reply-author">
-                    {reply.author.avatarUrl ? (
-                      <span className="avatar discussion-reply-avatar">
-                        <img src={reply.author.avatarUrl} alt="" />
-                      </span>
-                    ) : (
-                      <span className="discussion-reply-avatar-placeholder">
-                        <span className="ms sm" aria-hidden="true">
-                          {isTeacherReply ? 'verified_user' : 'account_circle'}
-                        </span>
-                      </span>
-                    )}
-                    <span className="discussion-reply-author-name">{reply.author.fullName}</span>
-                    {roleLabel(reply.author.role) && (
-                      <span className="chip sm primary discussion-reply-role-chip">{roleLabel(reply.author.role)}</span>
-                    )}
-                    <span className="discussion-reply-time">
-                      <span className="ms sm" aria-hidden="true">schedule</span>
-                      {formatDate(reply.createdAt)}
-                    </span>
-                  </div>
-
-                  <div className="discussion-reply-badge-action">
-                    {reply.isAccepted ? (
-                      <span className="chip green sm">
-                        <span className="ms sm" aria-hidden="true">check_circle</span>
-                        إجابة مقبولة
-                      </span>
-                    ) : (
-                      data.canAccept && (
-                        <button type="button" className="btn outline sm" onClick={() => handleAccept(reply.id)}>
-                          اعتماد كإجابة
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                <p className="discussion-reply-body">{reply.body}</p>
-              </div>
-            )
-          })}
+          {data.replies.map((reply) => (
+            <DiscussionReplyRow
+              key={reply.id}
+              reply={reply}
+              canAccept={data.canAccept}
+              onAccept={handleAccept}
+            />
+          ))}
         </div>
       )}
 
-      <form onSubmit={handleReply} className="discussion-reply-composer" style={{ gap: 8 }}>
-        <div className="tf" style={{ marginBottom: 0 }}>
-          <label htmlFor="reply-body" style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>اكتب ردًا...</label>
-          <textarea
-            id="reply-body"
-            value={replyBody}
-            onChange={(event) => setReplyBody(event.target.value)}
-            placeholder="اكتب توضيحك أو إجابتك هنا..."
-            rows={2}
-            maxLength={10000}
-            disabled={isReplying}
-            required
-          />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-          <button type="submit" className="btn primary sm" disabled={isReplying || !replyBody.trim()}>
-            {isReplying && <span className="ms spin" aria-hidden="true">progress_activity</span>}
-            {isReplying ? 'جارٍ الإرسال...' : 'إرسال الرد'}
-          </button>
-        </div>
-      </form>
+      <DiscussionReplyComposer
+        value={replyBody}
+        onChange={setReplyBody}
+        onSubmit={handleReply}
+        isSubmitting={isReplying}
+      />
     </div>
   )
 }
