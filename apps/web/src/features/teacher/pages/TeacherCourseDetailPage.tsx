@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState } from 'react'
+import { useState } from 'react'
 import { useParams } from 'react-router'
 import { CourseDetailView } from '../../courses/components/CourseDetailView'
 import { useCourseDetail } from '../../courses/hooks/useCourseDetail'
-import { CommunityPanelSkeleton } from '../../community/components/CommunityPanelSkeleton'
+import { AnnouncementsSection } from '../../community/components/AnnouncementsSection'
+import { DiscussionsSection } from '../../community/components/DiscussionsSection'
 import { DocumentStatusList } from '../../documents/components/DocumentStatusList'
 import { DocumentUploader } from '../../documents/components/DocumentUploader'
 import { useCourseDocuments } from '../../documents/hooks/useCourseDocuments'
@@ -16,11 +17,7 @@ import { TeacherContentManager } from '../components/TeacherContentManager'
 import { TeacherCourseForm } from '../components/TeacherCourseForm'
 import { TeacherCourseDetailSkeleton } from '../components/TeacherCourseDetailSkeleton'
 
-const CourseCommunityPanel = lazy(() =>
-  import('../../community/components/CourseCommunityPanel').then((m) => ({ default: m.CourseCommunityPanel })),
-)
-
-type CourseDetailTab = 'content' | 'quizzes' | 'ai-exam' | 'files' | 'community'
+type CourseDetailTab = 'content' | 'quizzes' | 'ai-exam' | 'files' | 'community' | 'announcements'
 
 export function TeacherCourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -94,6 +91,15 @@ export function TeacherCourseDetailPage() {
         >
           المجتمع
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'announcements'}
+          onClick={() => setActiveTab('announcements')}
+          className={`tab${activeTab === 'announcements' ? ' active' : ''}`}
+        >
+          الإعلانات
+        </button>
       </div>
 
       {activeTab === 'content' && (
@@ -138,11 +144,9 @@ export function TeacherCourseDetailPage() {
         </section>
       )}
 
-      {activeTab === 'community' && (
-        <Suspense fallback={<CommunityPanelSkeleton />}>
-          <CourseCommunityPanel courseId={data.id} />
-        </Suspense>
-      )}
+      {activeTab === 'community' && <DiscussionsSection courseId={data.id} />}
+
+      {activeTab === 'announcements' && <AnnouncementsSection courseId={data.id} canManage />}
     </>
   )
 }

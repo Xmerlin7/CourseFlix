@@ -5,6 +5,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../../features/notifications/api/notifications.api'
+import { resolveNotificationTarget } from '../../features/notifications/lib/notification-target'
 import type { NotificationItem, NotificationType } from '../../features/notifications/types/notification.types'
 
 const TYPE_META: Record<NotificationType, { icon: string; lead: string }> = {
@@ -22,6 +23,15 @@ const TYPE_META: Record<NotificationType, { icon: string; lead: string }> = {
 // Panel only shows a recent slice — the full filterable list already
 // lives on the notifications page this panel links out to.
 const PANEL_LIMIT = 6
+
+/** The view-all path is role-scoped (`/student|teacher|admin/notifications`),
+ *  so it doubles as the role signal for deep-linking each item. */
+function roleFromViewAllPath(viewAllPath: string): 'student' | 'teacher' | 'admin' | null {
+  if (viewAllPath.startsWith('/student/')) return 'student'
+  if (viewAllPath.startsWith('/teacher/')) return 'teacher'
+  if (viewAllPath.startsWith('/admin/')) return 'admin'
+  return null
+}
 
 export type NotificationsBellProps = {
   notificationCount: number
@@ -102,6 +112,7 @@ export function NotificationsBell({ notificationCount, viewAllPath }: Notificati
 
   const visible = items.slice(0, PANEL_LIMIT)
   const panelUnreadCount = items.filter((item) => !item.isRead).length
+  const role = roleFromViewAllPath(viewAllPath)
 
   return (
     <div className="notif-wrap" ref={wrapRef}>
@@ -144,15 +155,13 @@ export function NotificationsBell({ notificationCount, viewAllPath }: Notificati
               !hasError &&
               visible.map((item) => {
                 const meta = TYPE_META[item.type]
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="list-item hoverable notif-item"
-                    onClick={() => {
-                      if (!item.isRead) void handleMarkRead(item.id)
-                    }}
-                  >
+                const target = role ? resolveNotificationTarget(item, role) : null
+                const onOpen = () => {
+                  if (!item.isRead) void handleMarkRead(item.id)
+                  setIsOpen(false)
+                }
+                const body = (
+                  <>
                     <span className={`lead ${meta.lead}`}>
                       <span className="ms sm">{meta.icon}</span>
                     </span>
@@ -161,6 +170,27 @@ export function NotificationsBell({ notificationCount, viewAllPath }: Notificati
                       <span className="s">{item.message}</span>
                     </span>
                     {!item.isRead && <span className="unread-dot" aria-label="غير مقروء" />}
+                  </>
+                )
+                return target ? (
+                  <Link
+                    key={item.id}
+                    to={target.path}
+                    className="list-item hoverable notif-item"
+                    onClick={onOpen}
+                  >
+                    {body}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="list-item hoverable notif-item"
+                    onClick={() => {
+                      if (!item.isRead) void handleMarkRead(item.id)
+                    }}
+                  >
+                    {body}
                   </button>
                 )
               })}
