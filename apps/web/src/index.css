@@ -556,12 +556,8 @@
 .community-list {
   display: flex;
   flex-direction: column;
+  gap: 10px;
   max-width: 920px;
-}
-
-/* Flat divider between rows instead of gaps/cards */
-.community-list > * + * {
-  border-top: 1px solid var(--outline-variant);
 }
 
 /* ── Base row (READ state) ── */
@@ -571,7 +567,8 @@
   gap: 12px;
   padding: 12px 14px;
   background: var(--surface);              /* clean white / neutral */
-  border-inline-start: 4px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent);
+  border-radius: calc(12px * var(--radius-scale));
   text-decoration: none;
   color: inherit;
   transition: background-color 0.12s ease, border-color 0.12s ease;
@@ -589,7 +586,7 @@
 /* ── UNREAD row — must be immediately distinguishable ── */
 .community-row.unread {
   background: #E8DCF4;                     /* strong lavender — NOT subtle */
-  border-inline-start-color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .community-row.unread:hover {
