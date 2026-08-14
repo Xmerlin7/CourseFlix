@@ -106,6 +106,9 @@ const StudentCommunityPage = lazy(() =>
 const StudentCourseCommunityPage = lazy(() =>
   import('../../features/community/pages/StudentCourseCommunityPage').then((m) => ({ default: m.StudentCourseCommunityPage }))
 )
+const AnnouncementRedirectPage = lazy(() =>
+  import('../../features/community/pages/AnnouncementRedirectPage').then((m) => ({ default: m.AnnouncementRedirectPage }))
+)
 const TeacherCommunityPage = lazy(() =>
   import('../../features/community/pages/TeacherCommunityPage').then((m) => ({ default: m.TeacherCommunityPage }))
 )
@@ -470,6 +473,14 @@ export const router = createBrowserRouter([
               </SuspenseWrapper>
             ),
           },
+          {
+            path: ROUTE_PATHS.STUDENT.ANNOUNCEMENT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<LoadingState variant="list" count={2} />}>
+                <AnnouncementRedirectPage />
+              </SuspenseWrapper>
+            ),
+          },
         ],
       },
     ],
@@ -594,6 +605,14 @@ export const router = createBrowserRouter([
             element: (
               <SuspenseWrapper fallback={<StudentCommunitySkeleton />}>
                 <TeacherCourseCommunityPage />
+              </SuspenseWrapper>
+            ),
+          },
+          {
+            path: ROUTE_PATHS.TEACHER.ANNOUNCEMENT_DETAIL,
+            element: (
+              <SuspenseWrapper fallback={<LoadingState variant="list" count={2} />}>
+                <AnnouncementRedirectPage />
               </SuspenseWrapper>
             ),
           },

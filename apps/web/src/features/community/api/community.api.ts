@@ -1,6 +1,7 @@
 import { httpClient } from '../../../shared/api/http-client'
 import type {
   Announcement,
+  AnnouncementDetail,
   DiscussionReply,
   DiscussionStatusFilter,
   DiscussionThreadDetail,
@@ -101,6 +102,12 @@ export function toggleThreadPin(threadId: string): Promise<DiscussionThreadDetai
 
 export function getAnnouncements(courseId: string): Promise<Announcement[]> {
   return httpClient.get<Announcement[]>(`/courses/${courseId}/announcements`)
+}
+
+/** Fetches a single announcement by id (resolves its course) so a
+ *  notification deep-link can land on the exact post. */
+export function getAnnouncement(postId: string): Promise<AnnouncementDetail> {
+  return httpClient.get<AnnouncementDetail>(`/announcements/${postId}`)
 }
 
 export function createAnnouncement(

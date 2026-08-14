@@ -73,6 +73,27 @@ describe('resolveNotificationTarget', () => {
     ).toBe('/student/interventions')
   })
 
+  it('deep-links announcements to the specific post for students and teachers', () => {
+    expect(
+      resolveNotificationTarget(
+        { relatedEntityType: 'post', relatedEntityId: 'post-1' },
+        'student',
+      )?.path,
+    ).toBe('/student/announcements/post-1')
+    expect(
+      resolveNotificationTarget(
+        { relatedEntityType: 'post', relatedEntityId: 'post-1' },
+        'teacher',
+      )?.path,
+    ).toBe('/teacher/announcements/post-1')
+    expect(
+      resolveNotificationTarget(
+        { relatedEntityType: 'post', relatedEntityId: 'post-1' },
+        'admin',
+      ),
+    ).toBeNull()
+  })
+
   it('returns null for unknown entity types', () => {
     expect(
       resolveNotificationTarget(

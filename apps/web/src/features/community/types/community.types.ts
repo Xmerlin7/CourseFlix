@@ -61,3 +61,7 @@ export interface Announcement {
   createdAt: string
   updatedAt: string
 }
+
+export interface AnnouncementDetail extends Announcement {
+  courseId: string
+}

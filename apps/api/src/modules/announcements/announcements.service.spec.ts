@@ -158,4 +158,46 @@ describe('AnnouncementsService', () => {
     const unpinned = await service.togglePin('post-1', makeUser());
     expect(unpinned.isPinned).toBe(false);
   });
+
+  it('resolves a single announcement with its course for notification deep links', async () => {
+    const post = {
+      id: 'post-1',
+      courseId: 'course-1',
+      teacherId: 'teacher-1',
+      content: 'إعلان مهم',
+      pinnedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    postsRepository.findOne.mockResolvedValue(post);
+
+    const result = await service.getAnnouncement('post-1', makeUser());
+
+    expect(result.courseId).toBe('course-1');
+    expect(result.id).toBe('post-1');
+    expect(result.content).toBe('إعلان مهم');
+  });
+
+  it('blocks students not enrolled in the announcement course', async () => {
+    const post = {
+      id: 'post-1',
+      courseId: 'course-1',
+      teacherId: 'teacher-1',
+      content: 'إعلان مهم',
+      pinnedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    postsRepository.findOne.mockResolvedValue(post);
+    enrollmentsService.assertStudentEnrolled.mockRejectedValue(
+      new ForbiddenException(),
+    );
+
+    await expect(
+      service.getAnnouncement(
+        'post-1',
+        makeUser({ id: 'student-1', role: 'student' }),
+      ),
+    ).rejects.toThrow(ForbiddenException);
+  });
 });
