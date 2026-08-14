@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -35,6 +36,19 @@ export class NotificationsController {
   @Patch('read-all')
   markAllRead(@CurrentUser() user: AuthenticatedUser) {
     return this.notificationsService.markAllRead(user.id);
+  }
+
+  @Patch('mark-entity-read')
+  async markEntityRead(
+    @Body() body: { relatedEntityType: string; relatedEntityId: string },
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const updated = await this.notificationsService.markEntityRead(
+      user.id,
+      body.relatedEntityType,
+      body.relatedEntityId,
+    );
+    return { updated };
   }
 
   @Patch(':notificationId/read')

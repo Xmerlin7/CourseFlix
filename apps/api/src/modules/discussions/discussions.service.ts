@@ -199,6 +199,10 @@ export class DiscussionsService {
 
     const isTeacherOfCourse = this.isEffectiveTeacher(user, course);
 
+    this.notifications
+      .markEntityRead?.(user.id, 'discussion_thread', threadId)
+      ?.catch(() => {});
+
     return {
       ...this.toListItem(thread, authors, helpfulThreadIds),
       body: thread.body,
@@ -219,6 +223,27 @@ export class DiscussionsService {
     };
   }
 
+  async markCourseDiscussionsRead(
+    courseId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ updated: number }> {
+    await this.assertCanAccessCourse(user, courseId);
+    const threads = await this.threadsRepository.find({
+      where: { courseId, deletedAt: IsNull() },
+      select: { id: true },
+    });
+    const threadIds = threads.map((t) => t.id);
+    if (threadIds.length === 0) return { updated: 0 };
+
+    const updated =
+      (await this.notifications.markEntitiesRead?.(
+        user.id,
+        'discussion_thread',
+        threadIds,
+      )) ?? 0;
+    return { updated };
+  }
+
   async createThread(
     courseId: string,
     user: AuthenticatedUser,
@@ -229,11 +254,14 @@ export class DiscussionsService {
     }
     const course = await this.assertCanAccessCourse(user, courseId);
 
+    const title = (input.title || '').trim();
+    if (!title) throw new BadRequestException('عنوان السؤال مطلوب.');
+    if (title.length > MAX_TITLE_LENGTH) {
+      throw new BadRequestException('عنوان السؤال طويل جدًا.');
+    }
+
     const body = (input.body || '').trim();
     if (!body) throw new BadRequestException('تفاصيل السؤال مطلوبة.');
-    const rawTitle = (input.title || '').trim();
-    const title = (rawTitle || body).slice(0, MAX_TITLE_LENGTH);
-
     if (body.length > MAX_BODY_LENGTH) {
       throw new BadRequestException('تفاصيل السؤال طويلة جدًا.');
     }

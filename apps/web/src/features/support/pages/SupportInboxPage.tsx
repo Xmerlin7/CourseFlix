@@ -139,7 +139,7 @@ export function SupportInboxPage() {
         <SearchField
           id="support-inbox-search"
           label="بحث في طلبات الدعم"
-          placeholder="ابحث بعنوان الطلب أو اسم الطالب أو رقم الطلب..."
+          placeholder="ابحث في طلبات الدعم..."
           value={searchQuery}
           onChange={setSearchQuery}
         />

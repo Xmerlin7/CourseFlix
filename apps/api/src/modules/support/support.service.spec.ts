@@ -91,8 +91,10 @@ describe('SupportService', () => {
     enrollmentsService = {
       assertStudentEnrolled: jest.fn().mockResolvedValue(undefined),
     };
-    attachmentsService = { saveAttachment: jest.fn() };
-    notifications = { notify: jest.fn().mockResolvedValue(undefined) };
+    notifications = {
+      notify: jest.fn().mockResolvedValue(undefined),
+      markEntityRead: jest.fn().mockResolvedValue(1),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [

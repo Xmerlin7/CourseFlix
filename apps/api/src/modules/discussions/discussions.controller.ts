@@ -81,6 +81,14 @@ export class DiscussionsController {
     return this.discussionsService.listThreads(courseId, user, filters);
   }
 
+  @Patch('courses/:courseId/discussions/read')
+  markCourseDiscussionsRead(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.discussionsService.markCourseDiscussionsRead(courseId, user);
+  }
+
   @Post('courses/:courseId/discussions')
   @UseInterceptors(FileInterceptor('attachment'))
   createThread(
