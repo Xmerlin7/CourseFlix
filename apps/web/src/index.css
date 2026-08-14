@@ -3530,22 +3530,22 @@ a.list-item:hover,
 }
 
 /* ---------- Notification Read/Unread States ---------- */
-/* 1. UNREAD state: light lavender background, bold title, purple border accent */
+/* 1. UNREAD state: clearly highlighted lavender card (#E2D3F4 contrast against #EBE3F1 panel) */
 .list-item.unread,
 .notif-item.unread {
-  background: color-mix(in srgb, var(--primary) 15%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
-/* 2. UNREAD + HOVER state: slightly stronger lavender background, deeper purple border & soft shadow */
+/* 2. UNREAD + HOVER state: richer lavender background (#D6C3ED), deeper purple border & soft shadow */
 .list-item.unread:hover,
 .notif-item.unread:hover,
 a.list-item.unread:hover,
 .list-item.unread.hoverable:hover,
 .notif-item.unread.hoverable:hover {
-  background: color-mix(in srgb, var(--primary) 24%, var(--surface));
-  border-color: color-mix(in srgb, var(--primary) 48%, transparent);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 16%, transparent);
+  background: color-mix(in srgb, var(--primary) 36%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 .list-item.unread .body .t,
@@ -3554,14 +3554,14 @@ a.list-item.unread:hover,
   color: var(--on-surface);
 }
 
-/* 3. READ state: clean off-white / neutral card background, distinct from surface-container-high panel */
+/* 3. READ state: clean white card background (#FFFFFF), distinct from surface-container-high panel */
 .list-item.read,
 .notif-item.read {
   background: #ffffff;
   border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent);
 }
 
-/* 4. READ + HOVER state: soft lavender-tinted background, subtle purple border & soft shadow */
+/* 4. READ + HOVER state: soft lavender-tinted background (#F4EEF8), subtle purple border & soft shadow */
 .list-item.read:hover,
 .notif-item.read:hover,
 a.list-item.read:hover,
