@@ -979,14 +979,137 @@
   background: color-mix(in srgb, #10b981 5%, var(--surface));
 }
 
-.discussion-reply-composer {
-  padding: calc(18px * var(--space-scale)) calc(20px * var(--space-scale));
-  border-radius: calc(18px * var(--radius-scale));
-  background: var(--surface);
+/* ---------- Compact Discussion Thread & Reply Rows ---------- */
+/* ---------- Compact Discussion Thread & Reply Rows ---------- */
+.discussion-question-card {
+  padding: calc(14px * var(--space-scale)) calc(16px * var(--space-scale));
+  border-radius: calc(14px * var(--radius-scale));
+  background: var(--surface-container-low);
   border: 1px solid var(--outline-variant);
-  box-shadow: var(--shadow-sm);
+  height: auto;
+}
+
+.discussion-reply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.discussion-reply-row {
+  background: var(--surface-container-low);
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+  border-radius: calc(10px * var(--radius-scale));
+  padding: calc(10px * var(--space-scale)) calc(14px * var(--space-scale));
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   width: 100%;
   box-sizing: border-box;
+  height: auto;
+}
+
+.discussion-reply-row:hover {
+  background: var(--surface-container);
+}
+
+.discussion-reply-row--accepted {
+  background: color-mix(in srgb, var(--success-container) 30%, var(--surface));
+  border-color: color-mix(in srgb, var(--on-success-container) 30%, transparent);
+}
+
+.discussion-reply-row--teacher {
+  border-inline-start: 3px solid var(--primary);
+}
+
+.discussion-reply-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.discussion-reply-author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.discussion-reply-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.discussion-reply-avatar-placeholder {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.discussion-reply-avatar-placeholder .ms {
+  font-size: 14px;
+}
+
+.discussion-reply-author-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.discussion-reply-role-chip {
+  font-size: 10.5px;
+  padding: 1px 6px;
+}
+
+.discussion-reply-time {
+  font-size: 11.5px;
+  color: var(--on-surface-variant);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: 2px;
+}
+
+.discussion-reply-time .ms {
+  font-size: 12.5px;
+}
+
+.discussion-reply-badge-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.discussion-reply-body {
+  margin: 4px 0 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--on-surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.discussion-reply-composer {
+  padding: calc(10px * var(--space-scale)) calc(14px * var(--space-scale));
+  border-radius: calc(12px * var(--radius-scale));
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 12px;
+}
+
+.discussion-reply-composer textarea {
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 13.5px;
 }
 
 

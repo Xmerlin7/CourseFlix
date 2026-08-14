@@ -25,17 +25,19 @@ export function DiscussionDetailSkeleton() {
         </div>
       </div>
 
-      <div className="skeleton" style={{ height: 22, width: 110, borderRadius: 6, marginBottom: 16 }} />
+      <div className="skeleton" style={{ height: 22, width: 110, borderRadius: 6, marginBottom: 12 }} />
 
-      {[0, 1].map((row) => (
-        <div key={row} className="card discussion-reply-card" style={{ gap: 10, marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="skeleton" style={{ height: 22, width: 120, borderRadius: 12 }} />
-            <div className="skeleton" style={{ height: 14, width: 80, borderRadius: 6 }} />
+      <div className="discussion-reply-list">
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="discussion-reply-row">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="skeleton" style={{ height: 20, width: 140, borderRadius: 10 }} />
+              <div className="skeleton" style={{ height: 14, width: 70, borderRadius: 6 }} />
+            </div>
+            <div className="skeleton" style={{ height: 14, width: '85%', borderRadius: 6, marginTop: 8 }} />
           </div>
-          <div className="skeleton" style={{ height: 14, width: '88%', borderRadius: 6 }} />
-        </div>
-      ))}
+        ))}
+      </div>
 
       <div className="card discussion-reply-composer" style={{ gap: 12, marginTop: 24 }}>
         <div className="skeleton" style={{ height: 16, width: 80, borderRadius: 6 }} />
