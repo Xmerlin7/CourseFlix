@@ -140,6 +140,15 @@ export class DiscussionsController {
     return this.discussionsService.acceptAnswer(threadId, replyId, user);
   }
 
+  @Delete('discussions/:threadId/accept/:replyId')
+  unacceptSpecificAnswer(
+    @Param('threadId') threadId: string,
+    @Param('replyId') replyId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.discussionsService.unacceptAnswer(threadId, user, replyId);
+  }
+
   @Delete('discussions/:threadId/accept')
   unacceptAnswer(
     @Param('threadId') threadId: string,

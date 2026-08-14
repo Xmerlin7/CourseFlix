@@ -12,6 +12,7 @@ import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { FileEntity } from '../documents/entities/file.entity';
 import { UserEntity } from '../users/entities/user.entity';
+import { NotificationEntity } from '../notifications/entities/notification.entity';
 import { SupportMessageEntity } from './entities/support-message.entity';
 import { SupportTicketAttachmentEntity } from './entities/support-ticket-attachment.entity';
 import { SupportTicketEntity } from './entities/support-ticket.entity';
@@ -39,9 +40,10 @@ describe('SupportService', () => {
   let filesRepository: Record<string, jest.Mock>;
   let coursesRepository: Record<string, jest.Mock>;
   let usersRepository: Record<string, jest.Mock>;
+  let notificationsRepository: Record<string, jest.Mock>;
   let enrollmentsService: { assertStudentEnrolled: jest.Mock };
   let attachmentsService: { saveAttachment: jest.Mock };
-  let notifications: { notify: jest.Mock };
+  let notifications: { notify: jest.Mock; markEntityRead: jest.Mock };
 
   const baseTicket: SupportTicketEntity = {
     id: 'ticket-1',
@@ -88,9 +90,11 @@ describe('SupportService', () => {
         .fn()
         .mockResolvedValue({ id: 'student-1', fullName: 'الطالب' }),
     };
+    notificationsRepository = { find: jest.fn().mockResolvedValue([]) };
     enrollmentsService = {
       assertStudentEnrolled: jest.fn().mockResolvedValue(undefined),
     };
+    attachmentsService = { saveAttachment: jest.fn() };
     notifications = {
       notify: jest.fn().mockResolvedValue(undefined),
       markEntityRead: jest.fn().mockResolvedValue(1),
@@ -117,6 +121,10 @@ describe('SupportService', () => {
           useValue: coursesRepository,
         },
         { provide: getRepositoryToken(UserEntity), useValue: usersRepository },
+        {
+          provide: getRepositoryToken(NotificationEntity),
+          useValue: notificationsRepository,
+        },
         { provide: EnrollmentsService, useValue: enrollmentsService },
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: NOTIFICATION_PRODUCER_PORT, useValue: notifications },
@@ -290,6 +298,21 @@ describe('SupportService', () => {
           body: 'رد',
         }),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('listMyTickets', () => {
+    it('returns student tickets and flags unread tickets correctly', async () => {
+      ticketsRepository.find.mockResolvedValue([baseTicket]);
+      notificationsRepository.find.mockResolvedValue([
+        { relatedEntityId: 'ticket-1', isRead: false },
+      ]);
+
+      const result = await service.listMyTickets(makeUser());
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('ticket-1');
+      expect(result[0].hasUnread).toBe(true);
     });
   });
 

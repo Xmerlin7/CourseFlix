@@ -21,9 +21,18 @@ export function DiscussionCard({ thread, to }: DiscussionCardProps) {
   const authorRole = roleLabel(thread.author.role)
 
   return (
-    <Link to={to} className="card support-ticket-card lift discussion-card">
+    <Link
+      to={to}
+      className={`card support-ticket-card lift discussion-card${thread.hasUnread ? ' unread' : ''}`}
+    >
       <div className="support-card-top">
         <div className="support-card-meta">
+          {thread.hasUnread && (
+            <span className="unread-badge-pill" aria-label="نشاط جديد">
+              <span className="unread-dot" aria-hidden="true" />
+              <span>جديد</span>
+            </span>
+          )}
           <span className={`chip ${thread.isAnswered ? 'green' : 'outline'} sm`}>
             <span className="ms sm" aria-hidden="true">
               {thread.isAnswered ? 'check_circle' : 'help'}

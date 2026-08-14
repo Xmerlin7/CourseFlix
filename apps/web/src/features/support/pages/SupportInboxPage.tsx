@@ -184,10 +184,16 @@ export function SupportInboxPage() {
             <Link
               key={ticket.id}
               to={`${detailPathPrefix}/${ticket.id}`}
-              className="support-ticket-card card lift"
+              className={`support-ticket-card card lift${ticket.hasUnread ? ' unread' : ''}`}
             >
               <div className="support-card-top">
                 <div className="support-card-meta">
+                  {ticket.hasUnread && (
+                    <span className="unread-badge-pill" aria-label="نشاط جديد">
+                      <span className="unread-dot" aria-hidden="true" />
+                      <span>جديد</span>
+                    </span>
+                  )}
                   <span className="support-card-id">#{ticket.id.slice(0, 8)}</span>
                   <span className="chip outline sm">
                     {SUPPORT_TICKET_CATEGORY_LABELS[ticket.category]}

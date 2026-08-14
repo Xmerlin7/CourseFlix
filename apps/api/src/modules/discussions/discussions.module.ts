@@ -16,6 +16,8 @@ import { DiscussionReplyEntity } from './entities/discussion-reply.entity';
 import { DiscussionThreadAttachmentEntity } from './entities/discussion-thread-attachment.entity';
 import { DiscussionThreadEntity } from './entities/discussion-thread.entity';
 
+import { NotificationEntity } from '../notifications/entities/notification.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -26,6 +28,7 @@ import { DiscussionThreadEntity } from './entities/discussion-thread.entity';
       FileEntity,
       CourseEntity,
       UserEntity,
+      NotificationEntity,
     ]),
     MulterModule.register({ storage: memoryStorage() }),
     SessionsModule,

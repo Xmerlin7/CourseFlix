@@ -583,18 +583,19 @@
   background: var(--surface-container);
 }
 
-/* ── UNREAD row — must be immediately distinguishable ── */
+/* ── UNREAD row — soft light lavender, calm and clear ── */
 .community-row.unread {
-  background: #E8DCF4;                     /* strong lavender — NOT subtle */
-  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: #F3EEFA;
+  border-color: #D8CBEA;
 }
 
 .community-row.unread:hover {
-  background: #DFCFEE;                     /* slightly deeper on hover */
+  background: #EAE0F5;
+  border-color: #CBB9E2;
 }
 
 .community-row.unread .community-row-title {
-  font-weight: 800;
+  font-weight: 750;
   color: var(--on-surface);
 }
 
@@ -604,12 +605,36 @@
 }
 
 .community-row.unread .community-row-grade {
-  color: var(--on-surface);
+  color: var(--on-surface-variant);
 }
 
 .community-row.unread .community-row-preview {
   color: var(--on-surface);
   font-weight: 600;
+}
+
+/* ── Shared Unread Indicators ── */
+.unread-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.unread-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  background: #EBE3F7;
+  color: var(--primary);
+  border: 1px solid #D8CBEA;
+  border-radius: calc(999px * var(--radius-scale));
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 /* ── Avatar ── */

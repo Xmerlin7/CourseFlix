@@ -14,22 +14,25 @@ export interface DiscussionReplyRowProps {
   reply: DiscussionReply
   canAccept?: boolean
   onAccept?: (replyId: string) => void
+  onUnaccept?: (replyId: string) => void
 }
 
 export function DiscussionReplyRow({
   reply,
   canAccept = false,
   onAccept,
+  onUnaccept,
 }: DiscussionReplyRowProps) {
   const isTeacherReply = reply.author.role === 'teacher' || reply.author.role === 'assistant'
   const authorRole = roleLabel(reply.author.role)
 
   return (
     <div
-      className={`discussion-reply-row${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}`}
+      className={`discussion-reply-row${reply.isUnread ? ' unread' : ''}${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}`}
     >
       <div className="discussion-reply-header">
         <div className="discussion-reply-author">
+          {reply.isUnread && <span className="unread-dot" aria-label="غير مقروء" />}
           {reply.author.avatarUrl ? (
             <span className="avatar discussion-reply-avatar">
               <img src={reply.author.avatarUrl} alt="" />
@@ -51,12 +54,24 @@ export function DiscussionReplyRow({
           </span>
         </div>
 
-        <div className="discussion-reply-badge-action">
+        <div className="discussion-reply-badge-action" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {reply.isAccepted ? (
-            <span className="chip green sm">
-              <span className="ms sm" aria-hidden="true">check_circle</span>
-              إجابة مقبولة
-            </span>
+            <>
+              <span className="chip green sm">
+                <span className="ms sm" aria-hidden="true">check_circle</span>
+                إجابة مقبولة
+              </span>
+              {canAccept && onUnaccept && (
+                <button
+                  type="button"
+                  className="btn outline sm"
+                  style={{ fontSize: 11, padding: '2px 8px' }}
+                  onClick={() => onUnaccept(reply.id)}
+                >
+                  إلغاء الاعتماد
+                </button>
+              )}
+            </>
           ) : (
             canAccept && onAccept && (
               <button
