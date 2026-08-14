@@ -49,7 +49,7 @@ export class StudentController {
 
   @Get('community/summary')
   getCommunitySummary(@Req() request: AuthenticatedRequest) {
-    return this.studentService.getCommunitySummary(request.user.id);
+    return this.studentService.getCommunitySummary(this.requireStudentId(request));
   }
 
   @Post('enroll')
