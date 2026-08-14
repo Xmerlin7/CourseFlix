@@ -4,8 +4,7 @@ import { IsNull, Repository } from 'typeorm';
 import { CourseEntity } from '../courses/entities/course.entity';
 import { PlatformSettingEntity } from './entities/platform-setting.entity';
 
-export const AUTH_POSTER_FEATURED_COURSE_KEY =
-  'auth_poster_featured_course_id';
+export const AUTH_POSTER_FEATURED_COURSE_KEY = 'auth_poster_featured_course_id';
 
 export interface AuthPosterCourse {
   id: string | null;

@@ -36,7 +36,10 @@ describe('PlatformSettingsService', () => {
           provide: getRepositoryToken(PlatformSettingEntity),
           useValue: settingsRepository,
         },
-        { provide: getRepositoryToken(CourseEntity), useValue: coursesRepository },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
       ],
     }).compile();
 
@@ -96,7 +99,9 @@ describe('PlatformSettingsService', () => {
   });
 
   it('saves a published active course as the featured auth poster course', async () => {
-    coursesRepository.findOne.mockResolvedValueOnce(course).mockResolvedValueOnce(course);
+    coursesRepository.findOne
+      .mockResolvedValueOnce(course)
+      .mockResolvedValueOnce(course);
     settingsRepository.findOne.mockResolvedValue({
       key: AUTH_POSTER_FEATURED_COURSE_KEY,
       value: course.id,
