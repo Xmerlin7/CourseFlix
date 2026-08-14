@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { AttachmentPreviewList } from '../../../shared/components/AttachmentPreview'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
@@ -7,7 +8,6 @@ import { showToast } from '../../../shared/components/Toast'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
 import { addTicketMessage, updateTicketStatus } from '../api/support.api'
-import { AttachmentCard } from '../components/AttachmentCard'
 import { MessageBubble, type MessagePendingStatus } from '../components/MessageBubble'
 import { MessageComposer } from '../components/MessageComposer'
 import '../components/SupportChat.css'
@@ -186,54 +186,55 @@ export function SupportTicketDetailPage() {
   const isClosed = data.status === 'closed'
 
   return (
-    <div>
+    <div style={{ maxWidth: 880, margin: '0 auto', width: '100%' }}>
       <Link to={backPath} className="meta-link support-back-link">
         <span className="ms" aria-hidden="true">arrow_forward</span>
         العودة للدعم
       </Link>
 
-
       <div className="card support-ticket-header">
         <div className="support-ticket-header-top">
-          <div>
-            <span className="support-ticket-id">طلب دعم #{data.id.slice(0, 8)}</span>
-            <h1 className="page-title" style={{ margin: '4px 0 10px', fontSize: 21 }}>
-              {data.subject}
-            </h1>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 260 }}>
             <div className="support-ticket-chips">
+              <span className="support-ticket-id">طلب دعم #{data.id.slice(0, 8)}</span>
               <span className="chip outline">
-                <span className="ms" aria-hidden="true">
+                <span className="ms sm" aria-hidden="true">
                   {CATEGORY_ICONS[data.category] ?? 'label'}
                 </span>
                 {SUPPORT_TICKET_CATEGORY_LABELS[data.category]}
               </span>
               {data.courseTitle && (
                 <span className="chip outline">
-                  <span className="ms" aria-hidden="true">school</span>
+                  <span className="ms sm" aria-hidden="true">school</span>
                   {data.courseTitle}
                 </span>
               )}
               <span className="chip outline">
-                <span className="ms" aria-hidden="true">schedule</span>
+                <span className="ms sm" aria-hidden="true">schedule</span>
                 {formatDate(data.createdAt)}
               </span>
               {isStaff && (
                 <span className="chip outline">
-                  <span className="ms" aria-hidden="true">person</span>
+                  <span className="ms sm" aria-hidden="true">person</span>
                   {data.studentName}
                 </span>
               )}
             </div>
+
+            <h1 className="page-title" style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 700 }}>
+              {data.subject}
+            </h1>
           </div>
 
           {isStaff ? (
-            <div className="tf" style={{ marginBottom: 0, minWidth: 180 }}>
-              <label htmlFor="ticket-status">الحالة</label>
+            <div className="tf" style={{ marginBottom: 0, minWidth: 160 }}>
+              <label htmlFor="ticket-status" style={{ fontSize: 12 }}>الحالة</label>
               <select
                 id="ticket-status"
                 value={data.status}
                 onChange={(event) => handleStatusChange(event.target.value as SupportTicketStatus)}
                 disabled={isUpdatingStatus}
+                style={{ padding: '6px 12px', fontSize: 13 }}
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -250,27 +251,16 @@ export function SupportTicketDetailPage() {
         {data.description && <p className="support-ticket-description">{data.description}</p>}
 
         {data.attachments.length > 0 && (
-          <div className="support-ticket-attachments">
-            {data.attachments.map((file) => (
-              <AttachmentCard key={file.id} attachment={file} />
-            ))}
+          <div className="support-ticket-attachments" style={{ marginTop: 6 }}>
+            <AttachmentPreviewList attachments={data.attachments} layout="horizontal" />
           </div>
         )}
       </div>
 
       <div className="support-chat-panel">
-        <div className="support-chat-messages" ref={messagesRef}>
-          {renderList.length === 0 ? (
-            <div className="support-chat-empty">
-              <strong>أهلاً بيك 👋</strong>
-              <p>
-                {isStaff
-                  ? 'اكتب ردك هنا.'
-                  : 'اكتب رسالتك وهيساعدك فريق الدعم في حل المشكلة.'}
-              </p>
-            </div>
-          ) : (
-            renderList.map((message, index) => (
+        {renderList.length > 0 && (
+          <div className="support-chat-messages" ref={messagesRef}>
+            {renderList.map((message, index) => (
               <MessageBubble
                 key={message.key}
                 authorName={message.authorName}
@@ -283,11 +273,13 @@ export function SupportTicketDetailPage() {
                 onRetry={message.pendingStatus === 'failed' ? handleRetry : undefined}
                 onDismiss={message.pendingStatus === 'failed' ? handleDismissFailed : undefined}
               />
-            ))
-          )}
+            ))}
 
-          {pending?.status === 'sending' && <TypingIndicator variant={isStaff ? 'student' : 'support'} />}
-        </div>
+            {pending?.status === 'sending' && (
+              <TypingIndicator variant={isStaff ? 'student' : 'support'} />
+            )}
+          </div>
+        )}
 
         {isClosed ? (
           <div className="support-chat-closed-notice">
