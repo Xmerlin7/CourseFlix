@@ -119,7 +119,7 @@ export function DiscussionDetailPage() {
         </Link>
       </div>
 
-      <div className="card discussion-question-card" style={{ gap: 14, marginBottom: 24 }}>
+      <div className="card discussion-question-card" style={{ gap: 10, marginBottom: 20 }}>
         <div className="support-card-top" style={{ alignItems: 'center' }}>
           <div className="support-card-meta">
             <span className={`chip ${data.isAnswered ? 'green' : 'outline'} sm`}>
@@ -150,11 +150,11 @@ export function DiscussionDetailPage() {
           </div>
         </div>
 
-        <h1 className="page-title" style={{ fontSize: 22, margin: 0, overflowWrap: 'anywhere' }}>
+        <h1 className="page-title" style={{ fontSize: 21, margin: 0, overflowWrap: 'anywhere' }}>
           {data.title}
         </h1>
 
-        <div className="support-card-info" style={{ fontSize: 13, color: 'var(--on-surface-variant)' }}>
+        <div className="support-card-info" style={{ fontSize: 12.5, color: 'var(--on-surface-variant)' }}>
           <span className="support-card-info-item">
             <span className="ms sm" aria-hidden="true">schedule</span>
             {formatDate(data.createdAt)}
@@ -213,8 +213,8 @@ export function DiscussionDetailPage() {
         </div>
       </div>
 
-      <div className="section-head" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>الردود ({data.replies.length})</h2>
+      <div className="section-head" style={{ marginBottom: 12 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>الردود ({data.replies.length})</h2>
       </div>
 
       {data.replies.length === 0 ? (
@@ -223,53 +223,54 @@ export function DiscussionDetailPage() {
           message="كن أول من يجيب على هذا السؤال."
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+        <div className="discussion-reply-list">
           {data.replies.map((reply) => {
             const isTeacherReply = reply.author.role === 'teacher' || reply.author.role === 'assistant'
             return (
               <div
                 key={reply.id}
-                className={`card discussion-reply-card${reply.isAccepted ? ' discussion-reply-card--accepted' : ''}`}
+                className={`discussion-reply-row${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}`}
               >
-                <div className="support-card-top" style={{ alignItems: 'center' }}>
-                  <div className="discussion-author-badge">
+                <div className="discussion-reply-header">
+                  <div className="discussion-reply-author">
                     {reply.author.avatarUrl ? (
-                      <span className="avatar" style={{ width: 20, height: 20 }}>
+                      <span className="avatar discussion-reply-avatar">
                         <img src={reply.author.avatarUrl} alt="" />
                       </span>
                     ) : (
-                      <span className="ms sm" aria-hidden="true">
-                        {isTeacherReply ? 'verified_user' : 'account_circle'}
+                      <span className="discussion-reply-avatar-placeholder">
+                        <span className="ms sm" aria-hidden="true">
+                          {isTeacherReply ? 'verified_user' : 'account_circle'}
+                        </span>
                       </span>
                     )}
-                    <span>{reply.author.fullName}</span>
+                    <span className="discussion-reply-author-name">{reply.author.fullName}</span>
                     {roleLabel(reply.author.role) && (
-                      <span className="chip sm primary">{roleLabel(reply.author.role)}</span>
+                      <span className="chip sm primary discussion-reply-role-chip">{roleLabel(reply.author.role)}</span>
                     )}
+                    <span className="discussion-reply-time">
+                      <span className="ms sm" aria-hidden="true">schedule</span>
+                      {formatDate(reply.createdAt)}
+                    </span>
                   </div>
 
-                  {reply.isAccepted ? (
-                    <span className="chip green sm">
-                      <span className="ms sm" aria-hidden="true">check_circle</span>
-                      إجابة مقبولة
-                    </span>
-                  ) : (
-                    data.canAccept && (
-                      <button type="button" className="btn outline sm" onClick={() => handleAccept(reply.id)}>
-                        اعتماد كإجابة
-                      </button>
-                    )
-                  )}
+                  <div className="discussion-reply-badge-action">
+                    {reply.isAccepted ? (
+                      <span className="chip green sm">
+                        <span className="ms sm" aria-hidden="true">check_circle</span>
+                        إجابة مقبولة
+                      </span>
+                    ) : (
+                      data.canAccept && (
+                        <button type="button" className="btn outline sm" onClick={() => handleAccept(reply.id)}>
+                          اعتماد كإجابة
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
 
-                <div className="support-card-info" style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', margin: '6px 0 10px' }}>
-                  <span className="support-card-info-item">
-                    <span className="ms sm" aria-hidden="true">schedule</span>
-                    {formatDate(reply.createdAt)}
-                  </span>
-                </div>
-
-                <p className="discussion-body-text">{reply.body}</p>
+                <p className="discussion-reply-body">{reply.body}</p>
               </div>
             )
           })}

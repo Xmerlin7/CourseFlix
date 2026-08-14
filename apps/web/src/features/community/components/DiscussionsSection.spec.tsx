@@ -86,7 +86,7 @@ describe('DiscussionsSection', () => {
 
     await screen.findByText('قانون كولوم مش واضح')
 
-    await user.type(screen.getByPlaceholderText('ابحث في المناقشات...'), 'لا يوجد نتيجة')
+    await user.type(screen.getByLabelText('بحث في المناقشات'), 'لا يوجد نتيجة')
     await user.keyboard('{Enter}')
 
     expect(await screen.findByText('لم نجد أي مناقشات مطابقة لبحثك')).toBeInTheDocument()
