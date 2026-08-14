@@ -366,30 +366,79 @@ describe('DiscussionsService', () => {
     });
   });
 
-  describe('acceptAnswer', () => {
-    it('lets the question author mark a reply as the accepted answer', async () => {
+  describe('acceptAnswer & unacceptAnswer', () => {
+    it('lets the question author mark multiple replies as accepted answers', async () => {
       threadsRepository.findOne.mockResolvedValue({ ...baseThread });
-      repliesRepository.findOne.mockResolvedValue({
+      const reply1 = {
         id: 'reply-1',
         threadId: 'thread-1',
         authorId: 'teacher-1',
         authorRole: 'teacher',
-        body: 'الشرح',
+        body: 'الشرح الأول',
+        isAccepted: false,
         createdAt: new Date(),
-      });
+      };
+      repliesRepository.findOne.mockResolvedValue(reply1);
+      repliesRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
       threadsRepository.save.mockImplementation((input) =>
         Promise.resolve(input),
       );
-      repliesRepository.find.mockResolvedValue([]);
+      repliesRepository.find.mockResolvedValue([
+        { ...reply1, isAccepted: true },
+        {
+          id: 'reply-2',
+          threadId: 'thread-1',
+          authorId: 'student-2',
+          authorRole: 'student',
+          body: 'الشرح الثاني',
+          isAccepted: true,
+          createdAt: new Date(),
+        },
+      ]);
 
-      await service.acceptAnswer(
+      const result = await service.acceptAnswer(
         'thread-1',
         'reply-1',
         makeUser({ id: 'student-1' }),
       );
 
+      expect(repliesRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'reply-1', isAccepted: true }),
+      );
       expect(threadsRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({ acceptedReplyId: 'reply-1' }),
+      );
+      expect(result.replies[0].isAccepted).toBe(true);
+      expect(result.replies[1].isAccepted).toBe(true);
+    });
+
+    it('lets the question author unaccept a specific reply', async () => {
+      threadsRepository.findOne.mockResolvedValue({ ...baseThread, acceptedReplyId: 'reply-1' });
+      repliesRepository.findOne
+        .mockResolvedValueOnce({
+          id: 'reply-1',
+          threadId: 'thread-1',
+          authorId: 'teacher-1',
+          isAccepted: true,
+        })
+        .mockResolvedValueOnce(null);
+      repliesRepository.save.mockImplementation((input) => Promise.resolve(input));
+      threadsRepository.save.mockImplementation((input) => Promise.resolve(input));
+      repliesRepository.find.mockResolvedValue([]);
+
+      await service.unacceptAnswer(
+        'thread-1',
+        makeUser({ id: 'student-1' }),
+        'reply-1',
+      );
+
+      expect(repliesRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'reply-1', isAccepted: false }),
+      );
+      expect(threadsRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ acceptedReplyId: null }),
       );
     });
 

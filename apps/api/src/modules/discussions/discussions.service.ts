@@ -239,7 +239,7 @@ export class DiscussionsService {
         id: r.id,
         author: this.resolveAuthor(r.authorId, r.authorRole, authors),
         body: r.body,
-        isAccepted: thread.acceptedReplyId === r.id,
+        isAccepted: Boolean(r.isAccepted),
         createdAt: r.createdAt.toISOString(),
       })),
       canAccept: thread.authorId === user.id,
@@ -320,18 +320,30 @@ export class DiscussionsService {
       );
     }
 
-    this.notifications
-      .notify({
-        userId: course.teacherId,
-        type: 'discussion_reply',
-        title: 'سؤال جديد في المجتمع',
-        message: `${user.fullName} سأل: ${title}`,
-        relatedEntityType: 'discussion_thread',
-        relatedEntityId: thread.id,
-      })
-      .catch(() => {
-        // Best-effort — a missed notification never blocks the question itself.
-      });
+    const assistants = await this.usersRepository.find({
+      where: {
+        role: 'assistant',
+        managedByTeacherId: course.teacherId,
+        deletedAt: IsNull(),
+      },
+      select: { id: true },
+    });
+    const staffIds = Array.from(
+      new Set([course.teacherId, ...assistants.map((a) => a.id)]),
+    ).filter((id) => id !== user.id);
+
+    for (const staffId of staffIds) {
+      this.notifications
+        .notify({
+          userId: staffId,
+          type: 'discussion_reply',
+          title: 'سؤال جديد في المجتمع',
+          message: `${user.fullName} سأل: ${title}`,
+          relatedEntityType: 'discussion_thread',
+          relatedEntityId: thread.id,
+        })
+        .catch(() => {});
+    }
 
     return this.getThread(thread.id, user);
   }
@@ -350,18 +362,50 @@ export class DiscussionsService {
         authorId: user.id,
         authorRole: user.role,
         body: dto.body.trim(),
+        isAccepted: false,
       }),
     );
 
     await this.threadsRepository.increment({ id: threadId }, 'replyCount', 1);
 
-    if (thread.authorId !== user.id) {
+    const course = await this.coursesRepository.findOne({
+      where: { id: thread.courseId },
+      select: { id: true, teacherId: true },
+    });
+
+    const recipientIds = new Set<string>();
+    if (thread.authorId) recipientIds.add(thread.authorId);
+    if (course?.teacherId) {
+      recipientIds.add(course.teacherId);
+      const assistants = await this.usersRepository.find({
+        where: {
+          role: 'assistant',
+          managedByTeacherId: course.teacherId,
+          deletedAt: IsNull(),
+        },
+        select: { id: true },
+      });
+      assistants.forEach((a) => recipientIds.add(a.id));
+    }
+
+    const previousReplies = await this.repliesRepository.find({
+      where: { threadId, deletedAt: IsNull() },
+      select: { authorId: true },
+    });
+    previousReplies.forEach((r) => recipientIds.add(r.authorId));
+
+    recipientIds.delete(user.id);
+
+    for (const recipientId of recipientIds) {
       this.notifications
         .notify({
-          userId: thread.authorId,
+          userId: recipientId,
           type: 'discussion_reply',
-          title: 'رد جديد على سؤالك',
-          message: `${user.fullName} رد على سؤالك: ${thread.title}`,
+          title:
+            recipientId === thread.authorId
+              ? 'رد جديد على سؤالك'
+              : 'نشاط جديد في المناقشة',
+          message: `${user.fullName} رد على: ${thread.title}`,
           relatedEntityType: 'discussion_thread',
           relatedEntityId: threadId,
         })
@@ -399,6 +443,9 @@ export class DiscussionsService {
       throw new NotFoundException('Reply not found.');
     }
 
+    reply.isAccepted = true;
+    await this.repliesRepository.save(reply);
+
     thread.acceptedReplyId = reply.id;
     await this.threadsRepository.save(thread);
 
@@ -421,6 +468,7 @@ export class DiscussionsService {
   async unacceptAnswer(
     threadId: string,
     user: AuthenticatedUser,
+    replyId?: string,
   ): Promise<DiscussionThreadDetailResponse> {
     const thread = await this.loadThreadOrThrow(threadId);
     await this.assertCanAccessCourse(user, thread.courseId);
@@ -431,7 +479,25 @@ export class DiscussionsService {
       );
     }
 
-    thread.acceptedReplyId = null;
+    if (replyId) {
+      const reply = await this.repliesRepository.findOne({
+        where: { id: replyId, threadId, deletedAt: IsNull() },
+      });
+      if (reply) {
+        reply.isAccepted = false;
+        await this.repliesRepository.save(reply);
+      }
+    } else {
+      await this.repliesRepository.update(
+        { threadId, isAccepted: true },
+        { isAccepted: false },
+      );
+    }
+
+    const remainingAccepted = await this.repliesRepository.findOne({
+      where: { threadId, isAccepted: true, deletedAt: IsNull() },
+    });
+    thread.acceptedReplyId = remainingAccepted ? remainingAccepted.id : null;
     await this.threadsRepository.save(thread);
 
     return this.getThread(threadId, user);

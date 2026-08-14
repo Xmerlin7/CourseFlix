@@ -77,8 +77,14 @@ export function acceptAnswer(
   return httpClient.post<DiscussionThreadDetail>(`/discussions/${threadId}/accept/${replyId}`)
 }
 
-export function unacceptAnswer(threadId: string): Promise<DiscussionThreadDetail> {
-  return httpClient.delete<DiscussionThreadDetail>(`/discussions/${threadId}/accept`)
+export function unacceptAnswer(
+  threadId: string,
+  replyId?: string,
+): Promise<DiscussionThreadDetail> {
+  const url = replyId
+    ? `/discussions/${threadId}/accept/${replyId}`
+    : `/discussions/${threadId}/accept`
+  return httpClient.delete<DiscussionThreadDetail>(url)
 }
 
 export function toggleHelpful(

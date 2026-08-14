@@ -98,10 +98,11 @@ export function DiscussionDetailPage() {
     }
   }
 
-  async function handleUnaccept() {
+  async function handleUnaccept(replyId?: string) {
     if (!threadId) return
     try {
-      await unacceptAnswer(threadId)
+      await unacceptAnswer(threadId, replyId)
+      showToast('تم إلغاء الاعتماد', 'success')
       refetch()
     } catch {
       showToast('تعذر التراجع عن الاعتماد', 'error')
@@ -223,11 +224,6 @@ export function DiscussionDetailPage() {
 
       <div className="section-head" style={{ marginBottom: 8, alignItems: 'center', justifyContent: 'space-between' }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>الردود ({data.replies.length})</h2>
-        {data.canAccept && data.isAnswered && (
-          <button type="button" className="btn outline sm" onClick={handleUnaccept} style={{ fontSize: 12, padding: '4px 10px' }}>
-            التراجع عن الإجابة المعتمدة
-          </button>
-        )}
       </div>
 
       {data.replies.length > 0 && (
@@ -238,6 +234,7 @@ export function DiscussionDetailPage() {
               reply={reply}
               canAccept={data.canAccept}
               onAccept={handleAccept}
+              onUnaccept={handleUnaccept}
             />
           ))}
         </div>

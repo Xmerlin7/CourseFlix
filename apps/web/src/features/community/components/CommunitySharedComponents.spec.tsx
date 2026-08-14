@@ -133,6 +133,22 @@ describe('DiscussionReplyRow', () => {
 
     expect(handleAccept).toHaveBeenCalledWith('reply-1')
   })
+
+  it('calls onUnaccept when unaccept button is clicked for an accepted reply', async () => {
+    const handleUnaccept = vi.fn()
+    render(
+      <DiscussionReplyRow
+        reply={{ ...baseReply, isAccepted: true }}
+        canAccept
+        onUnaccept={handleUnaccept}
+      />,
+    )
+
+    const unacceptBtn = screen.getByRole('button', { name: 'إلغاء الاعتماد' })
+    await userEvent.click(unacceptBtn)
+
+    expect(handleUnaccept).toHaveBeenCalledWith('reply-1')
+  })
 })
 
 describe('DiscussionCard', () => {
