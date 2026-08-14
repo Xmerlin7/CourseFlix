@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AttachmentPicker } from '../../../shared/components/AttachmentPicker'
+import { AttachmentPreviewList } from '../../../shared/components/AttachmentPreview'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ErrorState } from '../../../shared/components/ErrorState'
@@ -267,15 +268,8 @@ function AnnouncementCard({
       )}
 
       {announcement.attachments.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {announcement.attachments.map((file) => (
-            <span key={file.id} className="chip outline">
-              <span className="ms" style={{ fontSize: 14 }}>
-                attach_file
-              </span>
-              {file.fileName}
-            </span>
-          ))}
+        <div className="announcement-attachments" style={{ marginTop: 6 }}>
+          <AttachmentPreviewList attachments={announcement.attachments} layout="vertical" />
         </div>
       )}
     </div>
