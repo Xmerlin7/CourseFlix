@@ -857,11 +857,12 @@
 .notif-item {
   width: 100%;
   text-align: start;
-  background: transparent;
-  border: none;
+  border: 1px solid transparent;
   font: inherit;
   color: inherit;
   padding: 12px 14px;
+  border-radius: calc(14px * var(--radius-scale));
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .notif-panel-foot {
@@ -3520,11 +3521,66 @@ a.list-item:hover,
 }
 
 .unread-dot {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
   flex: none;
+}
+
+/* ---------- Notification Read/Unread States ---------- */
+/* 1. UNREAD state: clearly highlighted lavender card (#E2D3F4 contrast against #EBE3F1 panel) */
+.list-item.unread,
+.notif-item.unread {
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+/* 2. UNREAD + HOVER state: richer lavender background (#D6C3ED), deeper purple border & soft shadow */
+.list-item.unread:hover,
+.notif-item.unread:hover,
+a.list-item.unread:hover,
+.list-item.unread.hoverable:hover,
+.notif-item.unread.hoverable:hover {
+  background: color-mix(in srgb, var(--primary) 36%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.list-item.unread .body .t,
+.notif-item.unread .body .t {
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+/* 3. READ state: clean white card background (#FFFFFF), distinct from surface-container-high panel */
+.list-item.read,
+.notif-item.read {
+  background: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent);
+}
+
+/* 4. READ + HOVER state: soft lavender-tinted background (#F4EEF8), subtle purple border & soft shadow */
+.list-item.read:hover,
+.notif-item.read:hover,
+a.list-item.read:hover,
+.list-item.read.hoverable:hover,
+.notif-item.read.hoverable:hover {
+  background: color-mix(in srgb, var(--primary) 10%, #ffffff);
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.list-item.read .body .t,
+.notif-item.read .body .t {
+  font-weight: 500;
+  color: var(--on-surface-variant);
+}
+
+.list-item.read:hover .body .t,
+.notif-item.read:hover .body .t {
+  color: var(--on-surface);
 }
 
 /* ---------- Tabs ---------- */
