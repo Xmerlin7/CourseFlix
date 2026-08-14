@@ -47,7 +47,7 @@ export function DiscussionCard({ thread, to }: DiscussionCardProps) {
         </div>
       </div>
 
-      <h3 className="support-card-title">{thread.title}</h3>
+      <h3 className="support-card-title">{thread.body || thread.title}</h3>
 
       {thread.tags.length > 0 && (
         <div className="discussion-card-tags" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>

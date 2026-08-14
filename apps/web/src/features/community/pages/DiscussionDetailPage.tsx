@@ -150,18 +150,16 @@ export function DiscussionDetailPage() {
           </div>
         </div>
 
-        <h1 className="page-title" style={{ fontSize: 19, margin: '2px 0 0', overflowWrap: 'anywhere' }}>
-          {data.title}
-        </h1>
+        <p className="discussion-body-text" style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.5, margin: '6px 0 8px', overflowWrap: 'anywhere' }}>
+          {data.body || data.title}
+        </p>
 
-        <div className="support-card-info" style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
+        <div className="support-card-info" style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginBottom: 4 }}>
           <span className="support-card-info-item">
             <span className="ms sm" aria-hidden="true">schedule</span>
             {formatDate(data.createdAt)}
           </span>
         </div>
-
-        <p className="discussion-body-text" style={{ margin: '4px 0 0' }}>{data.body}</p>
 
         {data.attachments.length > 0 && (
           <div className="discussion-attachments-list" style={{ marginTop: 4 }}>

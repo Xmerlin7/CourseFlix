@@ -14,7 +14,7 @@ export interface DiscussionListFilters {
 }
 
 export interface CreateThreadInput {
-  title: string
+  title?: string
   body: string
   tags: string[]
   attachment?: File | null
@@ -50,7 +50,7 @@ export function createDiscussion(
   input: CreateThreadInput,
 ): Promise<DiscussionThreadDetail> {
   const formData = new FormData()
-  formData.set('title', input.title)
+  formData.set('title', input.title || input.body)
   formData.set('body', input.body)
   formData.set('tags', JSON.stringify(input.tags))
   if (input.attachment) {

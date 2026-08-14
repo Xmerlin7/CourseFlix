@@ -5,7 +5,7 @@ import { ApiError } from '../../../shared/api/api-error'
 interface AskQuestionDialogProps {
   open: boolean
   isSubmitting: boolean
-  onSubmit: (input: { title: string; body: string; tags: string[]; attachment: File | null }) => Promise<void>
+  onSubmit: (input: { title?: string; body: string; tags: string[]; attachment: File | null }) => Promise<void>
   onClose: () => void
 }
 
@@ -70,9 +70,8 @@ export function AskQuestionDialog({ open, isSubmitting, onSubmit, onClose }: Ask
       return
     }
     setError(null)
-    const title = trimmedBody.split('\n')[0].slice(0, 150)
     try {
-      await onSubmit({ title, body: trimmedBody, tags, attachment })
+      await onSubmit({ body: trimmedBody, tags, attachment })
       resetAndClose()
     } catch (err) {
       setError(

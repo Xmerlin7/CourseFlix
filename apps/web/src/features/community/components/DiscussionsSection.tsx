@@ -47,7 +47,7 @@ export function DiscussionsSection({ courseId }: DiscussionsSectionProps) {
   // paginates; `search` is passed so a new term returns to page 1.
   const list = usePaginatedList(data, NO_CLIENT_FILTER, PAGE_SIZE, search)
 
-  async function handleAsk(input: { title: string; body: string; tags: string[]; attachment: File | null }) {
+  async function handleAsk(input: { title?: string; body: string; tags: string[]; attachment: File | null }) {
     setIsSubmitting(true)
     try {
       const thread = await createDiscussion(courseId, input)
