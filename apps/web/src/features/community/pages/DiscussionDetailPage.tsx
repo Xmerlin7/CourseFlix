@@ -218,6 +218,7 @@ export function DiscussionDetailPage() {
               key={reply.id}
               reply={reply}
               canAccept={data.canAccept}
+              isMe={reply.author.id === user?.id}
               onAccept={handleAccept}
               onUnaccept={handleUnaccept}
             />
