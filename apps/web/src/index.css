@@ -1685,6 +1685,12 @@ textarea:placeholder-shown {
 
 /* ---------- Auth shell: immersive mesh login/register ---------- */
 .auth-shell {
+  --auth-pointer-x: 50%;
+  --auth-pointer-y: 50%;
+  --auth-pointer-px: 50%;
+  --auth-pointer-py: 50%;
+  --auth-pointer-nx: 0;
+  --auth-pointer-ny: 0;
   min-height: 100vh;
   position: relative;
   display: grid;
@@ -1718,6 +1724,30 @@ textarea:placeholder-shown {
   background-size: 44px 44px, 44px 44px, 100% 100%;
   mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 80%, transparent 100%);
   opacity: 0.52;
+  transform: translate3d(calc(var(--auth-pointer-nx) * -18px), calc(var(--auth-pointer-ny) * -18px), 0);
+  transition: transform 0.18s ease-out;
+}
+
+.auth-pointer-aura {
+  position: fixed;
+  left: var(--auth-pointer-x);
+  top: var(--auth-pointer-y);
+  z-index: -1;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(103, 245, 255, 0.28) 0%, rgba(103, 245, 255, 0.12) 32%, transparent 68%);
+  filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.82);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.auth-shell[data-pointer="active"] .auth-pointer-aura {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .auth-shell::before {
@@ -1726,6 +1756,7 @@ textarea:placeholder-shown {
   inset: 0;
   z-index: -2;
   background:
+    radial-gradient(circle at var(--auth-pointer-x) var(--auth-pointer-y), rgba(103, 245, 255, 0.28), transparent 22%),
     radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.18), transparent 24%),
     radial-gradient(circle at 54% 82%, rgba(255, 212, 180, 0.38), transparent 28%),
     linear-gradient(180deg, rgba(8, 18, 38, 0.18), rgba(8, 9, 20, 0.56));
@@ -1772,6 +1803,12 @@ textarea:placeholder-shown {
     0 0 0 1px rgba(255, 255, 255, 0.46) inset,
     -18px 0 58px rgba(34, 211, 238, 0.14);
   backdrop-filter: blur(18px) saturate(1.08);
+  transform:
+    rotateX(calc(var(--auth-pointer-ny) * -3deg))
+    rotateY(calc(var(--auth-pointer-nx) * 4deg))
+    translate3d(calc(var(--auth-pointer-nx) * 8px), calc(var(--auth-pointer-ny) * 6px), 0);
+  transform-style: preserve-3d;
+  transition: transform 0.14s ease-out, box-shadow 0.18s ease;
 }
 
 .auth-form-inner::before {
@@ -1782,6 +1819,19 @@ textarea:placeholder-shown {
   border-inline-end: 1px solid color-mix(in srgb, #22D3EE 16%, transparent);
   border-radius: inherit;
   pointer-events: none;
+  transform: translateZ(12px);
+}
+
+.auth-form-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at var(--auth-pointer-px) var(--auth-pointer-py), color-mix(in srgb, #22D3EE 18%, transparent), transparent 28%);
+  opacity: 0.72;
+  pointer-events: none;
+  mix-blend-mode: screen;
 }
 
 :root.dark .auth-form-inner {
@@ -1859,6 +1909,8 @@ textarea:placeholder-shown {
   background: transparent;
   z-index: 1;
   pointer-events: none;
+  transform: translate3d(calc(var(--auth-pointer-nx) * -22px), calc(var(--auth-pointer-ny) * -18px), 0);
+  transition: transform 0.18s ease-out;
 }
 
 .auth-floating-poster .poster-stage {
@@ -1896,7 +1948,7 @@ textarea:placeholder-shown {
     linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
   background-size: 28px 28px;
-  transform: translate3d(calc(var(--poster-x) * -12px), calc(var(--poster-y) * -12px), 0);
+  transform: translate3d(calc((var(--poster-x) * -12px) + (var(--auth-pointer-nx) * -10px)), calc((var(--poster-y) * -12px) + (var(--auth-pointer-ny) * -10px)), 0);
   opacity: 0.34;
   pointer-events: none;
   z-index: -1;
@@ -2232,6 +2284,9 @@ textarea:placeholder-shown {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .auth-grid,
+  .auth-panel-brand,
+  .auth-form-inner,
   .poster,
   .poster-cover-img,
   .auth-shell .tf input,
@@ -2242,6 +2297,10 @@ textarea:placeholder-shown {
     animation: none;
     transition: none;
     transform: none;
+  }
+
+  .auth-pointer-aura {
+    display: none;
   }
 
   .poster-progress-track span {
