@@ -45,6 +45,10 @@ export function getDiscussion(threadId: string): Promise<DiscussionThreadDetail>
   return httpClient.get<DiscussionThreadDetail>(`/discussions/${threadId}`)
 }
 
+export function markCourseCommunityRead(courseId: string): Promise<{ updated: number }> {
+  return httpClient.patch<{ updated: number }>(`/courses/${courseId}/discussions/read`)
+}
+
 export function createDiscussion(
   courseId: string,
   input: CreateThreadInput,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
@@ -6,6 +6,7 @@ import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { showToast } from '../../../shared/components/Toast'
 import { sanitizeFilename } from '../../../shared/utils/sanitizeFilename'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
 import {
   acceptAnswer,
   createReply,
@@ -35,6 +36,12 @@ export function DiscussionDetailPage() {
   const [replyBody, setReplyBody] = useState('')
   const [isReplying, setIsReplying] = useState(false)
   const [isTogglingHelpful, setIsTogglingHelpful] = useState(false)
+
+  useEffect(() => {
+    if (data) {
+      emitUnreadCountChanged()
+    }
+  }, [data?.id])
 
   if (isLoading) return <DiscussionDetailSkeleton />
 

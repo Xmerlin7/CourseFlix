@@ -83,7 +83,7 @@ describe('CheckoutPage', () => {
     expect(
       await screen.findByText('تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى.'),
     ).toBeInTheDocument()
-    expect(screen.queryByText('bad gateway')).not.toBeInTheDocument()
+    expect(screen.getByText('bad gateway')).toBeInTheDocument()
   })
 
   it('redirects to the explore-courses page when the student declines the simulated payment', async () => {
@@ -103,7 +103,7 @@ describe('CheckoutPage', () => {
     )
 
     await screen.findByText('الميكانيكا الكلاسيكية')
-    await user.click(screen.getByRole('button', { name: 'محاكاة رفض الدفع (تجريبي)' }))
+    await user.click(screen.getByRole('button', { name: 'الرجوع للدورات' }))
 
     expect(await screen.findByText('استكشف الدورات')).toBeInTheDocument()
   })

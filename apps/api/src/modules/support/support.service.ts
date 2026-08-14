@@ -223,6 +223,11 @@ export class SupportService {
   ): Promise<SupportTicketDetailResponse> {
     const ticket = await this.loadTicketOrThrow(ticketId);
     this.assertCanAccessTicket(ticket, user);
+
+    this.notifications
+      .markEntityRead?.(user.id, 'support_ticket', ticketId)
+      ?.catch(() => {});
+
     return this.toDetailResponse(ticket);
   }
 

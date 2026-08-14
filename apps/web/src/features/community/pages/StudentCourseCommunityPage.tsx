@@ -4,7 +4,9 @@ import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { DiscussionsSection } from '../components/DiscussionsSection'
 import { useStudentEnrollments } from '../../student/hooks/useStudentEnrollments'
 import { AnnouncementsSection } from '../components/AnnouncementsSection'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { markCourseCommunityRead } from '../api/community.api'
+import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
 
 type CommunityTab = 'discussions' | 'announcements'
 
@@ -12,6 +14,13 @@ export function StudentCourseCommunityPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const { data: enrollments, isLoading } = useStudentEnrollments()
   const [activeTab, setActiveTab] = useState<CommunityTab>('discussions')
+
+  useEffect(() => {
+    if (!courseId) return
+    void markCourseCommunityRead(courseId)
+      .then(() => emitUnreadCountChanged())
+      .catch(() => {})
+  }, [courseId])
 
   if (!courseId) return <NotFoundState />
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { getStudentCommunitySummary } from '../api/student.api'
 import type { StudentCommunitySummaryItem } from '../types/student.types'
+import { UNREAD_NOTIFICATIONS_CHANGED_EVENT } from '../../notifications/utils/notificationEvents'
 
 interface UseStudentCommunitySummaryResult {
   data: StudentCommunitySummaryItem[]
@@ -16,6 +17,17 @@ export function useStudentCommunitySummary(): UseStudentCommunitySummaryResult {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
   const [refetchToken, setRefetchToken] = useState(0)
+
+  useEffect(() => {
+    function handleUnreadChange() {
+      setRefetchToken((token) => token + 1)
+    }
+
+    window.addEventListener(UNREAD_NOTIFICATIONS_CHANGED_EVENT, handleUnreadChange)
+    return () => {
+      window.removeEventListener(UNREAD_NOTIFICATIONS_CHANGED_EVENT, handleUnreadChange)
+    }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()

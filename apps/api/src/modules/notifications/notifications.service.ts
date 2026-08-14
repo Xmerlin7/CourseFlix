@@ -209,6 +209,45 @@ export class NotificationsService implements NotificationProducerPort {
     return { updated: result.affected ?? 0 };
   }
 
+  async markEntityRead(
+    userId: string,
+    relatedEntityType: string,
+    relatedEntityId: string,
+  ): Promise<number> {
+    const result = await this.notificationsRepository
+      .createQueryBuilder()
+      .update(NotificationEntity)
+      .set({ isRead: true, readAt: new Date() })
+      .where('user_id = :userId', { userId })
+      .andWhere('related_entity_type = :relatedEntityType', { relatedEntityType })
+      .andWhere('related_entity_id = :relatedEntityId', { relatedEntityId })
+      .andWhere('is_read = false')
+      .andWhere('deleted_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
+  }
+
+  async markEntitiesRead(
+    userId: string,
+    relatedEntityType: string,
+    relatedEntityIds: string[],
+  ): Promise<number> {
+    if (relatedEntityIds.length === 0) return 0;
+    const result = await this.notificationsRepository
+      .createQueryBuilder()
+      .update(NotificationEntity)
+      .set({ isRead: true, readAt: new Date() })
+      .where('user_id = :userId', { userId })
+      .andWhere('related_entity_type = :relatedEntityType', { relatedEntityType })
+      .andWhere('related_entity_id IN (:...relatedEntityIds)', { relatedEntityIds })
+      .andWhere('is_read = false')
+      .andWhere('deleted_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
+  }
+
   private parseFilters(
     filters: NotificationListFilters,
   ): ParsedNotificationListFilters {
