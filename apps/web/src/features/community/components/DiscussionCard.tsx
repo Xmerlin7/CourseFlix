@@ -5,6 +5,12 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+function roleLabel(role: DiscussionThreadListItem['author']['role']): string | null {
+  if (role === 'teacher') return 'المدرس'
+  if (role === 'assistant') return 'مساعد المدرس'
+  return null
+}
+
 interface DiscussionCardProps {
   thread: DiscussionThreadListItem
   to: string
@@ -12,6 +18,7 @@ interface DiscussionCardProps {
 
 export function DiscussionCard({ thread, to }: DiscussionCardProps) {
   const isTeacher = thread.author.role === 'teacher' || thread.author.role === 'assistant'
+  const authorRole = roleLabel(thread.author.role)
 
   return (
     <Link to={to} className="card support-ticket-card lift discussion-card">
@@ -43,7 +50,7 @@ export function DiscussionCard({ thread, to }: DiscussionCardProps) {
             </span>
           )}
           <span>{thread.author.fullName}</span>
-          {isTeacher && <span className="chip sm primary">المدرس</span>}
+          {authorRole && <span className="chip sm primary">{authorRole}</span>}
         </div>
       </div>
 
