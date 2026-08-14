@@ -37,6 +37,39 @@ describe('AnnouncementsSection', () => {
     expect(screen.getByAltText('diagram.png')).toBeInTheDocument()
   })
 
+  it('renders structured announcements with hero rank and metadata', async () => {
+    const structuredAnnouncements = [
+      {
+        id: 'ann-rank',
+        content: `اسم الطالب: محمود أحمد
+حالة الطالب: ناجح
+نوع التعليم: عام
+الشعبة: علمي علوم
+رقم الجلوس: 104523
+ترتيبك العام على الجمهورية: #200,908 من 914,945 طالب`,
+        isPinned: false,
+        attachments: [],
+        canManage: false,
+        createdAt: '2026-01-01T10:00:00Z',
+        updatedAt: '2026-01-01T10:00:00Z',
+      },
+    ]
+
+    server.use(
+      http.get(`${env.apiBaseUrl}/courses/course-1/announcements`, () =>
+        HttpResponse.json(structuredAnnouncements),
+      ),
+    )
+
+    renderWithProviders(<AnnouncementsSection courseId="course-1" canManage={false} />)
+
+    expect(await screen.findByText('محمود أحمد')).toBeInTheDocument()
+    expect(screen.getByText('#200,908')).toBeInTheDocument()
+    expect(screen.getByText('ترتيبك العام على الجمهورية')).toBeInTheDocument()
+    expect(screen.getByText('علمي علوم')).toBeInTheDocument()
+    expect(screen.getByText('104523')).toBeInTheDocument()
+  })
+
   it('renders empty state when there are no announcements', async () => {
     server.use(
       http.get(`${env.apiBaseUrl}/courses/course-1/announcements`, () =>
