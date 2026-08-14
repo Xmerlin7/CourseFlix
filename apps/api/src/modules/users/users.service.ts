@@ -21,6 +21,12 @@ export interface UserSettingsResponse {
   notificationPreferences: Record<string, boolean>;
 }
 
+export interface PublicTeacherContactResponse {
+  teacherName: string;
+  whatsappNumber: string | null;
+  whatsappHref: string | null;
+}
+
 export interface UploadedAvatarFile {
   originalname: string;
   mimetype: string;
@@ -29,6 +35,7 @@ export interface UploadedAvatarFile {
 }
 
 const MAX_AVATAR_BYTES = 5_242_880; // 5 MiB — a profile photo, not a document.
+const EGYPT_COUNTRY_CODE = '20';
 
 // Declared mimetype alone is never trusted (same discipline as
 // documents.service.ts's PDF magic-byte check) — each entry's magic
@@ -155,10 +162,31 @@ export class UsersService {
 
     if (dto.fullName !== undefined) user.fullName = dto.fullName;
     if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
+    if (dto.whatsappNumber !== undefined) {
+      if (user.role !== 'teacher') {
+        throw new BadRequestException(
+          'Only teachers can add a WhatsApp contact number.',
+        );
+      }
+      user.whatsappNumber = this.normalizeWhatsappNumber(dto.whatsappNumber);
+    }
 
     const saved = await this.usersRepository.save(user);
     const { passwordHash: _passwordHash, ...safeUser } = saved;
     return safeUser;
+  }
+
+  async getPublicTeacherContact(): Promise<PublicTeacherContactResponse> {
+    const teacher = await this.usersRepository.findOne({
+      where: { role: 'teacher', status: 'active', deletedAt: IsNull() },
+      order: { createdAt: 'ASC' },
+    });
+
+    return {
+      teacherName: teacher?.fullName ?? '',
+      whatsappNumber: teacher?.whatsappNumber ?? null,
+      whatsappHref: this.createWhatsappHref(teacher?.whatsappNumber ?? null),
+    };
   }
 
   async uploadAvatar(
@@ -221,6 +249,32 @@ export class UsersService {
         'الصورة يجب أن تكون بصيغة PNG أو JPEG أو GIF أو WEBP.',
       );
     }
+  }
+
+  private normalizeWhatsappNumber(value: string | null): string | null {
+    if (value === null) return null;
+
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    let digits = trimmed.replace(/\D/g, '');
+    if (digits.startsWith('00')) {
+      digits = digits.slice(2);
+    }
+    if (digits.startsWith('0')) {
+      digits = `${EGYPT_COUNTRY_CODE}${digits.slice(1)}`;
+    }
+
+    if (digits.length < 8 || digits.length > 15) {
+      throw new BadRequestException('رقم واتساب غير صالح.');
+    }
+
+    return digits;
+  }
+
+  private createWhatsappHref(value: string | null): string | null {
+    if (!value) return null;
+    return `https://wa.me/${value}`;
   }
 
   async getSettings(userId: string): Promise<UserSettingsResponse> {
