@@ -4,6 +4,7 @@ import { EmptyState } from "../../../shared/components/EmptyState";
 import { ErrorState } from "../../../shared/components/ErrorState";
 import { NotFoundState } from "../../../shared/components/NotFoundState";
 import { handleChatInputKeyDown } from "../../../shared/utils/chatInput";
+import { AiThinkingIndicator } from "../components/AiThinkingIndicator";
 import { CitationList } from "../components/CitationList";
 import { useTutorChat } from "../hooks/useTutorChat";
 
@@ -64,36 +65,35 @@ export function StudentAssistantPage() {
                     : "var(--surface-container-low)",
               }}
             >
-              <div
-                style={{ display: "flex", gap: 10, alignItems: "flex-start" }}
-              >
-                <span className="lead">
-                  <span className="ms">
-                    {message.role === "student" ? "person" : "smart_toy"}
-                  </span>
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-                    {message.text}
-                  </p>
-                  {message.status === "no_answer" && (
-                    <span className="chip outline" style={{ marginTop: 10 }}>
-                      بدون مصادر
+              {message.pending ? (
+                <AiThinkingIndicator />
+              ) : (
+                <div
+                  className="ai-answer-enter"
+                  style={{ display: "flex", gap: 10, alignItems: "flex-start" }}
+                >
+                  <span className="lead">
+                    <span className="ms">
+                      {message.role === "student" ? "person" : "smart_toy"}
                     </span>
-                  )}
-                  {!message.failed && message.status === "answered" && (
-                    <CitationList citations={message.citations ?? []} />
-                  )}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                      {message.text}
+                    </p>
+                    {message.status === "no_answer" && (
+                      <span className="chip outline" style={{ marginTop: 10 }}>
+                        بدون مصادر
+                      </span>
+                    )}
+                    {!message.failed && message.status === "answered" && (
+                      <CitationList citations={message.citations ?? []} />
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </article>
           ))}
-        </div>
-      )}
-
-      {isSending && (
-        <div className="card" role="status" style={{ marginTop: 14 }}>
-          <span className="meta">المساعد بيجهز الرد...</span>
         </div>
       )}
 
