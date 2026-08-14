@@ -57,11 +57,22 @@ export function StudentCommunityPage() {
 
   const courses = (enrollments ?? [])
     .filter((enrollment) => enrollment.status === 'active' || enrollment.status === 'completed')
-    // Most recently active course first, like a real conversation list —
-    // courses with no community activity yet keep their enrollment order.
+    // Ordering hierarchy:
+    // 1. Courses with unread activity (highest unread count first)
+    // 2. Courses with recent activity (most recent first)
+    // 3. Inactive courses
     .sort((a, b) => {
-      const aTime = summaryByCourseId.get(a.courseId)?.lastActivityAt
-      const bTime = summaryByCourseId.get(b.courseId)?.lastActivityAt
+      const aSum = summaryByCourseId.get(a.courseId)
+      const bSum = summaryByCourseId.get(b.courseId)
+      const aUnread = aSum?.unreadCount ?? 0
+      const bUnread = bSum?.unreadCount ?? 0
+      if (aUnread > 0 && bUnread === 0) return -1
+      if (bUnread > 0 && aUnread === 0) return 1
+      if (aUnread > 0 && bUnread > 0 && aUnread !== bUnread) {
+        return bUnread - aUnread
+      }
+      const aTime = aSum?.lastActivityAt
+      const bTime = bSum?.lastActivityAt
       if (aTime && bTime) return bTime.localeCompare(aTime)
       if (aTime) return -1
       if (bTime) return 1
@@ -144,14 +155,20 @@ function CommunityCourseRow({
   summary?: StudentCommunitySummaryItem
 }) {
   const unreadCount = summary?.unreadCount ?? 0
+  const isUnread = unreadCount > 0
+  const badgeLabel = unreadCount > 99 ? '99+' : String(unreadCount)
 
   return (
-    <Link to={buildCommunityPath(enrollment.courseId)} className="community-row">
+    <Link
+      to={buildCommunityPath(enrollment.courseId)}
+      className={`community-row${isUnread ? ' unread' : ''}`}
+    >
       <div className="community-row-avatar">
         <CourseThumb coverImageUrl={enrollment.coverImageUrl} alt={enrollment.courseTitle ?? ''} />
       </div>
 
       <div className="community-row-main">
+        {/* Line 1: course name + timestamp */}
         <div className="community-row-line1">
           <span className="community-row-title">{enrollment.courseTitle}</span>
           {summary?.lastActivityAt && (
@@ -159,16 +176,18 @@ function CommunityCourseRow({
           )}
         </div>
 
-        {enrollment.gradeLevel && (
-          <div className="community-row-line2">
-            <span className="community-row-grade">{enrollment.gradeLevel}</span>
+        {/* Line 2: grade + unread badge */}
+        <div className="community-row-line2">
+          <span className="community-row-grade">{enrollment.gradeLevel ?? ''}</span>
+          {isUnread && <span className="community-row-badge">{badgeLabel}</span>}
+        </div>
+
+        {/* Line 3: latest message preview */}
+        {summary?.preview && (
+          <div className="community-row-line3">
+            <span className="community-row-preview">{summary.preview}</span>
           </div>
         )}
-
-        <div className="community-row-line3">
-          <span className="community-row-preview">{summary?.preview ?? 'لا توجد رسائل جديدة'}</span>
-          {unreadCount > 0 && <span className="community-row-badge">{unreadCount}</span>}
-        </div>
       </div>
     </Link>
   )
