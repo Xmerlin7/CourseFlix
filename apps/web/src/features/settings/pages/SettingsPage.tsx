@@ -6,6 +6,7 @@ import { AdminAuthPosterSettingsForm } from '../components/AdminAuthPosterSettin
 import { AppearanceSettingsForm } from '../components/AppearanceSettingsForm'
 import { ExperienceSettingsForm } from '../components/ExperienceSettingsForm'
 import { NotificationSettingsForm } from '../components/NotificationSettingsForm'
+import { TeacherAuthPosterSettingsForm } from '../components/TeacherAuthPosterSettingsForm'
 
 type SettingsTab = 'appearance' | 'experience' | 'notifications' | 'student-contact' | 'auth-poster'
 
@@ -21,6 +22,7 @@ const ADMIN_TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
 
 const TEACHER_TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
   { value: 'student-contact', label: 'تواصل الطلاب', icon: 'forum' },
+  { value: 'auth-poster', label: 'واجهة الدخول', icon: 'login' },
 ]
 
 export function SettingsPage() {
@@ -58,7 +60,8 @@ export function SettingsPage() {
           {activeTab === 'experience' && <ExperienceSettingsForm />}
           {activeTab === 'notifications' && <NotificationSettingsForm />}
           {activeTab === 'student-contact' && <TeacherWhatsappContactForm />}
-          {activeTab === 'auth-poster' && <AdminAuthPosterSettingsForm />}
+          {activeTab === 'auth-poster' && user?.role === 'admin' && <AdminAuthPosterSettingsForm />}
+          {activeTab === 'auth-poster' && user?.role === 'teacher' && <TeacherAuthPosterSettingsForm />}
         </div>
       </div>
     </>
