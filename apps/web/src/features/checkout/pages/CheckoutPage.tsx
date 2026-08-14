@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
@@ -48,6 +48,7 @@ function NoticeCard({ icon, title, message, actionLabel, actionTo }: NoticeCardP
 
 export function CheckoutPage() {
   const { courseId } = useParams<{ courseId: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const {
     order,
@@ -60,7 +61,7 @@ export function CheckoutPage() {
     pay,
     payWithPaymob,
     retryCreate,
-  } = useCheckout(courseId ?? '')
+  } = useCheckout(courseId ?? '', searchParams.get('order'))
 
   if (isCreating) {
     return <LoadingState variant="text" />
