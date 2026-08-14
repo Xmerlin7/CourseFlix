@@ -1,0 +1,284 @@
+/* ── Shared Attachment Preview & Lightbox ─────────────────────────────
+   Used across Support Tickets, Announcements, and Discussion Threads. */
+
+.attachment-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+  margin-top: 6px;
+}
+
+.attachment-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.attachment-preview-list--horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- Image Preview Thumbnail ---------- */
+.attachment-image-wrapper {
+  position: relative;
+  display: inline-flex;
+  border-radius: calc(14px * var(--radius-scale));
+  overflow: hidden;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-low);
+  cursor: pointer;
+  max-width: 320px;
+  max-height: 220px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.attachment-image-wrapper:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 4px 14px rgba(103, 58, 183, 0.12);
+}
+
+.attachment-image-thumb {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.attachment-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  color: #fff;
+  border-radius: inherit;
+}
+
+.attachment-image-wrapper:hover .attachment-image-overlay {
+  opacity: 1;
+}
+
+.attachment-image-overlay .ms {
+  font-size: 26px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+/* ---------- Compact File Attachment Card ---------- */
+.attachment-file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(8px * var(--space-scale)) calc(12px * var(--space-scale));
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(12px * var(--radius-scale));
+  background: var(--surface-container-low);
+  text-decoration: none;
+  color: var(--on-surface);
+  max-width: 420px;
+  width: fit-content;
+  min-width: 220px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.attachment-file-card:hover {
+  background: var(--surface-container-high, #f2ecf9);
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(103, 58, 183, 0.08);
+}
+
+.attachment-file-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: calc(8px * var(--radius-scale));
+  background: rgba(103, 58, 183, 0.08);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.attachment-file-icon-box.pdf {
+  background: rgba(229, 57, 53, 0.1);
+  color: #d32f2f;
+}
+
+.attachment-file-icon-box.word {
+  background: rgba(33, 150, 243, 0.1);
+  color: #1976d2;
+}
+
+.attachment-file-icon-box.excel {
+  background: rgba(76, 175, 80, 0.1);
+  color: #388e3c;
+}
+
+.attachment-file-icon-box.zip {
+  background: rgba(255, 152, 0, 0.1);
+  color: #f57c00;
+}
+
+.attachment-file-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.attachment-file-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: ltr;
+  text-align: right;
+}
+
+.attachment-file-meta {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attachment-file-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-inline-start: auto;
+  padding: 4px 8px;
+  border-radius: calc(6px * var(--radius-scale));
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.attachment-file-card:hover .attachment-file-action {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.attachment-file-action .ms {
+  font-size: 14px;
+}
+
+/* ---------- Image Lightbox Modal ---------- */
+.image-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(18, 14, 28, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: lightboxFadeIn 0.2s ease-out;
+}
+
+@keyframes lightboxFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.image-lightbox-header {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #fff;
+  z-index: 10000;
+}
+
+.image-lightbox-title {
+  font-size: 14px;
+  font-weight: 600;
+  max-width: 60vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.image-lightbox-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.image-lightbox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+  text-decoration: none;
+}
+
+.image-lightbox-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.image-lightbox-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw;
+  max-height: 82vh;
+  margin-top: 30px;
+}
+
+.image-lightbox-img {
+  max-width: 90vw;
+  max-height: 82vh;
+  object-fit: contain;
+  border-radius: calc(12px * var(--radius-scale));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: lightboxZoomIn 0.2s ease-out;
+}
+
+@keyframes lightboxZoomIn {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+}
