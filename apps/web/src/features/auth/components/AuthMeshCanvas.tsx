@@ -1,33 +1,107 @@
 import { useEffect, useRef } from 'react'
 
-interface MeshPoint {
-  baseX: number
-  baseY: number
-  z: number
-  speed: number
+type Rgb = [number, number, number]
+
+interface NetworkNode {
+  x: number
+  y: number
+  vx: number
+  vy: number
   phase: number
-  size: number
+  radius: number
+  opacity: number
+  prominent: boolean
+  polarity: 1 | -1
+  pointerForce: number
 }
 
-const LINE_DISTANCE = 0.28
-const POINTER_RADIUS = 0.24
+const FALLBACK_PRIMARY: Rgb = [101, 85, 143]
+const FALLBACK_PRIMARY_CONTAINER: Rgb = [233, 221, 255]
+const FALLBACK_SURFACE: Rgb = [254, 251, 255]
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 }
 
-function createPoints(count: number): MeshPoint[] {
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function parseCssColor(value: string, fallback: Rgb): Rgb {
+  const color = value.trim()
+  const hex = color.match(/^#([\da-f]{3}|[\da-f]{6})$/i)
+  const rgb = color.match(/rgba?\(([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i)
+
+  if (hex) {
+    const normalized = hex[1].length === 3
+      ? hex[1].split('').map((part) => part + part).join('')
+      : hex[1]
+
+    return [
+      Number.parseInt(normalized.slice(0, 2), 16),
+      Number.parseInt(normalized.slice(2, 4), 16),
+      Number.parseInt(normalized.slice(4, 6), 16),
+    ]
+  }
+
+  if (rgb) {
+    return [
+      clamp(Number(rgb[1]), 0, 255),
+      clamp(Number(rgb[2]), 0, 255),
+      clamp(Number(rgb[3]), 0, 255),
+    ]
+  }
+
+  return fallback
+}
+
+function rgba(color: Rgb, alpha: number) {
+  return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${clamp(alpha, 0, 1).toFixed(3)})`
+}
+
+function getPalette(canvas: HTMLCanvasElement) {
+  const styles = window.getComputedStyle(canvas)
+
+  return {
+    primary: parseCssColor(styles.getPropertyValue('--primary'), FALLBACK_PRIMARY),
+    primaryContainer: parseCssColor(styles.getPropertyValue('--primary-container'), FALLBACK_PRIMARY_CONTAINER),
+    surface: parseCssColor(styles.getPropertyValue('--surface'), FALLBACK_SURFACE),
+  }
+}
+
+function getNodeCount(width: number) {
+  if (width < 560) return 42
+  if (width < 980) return 58
+  return 74
+}
+
+function getConnectionDistance(width: number) {
+  if (width < 560) return 108
+  if (width < 980) return 132
+  return 156
+}
+
+function getPointerRadius(width: number) {
+  if (width < 560) return 118
+  if (width < 980) return 148
+  return 176
+}
+
+function createNodes(count: number, width: number, height: number): NetworkNode[] {
   return Array.from({ length: count }, (_, index) => {
-    const lane = index / Math.max(1, count - 1)
-    const tunnelBias = Math.pow(lane, 0.74)
+    const prominent = index % 13 === 0
 
     return {
-      baseX: Math.random() * 2 - 1,
-      baseY: Math.random() * 1.35 - 0.8 + tunnelBias * 0.28,
-      z: Math.random(),
-      speed: 0.00035 + Math.random() * 0.00065,
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: (Math.random() - 0.5) * 0.14,
       phase: Math.random() * Math.PI * 2,
-      size: 1.3 + Math.random() * 2.2,
+      radius: prominent ? 2.2 + Math.random() * 0.7 : 1.2 + Math.random() * 0.8,
+      opacity: prominent ? 0.54 + Math.random() * 0.16 : 0.32 + Math.random() * 0.2,
+      prominent,
+      polarity: index % 3 === 0 ? 1 : -1,
+      pointerForce: 0,
     }
   })
 }
@@ -41,149 +115,241 @@ export function AuthMeshCanvas() {
 
     const context = canvas.getContext('2d')
     if (!context) return
+
     const meshCanvas = canvas
     const meshContext = context
-
-    let frame = 0
-    let width = 0
-    let height = 0
-    let dpr = 1
-    let points = createPoints(window.innerWidth < 760 ? 62 : 104)
     const pointer = { x: 0, y: 0, active: false }
-    const reducedMotion = prefersReducedMotion()
+    const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+
+    let width = 1
+    let height = 1
+    let dpr = 1
+    let nodes: NetworkNode[] = []
+    let palette = getPalette(meshCanvas)
+    let frame = 0
+    let lastTime = 0
+    let isVisible = true
+    let isDocumentVisible = !document.hidden
+    let reducedMotion = prefersReducedMotion()
+
+    function stop() {
+      if (!frame) return
+      cancelAnimationFrame(frame)
+      frame = 0
+    }
+
+    function shouldAnimate() {
+      return isVisible && isDocumentVisible && !reducedMotion
+    }
+
+    function schedule() {
+      if (frame || !shouldAnimate()) return
+      frame = requestAnimationFrame(draw)
+    }
 
     function resize() {
+      const bounds = meshCanvas.parentElement?.getBoundingClientRect() ?? meshCanvas.getBoundingClientRect()
+      width = Math.max(1, Math.round(bounds.width || window.innerWidth))
+      height = Math.max(1, Math.round(bounds.height || window.innerHeight))
       dpr = Math.min(window.devicePixelRatio || 1, 2)
-      width = window.innerWidth
-      height = window.innerHeight
+      palette = getPalette(meshCanvas)
+
       meshCanvas.width = Math.floor(width * dpr)
       meshCanvas.height = Math.floor(height * dpr)
       meshCanvas.style.width = `${width}px`
       meshCanvas.style.height = `${height}px`
       meshContext.setTransform(dpr, 0, 0, dpr, 0, 0)
-      points = createPoints(width < 760 ? 62 : 104)
+      nodes = createNodes(getNodeCount(width), width, height)
+      lastTime = 0
+      drawStatic()
+      schedule()
     }
 
-    function onPointerMove(event: PointerEvent) {
-      pointer.x = (event.clientX / Math.max(1, width)) * 2 - 1
-      pointer.y = (event.clientY / Math.max(1, height)) * 2 - 1
-      pointer.active = true
+    function updatePointer(event: PointerEvent) {
+      const bounds = meshCanvas.getBoundingClientRect()
+      const x = event.clientX - bounds.left
+      const y = event.clientY - bounds.top
+
+      pointer.x = x
+      pointer.y = y
+      pointer.active = x >= 0 && x <= bounds.width && y >= 0 && y <= bounds.height
     }
 
-    function onPointerLeave() {
+    function clearPointer() {
       pointer.active = false
     }
 
-    function project(point: MeshPoint, time: number) {
-      const z = reducedMotion ? point.z : (point.z + time * point.speed) % 1
-      const depth = 0.35 + z * 1.65
-      const driftX = Math.sin(time * 0.00045 + point.phase) * 0.08
-      const driftY = Math.cos(time * 0.00038 + point.phase * 1.3) * 0.06
-      const pointX = point.baseX * 0.72
-      const pointY = point.baseY * 0.68
-      const pointerDx = pointer.x - pointX
-      const pointerDy = pointer.y - pointY
-      const pointerDistance = Math.hypot(pointerDx, pointerDy)
-      const force = pointer.active
-        ? Math.max(0, 1 - pointerDistance / POINTER_RADIUS) ** 2
-        : 0
-      const pullX = force * pointerDx * (0.18 + z * 0.08)
-      const pullY = force * pointerDy * (0.13 + z * 0.06)
-      const ripple = force * Math.sin(time * 0.006 + point.phase) * 0.045
+    function updateNodes(delta: number, time: number) {
+      const pointerRadius = getPointerRadius(width)
+      const edgePadding = 18
 
-      return {
-        x: width * (0.5 + (point.baseX + driftX + pullX + ripple) * depth * 0.36),
-        y: height * (0.46 + (point.baseY + driftY + pullY - ripple * 0.6) * depth * 0.34),
-        z,
-        depth,
-        size: point.size * (0.72 + z * 1.35),
-        force,
+      for (const node of nodes) {
+        node.pointerForce = 0
+        node.x += (node.vx + Math.sin(time * 0.00034 + node.phase) * 0.018) * delta
+        node.y += (node.vy + Math.cos(time * 0.00028 + node.phase) * 0.016) * delta
+
+        if (pointer.active) {
+          const dx = pointer.x - node.x
+          const dy = pointer.y - node.y
+          const distance = Math.max(1, Math.hypot(dx, dy))
+
+          if (distance < pointerRadius) {
+            const force = Math.pow(1 - distance / pointerRadius, 2)
+            const direction = node.polarity
+            node.pointerForce = force
+            node.x += (dx / distance) * force * 0.42 * direction * delta
+            node.y += (dy / distance) * force * 0.34 * direction * delta
+          }
+        }
+
+        if (node.x < edgePadding || node.x > width - edgePadding) {
+          node.vx *= -1
+          node.x = clamp(node.x, edgePadding, width - edgePadding)
+        }
+
+        if (node.y < edgePadding || node.y > height - edgePadding) {
+          node.vy *= -1
+          node.y = clamp(node.y, edgePadding, height - edgePadding)
+        }
       }
     }
 
-    function draw(time: number) {
+    function paint(time: number) {
+      const connectionDistance = getConnectionDistance(width)
+
       meshContext.clearRect(0, 0, width, height)
-
-      const projected = points.map((point) => project(point, time))
-
       meshContext.save()
-      meshContext.globalCompositeOperation = 'lighter'
+      meshContext.globalCompositeOperation = 'source-over'
 
-      for (let i = 0; i < projected.length; i += 1) {
-        for (let j = i + 1; j < projected.length; j += 1) {
-          const a = projected[i]
-          const b = projected[j]
-          const dx = (a.x - b.x) / width
-          const dy = (a.y - b.y) / height
+      for (let i = 0; i < nodes.length; i += 1) {
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          const a = nodes[i]
+          const b = nodes[j]
+          const dx = a.x - b.x
+          const dy = a.y - b.y
           const distance = Math.hypot(dx, dy)
 
-          if (distance > LINE_DISTANCE) continue
+          if (distance > connectionDistance) continue
 
-          const pointerBoost = Math.max(a.force, b.force)
-          const alpha = Math.pow(1 - distance / LINE_DISTANCE, 1.8) * (0.5 + pointerBoost * 0.9)
-          const widthFactor = 0.35 + Math.max(a.z, b.z) * 1.35
+          const proximity = 1 - distance / connectionDistance
+          const pointerBoost = Math.max(a.pointerForce, b.pointerForce)
+          const alpha = Math.pow(proximity, 1.7) * 0.2 + pointerBoost * 0.08
 
           meshContext.beginPath()
           meshContext.moveTo(a.x, a.y)
           meshContext.lineTo(b.x, b.y)
-          meshContext.lineWidth = widthFactor + pointerBoost * 1.8
-          meshContext.strokeStyle = `rgba(103, 245, 255, ${alpha})`
-          meshContext.shadowColor = 'rgba(35, 230, 255, 0.75)'
-          meshContext.shadowBlur = 9 * alpha + pointerBoost * 18
+          meshContext.lineWidth = 0.55 + proximity * 0.38 + pointerBoost * 0.35
+          meshContext.strokeStyle = rgba(palette.primaryContainer, alpha)
           meshContext.stroke()
         }
       }
 
-      for (const point of projected) {
-        const pulse = reducedMotion ? 1 : 0.78 + Math.sin(time * 0.003 + point.z * 8) * 0.22
-        const radius = point.size * pulse * (1 + point.force * 1.15)
-
+      if (pointer.active && !reducedMotion) {
+        const radius = getPointerRadius(width) * 1.18
+        const gradient = meshContext.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, radius)
+        gradient.addColorStop(0, rgba(palette.primaryContainer, 0.12))
+        gradient.addColorStop(0.42, rgba(palette.primary, 0.055))
+        gradient.addColorStop(1, rgba(palette.primary, 0))
+        meshContext.fillStyle = gradient
         meshContext.beginPath()
-        meshContext.arc(point.x, point.y, radius * (2.6 + point.force * 2.4), 0, Math.PI * 2)
-        meshContext.fillStyle = `rgba(73, 232, 255, ${0.08 + point.z * 0.12 + point.force * 0.28})`
-        meshContext.fill()
-
-        meshContext.beginPath()
-        meshContext.arc(point.x, point.y, radius, 0, Math.PI * 2)
-        meshContext.fillStyle = `rgba(236, 254, 255, ${0.72 + point.z * 0.22})`
-        meshContext.shadowColor = 'rgba(86, 242, 255, 0.95)'
-        meshContext.shadowBlur = 18 + point.force * 30
+        meshContext.arc(pointer.x, pointer.y, radius, 0, Math.PI * 2)
         meshContext.fill()
       }
 
-      if (pointer.active) {
-        const pointerX = width * (0.5 + pointer.x * 0.5)
-        const pointerY = height * (0.5 + pointer.y * 0.5)
-        const gradient = meshContext.createRadialGradient(pointerX, pointerY, 0, pointerX, pointerY, 180)
-        gradient.addColorStop(0, 'rgba(124, 255, 255, 0.22)')
-        gradient.addColorStop(0.35, 'rgba(124, 255, 255, 0.08)')
-        gradient.addColorStop(1, 'rgba(124, 255, 255, 0)')
-        meshContext.fillStyle = gradient
+      for (const node of nodes) {
+        const pulse = reducedMotion ? 1 : 0.92 + Math.sin(time * 0.0014 + node.phase) * 0.08
+        const radius = node.radius * pulse + node.pointerForce * 1.2
+        const nodeAlpha = node.opacity + node.pointerForce * 0.22
+
+        if (node.prominent || node.pointerForce > 0.08) {
+          meshContext.beginPath()
+          meshContext.arc(node.x, node.y, radius * 4.6, 0, Math.PI * 2)
+          meshContext.fillStyle = rgba(palette.primary, 0.045 + node.pointerForce * 0.08)
+          meshContext.fill()
+        }
+
         meshContext.beginPath()
-        meshContext.arc(pointerX, pointerY, 180, 0, Math.PI * 2)
+        meshContext.arc(node.x, node.y, radius, 0, Math.PI * 2)
+        meshContext.fillStyle = rgba(node.prominent ? palette.surface : palette.primaryContainer, nodeAlpha)
         meshContext.fill()
       }
 
       meshContext.restore()
-
-      frame = reducedMotion ? 0 : requestAnimationFrame(draw)
     }
+
+    function draw(time: number) {
+      frame = 0
+      const delta = lastTime ? clamp((time - lastTime) / 16.67, 0.4, 2.4) : 1
+      lastTime = time
+      updateNodes(delta, time)
+      paint(time)
+      schedule()
+    }
+
+    function drawStatic() {
+      for (const node of nodes) {
+        node.pointerForce = 0
+      }
+      paint(0)
+    }
+
+    function handleMotionChange(event: MediaQueryListEvent) {
+      reducedMotion = event.matches
+      lastTime = 0
+      if (reducedMotion) {
+        stop()
+        drawStatic()
+      } else {
+        schedule()
+      }
+    }
+
+    function handleVisibilityChange() {
+      isDocumentVisible = !document.hidden
+      if (isDocumentVisible) {
+        lastTime = 0
+        schedule()
+      } else {
+        stop()
+      }
+    }
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(resize)
+      : null
+    const intersectionObserver = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(([entry]) => {
+        isVisible = entry.isIntersecting
+        if (isVisible) {
+          lastTime = 0
+          schedule()
+        } else {
+          stop()
+        }
+      })
+      : null
 
     resize()
+    resizeObserver?.observe(meshCanvas.parentElement ?? meshCanvas)
+    intersectionObserver?.observe(meshCanvas)
     window.addEventListener('resize', resize)
-    window.addEventListener('pointermove', onPointerMove)
-    window.addEventListener('pointerleave', onPointerLeave)
-    if (reducedMotion) {
-      draw(0)
-    } else {
-      frame = requestAnimationFrame(draw)
-    }
+    window.addEventListener('pointermove', updatePointer)
+    window.addEventListener('pointerleave', clearPointer)
+    window.addEventListener('blur', clearPointer)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    motionQuery?.addEventListener('change', handleMotionChange)
+    schedule()
 
     return () => {
-      if (frame) cancelAnimationFrame(frame)
+      stop()
+      resizeObserver?.disconnect()
+      intersectionObserver?.disconnect()
       window.removeEventListener('resize', resize)
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerleave', onPointerLeave)
+      window.removeEventListener('pointermove', updatePointer)
+      window.removeEventListener('pointerleave', clearPointer)
+      window.removeEventListener('blur', clearPointer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      motionQuery?.removeEventListener('change', handleMotionChange)
     }
   }, [])
 
