@@ -3884,20 +3884,20 @@ a.list-item.unread:hover,
   color: var(--on-surface);
 }
 
-/* 3. READ state: clean white card background (#FFFFFF), distinct from surface-container-high panel */
+/* 3. READ state: clean card background (surface, dark-aware), distinct from surface-container-high panel */
 .list-item.read,
 .notif-item.read {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent);
 }
 
-/* 4. READ + HOVER state: soft lavender-tinted background (#F4EEF8), subtle purple border & soft shadow */
+/* 4. READ + HOVER state: soft lavender-tinted background, subtle purple border & soft shadow */
 .list-item.read:hover,
 .notif-item.read:hover,
 a.list-item.read:hover,
 .list-item.read.hoverable:hover,
 .notif-item.read.hoverable:hover {
-  background: color-mix(in srgb, var(--primary) 10%, #ffffff);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
   border-color: color-mix(in srgb, var(--primary) 35%, transparent);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 12%, transparent);
 }
