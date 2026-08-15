@@ -35,7 +35,6 @@ POSTGRES_PORT="${POSTGRES_PORT:-}"
 REDIS_PORT="${REDIS_PORT:-}"
 CHROMA_PORT="${CHROMA_PORT:-}"
 NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-}"
-NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-}"
 
 # ─── output helpers ──────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -104,9 +103,6 @@ load_local_env_settings() {
 
   value="$(env_value CHROMA_PORT)"
   CHROMA_PORT="${CHROMA_PORT:-${value:-8000}}"
-
-  value="$(env_value NGROK_AUTHTOKEN)"
-  NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-$value}"
 
   value="$(env_value NGROK_AUTHTOKEN)"
   NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-$value}"
@@ -263,16 +259,10 @@ start_ngrok() {
     return 0
   fi
 
-  if ! configure_ngrok; then
-    warn "ngrok authentication unavailable — continuing without a tunnel"
-    return 0
-  fi
-
   if curl -sf --max-time 3 http://127.0.0.1:4040/api/tunnels >/dev/null 2>&1; then
     local existing
 
     existing="$(ngrok_public_url)"
-
 
     if [ -n "$existing" ]; then
       ok "ngrok already running — $existing -> http://localhost:$API_PORT"
@@ -287,10 +277,6 @@ start_ngrok() {
   echo "$ngrok_pid" > "$NGROK_PID_FILE"
 
   printf '  waiting for ngrok tunnel'
-
-  local waited=0
-  local url=""
-
 
   local waited=0
   local url=""

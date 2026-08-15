@@ -56,6 +56,7 @@ describe('DiscussionsService', () => {
   let filesRepository: Record<string, jest.Mock>;
   let coursesRepository: Record<string, jest.Mock>;
   let usersRepository: Record<string, jest.Mock>;
+  let notificationsRepository: Record<string, jest.Mock>;
   let enrollmentsService: { assertStudentEnrolled: jest.Mock };
   let attachmentsService: { saveAttachment: jest.Mock };
   let notifications: { notify: jest.Mock };
