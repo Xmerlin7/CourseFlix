@@ -19,9 +19,15 @@ export function LoginPage() {
 
   // The Google callback now pauses at a one-time code (no session yet): it
   // redirects here with `oauth=otp&email=<account>` while the code is
-  // mailed. Show the shared code step; redeeming it signs the user in.
+  // mailed. Show the shared code step; redeeming it signs the user in. In
+  // dev mode the callback also carries `devCode` so the code shows inline
+  // (mail isn't configured locally) — production never includes it.
   const oauthOtpEmail = useMemo(
     () => (oauth === 'otp' ? (searchParams.get('email') ?? '') : ''),
+    [oauth, searchParams],
+  )
+  const oauthOtpDevCode = useMemo(
+    () => (oauth === 'otp' ? (searchParams.get('devCode') ?? undefined) : undefined),
     [oauth, searchParams],
   )
 
@@ -43,6 +49,7 @@ export function LoginPage() {
         <VerifyCodeForm
           email={oauthOtpEmail}
           purpose="google_oauth"
+          devCode={oauthOtpDevCode}
           onResend={(email) => requestOtp({ email, purpose: 'google_oauth' })}
           onVerified={(verifiedUser) =>
             navigate(getRoleHomePath(verifiedUser.role), { replace: true })
