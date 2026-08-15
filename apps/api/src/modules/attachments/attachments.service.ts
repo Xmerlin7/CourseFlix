@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  NotFoundException,
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,7 +18,18 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/webp',
   'image/gif',
+  'image/svg+xml',
   'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/zip',
+  'application/x-zip-compressed',
+  'text/plain',
+  'text/csv',
 ]);
 
 export interface UploadAttachmentInput {
@@ -28,13 +40,16 @@ export interface UploadAttachmentInput {
   uploadedById: string;
 }
 
+export interface AttachmentDownloadFile {
+  buffer: Buffer;
+  mimeType: string;
+  fileName: string;
+}
+
 /**
- * Shared "attach a screenshot/file" primitive for Community questions and
- * Support tickets — reuses the `files` table and `LocalStorageAdapter`
- * that DocumentsModule already owns instead of a second storage system.
- * Deliberately image/PDF-only and much smaller than the 20 MiB teacher
- * course-material cap: these are chat-style attachments, not lecture
- * materials.
+ * Shared "attach a screenshot/file" primitive for Community questions,
+ * Announcements, and Support tickets — reuses the `files` table and
+ * `LocalStorageAdapter` that DocumentsModule already owns.
  */
 @Injectable()
 export class AttachmentsService {
@@ -48,7 +63,7 @@ export class AttachmentsService {
   async saveAttachment(input: UploadAttachmentInput): Promise<FileEntity> {
     if (!ALLOWED_MIME_TYPES.has(input.mimeType)) {
       throw new BadRequestException(
-        'نوع الملف غير مدعوم. الأنواع المسموح بها: صور أو PDF.',
+        'نوع الملف غير مدعوم. يرجى إرفاق صور، PDF، أو مستندات صالحة.',
       );
     }
     if (input.sizeBytes === 0) {
@@ -74,5 +89,21 @@ export class AttachmentsService {
         uploadedBy: input.uploadedById,
       }),
     );
+  }
+
+  async getFileForDownload(fileId: string): Promise<AttachmentDownloadFile> {
+    const file = await this.filesRepository.findOne({
+      where: { id: fileId },
+    });
+    if (!file) {
+      throw new NotFoundException('المرفق غير موجود.');
+    }
+
+    const buffer = await this.storageAdapter.read(file.storagePath);
+    return {
+      buffer,
+      mimeType: file.mimeType,
+      fileName: file.fileName,
+    };
   }
 }

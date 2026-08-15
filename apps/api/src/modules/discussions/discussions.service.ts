@@ -18,6 +18,7 @@ import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UserEntity } from '../users/entities/user.entity';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { FileEntity } from '../documents/entities/file.entity';
+import { NotificationEntity } from '../notifications/entities/notification.entity';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { DiscussionHelpfulVoteEntity } from './entities/discussion-helpful-vote.entity';
 import { DiscussionReplyEntity } from './entities/discussion-reply.entity';
@@ -63,6 +64,7 @@ export interface DiscussionThreadListItemResponse {
   isPinned: boolean;
   isAnswered: boolean;
   createdAt: string;
+  hasUnread: boolean;
 }
 
 export interface DiscussionReplyResponse {
@@ -121,6 +123,8 @@ export class DiscussionsService {
     private readonly coursesRepository: Repository<CourseEntity>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(NotificationEntity)
+    private readonly notificationsRepository: Repository<NotificationEntity>,
     private readonly enrollmentsService: EnrollmentsService,
     private readonly attachmentsService: AttachmentsService,
     @Inject(NOTIFICATION_PRODUCER_PORT)
@@ -163,13 +167,33 @@ export class DiscussionsService {
       .take(100);
 
     const threads = await qb.getMany();
-    const authors = await this.loadAuthors(threads.map((t) => t.authorId));
-    const helpfulThreadIds = await this.loadHelpfulThreadIds(
-      user.id,
-      threads.map((t) => t.id),
+    const threadIds = threads.map((t) => t.id);
+    const [authors, helpfulThreadIds, unreadNotifs] = await Promise.all([
+      this.loadAuthors(threads.map((t) => t.authorId)),
+      this.loadHelpfulThreadIds(user.id, threadIds),
+      threadIds.length
+        ? this.notificationsRepository.find({
+            where: {
+              userId: user.id,
+              isRead: false,
+              relatedEntityType: 'discussion_thread',
+              relatedEntityId: In(threadIds),
+              deletedAt: IsNull(),
+            },
+            select: { relatedEntityId: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const unreadThreadIds = new Set(
+      unreadNotifs
+        .map((n) => n.relatedEntityId)
+        .filter((id): id is string => !!id),
     );
 
-    return threads.map((t) => this.toListItem(t, authors, helpfulThreadIds));
+    return threads.map((t) =>
+      this.toListItem(t, authors, helpfulThreadIds, unreadThreadIds),
+    );
   }
 
   async getThread(
@@ -199,6 +223,10 @@ export class DiscussionsService {
 
     const isTeacherOfCourse = this.isEffectiveTeacher(user, course);
 
+    this.notifications
+      .markEntityRead?.(user.id, 'discussion_thread', threadId)
+      ?.catch(() => {});
+
     return {
       ...this.toListItem(thread, authors, helpfulThreadIds),
       body: thread.body,
@@ -211,12 +239,33 @@ export class DiscussionsService {
         id: r.id,
         author: this.resolveAuthor(r.authorId, r.authorRole, authors),
         body: r.body,
-        isAccepted: thread.acceptedReplyId === r.id,
+        isAccepted: Boolean(r.isAccepted),
         createdAt: r.createdAt.toISOString(),
       })),
       canAccept: thread.authorId === user.id,
       canPin: isTeacherOfCourse,
     };
+  }
+
+  async markCourseDiscussionsRead(
+    courseId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ updated: number }> {
+    await this.assertCanAccessCourse(user, courseId);
+    const threads = await this.threadsRepository.find({
+      where: { courseId, deletedAt: IsNull() },
+      select: { id: true },
+    });
+    const threadIds = threads.map((t) => t.id);
+    if (threadIds.length === 0) return { updated: 0 };
+
+    const updated =
+      (await this.notifications.markEntitiesRead?.(
+        user.id,
+        'discussion_thread',
+        threadIds,
+      )) ?? 0;
+    return { updated };
   }
 
   async createThread(
@@ -229,11 +278,14 @@ export class DiscussionsService {
     }
     const course = await this.assertCanAccessCourse(user, courseId);
 
+    const title = (input.title || '').trim();
+    if (!title) throw new BadRequestException('عنوان السؤال مطلوب.');
+    if (title.length > MAX_TITLE_LENGTH) {
+      throw new BadRequestException('عنوان السؤال طويل جدًا.');
+    }
+
     const body = (input.body || '').trim();
     if (!body) throw new BadRequestException('تفاصيل السؤال مطلوبة.');
-    const rawTitle = (input.title || '').trim();
-    const title = (rawTitle || body).slice(0, MAX_TITLE_LENGTH);
-
     if (body.length > MAX_BODY_LENGTH) {
       throw new BadRequestException('تفاصيل السؤال طويلة جدًا.');
     }
@@ -268,18 +320,30 @@ export class DiscussionsService {
       );
     }
 
-    this.notifications
-      .notify({
-        userId: course.teacherId,
-        type: 'discussion_reply',
-        title: 'سؤال جديد في المجتمع',
-        message: `${user.fullName} سأل: ${title}`,
-        relatedEntityType: 'discussion_thread',
-        relatedEntityId: thread.id,
-      })
-      .catch(() => {
-        // Best-effort — a missed notification never blocks the question itself.
-      });
+    const assistants = await this.usersRepository.find({
+      where: {
+        role: 'assistant',
+        managedByTeacherId: course.teacherId,
+        deletedAt: IsNull(),
+      },
+      select: { id: true },
+    });
+    const staffIds = Array.from(
+      new Set([course.teacherId, ...assistants.map((a) => a.id)]),
+    ).filter((id) => id !== user.id);
+
+    for (const staffId of staffIds) {
+      this.notifications
+        .notify({
+          userId: staffId,
+          type: 'discussion_reply',
+          title: 'سؤال جديد في المجتمع',
+          message: `${user.fullName} سأل: ${title}`,
+          relatedEntityType: 'discussion_thread',
+          relatedEntityId: thread.id,
+        })
+        .catch(() => {});
+    }
 
     return this.getThread(thread.id, user);
   }
@@ -298,18 +362,50 @@ export class DiscussionsService {
         authorId: user.id,
         authorRole: user.role,
         body: dto.body.trim(),
+        isAccepted: false,
       }),
     );
 
     await this.threadsRepository.increment({ id: threadId }, 'replyCount', 1);
 
-    if (thread.authorId !== user.id) {
+    const course = await this.coursesRepository.findOne({
+      where: { id: thread.courseId },
+      select: { id: true, teacherId: true },
+    });
+
+    const recipientIds = new Set<string>();
+    if (thread.authorId) recipientIds.add(thread.authorId);
+    if (course?.teacherId) {
+      recipientIds.add(course.teacherId);
+      const assistants = await this.usersRepository.find({
+        where: {
+          role: 'assistant',
+          managedByTeacherId: course.teacherId,
+          deletedAt: IsNull(),
+        },
+        select: { id: true },
+      });
+      assistants.forEach((a) => recipientIds.add(a.id));
+    }
+
+    const previousReplies = await this.repliesRepository.find({
+      where: { threadId, deletedAt: IsNull() },
+      select: { authorId: true },
+    });
+    previousReplies.forEach((r) => recipientIds.add(r.authorId));
+
+    recipientIds.delete(user.id);
+
+    for (const recipientId of recipientIds) {
       this.notifications
         .notify({
-          userId: thread.authorId,
+          userId: recipientId,
           type: 'discussion_reply',
-          title: 'رد جديد على سؤالك',
-          message: `${user.fullName} رد على سؤالك: ${thread.title}`,
+          title:
+            recipientId === thread.authorId
+              ? 'رد جديد على سؤالك'
+              : 'نشاط جديد في المناقشة',
+          message: `${user.fullName} رد على: ${thread.title}`,
           relatedEntityType: 'discussion_thread',
           relatedEntityId: threadId,
         })
@@ -347,6 +443,9 @@ export class DiscussionsService {
       throw new NotFoundException('Reply not found.');
     }
 
+    reply.isAccepted = true;
+    await this.repliesRepository.save(reply);
+
     thread.acceptedReplyId = reply.id;
     await this.threadsRepository.save(thread);
 
@@ -369,6 +468,7 @@ export class DiscussionsService {
   async unacceptAnswer(
     threadId: string,
     user: AuthenticatedUser,
+    replyId?: string,
   ): Promise<DiscussionThreadDetailResponse> {
     const thread = await this.loadThreadOrThrow(threadId);
     await this.assertCanAccessCourse(user, thread.courseId);
@@ -379,7 +479,25 @@ export class DiscussionsService {
       );
     }
 
-    thread.acceptedReplyId = null;
+    if (replyId) {
+      const reply = await this.repliesRepository.findOne({
+        where: { id: replyId, threadId, deletedAt: IsNull() },
+      });
+      if (reply) {
+        reply.isAccepted = false;
+        await this.repliesRepository.save(reply);
+      }
+    } else {
+      await this.repliesRepository.update(
+        { threadId, isAccepted: true },
+        { isAccepted: false },
+      );
+    }
+
+    const remainingAccepted = await this.repliesRepository.findOne({
+      where: { threadId, isAccepted: true, deletedAt: IsNull() },
+    });
+    thread.acceptedReplyId = remainingAccepted ? remainingAccepted.id : null;
     await this.threadsRepository.save(thread);
 
     return this.getThread(threadId, user);
@@ -594,6 +712,7 @@ export class DiscussionsService {
     thread: DiscussionThreadEntity,
     authors: Map<string, UserEntity>,
     helpfulThreadIds: Set<string>,
+    unreadThreadIds?: Set<string>,
   ): DiscussionThreadListItemResponse {
     return {
       id: thread.id,
@@ -608,6 +727,7 @@ export class DiscussionsService {
       isPinned: thread.isPinned,
       isAnswered: thread.acceptedReplyId !== null,
       createdAt: thread.createdAt.toISOString(),
+      hasUnread: unreadThreadIds?.has(thread.id) ?? false,
     };
   }
 }

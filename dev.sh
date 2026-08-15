@@ -35,6 +35,7 @@ POSTGRES_PORT="${POSTGRES_PORT:-}"
 REDIS_PORT="${REDIS_PORT:-}"
 CHROMA_PORT="${CHROMA_PORT:-}"
 NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-}"
+NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-}"
 
 # ─── output helpers ──────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -103,6 +104,9 @@ load_local_env_settings() {
 
   value="$(env_value CHROMA_PORT)"
   CHROMA_PORT="${CHROMA_PORT:-${value:-8000}}"
+
+  value="$(env_value NGROK_AUTHTOKEN)"
+  NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-$value}"
 
   value="$(env_value NGROK_AUTHTOKEN)"
   NGROK_AUTHTOKEN="${NGROK_AUTHTOKEN:-$value}"
@@ -259,10 +263,16 @@ start_ngrok() {
     return 0
   fi
 
+  if ! configure_ngrok; then
+    warn "ngrok authentication unavailable — continuing without a tunnel"
+    return 0
+  fi
+
   if curl -sf --max-time 3 http://127.0.0.1:4040/api/tunnels >/dev/null 2>&1; then
     local existing
 
     existing="$(ngrok_public_url)"
+
 
     if [ -n "$existing" ]; then
       ok "ngrok already running — $existing -> http://localhost:$API_PORT"
@@ -277,6 +287,10 @@ start_ngrok() {
   echo "$ngrok_pid" > "$NGROK_PID_FILE"
 
   printf '  waiting for ngrok tunnel'
+
+  local waited=0
+  local url=""
+
 
   local waited=0
   local url=""
@@ -301,10 +315,12 @@ start_ngrok() {
       return 0
     fi
 
+
     printf '.'
     sleep 1
     waited=$((waited + 1))
   done
+
 
   printf '\n'
   ok "ngrok tunnel ready — $url -> http://localhost:$API_PORT"
@@ -314,7 +330,9 @@ stop_ngrok() {
   if [ -f "$NGROK_PID_FILE" ]; then
     local pid
 
+
     pid="$(cat "$NGROK_PID_FILE" 2>/dev/null || true)"
+
 
     if [ -n "$pid" ] && ps -p "$pid" >/dev/null 2>&1; then
       stop_pid_group "$pid"
@@ -324,6 +342,7 @@ stop_ngrok() {
     fi
   fi
 
+
   ok "ngrok was not running"
 }
 
@@ -331,11 +350,13 @@ stop_ngrok() {
 start_infra() {
   step "Starting infrastructure (Postgres, Redis, Chroma)"
 
+
   compose up -d >/dev/null 2>&1
   ok "containers up"
 
   wait_for_postgres_container
   ensure_postgres_port_published
+
 
   ok "Postgres healthy on port $POSTGRES_PORT"
 }
@@ -343,9 +364,15 @@ start_infra() {
 wait_for_postgres_container() {
   printf '  waiting for Postgres to accept connections'
 
+
   local waited=0
 
   until [ "$(dk inspect --format '{{.State.Health.Status}}' courseflix-postgres 2>/dev/null)" = "healthy" ]; do
+    [ "$waited" -ge 60 ] && {
+      printf '\n'
+      die "Postgres did not become healthy within 60s. Try: ./dev.sh logs"
+    }
+
     [ "$waited" -ge 60 ] && {
       printf '\n'
       die "Postgres did not become healthy within 60s. Try: ./dev.sh logs"
@@ -356,16 +383,20 @@ wait_for_postgres_container() {
     waited=$((waited + 1))
   done
 
+
   printf '\n'
 }
 
 postgres_published_port() {
   dk port courseflix-postgres 5432/tcp 2>/dev/null \
     | awk -F: 'NR == 1 { print $NF }'
+  dk port courseflix-postgres 5432/tcp 2>/dev/null \
+    | awk -F: 'NR == 1 { print $NF }'
 }
 
 ensure_postgres_port_published() {
   local published
+
 
   published="$(postgres_published_port)"
 
@@ -374,6 +405,7 @@ ensure_postgres_port_published() {
   fi
 
   warn "Postgres is not published on host port $POSTGRES_PORT — recreating its container."
+
 
   compose up -d --force-recreate postgres > "$LOG_DIR/postgres-recreate.log" 2>&1 \
     || {

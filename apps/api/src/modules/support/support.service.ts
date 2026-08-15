@@ -15,6 +15,7 @@ import { CourseEntity } from '../courses/entities/course.entity';
 import { FileEntity } from '../documents/entities/file.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { UserEntity } from '../users/entities/user.entity';
+import { NotificationEntity } from '../notifications/entities/notification.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { SupportMessageEntity } from './entities/support-message.entity';
@@ -64,6 +65,7 @@ export interface SupportTicketListItemResponse {
   studentName: string;
   createdAt: string;
   updatedAt: string;
+  hasUnread: boolean;
 }
 
 export interface SupportTicketDetailResponse extends SupportTicketListItemResponse {
@@ -107,6 +109,8 @@ export class SupportService {
     private readonly coursesRepository: Repository<CourseEntity>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(NotificationEntity)
+    private readonly notificationsRepository: Repository<NotificationEntity>,
     private readonly enrollmentsService: EnrollmentsService,
     private readonly attachmentsService: AttachmentsService,
     @Inject(NOTIFICATION_PRODUCER_PORT)
@@ -174,7 +178,7 @@ export class SupportService {
       `${user.fullName} فتح طلب دعم فني (${input.category}).`,
     );
 
-    return this.toDetailResponse(ticket);
+    return this.toDetailResponse(ticket, user.id);
   }
 
   async listMyTickets(
@@ -190,11 +194,12 @@ export class SupportService {
       order: { createdAt: 'DESC' },
       take: 100,
     });
-    return this.toListResponses(tickets);
+    return this.toListResponses(tickets, user.id);
   }
 
   async listStaffTickets(
     filters: StaffTicketListFilters,
+    user?: AuthenticatedUser,
   ): Promise<SupportTicketListItemResponse[]> {
     const qb = this.ticketsRepository
       .createQueryBuilder('t')
@@ -214,7 +219,7 @@ export class SupportService {
 
     qb.orderBy('t.createdAt', 'DESC').take(200);
     const tickets = await qb.getMany();
-    return this.toListResponses(tickets);
+    return this.toListResponses(tickets, user?.id);
   }
 
   async getTicket(
@@ -223,6 +228,11 @@ export class SupportService {
   ): Promise<SupportTicketDetailResponse> {
     const ticket = await this.loadTicketOrThrow(ticketId);
     this.assertCanAccessTicket(ticket, user);
+
+    this.notifications
+      .markEntityRead?.(user.id, 'support_ticket', ticketId)
+      ?.catch(() => {});
+
     return this.toDetailResponse(ticket);
   }
 
@@ -390,9 +400,11 @@ export class SupportService {
 
   private async toListResponses(
     tickets: SupportTicketEntity[],
+    userId?: string,
   ): Promise<SupportTicketListItemResponse[]> {
     if (tickets.length === 0) return [];
 
+    const ticketIds = tickets.map((t) => t.id);
     const studentIds = Array.from(new Set(tickets.map((t) => t.studentId)));
     const courseIds = Array.from(
       new Set(
@@ -400,7 +412,7 @@ export class SupportService {
       ),
     );
 
-    const [students, courses] = await Promise.all([
+    const [students, courses, unreadNotifs] = await Promise.all([
       this.usersRepository.find({
         where: { id: In(studentIds) },
         select: { id: true, fullName: true },
@@ -411,10 +423,27 @@ export class SupportService {
             select: { id: true, title: true },
           })
         : Promise.resolve([]),
+      userId && ticketIds.length
+        ? this.notificationsRepository.find({
+            where: {
+              userId,
+              isRead: false,
+              relatedEntityType: 'support_ticket',
+              relatedEntityId: In(ticketIds),
+              deletedAt: IsNull(),
+            },
+            select: { relatedEntityId: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const studentsById = new Map(students.map((s) => [s.id, s]));
     const coursesById = new Map(courses.map((c) => [c.id, c]));
+    const unreadTicketIds = new Set(
+      unreadNotifs
+        .map((n) => n.relatedEntityId)
+        .filter((id): id is string => !!id),
+    );
 
     return tickets.map((t) => ({
       id: t.id,
@@ -427,13 +456,15 @@ export class SupportService {
       studentName: studentsById.get(t.studentId)?.fullName ?? 'مستخدم محذوف',
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
+      hasUnread: unreadTicketIds.has(t.id),
     }));
   }
 
   private async toDetailResponse(
     ticket: SupportTicketEntity,
+    userId?: string,
   ): Promise<SupportTicketDetailResponse> {
-    const [listItem] = await this.toListResponses([ticket]);
+    const [listItem] = await this.toListResponses([ticket], userId);
 
     const [messages, attachmentRows] = await Promise.all([
       this.messagesRepository.find({

@@ -16,6 +16,7 @@ export interface SupportTicketListItem {
   studentName: string
   createdAt: string
   updatedAt: string
+  hasUnread?: boolean
 }
 
 export interface SupportMessage {
@@ -25,6 +26,7 @@ export interface SupportMessage {
   isStaffReply: boolean
   body: string
   createdAt: string
+  isUnread?: boolean
 }
 
 export interface SupportTicketAttachment {

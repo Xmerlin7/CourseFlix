@@ -1,6 +1,7 @@
 import { httpClient } from '../../../shared/api/http-client'
 import type {
   Announcement,
+  AnnouncementDetail,
   DiscussionReply,
   DiscussionStatusFilter,
   DiscussionThreadDetail,
@@ -45,6 +46,10 @@ export function getDiscussion(threadId: string): Promise<DiscussionThreadDetail>
   return httpClient.get<DiscussionThreadDetail>(`/discussions/${threadId}`)
 }
 
+export function markCourseCommunityRead(courseId: string): Promise<{ updated: number }> {
+  return httpClient.patch<{ updated: number }>(`/courses/${courseId}/discussions/read`)
+}
+
 export function createDiscussion(
   courseId: string,
   input: CreateThreadInput,
@@ -73,8 +78,14 @@ export function acceptAnswer(
   return httpClient.post<DiscussionThreadDetail>(`/discussions/${threadId}/accept/${replyId}`)
 }
 
-export function unacceptAnswer(threadId: string): Promise<DiscussionThreadDetail> {
-  return httpClient.delete<DiscussionThreadDetail>(`/discussions/${threadId}/accept`)
+export function unacceptAnswer(
+  threadId: string,
+  replyId?: string,
+): Promise<DiscussionThreadDetail> {
+  const url = replyId
+    ? `/discussions/${threadId}/accept/${replyId}`
+    : `/discussions/${threadId}/accept`
+  return httpClient.delete<DiscussionThreadDetail>(url)
 }
 
 export function toggleHelpful(
@@ -91,6 +102,12 @@ export function toggleThreadPin(threadId: string): Promise<DiscussionThreadDetai
 
 export function getAnnouncements(courseId: string): Promise<Announcement[]> {
   return httpClient.get<Announcement[]>(`/courses/${courseId}/announcements`)
+}
+
+/** Fetches a single announcement by id (resolves its course) so a
+ *  notification deep-link can land on the exact post. */
+export function getAnnouncement(postId: string): Promise<AnnouncementDetail> {
+  return httpClient.get<AnnouncementDetail>(`/announcements/${postId}`)
 }
 
 export function createAnnouncement(

@@ -10,15 +10,11 @@ import type { CourseDetail } from '../../courses/types/course.types'
 export function AdminAuthPosterSettingsForm() {
   const poster = useAdminAuthPoster()
   const courses = useAdminCourses({ status: 'published' })
-  const [selectedCourseId, setSelectedCourseId] = useState('')
+  const [selectedCourseOverride, setSelectedCourseOverride] = useState<string>()
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<CourseDetail | null>(null)
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
-
-  useEffect(() => {
-    if (poster.data) {
-      setSelectedCourseId(poster.data.featuredCourseId ?? '')
-    }
-  }, [poster.data])
+  const selectedCourseId =
+    selectedCourseOverride ?? poster.data?.featuredCourseId ?? ''
 
   const selectedCourse = useMemo(
     () => courses.data?.find((course) => course.id === selectedCourseId) ?? null,
@@ -61,6 +57,7 @@ export function AdminAuthPosterSettingsForm() {
     ? {
         featuredCourseId: selectedCourseDetail.id,
         isFallback: false,
+        customization: poster.data?.customization,
         course: {
           id: selectedCourseDetail.id,
           title: selectedCourseDetail.title,
@@ -74,16 +71,17 @@ export function AdminAuthPosterSettingsForm() {
       ? {
           featuredCourseId: selectedCourse.id,
           isFallback: false,
-        course: {
-          id: selectedCourse.id,
-          title: selectedCourse.title,
-          description: null,
-          coverImageUrl: null,
-          gradeLevel: selectedCourse.gradeLevel,
-          teacherName: selectedCourse.teacherName,
-        },
-      }
-    : poster.data
+          customization: poster.data?.customization,
+          course: {
+            id: selectedCourse.id,
+            title: selectedCourse.title,
+            description: null,
+            coverImageUrl: null,
+            gradeLevel: selectedCourse.gradeLevel,
+            teacherName: selectedCourse.teacherName,
+          },
+        }
+      : poster.data
 
   async function handleSave() {
     try {
@@ -108,7 +106,7 @@ export function AdminAuthPosterSettingsForm() {
             id="admin-auth-poster-course"
             value={selectedCourseId}
             disabled={poster.isLoading || courses.isLoading || poster.isSaving}
-            onChange={(event) => setSelectedCourseId(event.target.value)}
+            onChange={(event) => setSelectedCourseOverride(event.target.value)}
           >
             <option value="">استخدام التصميم الافتراضي</option>
             {courses.data?.map((course) => (
@@ -145,7 +143,7 @@ export function AdminAuthPosterSettingsForm() {
             type="button"
             className="btn text"
             disabled={poster.isSaving}
-            onClick={() => setSelectedCourseId('')}
+            onClick={() => setSelectedCourseOverride('')}
           >
             <span className="ms">restart_alt</span>
             الرجوع للافتراضي

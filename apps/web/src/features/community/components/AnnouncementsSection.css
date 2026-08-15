@@ -1,0 +1,202 @@
+/* ── YouTube Community Style Announcement Posts ────────────────────────
+   CourseFlix Design System: RTL-first, YouTube feed layout, modern typography. */
+
+.announcements-feed {
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.announcements-feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 2px;
+}
+
+.announcements-feed-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.announcements-feed-header h2 .ms {
+  color: var(--primary);
+  font-size: 22px;
+}
+
+/* ---------- Compose Post Card ---------- */
+.announcement-compose-post {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: calc(18px * var(--space-scale));
+  border-radius: calc(16px * var(--radius-scale));
+  background: var(--surface);
+  border: 1px solid rgba(103, 58, 183, 0.25);
+  box-shadow: 0 4px 16px rgba(103, 58, 183, 0.06);
+}
+
+/* ---------- YouTube Community Post Card ---------- */
+.announcement-yt-post {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: calc(18px * var(--space-scale)) calc(20px * var(--space-scale));
+  border-radius: calc(16px * var(--radius-scale));
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.announcement-yt-post:hover {
+  border-color: rgba(103, 58, 183, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.announcement-yt-post.is-pinned {
+  border-color: rgba(103, 58, 183, 0.35);
+  background: linear-gradient(180deg, rgba(103, 58, 183, 0.03) 0%, var(--surface) 100%);
+}
+
+/* Notification deep-link focus: a short-lived ring so the reader lands on
+   the exact announcement instead of scanning the whole feed. */
+.announcement-yt-post.is-highlighted {
+  animation: announcement-focus-ring 2.4s ease-out 1;
+}
+
+@keyframes announcement-focus-ring {
+  0% {
+    border-color: rgba(103, 58, 183, 0.7);
+    box-shadow: 0 0 0 4px rgba(103, 58, 183, 0.18);
+    background: rgba(103, 58, 183, 0.06);
+  }
+  100% {
+    border-color: rgba(103, 58, 183, 0.35);
+    box-shadow: 0 0 0 0 rgba(103, 58, 183, 0);
+    background: var(--surface);
+  }
+}
+
+.announcement-yt-post.is-pinned::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), #9c27b0);
+}
+
+/* Post Header (Avatar + Name + Timestamp + Actions) */
+.announcement-yt-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.announcement-yt-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.announcement-yt-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, #7c4dff 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(103, 58, 183, 0.25);
+}
+
+.announcement-yt-avatar .ms {
+  font-size: 22px;
+}
+
+.announcement-yt-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.announcement-yt-author-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.announcement-yt-verified {
+  color: var(--primary);
+  font-size: 16px;
+  display: inline-flex;
+}
+
+.announcement-yt-time {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+
+.announcement-yt-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+}
+
+.announcement-yt-pinned-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: calc(8px * var(--radius-scale));
+  background: rgba(103, 58, 183, 0.1);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  margin-inline-end: 4px;
+}
+
+.announcement-yt-pinned-chip .ms {
+  font-size: 14px;
+}
+
+/* Post Content Body */
+.announcement-yt-content {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--on-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  padding: 2px 0;
+}
+
+/* Post Media / Attachment Container */
+.announcement-yt-media {
+  margin-top: 4px;
+  width: 100%;
+}

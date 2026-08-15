@@ -294,4 +294,57 @@ describe('NotificationsService', () => {
       expect(result).toEqual({ id: 'notification-1', isRead: true });
     });
   });
+
+  describe('markEntityRead', () => {
+    it('marks matching unread notifications for the given entity as read', async () => {
+      const result = await notificationsService.markEntityRead(
+        userA,
+        'discussion_thread',
+        'thread-123',
+      );
+
+      expect(updateQueryBuilder.update).toHaveBeenCalledWith(NotificationEntity);
+      expect(updateQueryBuilder.where).toHaveBeenCalledWith(
+        'user_id = :userId',
+        { userId: userA },
+      );
+      expect(updateQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'related_entity_type = :relatedEntityType',
+        { relatedEntityType: 'discussion_thread' },
+      );
+      expect(updateQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'related_entity_id = :relatedEntityId',
+        { relatedEntityId: 'thread-123' },
+      );
+      expect(result).toBe(2);
+    });
+  });
+
+  describe('markEntitiesRead', () => {
+    it('returns 0 when given an empty list of entity IDs', async () => {
+      const result = await notificationsService.markEntitiesRead(
+        userA,
+        'discussion_thread',
+        [],
+      );
+      expect(result).toBe(0);
+      expect(updateQueryBuilder.execute).not.toHaveBeenCalled();
+    });
+
+    it('marks matching unread notifications for multiple entity IDs as read', async () => {
+      const result = await notificationsService.markEntitiesRead(
+        userA,
+        'discussion_thread',
+        ['thread-1', 'thread-2'],
+      );
+
+      expect(updateQueryBuilder.update).toHaveBeenCalledWith(NotificationEntity);
+      expect(updateQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'related_entity_id IN (:...relatedEntityIds)',
+        { relatedEntityIds: ['thread-1', 'thread-2'] },
+      );
+      expect(result).toBe(2);
+    });
+  });
 });
+

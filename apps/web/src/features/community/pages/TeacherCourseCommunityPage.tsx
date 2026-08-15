@@ -1,17 +1,30 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useState, useEffect } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { AnnouncementsSection } from '../components/AnnouncementsSection'
 import { DiscussionsSection } from '../components/DiscussionsSection'
 import { useTeacherCourses } from '../../teacher/hooks/useTeacherCourses'
+import { markCourseCommunityRead } from '../api/community.api'
+import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
 
 type CommunityTab = 'discussions' | 'announcements'
 
 export function TeacherCourseCommunityPage() {
   const { courseId } = useParams<{ courseId: string }>()
+  const [searchParams] = useSearchParams()
+  const focusPostId = searchParams.get('post') ?? undefined
   const { data: courses, isLoading } = useTeacherCourses()
-  const [activeTab, setActiveTab] = useState<CommunityTab>('discussions')
+  const [activeTab, setActiveTab] = useState<CommunityTab>(
+    focusPostId ? 'announcements' : 'discussions',
+  )
+
+  useEffect(() => {
+    if (!courseId) return
+    void markCourseCommunityRead(courseId)
+      .then(() => emitUnreadCountChanged())
+      .catch(() => {})
+  }, [courseId])
 
   if (!courseId) return <NotFoundState />
 
@@ -64,7 +77,7 @@ export function TeacherCourseCommunityPage() {
       {activeTab === 'discussions' ? (
         <DiscussionsSection courseId={courseId} />
       ) : (
-        <AnnouncementsSection courseId={courseId} canManage />
+        <AnnouncementsSection courseId={courseId} canManage highlightPostId={focusPostId} />
       )}
     </div>
   )

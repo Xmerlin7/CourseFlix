@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { AttachmentPreviewList } from '../../../shared/components/AttachmentPreview'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { showToast } from '../../../shared/components/Toast'
-import { sanitizeFilename } from '../../../shared/utils/sanitizeFilename'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
 import {
   acceptAnswer,
   createReply,
@@ -35,6 +36,12 @@ export function DiscussionDetailPage() {
   const [replyBody, setReplyBody] = useState('')
   const [isReplying, setIsReplying] = useState(false)
   const [isTogglingHelpful, setIsTogglingHelpful] = useState(false)
+
+  useEffect(() => {
+    if (data) {
+      emitUnreadCountChanged()
+    }
+  }, [data?.id])
 
   if (isLoading) return <DiscussionDetailSkeleton />
 
@@ -91,10 +98,11 @@ export function DiscussionDetailPage() {
     }
   }
 
-  async function handleUnaccept() {
+  async function handleUnaccept(replyId?: string) {
     if (!threadId) return
     try {
-      await unacceptAnswer(threadId)
+      await unacceptAnswer(threadId, replyId)
+      showToast('تم إلغاء الاعتماد', 'success')
       refetch()
     } catch {
       showToast('تعذر التراجع عن الاعتماد', 'error')
@@ -166,22 +174,7 @@ export function DiscussionDetailPage() {
 
         {data.attachments.length > 0 && (
           <div className="discussion-attachments-list" style={{ marginTop: 4 }}>
-            {data.attachments.map((file) => {
-              const cleanName = sanitizeFilename(file.fileName)
-              return (
-                <a
-                  key={file.id}
-                  href={`/api/v1/attachments/${file.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="attachment-card"
-                >
-                  <span className="ms" aria-hidden="true">file_present</span>
-                  <span className="attachment-card-name">{cleanName}</span>
-                  <span className="ms sm" style={{ marginInlineStart: 'auto' }} aria-hidden="true">download</span>
-                </a>
-              )
-            })}
+            <AttachmentPreviewList attachments={data.attachments} layout="horizontal" />
           </div>
         )}
 
@@ -216,11 +209,6 @@ export function DiscussionDetailPage() {
 
       <div className="section-head" style={{ marginBottom: 8, alignItems: 'center', justifyContent: 'space-between' }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>الردود ({data.replies.length})</h2>
-        {data.canAccept && data.isAnswered && (
-          <button type="button" className="btn outline sm" onClick={handleUnaccept} style={{ fontSize: 12, padding: '4px 10px' }}>
-            التراجع عن الإجابة المعتمدة
-          </button>
-        )}
       </div>
 
       {data.replies.length > 0 && (
@@ -230,7 +218,9 @@ export function DiscussionDetailPage() {
               key={reply.id}
               reply={reply}
               canAccept={data.canAccept}
+              isMe={reply.author.id === user?.id}
               onAccept={handleAccept}
+              onUnaccept={handleUnaccept}
             />
           ))}
         </div>

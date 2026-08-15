@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { CommunityCourseRow } from './CommunityCourseRow'
+import { DiscussionCard } from './DiscussionCard'
 import { DiscussionReplyRow } from './DiscussionReplyRow'
 import { DiscussionReplyComposer } from './DiscussionReplyComposer'
 import type { DiscussionReply } from '../types/community.types'
@@ -114,6 +115,15 @@ describe('DiscussionReplyRow', () => {
     expect(screen.getByText('إجابة مقبولة')).toBeInTheDocument()
   })
 
+  it('renders unread indicator when isUnread is true', () => {
+    const { container } = render(
+      <DiscussionReplyRow reply={{ ...baseReply, isUnread: true }} />,
+    )
+
+    expect(container.querySelector('.discussion-reply-row')).toHaveClass('unread')
+    expect(container.querySelector('.unread-dot')).toBeInTheDocument()
+  })
+
   it('calls onAccept when accept button is clicked', async () => {
     const handleAccept = vi.fn()
     render(<DiscussionReplyRow reply={baseReply} canAccept onAccept={handleAccept} />)
@@ -122,6 +132,68 @@ describe('DiscussionReplyRow', () => {
     await userEvent.click(acceptBtn)
 
     expect(handleAccept).toHaveBeenCalledWith('reply-1')
+  })
+
+  it('calls onUnaccept when unaccept button is clicked for an accepted reply', async () => {
+    const handleUnaccept = vi.fn()
+    render(
+      <DiscussionReplyRow
+        reply={{ ...baseReply, isAccepted: true }}
+        canAccept
+        onUnaccept={handleUnaccept}
+      />,
+    )
+
+    const unacceptBtn = screen.getByRole('button', { name: 'إلغاء الاعتماد' })
+    await userEvent.click(unacceptBtn)
+
+    expect(handleUnaccept).toHaveBeenCalledWith('reply-1')
+  })
+})
+
+describe('DiscussionCard', () => {
+  const baseThread = {
+    id: 'thread-1',
+    courseId: 'course-1',
+    title: 'سؤال حول الحركة الموجية',
+    body: 'كيف تنتقل الموجات الكهرومغناطيسية؟',
+    author: {
+      id: 'student-1',
+      fullName: 'علي حسن',
+      avatarUrl: null,
+      role: 'student' as const,
+    },
+    tags: ['فيزياء'],
+    replyCount: 2,
+    helpfulCount: 1,
+    isHelpfulByMe: false,
+    isPinned: false,
+    isAnswered: false,
+    createdAt: new Date().toISOString(),
+  }
+
+  it('renders read discussion card without unread class or badge', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <DiscussionCard thread={{ ...baseThread, hasUnread: false }} to="/student/discussions/thread-1" />
+      </MemoryRouter>,
+    )
+
+    const link = container.querySelector('.discussion-card')
+    expect(link).not.toHaveClass('unread')
+    expect(screen.queryByText('جديد')).not.toBeInTheDocument()
+  })
+
+  it('renders unread discussion card with unread class and new badge', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <DiscussionCard thread={{ ...baseThread, hasUnread: true }} to="/student/discussions/thread-1" />
+      </MemoryRouter>,
+    )
+
+    const link = container.querySelector('.discussion-card')
+    expect(link).toHaveClass('unread')
+    expect(screen.getByText('جديد')).toBeInTheDocument()
   })
 })
 

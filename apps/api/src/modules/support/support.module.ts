@@ -15,6 +15,8 @@ import { SupportTicketEntity } from './entities/support-ticket.entity';
 import { SupportController } from './support.controller';
 import { SupportService } from './support.service';
 
+import { NotificationEntity } from '../notifications/entities/notification.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -24,6 +26,7 @@ import { SupportService } from './support.service';
       FileEntity,
       CourseEntity,
       UserEntity,
+      NotificationEntity,
     ]),
     MulterModule.register({ storage: memoryStorage() }),
     SessionsModule,

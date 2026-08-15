@@ -1,12 +1,12 @@
 import { Outlet } from 'react-router'
 import { useRef, type PointerEvent, type PropsWithChildren } from 'react'
 import { AuthMeshCanvas } from '../../features/auth/components/AuthMeshCanvas'
-import { AuthCourseStrip } from '../../features/auth/components/TeacherPoster'
+import { AuthCourseStrip, TeacherPoster } from '../../features/auth/components/TeacherPoster'
 import { useAuthPoster } from '../../features/auth/hooks/useAuthPoster'
 
 // Immersive auth shell shared by /login and /register. The form remains
-// first in the DOM and keeps the existing auth flow; the course visuals
-// around it are decorative, with a compact admin-selected course strip.
+// first in the DOM and keeps the existing auth flow; the admin-selected
+// course is echoed in a compact strip and a responsive preview surface.
 export function AuthLayout({ children }: PropsWithChildren) {
   const poster = useAuthPoster()
   const shellRef = useRef<HTMLDivElement | null>(null)
@@ -52,7 +52,6 @@ export function AuthLayout({ children }: PropsWithChildren) {
       onPointerLeave={handlePointerLeave}
     >
       <AuthMeshCanvas />
-      <div className="auth-grid" aria-hidden="true" />
       <div className="auth-pointer-aura" aria-hidden="true" />
 
       <main className="auth-panel-form">
@@ -66,6 +65,9 @@ export function AuthLayout({ children }: PropsWithChildren) {
         </div>
       </main>
 
+      <aside className="auth-panel-brand auth-floating-poster" aria-label="الدورة المميزة">
+        <TeacherPoster content={poster.data} isLoading={poster.isLoading} />
+      </aside>
     </div>
   )
 }

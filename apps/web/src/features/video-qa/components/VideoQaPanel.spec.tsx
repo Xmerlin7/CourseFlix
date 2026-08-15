@@ -91,6 +91,40 @@ describe('VideoQaPanel', () => {
     expect(onSeek).toHaveBeenCalledWith(185);
   });
 
+  it('shows the AI thinking message in the pending video answer bubble', async () => {
+    mockStatus('completed');
+    let releaseResponse = () => {};
+    const responseGate = new Promise<void>((resolve) => {
+      releaseResponse = resolve;
+    });
+
+    server.use(
+      http.post(`${env.apiBaseUrl}/student/videos/${videoId}/ask`, async () => {
+        await responseGate;
+        return HttpResponse.json({
+          status: 'answered',
+          answer: 'وصل رد الفيديو.',
+          citations: [],
+        });
+      }),
+    );
+
+    const user = await openPanel();
+    await user.type(await waitForQuestionInput(), 'اشرح الجزء ده');
+    await user.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
+
+    expect(
+      await screen.findByRole('status', { name: 'المساعد الذكي يحضّر الرد' }),
+    ).toBeInTheDocument();
+
+    releaseResponse();
+
+    expect(await screen.findByText('وصل رد الفيديو.')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('status', { name: 'المساعد الذكي يحضّر الرد' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders no clickable citation when the player cannot seek', async () => {
     mockStatus('completed');
     server.use(

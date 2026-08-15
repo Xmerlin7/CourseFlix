@@ -43,6 +43,41 @@ describe('TeacherPoster', () => {
     expect(screen.getByText('الثالث الثانوي')).toBeInTheDocument()
   })
 
+  it('renders customized card text', () => {
+    renderWithProviders(
+      <TeacherPoster
+        content={{
+          featuredCourseId: 'course-1',
+          isFallback: false,
+          customization: {
+            badgeText: 'تعلم بطريقتك',
+            teacherPrefix: 'بإشراف',
+            studyPlanValue: '2 weeks',
+            studyPlanLabel: 'مدة الخطة',
+            quizValue: '10 quizzes',
+            quizLabel: 'تدريب عملي',
+            followUpValue: 'يوميًا',
+            followUpLabel: 'متابعة مستمرة',
+            journeyLabel: 'تقدمك',
+          },
+          course: {
+            id: 'course-1',
+            title: 'الفيزياء',
+            description: 'شرح مبسط.',
+            coverImageUrl: null,
+            gradeLevel: 'الثالث الثانوي',
+            teacherName: 'محمد عبدالرحمن',
+          },
+        }}
+      />,
+      { auth },
+    )
+
+    expect(screen.getByText('2 weeks')).toBeInTheDocument()
+    expect(screen.getByText('مدة الخطة')).toBeInTheDocument()
+    expect(screen.getByText('تعلم بطريقتك')).toBeInTheDocument()
+  })
+
   it('renders fallback auth poster content when public config fails', async () => {
     server.use(
       http.get(apiUrl('/public/auth-poster'), () =>

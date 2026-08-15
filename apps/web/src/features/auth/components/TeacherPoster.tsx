@@ -1,5 +1,9 @@
 import { useState, type CSSProperties, type MouseEvent } from 'react'
-import type { AuthPosterContent, AuthPosterCourse } from '../types/auth-poster.types'
+import {
+  DEFAULT_AUTH_POSTER_CUSTOMIZATION,
+  type AuthPosterContent,
+  type AuthPosterCourse,
+} from '../types/auth-poster.types'
 
 const FALLBACK_COURSE: AuthPosterCourse = {
   id: null,
@@ -10,12 +14,6 @@ const FALLBACK_COURSE: AuthPosterCourse = {
   gradeLevel: 'من الإعدادي للثانوي',
   teacherName: 'محمد عبدالرحمن',
 }
-
-const STUDY_STATS = [
-  { label: 'خطة مذاكرة', value: '١٢ أسبوع' },
-  { label: 'اختبارات قصيرة', value: '٤٨ تدريب' },
-  { label: 'متابعة تقدم', value: 'كل حصة' },
-]
 
 function getPosterCourse(content?: AuthPosterContent | null): AuthPosterCourse {
   return content?.course ?? FALLBACK_COURSE
@@ -67,6 +65,15 @@ export function TeacherPoster({ content, isLoading = false }: {
   isLoading?: boolean
 }) {
   const course = getPosterCourse(content)
+  const customization = {
+    ...DEFAULT_AUTH_POSTER_CUSTOMIZATION,
+    ...content?.customization,
+  }
+  const studyStats = [
+    { label: customization.studyPlanLabel, value: customization.studyPlanValue },
+    { label: customization.quizLabel, value: customization.quizValue },
+    { label: customization.followUpLabel, value: customization.followUpValue },
+  ]
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
 
   function handlePointerMove(event: MouseEvent<HTMLDivElement>) {
@@ -90,13 +97,13 @@ export function TeacherPoster({ content, isLoading = false }: {
       <div className="poster-light" aria-hidden="true" />
       <div className="poster-grid-lines" aria-hidden="true" />
 
-      <div className="poster">
+      <div className="poster notranslate" lang="ar" dir="rtl" translate="no">
         <div className="poster-hero">
           <PosterAvatar title={course.title} coverImageUrl={course.coverImageUrl} />
           <div className="poster-hero-overlay" />
           <span className="poster-live-badge">
             <span className="ms">verified</span>
-            منصة تعليم تفاعلية
+            {customization.badgeText}
           </span>
         </div>
 
@@ -109,7 +116,7 @@ export function TeacherPoster({ content, isLoading = false }: {
           <div className="poster-identity">
             <span className="poster-teacher-icon ms">person</span>
             <div className="poster-titles">
-              <p className="poster-eyebrow">مع الأستاذ</p>
+              <p className="poster-eyebrow">{customization.teacherPrefix}</p>
               <p className="poster-name">{course.teacherName}</p>
             </div>
           </div>
@@ -117,8 +124,8 @@ export function TeacherPoster({ content, isLoading = false }: {
           <p className="poster-description">{getShortDescription(course.description)}</p>
 
           <ul className="poster-stats">
-            {STUDY_STATS.map((stat) => (
-              <li key={stat.label}>
+            {studyStats.map((stat, index) => (
+              <li key={index}>
                 <strong>{stat.value}</strong>
                 <span>{stat.label}</span>
               </li>
@@ -126,7 +133,7 @@ export function TeacherPoster({ content, isLoading = false }: {
           </ul>
 
           <div className="poster-progress">
-            <span>رحلة الطالب</span>
+            <span>{customization.journeyLabel}</span>
             <div className="poster-progress-track">
               <span />
             </div>

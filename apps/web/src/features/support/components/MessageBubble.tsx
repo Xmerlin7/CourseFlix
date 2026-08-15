@@ -8,6 +8,7 @@ interface MessageBubbleProps {
   createdAt: string
   showHeader: boolean
   pendingStatus?: MessagePendingStatus
+  isUnread?: boolean
   onRetry?: () => void
   onDismiss?: () => void
 }
@@ -24,6 +25,7 @@ export function MessageBubble({
   createdAt,
   showHeader,
   pendingStatus,
+  isUnread,
   onRetry,
   onDismiss,
 }: MessageBubbleProps) {
@@ -33,6 +35,7 @@ export function MessageBubble({
     <div className={`chat-msg-group from-${variant}${showHeader ? ' is-new-group' : ''}`}>
       {showHeader && (
         <div className="chat-msg-group-label">
+          {isUnread && <span className="unread-dot" aria-label="غير مقروء" />}
           <span className="chat-msg-avatar" aria-hidden="true">
             {authorAvatarUrl ? (
               <img src={authorAvatarUrl} alt="" />
@@ -46,7 +49,9 @@ export function MessageBubble({
           </span>
         </div>
       )}
-      <div className={`chat-msg from-${variant}${pendingStatus === 'failed' ? ' is-failed' : ''}`}>
+      <div
+        className={`chat-msg from-${variant}${pendingStatus === 'failed' ? ' is-failed' : ''}${isUnread ? ' is-unread' : ''}`}
+      >
         <p>{body}</p>
         <div className="chat-msg-meta">
           <span className="chat-msg-time">

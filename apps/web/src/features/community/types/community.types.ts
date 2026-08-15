@@ -26,6 +26,7 @@ export interface DiscussionThreadListItem {
   isPinned: boolean
   isAnswered: boolean
   createdAt: string
+  hasUnread?: boolean
 }
 
 export interface DiscussionReply {
@@ -34,6 +35,7 @@ export interface DiscussionReply {
   body: string
   isAccepted: boolean
   createdAt: string
+  isUnread?: boolean
 }
 
 export interface DiscussionThreadDetail extends DiscussionThreadListItem {
@@ -58,4 +60,8 @@ export interface Announcement {
   canManage: boolean
   createdAt: string
   updatedAt: string
+}
+
+export interface AnnouncementDetail extends Announcement {
+  courseId: string
 }

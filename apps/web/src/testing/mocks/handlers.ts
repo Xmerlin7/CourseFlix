@@ -53,6 +53,8 @@ export const handlers = [
 
   http.get(apiUrl("/courses/:courseId/announcements"), () => HttpResponse.json([])),
   http.get(apiUrl("/courses/:courseId/discussions"), () => HttpResponse.json([])),
+  http.patch(apiUrl("/courses/:courseId/discussions/read"), () => HttpResponse.json({ updated: 1 })),
+  http.patch(apiUrl("/notifications/mark-entity-read"), () => HttpResponse.json({ updated: 1 })),
 
   http.post(apiUrl("/auth/register"), () =>
     HttpResponse.json(

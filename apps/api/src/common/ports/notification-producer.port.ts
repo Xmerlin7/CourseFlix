@@ -24,6 +24,16 @@ export interface NotifyInput {
 
 export interface NotificationProducerPort {
   notify(input: NotifyInput): Promise<void>;
+  markEntityRead?(
+    userId: string,
+    relatedEntityType: string,
+    relatedEntityId: string,
+  ): Promise<number>;
+  markEntitiesRead?(
+    userId: string,
+    relatedEntityType: string,
+    relatedEntityIds: string[],
+  ): Promise<number>;
 }
 
 @Injectable()
@@ -33,5 +43,21 @@ export class NoopNotificationProducer implements NotificationProducerPort {
   notify(input: NotifyInput): Promise<void> {
     this.logger.log(`(noop) notify ${input.userId}: ${input.type}`);
     return Promise.resolve();
+  }
+
+  markEntityRead(
+    _userId: string,
+    _relatedEntityType: string,
+    _relatedEntityId: string,
+  ): Promise<number> {
+    return Promise.resolve(0);
+  }
+
+  markEntitiesRead(
+    _userId: string,
+    _relatedEntityType: string,
+    _relatedEntityIds: string[],
+  ): Promise<number> {
+    return Promise.resolve(0);
   }
 }

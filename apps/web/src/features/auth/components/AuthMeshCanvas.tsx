@@ -10,7 +10,7 @@ interface NetworkNode {
   phase: number
   radius: number
   opacity: number
-  prominent: boolean
+  kind: 'node' | 'medium' | 'hub'
   polarity: 1 | -1
   pointerForce: number
 }
@@ -19,6 +19,7 @@ const FALLBACK_PRIMARY: Rgb = [101, 85, 143]
 const FALLBACK_PRIMARY_CONTAINER: Rgb = [233, 221, 255]
 const FALLBACK_SURFACE: Rgb = [254, 251, 255]
 const FALLBACK_ACCENT: Rgb = [34, 211, 238]
+const FALLBACK_EDGE: Rgb = [79, 55, 139]
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -68,19 +69,21 @@ function getPalette(canvas: HTMLCanvasElement) {
     primaryContainer: parseCssColor(styles.getPropertyValue('--primary-container'), FALLBACK_PRIMARY_CONTAINER),
     surface: parseCssColor(styles.getPropertyValue('--surface'), FALLBACK_SURFACE),
     accent: parseCssColor(styles.getPropertyValue('--auth-mesh-accent'), FALLBACK_ACCENT),
+    edge: parseCssColor(styles.getPropertyValue('--auth-mesh-edge'), FALLBACK_EDGE),
   }
 }
 
-function getNodeCount(width: number) {
-  if (width < 560) return 54
-  if (width < 980) return 72
-  return 94
+function getNodeCount(width: number, height: number) {
+  const area = width * height
+  const minimum = width < 560 ? 38 : width < 980 ? 52 : 68
+  const maximum = width < 560 ? 58 : width < 980 ? 86 : 124
+  return Math.round(clamp(area / 17_000, minimum, maximum))
 }
 
-function getConnectionDistance(width: number) {
-  if (width < 560) return 124
-  if (width < 980) return 154
-  return 184
+function getConnectionDistance(width: number, height: number, count: number) {
+  const averageSpacing = Math.sqrt((width * height) / Math.max(1, count))
+  const responsiveBoost = width < 560 ? 1.72 : width < 980 ? 1.9 : 2.04
+  return clamp(averageSpacing * responsiveBoost, 118, 198)
 }
 
 function getPointerRadius(width: number) {
@@ -102,7 +105,12 @@ function createNodes(count: number, width: number, height: number): NetworkNode[
 
   return Array.from({ length: count }, (_, index) => {
     const { column, row } = cells[index]
-    const prominent = index % 11 === 0
+    const hubInterval = Math.max(18, Math.round(count / Math.max(3, Math.min(6, Math.round(count / 23)))))
+    const kind: NetworkNode['kind'] = index % hubInterval === 0
+      ? 'hub'
+      : index % 5 === 0
+        ? 'medium'
+        : 'node'
     const jitterX = (Math.random() - 0.5) * cellWidth * 0.72
     const jitterY = (Math.random() - 0.5) * cellHeight * 0.72
 
@@ -112,9 +120,17 @@ function createNodes(count: number, width: number, height: number): NetworkNode[
       vx: (Math.random() - 0.5) * 0.12,
       vy: (Math.random() - 0.5) * 0.1,
       phase: Math.random() * Math.PI * 2,
-      radius: prominent ? 2.55 + Math.random() * 0.85 : 1.35 + Math.random() * 0.85,
-      opacity: prominent ? 0.64 + Math.random() * 0.14 : 0.4 + Math.random() * 0.2,
-      prominent,
+      radius: kind === 'hub'
+        ? 3.45 + Math.random() * 0.7
+        : kind === 'medium'
+          ? 2.15 + Math.random() * 0.55
+          : 1.35 + Math.random() * 0.55,
+      opacity: kind === 'hub'
+        ? 0.82 + Math.random() * 0.1
+        : kind === 'medium'
+          ? 0.66 + Math.random() * 0.1
+          : 0.48 + Math.random() * 0.14,
+      kind,
       polarity: index % 3 === 0 ? 1 : -1,
       pointerForce: 0,
     }
@@ -174,7 +190,7 @@ export function AuthMeshCanvas() {
       meshCanvas.style.width = `${width}px`
       meshCanvas.style.height = `${height}px`
       meshContext.setTransform(dpr, 0, 0, dpr, 0, 0)
-      nodes = createNodes(getNodeCount(width), width, height)
+      nodes = createNodes(getNodeCount(width, height), width, height)
       lastTime = 0
       drawStatic()
       schedule()
@@ -230,7 +246,8 @@ export function AuthMeshCanvas() {
     }
 
     function paint(time: number) {
-      const connectionDistance = getConnectionDistance(width)
+      const connectionDistance = getConnectionDistance(width, height, nodes.length)
+      const degrees = new Uint8Array(nodes.length)
 
       meshContext.clearRect(0, 0, width, height)
       meshContext.save()
@@ -244,18 +261,25 @@ export function AuthMeshCanvas() {
           const dy = a.y - b.y
           const distance = Math.hypot(dx, dy)
 
-          if (distance > connectionDistance) continue
+          const isHubConnection = a.kind === 'hub' || b.kind === 'hub'
+          const linkDistance = isHubConnection ? connectionDistance * 1.18 : connectionDistance
+          const maxDegreeA = a.kind === 'hub' ? 9 : a.kind === 'medium' ? 5 : 4
+          const maxDegreeB = b.kind === 'hub' ? 9 : b.kind === 'medium' ? 5 : 4
 
-          const proximity = 1 - distance / connectionDistance
+          if (distance > linkDistance || degrees[i] >= maxDegreeA || degrees[j] >= maxDegreeB) continue
+
+          const proximity = 1 - distance / linkDistance
           const pointerBoost = Math.max(a.pointerForce, b.pointerForce)
-          const alpha = Math.pow(proximity, 1.55) * 0.32 + pointerBoost * 0.14
+          const alpha = Math.pow(proximity, 1.35) * (isHubConnection ? 0.34 : 0.27) + pointerBoost * 0.2
 
           meshContext.beginPath()
           meshContext.moveTo(a.x, a.y)
           meshContext.lineTo(b.x, b.y)
-          meshContext.lineWidth = 0.62 + proximity * 0.44 + pointerBoost * 0.44
-          meshContext.strokeStyle = rgba(palette.primaryContainer, alpha)
+          meshContext.lineWidth = 0.68 + proximity * 0.5 + pointerBoost * 0.58
+          meshContext.strokeStyle = rgba(isHubConnection ? palette.primary : palette.edge, alpha)
           meshContext.stroke()
+          degrees[i] += 1
+          degrees[j] += 1
         }
       }
 
@@ -273,8 +297,8 @@ export function AuthMeshCanvas() {
           meshContext.beginPath()
           meshContext.moveTo(pointer.x, pointer.y)
           meshContext.lineTo(node.x, node.y)
-          meshContext.lineWidth = 0.45 + proximity * 0.42
-          meshContext.strokeStyle = rgba(palette.accent, Math.pow(proximity, 1.9) * 0.16)
+          meshContext.lineWidth = 0.52 + proximity * 0.58
+          meshContext.strokeStyle = rgba(palette.accent, Math.pow(proximity, 1.7) * 0.3)
           meshContext.stroke()
         }
 
@@ -294,16 +318,23 @@ export function AuthMeshCanvas() {
         const radius = node.radius * pulse + node.pointerForce * 1.2
         const nodeAlpha = node.opacity + node.pointerForce * 0.22
 
-        if (node.prominent || node.pointerForce > 0.08) {
+        if (node.kind === 'hub' || node.pointerForce > 0.08) {
           meshContext.beginPath()
           meshContext.arc(node.x, node.y, radius * 4.8, 0, Math.PI * 2)
-          meshContext.fillStyle = rgba(node.pointerForce > 0.08 ? palette.accent : palette.primary, 0.052 + node.pointerForce * 0.12)
+          meshContext.fillStyle = rgba(node.pointerForce > 0.08 ? palette.accent : palette.primary, 0.08 + node.pointerForce * 0.14)
           meshContext.fill()
         }
 
         meshContext.beginPath()
         meshContext.arc(node.x, node.y, radius, 0, Math.PI * 2)
-        meshContext.fillStyle = rgba(node.pointerForce > 0.1 ? palette.accent : node.prominent ? palette.surface : palette.primaryContainer, nodeAlpha)
+        meshContext.fillStyle = rgba(
+          node.pointerForce > 0.1 || node.kind === 'hub'
+            ? palette.accent
+            : node.kind === 'medium'
+              ? palette.primary
+              : palette.edge,
+          nodeAlpha,
+        )
         meshContext.fill()
       }
 

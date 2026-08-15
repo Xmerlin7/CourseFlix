@@ -32,4 +32,5 @@ export interface TutorChatMessage {
   status?: TutorMessageStatus;
   citations?: TutorCitation[];
   failed?: boolean;
+  pending?: boolean;
 }

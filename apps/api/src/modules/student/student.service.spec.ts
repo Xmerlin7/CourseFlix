@@ -55,7 +55,10 @@ describe('StudentService', () => {
 
   beforeEach(async () => {
     enrollmentsService = { findStudentEnrollments: jest.fn() };
-    coursesService = { findByIds: jest.fn() };
+    coursesService = {
+      findByIds: jest.fn(),
+      findOwnedCourses: jest.fn().mockResolvedValue([]),
+    };
     usersService = { findById: jest.fn() };
     lessonsService = {
       getCourseProgressSummaries: jest.fn().mockResolvedValue(new Map()),

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getNotifications } from '../../features/notifications/api/notifications.api'
+import { UNREAD_NOTIFICATIONS_CHANGED_EVENT } from '../../features/notifications/utils/notificationEvents'
 
 const POLL_INTERVAL_MS = 30_000
 
@@ -12,9 +13,10 @@ interface SidebarUnreadState {
 }
 
 /**
- * Polls unread notifications every 30 s and returns boolean flags indicating
- * whether there is new community activity (discussion replies / accepted answers)
- * or new support activity (ticket updates) for the current user.
+ * Polls unread notifications and listens to local unread change events,
+ * returning boolean flags indicating whether there is new community activity
+ * (discussion replies / accepted answers) or new support activity (ticket updates)
+ * for the current user.
  *
  * Errors are swallowed — a stale/missing dot is not worth a page-level error.
  */
@@ -45,9 +47,16 @@ export function useStudentSidebarUnread(): SidebarUnreadState {
     }
 
     void load()
+
+    function handleUnreadChange() {
+      void load()
+    }
+
+    window.addEventListener(UNREAD_NOTIFICATIONS_CHANGED_EVENT, handleUnreadChange)
     const timer = setInterval(() => void load(), POLL_INTERVAL_MS)
     return () => {
       cancelled = true
+      window.removeEventListener(UNREAD_NOTIFICATIONS_CHANGED_EVENT, handleUnreadChange)
       clearInterval(timer)
     }
   }, [])

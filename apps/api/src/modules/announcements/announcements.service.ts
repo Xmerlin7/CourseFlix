@@ -36,6 +36,10 @@ export interface AnnouncementResponse {
   updatedAt: string;
 }
 
+export interface AnnouncementDetailResponse extends AnnouncementResponse {
+  courseId: string;
+}
+
 export interface LatestPostByCourse {
   content: string;
   createdAt: Date;
@@ -84,6 +88,22 @@ export class AnnouncementsService {
     });
 
     return this.toResponses(posts, isManager);
+  }
+
+  /**
+   * Resolves a single announcement by id so notification links can land on
+   * the specific post. Access-checked the same way as the list endpoint —
+   * enrolled students and the course's own teacher/assistant may read it.
+   */
+  async getAnnouncement(
+    postId: string,
+    user: AuthenticatedUser,
+  ): Promise<AnnouncementDetailResponse> {
+    const post = await this.loadPostOrThrow(postId);
+    const course = await this.assertCanAccessCourse(user, post.courseId);
+    const isManager = this.isEffectiveTeacher(user, course);
+    const [response] = await this.toResponses([post], isManager);
+    return { ...response, courseId: post.courseId };
   }
 
   async createAnnouncement(
