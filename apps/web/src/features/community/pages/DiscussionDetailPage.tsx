@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { AttachmentPreviewList } from '../../../shared/components/AttachmentPreview'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { ForbiddenState } from '../../../shared/components/ForbiddenState'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { showToast } from '../../../shared/components/Toast'
-import { sanitizeFilename } from '../../../shared/utils/sanitizeFilename'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { emitUnreadCountChanged } from '../../notifications/utils/notificationEvents'
 import {
@@ -174,22 +174,7 @@ export function DiscussionDetailPage() {
 
         {data.attachments.length > 0 && (
           <div className="discussion-attachments-list" style={{ marginTop: 4 }}>
-            {data.attachments.map((file) => {
-              const cleanName = sanitizeFilename(file.fileName)
-              return (
-                <a
-                  key={file.id}
-                  href={`/api/v1/attachments/${file.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="attachment-card"
-                >
-                  <span className="ms" aria-hidden="true">file_present</span>
-                  <span className="attachment-card-name">{cleanName}</span>
-                  <span className="ms sm" style={{ marginInlineStart: 'auto' }} aria-hidden="true">download</span>
-                </a>
-              )
-            })}
+            <AttachmentPreviewList attachments={data.attachments} layout="horizontal" />
           </div>
         )}
 
@@ -233,6 +218,7 @@ export function DiscussionDetailPage() {
               key={reply.id}
               reply={reply}
               canAccept={data.canAccept}
+              isMe={reply.author.id === user?.id}
               onAccept={handleAccept}
               onUnaccept={handleUnaccept}
             />

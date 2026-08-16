@@ -87,6 +87,14 @@ export class AnnouncementsController {
     );
   }
 
+  @Get('announcements/:postId')
+  getAnnouncement(
+    @Param('postId') postId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.announcementsService.getAnnouncement(postId, user);
+  }
+
   @Delete('announcements/:postId')
   deleteAnnouncement(
     @Param('postId') postId: string,

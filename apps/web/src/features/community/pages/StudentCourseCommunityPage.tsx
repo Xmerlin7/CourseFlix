@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { DiscussionsSection } from '../components/DiscussionsSection'
@@ -12,8 +12,12 @@ type CommunityTab = 'discussions' | 'announcements'
 
 export function StudentCourseCommunityPage() {
   const { courseId } = useParams<{ courseId: string }>()
+  const [searchParams] = useSearchParams()
+  const focusPostId = searchParams.get('post') ?? undefined
   const { data: enrollments, isLoading } = useStudentEnrollments()
-  const [activeTab, setActiveTab] = useState<CommunityTab>('discussions')
+  const [activeTab, setActiveTab] = useState<CommunityTab>(
+    focusPostId ? 'announcements' : 'discussions',
+  )
 
   useEffect(() => {
     if (!courseId) return
@@ -80,7 +84,7 @@ export function StudentCourseCommunityPage() {
       {activeTab === 'discussions' ? (
         <DiscussionsSection courseId={courseId} />
       ) : (
-        <AnnouncementsSection courseId={courseId} canManage={false} />
+        <AnnouncementsSection courseId={courseId} canManage={false} highlightPostId={focusPostId} />
       )}
     </div>
   )
