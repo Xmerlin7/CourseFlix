@@ -1935,9 +1935,17 @@ textarea:placeholder-shown {
   }
 }
 
-/* ---------- Standalone legal document pages (/terms, /privacy) ---------- */
+/* ---------- Standalone legal document pages (/terms, /privacy) ----------
+   These render outside the signed-in shell, so they have to scroll
+   themselves: `body.shell` above is pinned to 100vh with overflow hidden
+   so the app's sidebar and main pane can scroll independently, which
+   leaves the document unable to scroll at all. A plain `min-height: 100vh`
+   block therefore had everything past the first viewport permanently cut
+   off — on a legal page, that is most of the text. */
 .legal-page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
   background: var(--bg);
 }
 
