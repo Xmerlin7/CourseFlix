@@ -4,7 +4,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { MailService } from '../mail/mail.service';
 import { OtpService } from '../otp/otp.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
@@ -43,11 +42,12 @@ export interface GoogleProfile {
 }
 
 // Response shape shared by every flow that emails an OTP. `devCode` is only
-// present when email delivery is NOT configured AND we're not in production —
-// once a real mail key is set the code never leaves the server. The
-// `accountStatus` field is only set for the register flow (where the user has
-// already proven they own the email), so the client can tell "code sent" from
-// "account already active".
+// present when email delivery did NOT actually happen (unconfigured OR a
+// failed send) AND we're not in production — once mail is genuinely
+// delivered the code never leaves the server. The `accountStatus` field is
+// only set for the register flow (where the user has already proven they
+// own the email), so the client can tell "code sent" from "account already
+// active".
 export interface OtpResponse {
   message: string;
   email: string;
@@ -61,7 +61,6 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly sessionsService: SessionsService,
     private readonly otpService: OtpService,
-    private readonly mailService: MailService,
   ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResult> {
@@ -167,7 +166,7 @@ export class AuthService {
       'student', // Default role for new registrations
     );
 
-    const code = await this.otpService.issue(
+    const { code, delivered } = await this.otpService.issue(
       newUser.id,
       newUser.email,
       'register',
@@ -178,7 +177,7 @@ export class AuthService {
         'Registration successful. Check your email for your verification code.',
       email: newUser.email,
       accountStatus: 'pending' as const,
-      ...this.devCode(code),
+      ...this.devCode(code, delivered),
     };
   }
 
@@ -207,12 +206,16 @@ export class AuthService {
               : ('unknown' as const),
         };
       }
-      const code = await this.otpService.issue(user.id, user.email, 'register');
+      const { code, delivered } = await this.otpService.issue(
+        user.id,
+        user.email,
+        'register',
+      );
       return {
         message: 'Check your email for your verification code.',
         email: user.email,
         accountStatus: 'pending' as const,
-        ...this.devCode(code),
+        ...this.devCode(code, delivered),
       };
     }
 
@@ -221,7 +224,7 @@ export class AuthService {
     // the endpoint can't be used to enumerate registered emails — only an
     // active account gets a code.
     if (user && user.status === 'active') {
-      const code = await this.otpService.issue(
+      const { code, delivered } = await this.otpService.issue(
         user.id,
         user.email,
         'google_oauth',
@@ -229,7 +232,7 @@ export class AuthService {
       return {
         message: 'Check your email for your Google sign-in code.',
         email: user.email,
-        ...this.devCode(code),
+        ...this.devCode(code, delivered),
       };
     }
 
@@ -271,7 +274,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
 
     if (user && user.status === 'active') {
-      const code = await this.otpService.issue(
+      const { code, delivered } = await this.otpService.issue(
         user.id,
         user.email,
         'password_reset',
@@ -279,7 +282,7 @@ export class AuthService {
       return {
         message: 'Check your email for your password reset code.',
         email: user.email,
-        ...this.devCode(code),
+        ...this.devCode(code, delivered),
       };
     }
 
@@ -352,11 +355,15 @@ export class AuthService {
     };
   }
 
-  private devCode(code: string): { devCode: string } | {} {
+  // Gated on `delivered`, not on whether Resend is configured — a
+  // configured-but-failing key (revoked, unverified sender domain, Resend
+  // down) must fall back to devCode exactly like being unconfigured does,
+  // or the code becomes unreachable: not emailed, and not returned either.
+  private devCode(code: string, delivered: boolean): { devCode: string } | {} {
     if (process.env.NODE_ENV === 'production') {
       return {};
     }
-    if (this.mailService.isConfigured()) {
+    if (delivered) {
       return {};
     }
     return { devCode: code };
@@ -368,7 +375,7 @@ export class AuthService {
   private async issueGoogleOtp(
     user: Pick<UserEntity, 'id' | 'email'>,
   ): Promise<GoogleOtpRequired> {
-    const code = await this.otpService.issue(
+    const { code, delivered } = await this.otpService.issue(
       user.id,
       user.email,
       'google_oauth',
@@ -376,7 +383,7 @@ export class AuthService {
     return {
       requiresOtp: true,
       email: user.email,
-      ...this.devCode(code),
+      ...this.devCode(code, delivered),
     };
   }
 }

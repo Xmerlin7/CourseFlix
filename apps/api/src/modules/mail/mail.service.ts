@@ -24,8 +24,18 @@ const OTP_SUBJECTS: Record<OtpPurpose, { en: string; ar: string }> = {
  * mail is not sent; the code is logged instead so local dev still works
  * (same fallback philosophy as MockEmbeddingProvider for embeddings). The
  * OTP controllers additionally echo the code as `devCode` when
- * NODE_ENV !== 'production', so a developer can read it straight from the
- * API response.
+ * NODE_ENV !== 'production' AND delivery didn't actually happen, so a
+ * developer can read it straight from the API response.
+ *
+ * `sendOtp` never throws — a revoked/invalid key, an unverified sender
+ * domain, or Resend being down would otherwise take the whole register/
+ * login/reset request down with it (a 500, with the account or reset
+ * request already half-created in the DB). The OTP itself was already
+ * persisted by OtpService before this runs, so a delivery failure only
+ * means the *email* didn't go out; the code is still valid and (outside
+ * production) still returned as `devCode`. Returns whether delivery
+ * actually happened, so callers know whether `devCode` is the only way
+ * the user will see the code.
  */
 @Injectable()
 export class MailService {
@@ -36,41 +46,52 @@ export class MailService {
     return Boolean(apiKey && apiKey !== 'replace-me');
   }
 
-  async sendOtp(to: string, code: string, purpose: OtpPurpose): Promise<void> {
+  async sendOtp(
+    to: string,
+    code: string,
+    purpose: OtpPurpose,
+  ): Promise<boolean> {
     const apiKey = process.env.RESEND_API_KEY;
     if (!this.isConfigured()) {
       this.logger.warn(
         `RESEND_API_KEY not configured — OTP for ${to} (${purpose}): ${code}`,
       );
-      return;
+      return false;
     }
 
     const from =
       process.env.EMAIL_FROM ?? 'CourseFlix <noreply@courseflix.local>';
     const subject = OTP_SUBJECTS[purpose];
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject: subject.en,
-        html: this.renderOtpHtml(code, purpose),
-      }),
-    });
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject: subject.en,
+          html: this.renderOtpHtml(code, purpose),
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+      if (!response.ok) {
+        const errorText = await response.text();
+        this.logger.error(
+          `Resend send failed (${response.status}) for ${to} (${purpose}): ${errorText} — OTP: ${code}`,
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
       this.logger.error(
-        `Resend send failed (${response.status}): ${errorText}`,
+        `Resend request failed for ${to} (${purpose}): ${error instanceof Error ? error.message : String(error)} — OTP: ${code}`,
       );
-      throw new Error(
-        `Failed to send email (status ${response.status}): ${errorText}`,
-      );
+      return false;
     }
   }
 
