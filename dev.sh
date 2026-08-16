@@ -3,6 +3,10 @@
 # CourseFlix local development launcher.
 #
 #   ./dev.sh            bring the whole stack up (infra + migrations + seed + API + web)
+#   ./dev.sh fast       restart just the API/web/worker — skips Docker,
+#                       migrations, seeding and ngrok. Use once the full
+#                       `up` has already been run and infra is still up;
+#                       this is the ~10s "I just changed code" restart.
 #   ./dev.sh stop       stop the API/web processes and the Docker services
 #   ./dev.sh reset      drop the database volume and rebuild it from scratch
 #   ./dev.sh status     show what is currently running
@@ -468,7 +472,7 @@ setup_database() {
 
   printf '  running migrations ...\n'
 
-  npm run migration:run --prefix apps/api --silent > "$LOG_DIR/migrations.log" 2>&1 \
+  TS_NODE_TRANSPILE_ONLY=true npm run migration:run --prefix apps/api --silent > "$LOG_DIR/migrations.log" 2>&1 \
     || {
       tail -20 "$LOG_DIR/migrations.log"
       die "migrations failed — see $LOG_DIR/migrations.log"
@@ -483,7 +487,7 @@ setup_database() {
 
   printf '  seeding demo data ...\n'
 
-  npm run seed --prefix apps/api --silent > "$LOG_DIR/seed.log" 2>&1 \
+  TS_NODE_TRANSPILE_ONLY=true npm run seed --prefix apps/api --silent > "$LOG_DIR/seed.log" 2>&1 \
     || {
       tail -20 "$LOG_DIR/seed.log"
       die "seed failed — see $LOG_DIR/seed.log"
@@ -493,7 +497,7 @@ setup_database() {
 
   printf '  backfilling missing/failed video transcripts ...\n'
 
-  npm run backfill:video-transcripts --prefix apps/api --silent > "$LOG_DIR/backfill.log" 2>&1 \
+  TS_NODE_TRANSPILE_ONLY=true npm run backfill:video-transcripts --prefix apps/api --silent > "$LOG_DIR/backfill.log" 2>&1 \
     && grep '^Backfill complete:' "$LOG_DIR/backfill.log" | sed 's/^/  /' \
     || warn "video transcript backfill failed — see $LOG_DIR/backfill.log (non-fatal, continuing)"
 }
@@ -601,24 +605,6 @@ start_apps() {
   free_port "$API_PORT"
   free_port "$WEB_PORT"
 
-  setsid npm run start:dev --prefix apps/api > "$API_LOG" 2>&1 < /dev/null &
-
-  wait_for_http \
-    "http://localhost:$API_PORT/api/v1/health" \
-    "API"
-
-  ok "API listening on http://localhost:$API_PORT"
-
-  start_ngrok
-
-  setsid npm run dev --prefix apps/web > "$WEB_LOG" 2>&1 < /dev/null &
-
-  wait_for_http \
-    "http://localhost:$WEB_PORT" \
-    "web app"
-
-  ok "web app listening on http://localhost:$WEB_PORT"
-
   if [ -f "$WORKER_PID_FILE" ]; then
     local old_worker_pid
 
@@ -631,8 +617,30 @@ start_apps() {
     fi
   fi
 
+  # Launch API, web and worker together, and kick off the ngrok tunnel
+  # right away too — none of these actually depend on each other being
+  # *ready*, only on their ports being free (handled above). Waiting for
+  # each one in turn before starting the next serializes work that can
+  # run concurrently, so every wait below is really just waiting out
+  # whichever of these was slowest to boot.
+  setsid npm run start:dev --prefix apps/api > "$API_LOG" 2>&1 < /dev/null &
+  setsid npm run dev --prefix apps/web > "$WEB_LOG" 2>&1 < /dev/null &
   setsid npm run start:dev --prefix apps/worker > "$WORKER_LOG" 2>&1 < /dev/null &
   echo "$!" > "$WORKER_PID_FILE"
+
+  start_ngrok
+
+  wait_for_http \
+    "http://localhost:$API_PORT/api/v1/health" \
+    "API"
+
+  ok "API listening on http://localhost:$API_PORT"
+
+  wait_for_http \
+    "http://localhost:$WEB_PORT" \
+    "web app"
+
+  ok "web app listening on http://localhost:$WEB_PORT"
 
   wait_for_log \
     "$WORKER_LOG" \
@@ -707,6 +715,15 @@ cmd_up() {
     || start_infra
 
   setup_database
+  start_apps
+  print_summary
+}
+
+cmd_fast() {
+  mkdir -p "$LOG_DIR"
+
+  step "Fast restart — API + web + worker only (no Docker/migrations/seed/ngrok)"
+
   start_apps
   print_summary
 }
@@ -846,7 +863,7 @@ SKIP_INFRA="false"
 
 for arg in "$@"; do
   case "$arg" in
-    up|stop|reset|status|logs)
+    up|fast|stop|reset|status|logs)
       COMMAND="$arg"
       ;;
 
@@ -859,7 +876,7 @@ for arg in "$@"; do
       ;;
 
     -h|--help)
-      sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,21p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
 
@@ -874,6 +891,10 @@ done
 case "$COMMAND" in
   up)
     cmd_up
+    ;;
+
+  fast)
+    cmd_fast
     ;;
 
   stop)
