@@ -78,7 +78,7 @@ export function AdminInterventionsPage() {
     <>
       <PageHeader title="تنبيهات المتابعة" description="كل تنبيهات الطلاب المتعثرين على المنصة" />
 
-      <div className="actions section" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="actions section">
         {(['all', 'active', 'resolved'] as const).map((option) => (
           <button
             key={option}

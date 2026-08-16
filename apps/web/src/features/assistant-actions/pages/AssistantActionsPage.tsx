@@ -106,7 +106,7 @@ export function AssistantActionsPage() {
         }
       />
 
-      <div className="actions section" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="actions section">
         {STATUS_FILTERS.map((filter) => (
           <button
             key={filter.value}
