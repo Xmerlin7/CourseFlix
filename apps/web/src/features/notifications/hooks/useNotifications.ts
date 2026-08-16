@@ -5,6 +5,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../api/notifications.api'
+import { emitUnreadCountChanged } from '../utils/notificationEvents'
 import type {
   NotificationItem,
   NotificationStatusFilter,
@@ -94,6 +95,7 @@ export function useNotifications(): UseNotificationsResult {
               : notification,
           ),
     )
+    emitUnreadCountChanged()
   }
 
   async function markAllRead() {
@@ -103,6 +105,7 @@ export function useNotifications(): UseNotificationsResult {
         ? []
         : current.map((notification) => ({ ...notification, isRead: true })),
     )
+    emitUnreadCountChanged()
   }
 
   return {

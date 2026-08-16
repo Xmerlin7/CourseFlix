@@ -6,6 +6,7 @@ import {
   markNotificationRead,
 } from '../../features/notifications/api/notifications.api'
 import { resolveNotificationTarget } from '../../features/notifications/lib/notification-target'
+import { emitUnreadCountChanged } from '../../features/notifications/utils/notificationEvents'
 import type { NotificationItem, NotificationType } from '../../features/notifications/types/notification.types'
 
 const TYPE_META: Record<NotificationType, { icon: string; lead: string }> = {
@@ -95,6 +96,7 @@ export function NotificationsBell({ notificationCount, viewAllPath }: Notificati
     )
     try {
       await markNotificationRead(notificationId)
+      emitUnreadCountChanged()
     } catch {
       // Panel is a lightweight preview — a failed mark-read here just
       // means the notifications page will show the true state on visit.
@@ -105,6 +107,7 @@ export function NotificationsBell({ notificationCount, viewAllPath }: Notificati
     setItems((current) => current.map((item) => ({ ...item, isRead: true })))
     try {
       await markAllNotificationsRead()
+      emitUnreadCountChanged()
     } catch {
       // See handleMarkRead — best-effort from the panel.
     }

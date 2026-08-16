@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { MailService } from '../mail/mail.service';
 import { OtpService } from '../otp/otp.service';
@@ -151,7 +155,7 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<OtpResponse> {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
-      throw new UnauthorizedException('Email already in use.');
+      throw new ConflictException('Email already in use.');
     }
 
     const passwordHash = await argon2.hash(dto.password);

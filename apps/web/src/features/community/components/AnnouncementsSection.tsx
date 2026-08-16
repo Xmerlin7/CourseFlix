@@ -113,85 +113,84 @@ export function AnnouncementsSection({ courseId, canManage, highlightPostId }: A
 
   return (
     <section className="section" aria-label="إعلانات الدورة" style={{ marginBottom: 8 }}>
-      <div className="announcements-feed">
-        <div className="announcements-feed-header">
-          <h2>
-            <span className="ms" aria-hidden="true">campaign</span>
-            الإعلانات
-          </h2>
-          {canManage && !isComposing && (
-            <button type="button" className="btn tonal" onClick={() => setIsComposing(true)}>
-              <span className="ms">add</span>
-              إعلان جديد
-            </button>
-          )}
-        </div>
-
-        {isComposing && (
-          <form className="announcement-compose-post" onSubmit={handleCreate}>
-            <div className="tf" style={{ marginBottom: 0 }}>
-              <label htmlFor="new-announcement">نص الإعلان</label>
-              <textarea
-                id="new-announcement"
-                value={content}
-                onChange={(event) => setContent(event.target.value)}
-                rows={3}
-                maxLength={5000}
-                placeholder="اكتب تفاصيل الإعلان هنا..."
-                disabled={isSubmitting}
-                required
-              />
-            </div>
-            <AttachmentPicker file={attachment} onChange={setAttachment} disabled={isSubmitting} />
-            <div className="form-dialog-actions">
-              <button
-                type="button"
-                className="btn outline"
-                onClick={() => {
-                  setIsComposing(false)
-                  setContent('')
-                  setAttachment(null)
-                }}
-                disabled={isSubmitting}
-              >
-                إلغاء
-              </button>
-              <button type="submit" className="btn primary" disabled={isSubmitting}>
-                {isSubmitting ? 'جارٍ النشر...' : 'نشر'}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {data.length === 0 ? (
-          <EmptyState
-            title="لا توجد إعلانات بعد"
-            message="ستظهر إعلانات المدرس هنا عند نشرها"
-          />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {data.map((announcement) => (
-              <AnnouncementPostCard
-                key={announcement.id}
-                announcement={announcement}
-                isHighlighted={highlightPostId === announcement.id}
-                isEditing={editingId === announcement.id}
-                editContent={editContent}
-                onStartEdit={() => {
-                  setEditingId(announcement.id)
-                  setEditContent(announcement.content)
-                }}
-                onEditChange={setEditContent}
-                onCancelEdit={() => setEditingId(null)}
-                onSaveEdit={() => handleSaveEdit(announcement.id)}
-                onDelete={() => setPendingDeleteId(announcement.id)}
-                onTogglePin={() => handleTogglePin(announcement.id)}
-                isSubmitting={isSubmitting}
-              />
-            ))}
-          </div>
+      <div className="section-head" style={{ flexWrap: 'wrap', gap: 10 }}>
+        <h2>
+          <span className="ms" style={{ verticalAlign: 'middle', marginInlineEnd: 6 }}>
+            campaign
+          </span>
+          الإعلانات
+        </h2>
+        {canManage && !isComposing && (
+          <button type="button" className="btn tonal" onClick={() => setIsComposing(true)}>
+            <span className="ms">add</span>
+            إعلان جديد
+          </button>
         )}
       </div>
+
+      {isComposing && (
+        <form className="card" onSubmit={handleCreate} style={{ gap: 10, marginBottom: 16 }}>
+          <div className="tf" style={{ marginBottom: 0 }}>
+            <label htmlFor="new-announcement">نص الإعلان</label>
+            <textarea
+              id="new-announcement"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              rows={3}
+              maxLength={5000}
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+          <AttachmentPicker file={attachment} onChange={setAttachment} disabled={isSubmitting} />
+          <div className="form-dialog-actions">
+            <button
+              type="button"
+              className="btn outline"
+              onClick={() => {
+                setIsComposing(false)
+                setContent('')
+                setAttachment(null)
+              }}
+              disabled={isSubmitting}
+            >
+              إلغاء
+            </button>
+            <button type="submit" className="btn primary" disabled={isSubmitting}>
+              {isSubmitting ? 'جارٍ النشر...' : 'نشر'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {data.length === 0 ? (
+        <EmptyState
+          title="لا توجد إعلانات بعد"
+          message="ستظهر إعلانات المدرس هنا عند نشرها"
+        />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          {data.map((announcement) => (
+            <AnnouncementCard
+              key={announcement.id}
+              announcement={announcement}
+              isHighlighted={highlightPostId === announcement.id}
+              isEditing={editingId === announcement.id}
+              editContent={editContent}
+              onStartEdit={() => {
+                setEditingId(announcement.id)
+                setEditContent(announcement.content)
+              }}
+              onEditChange={setEditContent}
+              onCancelEdit={() => setEditingId(null)}
+              onSaveEdit={() => handleSaveEdit(announcement.id)}
+              onDelete={() => setPendingDeleteId(announcement.id)}
+              onTogglePin={() => handleTogglePin(announcement.id)}
+              isSubmitting={isSubmitting}
+            />
+          ))}
+        </div>
+      )}
 
       <ConfirmModal
         open={pendingDeleteId !== null}
@@ -207,7 +206,7 @@ export function AnnouncementsSection({ courseId, canManage, highlightPostId }: A
   )
 }
 
-interface AnnouncementPostCardProps {
+interface AnnouncementCardProps {
   announcement: Announcement
   isHighlighted?: boolean
   isEditing: boolean
@@ -221,7 +220,7 @@ interface AnnouncementPostCardProps {
   isSubmitting: boolean
 }
 
-function AnnouncementPostCard({
+function AnnouncementCard({
   announcement,
   isHighlighted = false,
   isEditing,
@@ -233,73 +232,38 @@ function AnnouncementPostCard({
   onDelete,
   onTogglePin,
   isSubmitting,
-}: AnnouncementPostCardProps) {
+}: AnnouncementCardProps) {
   return (
-    <article
+    <div
       id={`announcement-${announcement.id}`}
-      className={`announcement-yt-post${announcement.isPinned ? ' is-pinned' : ''}${
-        isHighlighted ? ' is-highlighted' : ''
+      className={`card${announcement.isPinned ? ' announcement-pinned' : ''}${
+        isHighlighted ? ' announcement-highlighted' : ''
       }`}
+      style={{ gap: 8 }}
     >
-      <header className="announcement-yt-header">
-        <div className="announcement-yt-author">
-          <div className="announcement-yt-avatar" aria-hidden="true">
-            <span className="ms">school</span>
-          </div>
-          <div className="announcement-yt-author-info">
-            <div className="announcement-yt-author-name">
-              <span>مدرس المادة</span>
-              <span className="ms sm announcement-yt-verified" aria-label="موثق">
-                verified
-              </span>
-            </div>
-            <time className="announcement-yt-time" dateTime={announcement.createdAt}>
-              {formatDate(announcement.createdAt)}
-            </time>
-          </div>
-        </div>
-
-        <div className="announcement-yt-actions">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+        <span className="meta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {announcement.isPinned && (
-            <span className="announcement-yt-pinned-chip">
-              <span className="ms" aria-hidden="true">push_pin</span>
-              مثبت
+            <span className="ms" style={{ fontSize: 16, color: 'var(--primary)' }} aria-label="مثبت">
+              push_pin
             </span>
           )}
-
-          {announcement.canManage && (
-            <>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={onTogglePin}
-                title={announcement.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
-                aria-label={announcement.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
-              >
-                <span className="ms">{announcement.isPinned ? 'keep_off' : 'push_pin'}</span>
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={onStartEdit}
-                title="تعديل"
-                aria-label="تعديل"
-              >
-                <span className="ms">edit</span>
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={onDelete}
-                title="حذف"
-                aria-label="حذف"
-              >
-                <span className="ms">delete</span>
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+          {formatDate(announcement.createdAt)}
+        </span>
+        {announcement.canManage && (
+          <span style={{ display: 'flex', gap: 4 }}>
+            <button type="button" className="icon-btn" onClick={onTogglePin} aria-label={announcement.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}>
+              <span className="ms">{announcement.isPinned ? 'keep_off' : 'push_pin'}</span>
+            </button>
+            <button type="button" className="icon-btn" onClick={onStartEdit} aria-label="تعديل">
+              <span className="ms">edit</span>
+            </button>
+            <button type="button" className="icon-btn" onClick={onDelete} aria-label="حذف">
+              <span className="ms">delete</span>
+            </button>
+          </span>
+        )}
+      </div>
 
       {isEditing ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -308,8 +272,6 @@ function AnnouncementPostCard({
             onChange={(event) => onEditChange(event.target.value)}
             rows={3}
             disabled={isSubmitting}
-            className="tf"
-            style={{ width: '100%', marginBottom: 0 }}
           />
           <div className="form-dialog-actions">
             <button type="button" className="btn outline" onClick={onCancelEdit} disabled={isSubmitting}>
@@ -321,18 +283,14 @@ function AnnouncementPostCard({
           </div>
         </div>
       ) : (
-        <p className="announcement-yt-content">{announcement.content}</p>
+        <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{announcement.content}</p>
       )}
 
       {announcement.attachments.length > 0 && (
-        <div className="announcement-yt-media">
-          <AttachmentPreviewList
-            attachments={announcement.attachments}
-            variant="feed"
-            layout="vertical"
-          />
+        <div className="announcement-attachments" style={{ marginTop: 6 }}>
+          <AttachmentPreviewList attachments={announcement.attachments} layout="vertical" />
         </div>
       )}
-    </article>
+    </div>
   )
 }
