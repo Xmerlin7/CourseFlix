@@ -928,132 +928,118 @@ form + .cfa-alert {
 
 /* ---------------------------------------------------------------------------
  * 9. Showcase side
+ *
+ * A single marbled artwork with type set over it — no cards, no panels, no
+ * mock UI. The previous version put a glass card in the middle of this
+ * column, which meant the eye had to parse a miniature interface before it
+ * reached a single word; the panel is a poster, and a poster is art plus a
+ * sentence.
  * ------------------------------------------------------------------------ */
 
 .cfa-aside {
+  /* The artwork's palette. Every stop is mixed from --primary so the piece
+     follows the accent the user picked, with two fixed hues blended in to
+     give a real pour its colour range — a marble in a single hue reads as
+     a gradient, not as paint. */
+  --cfa-art-base: color-mix(in oklab, var(--primary) 62%, #100A22);
+  --cfa-art-deep: color-mix(in oklab, var(--primary) 26%, #070511);
+  --cfa-art-light: color-mix(in oklab, var(--primary) 34%, #FFFFFF);
+  --cfa-art-cool: color-mix(in oklab, var(--primary) 58%, #38BDF8);
+  --cfa-art-warm: color-mix(in oklab, var(--primary) 54%, #F472B6);
+
   position: relative;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(120% 88% at 82% 4%, var(--cfa-ink-lift), transparent 58%),
-    radial-gradient(96% 74% at 6% 96%, color-mix(in oklab, var(--primary) 46%, transparent), transparent 62%),
-    linear-gradient(158deg, var(--cfa-ink) 0%, var(--cfa-ink-deep) 100%);
-  color: var(--cfa-on-ink);
+  justify-content: flex-end;
+  padding: clamp(34px, 4vw, 62px);
+  background: var(--cfa-art-deep);
+  color: #FFFFFF;
   overflow: hidden;
 }
 
-/* Two slow-drifting orbs give the panel depth without a canvas or a
-   requestAnimationFrame loop — the previous shell ran a 420-line mesh
-   renderer for an effect this achieves in nine lines of CSS. */
-.cfa-orb {
+.cfa-art {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.5;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   pointer-events: none;
-  will-change: transform;
 }
 
-.cfa-orb.one {
-  width: 46%;
-  aspect-ratio: 1;
-  inset-block-start: -8%;
-  inset-inline-start: -10%;
-  background: color-mix(in oklab, var(--primary) 78%, #FFFFFF);
-  animation: cfa-drift-a 19s ease-in-out infinite;
-}
-
-.cfa-orb.two {
-  width: 40%;
-  aspect-ratio: 1;
-  inset-block-end: -12%;
-  inset-inline-end: -6%;
-  background: color-mix(in oklab, var(--primary) 58%, #22D3EE);
-  animation: cfa-drift-b 23s ease-in-out infinite;
-}
-
-/* Fine grain over the gradient. Gradients this large band visibly on
-   8-bit displays; a low-opacity noise layer breaks the banding up. */
-.cfa-grain {
+/*
+ * Legibility veil. The artwork is deliberately high-contrast, so the type
+ * needs a floor under it rather than a text-shadow — a shadow on a 30px
+ * Arabic heading muddies the letterforms, a gradient behind it does not.
+ * Weighted to the block-end because that is where the copy sits.
+ */
+.cfa-veil {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background: linear-gradient(
+    to top,
+    rgba(6, 4, 14, 0.88) 0%,
+    rgba(6, 4, 14, 0.62) 34%,
+    rgba(6, 4, 14, 0.18) 62%,
+    transparent 88%
+  );
 }
 
-/* The panel clips its orbs, so the content needs its own scroller rather
-   than letting a tall showcase spill into a hidden overflow. */
-.cfa-aside-scroll {
+.cfa-aside-inner {
   position: relative;
   z-index: 1;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: flex;
-  padding: clamp(32px, 3.6vw, 60px) clamp(26px, 3.2vw, 52px);
-}
-
-/* Same auto-margin centring as the form column, for the same reason. */
-.cfa-aside-inner {
-  width: 100%;
-  margin-block: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: clamp(20px, 2.4vw, 30px);
-}
-
-.cfa-aside-head {
-  max-width: 32ch;
+  max-width: 30ch;
 }
 
 .cfa-aside-title {
-  font-size: clamp(24px, 2.5vw, 32px);
+  font-size: clamp(30px, 3.4vw, 44px);
   font-weight: 800;
-  line-height: 1.45;
-  letter-spacing: -0.2px;
-  margin: 0 0 12px;
+  line-height: 1.32;
+  letter-spacing: -0.4px;
+  margin: 0 0 14px;
+  color: #FFFFFF;
 }
 
 .cfa-aside-text {
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.85;
-  color: var(--cfa-on-ink-dim);
   margin: 0;
+  color: color-mix(in oklab, #FFFFFF 76%, transparent);
 }
 
-/* Value props under the course card. */
+/* Quiet rule between the pitch and the proof points. */
 .cfa-points {
   display: grid;
-  gap: 13px;
-  margin: 0;
-  padding: 0;
+  gap: 14px;
+  margin: 26px 0 0;
+  padding: 22px 0 0;
+  border-top: 1px solid color-mix(in oklab, #FFFFFF 18%, transparent);
   list-style: none;
 }
 
 .cfa-points li {
   display: flex;
   align-items: center;
-  gap: 11px;
-  font-size: 13.5px;
+  gap: 12px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--cfa-on-ink-dim);
+  line-height: 1.5;
+  color: color-mix(in oklab, #FFFFFF 88%, transparent);
 }
 
 .cfa-points .ms {
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 17px;
-  color: var(--cfa-on-ink);
+  font-size: 18px;
+  color: #FFFFFF;
   background: color-mix(in oklab, #FFFFFF 14%, transparent);
-  border: 1px solid color-mix(in oklab, #FFFFFF 16%, transparent);
+  border: 1px solid color-mix(in oklab, #FFFFFF 22%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1067,16 +1053,6 @@ form + .cfa-alert {
 
 @keyframes cfa-spin {
   to { transform: rotate(360deg); }
-}
-
-@keyframes cfa-drift-a {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(9%, 7%, 0) scale(1.12); }
-}
-
-@keyframes cfa-drift-b {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1.06); }
-  50% { transform: translate3d(-8%, -9%, 0) scale(1); }
 }
 
 /* Staggered entrance for the form column. Applied on the wrapper's direct
@@ -1111,8 +1087,8 @@ form + .cfa-alert {
 
 /* --- Landscape tablet ----------------------------------------------------
    Still wide enough for the split, but not for everything in the panel.
-   The highlights list is the most expendable thing there — the spotlight
-   and the headline carry the message on their own. */
+   The proof-points list is the most expendable thing there — the headline
+   over the artwork carries the message on its own. */
 @media (max-width: 1080px) {
   .cfa-shell {
     grid-template-columns: minmax(0, 1fr) minmax(0, 0.78fr);
@@ -1129,8 +1105,8 @@ form + .cfa-alert {
 
 /* --- Portrait tablet and below ------------------------------------------
    Below this the split stops paying for itself: the showcase column gets
-   too narrow for the spotlight to read. The form takes the full viewport
-   and the featured course survives as the compact strip. */
+   too narrow for the artwork's type to breathe. The form takes the full
+   viewport and the showcase is dropped outright. */
 @media (max-width: 900px) {
   .cfa-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -1231,7 +1207,6 @@ form + .cfa-alert {
  * ------------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
-  .cfa-orb,
   .cfa-enter > *,
   .cfa-pane,
   .cfa-error,
@@ -1247,8 +1222,4 @@ form + .cfa-alert {
   .cfa-spinner {
     animation-duration: 1.4s;
   }
-}
-
-:root[data-reduce-motion="1"] .cfa-orb {
-  animation: none;
 }
