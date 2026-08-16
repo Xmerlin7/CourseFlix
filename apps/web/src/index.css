@@ -1888,53 +1888,6 @@ textarea:placeholder-shown {
   }
 }
 
-/* ---------- Auth poster copy editor (Settings > auth poster) ----------
-   The editor chrome only — the card being edited, and the preview frame
-   around it, live in features/auth/components/TeacherPoster.css so the
-   preview and the real /login card can never drift apart. */
-.auth-copy-customizer {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding-top: 4px;
-}
-
-.auth-copy-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.auth-copy-heading h4,
-.auth-copy-heading .meta {
-  margin: 0;
-}
-
-.auth-copy-heading .meta {
-  margin-top: 5px;
-}
-
-.auth-copy-heading .btn {
-  flex: none;
-}
-
-.auth-copy-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 12px;
-}
-
-@media (max-width: 700px) {
-  .auth-copy-heading {
-    flex-direction: column;
-  }
-
-  .auth-copy-fields {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* ---------- Standalone legal document pages (/terms, /privacy) ----------
    These render outside the signed-in shell, so they have to scroll
    themselves: `body.shell` above is pinned to 100vh with overflow hidden

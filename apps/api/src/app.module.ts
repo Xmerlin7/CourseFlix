@@ -25,7 +25,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { OAuthModule } from './modules/oauth/oauth.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { PaymobModule } from './modules/paymob/paymob.module';
-import { PlatformSettingsModule } from './modules/platform-settings/platform-settings.module';
 import { QuizzesModule } from './modules/quizzes/quiz.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { StudentModule } from './modules/student/student.module';
@@ -83,7 +82,6 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     MailModule,
     OAuthModule,
     CoursesModule,
-    PlatformSettingsModule,
     EnrollmentsModule,
     StudentModule,
     TeacherModule,
