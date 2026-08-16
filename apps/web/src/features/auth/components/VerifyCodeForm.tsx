@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
+import { AuthSubmit } from './AuthUi'
 import { useAuth } from '../hooks/useAuth'
 import type { AuthUser, OtpPurpose, OtpResponse } from '../types/auth.types'
 
@@ -76,48 +77,64 @@ export function VerifyCodeForm({
   return (
     <form onSubmit={(event) => void handleSubmit(event)} noValidate>
       {currentDevCode && (
-        <p className="otp-dev-hint" role="note">
-          <span className="ms sm" aria-hidden="true">code</span>
-          وضع التطوير: إرسال الإيميل مش متظبط، الكود هو{' '}
-          <button type="button" className="otp-dev-hint-code" onClick={() => setCode(currentDevCode)}>
+        <p className="cfa-devcode" role="note">
+          <span className="ms" aria-hidden="true">
+            code
+          </span>
+          وضع التطوير: إرسال الإيميل مش متظبط، الكود هو
+          <button type="button" onClick={() => setCode(currentDevCode)}>
             {currentDevCode}
           </button>
         </p>
       )}
-      <div className="tf">
-        <label htmlFor="otpCode">رمز التحقق</label>
+
+      <div className={`cfa-field${error ? ' invalid' : ''}`}>
+        <label className="cfa-label" htmlFor="otpCode">
+          رمز التحقق
+        </label>
         <input
           type="text"
           inputMode="numeric"
           id="otpCode"
-          placeholder="أدخل الرمز المكوّن من ٦ أرقام"
+          className="cfa-otp"
+          placeholder="––––––"
           autoComplete="one-time-code"
           autoFocus
           required
           maxLength={6}
           value={code}
           onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? 'otp-error' : undefined}
         />
         {error && (
-          <span className="error-text" role="alert">
+          <span className="cfa-error" id="otp-error" role="alert">
+            <span className="ms" aria-hidden="true">
+              error
+            </span>
             {error}
           </span>
         )}
       </div>
 
-      <button className="btn big" type="submit" disabled={isVerifying} style={{ width: '100%' }}>
-        {isVerifying ? 'جارٍ التحقق...' : 'تأكيد الرمز'}
-      </button>
+      <AuthSubmit icon="verified" isPending={isVerifying} pendingLabel="جارٍ التحقق...">
+        تأكيد الرمز
+      </AuthSubmit>
 
-      <button
-        type="button"
-        className="btn text btn-compact"
-        disabled={isResending}
-        onClick={() => void handleResend()}
-        style={{ marginTop: '0.5rem' }}
-      >
-        {isResending ? 'جارٍ الإرسال...' : 'لم يصلك الرمز؟ أعد الإرسال'}
-      </button>
+      <div className="cfa-row">
+        <span className="cfa-hint">لم يصلك الرمز؟</span>
+        <button
+          type="button"
+          className="cfa-link-btn"
+          disabled={isResending}
+          onClick={() => void handleResend()}
+        >
+          <span className="ms" aria-hidden="true">
+            refresh
+          </span>
+          {isResending ? 'جارٍ الإرسال...' : 'إعادة الإرسال'}
+        </button>
+      </div>
     </form>
   )
 }

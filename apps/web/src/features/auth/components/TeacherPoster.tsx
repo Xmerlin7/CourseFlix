@@ -1,10 +1,12 @@
-import { useState, type CSSProperties, type MouseEvent } from 'react'
+import './TeacherPoster.css'
 import {
   DEFAULT_AUTH_POSTER_CUSTOMIZATION,
   type AuthPosterContent,
   type AuthPosterCourse,
 } from '../types/auth-poster.types'
 
+// Shown whenever the public auth-poster config is unreachable or no course
+// has been featured yet, so the showcase panel is never a hole.
 const FALLBACK_COURSE: AuthPosterCourse = {
   id: null,
   title: 'الفيزياء',
@@ -19,40 +21,42 @@ function getPosterCourse(content?: AuthPosterContent | null): AuthPosterCourse {
   return content?.course ?? FALLBACK_COURSE
 }
 
+// The card's description sits in a fixed-height rhythm beside the stats;
+// letting an arbitrarily long course description through pushes the stats
+// and progress bar out of the panel on shorter viewports.
 function getShortDescription(description: string | null): string {
   const fallback = FALLBACK_COURSE.description ?? ''
   const normalized = description?.trim() || fallback
   return normalized.length > 130 ? `${normalized.slice(0, 127).trim()}...` : normalized
 }
 
-function PosterAvatar({ title, coverImageUrl }: Pick<AuthPosterCourse, 'title' | 'coverImageUrl'>) {
+function CoverArt({ title, coverImageUrl }: Pick<AuthPosterCourse, 'title' | 'coverImageUrl'>) {
   if (coverImageUrl) {
-    return (
-      <img
-        className="poster-cover-img"
-        src={coverImageUrl}
-        alt=""
-        loading="lazy"
-        decoding="async"
-      />
-    )
+    return <img src={coverImageUrl} alt="" loading="lazy" decoding="async" />
   }
 
   return (
-    <div className="poster-cover-fallback" aria-hidden="true">
+    <div className="cfp-cover-fallback" aria-hidden="true">
       <span className="ms">auto_stories</span>
       <strong>{title.slice(0, 2)}</strong>
     </div>
   )
 }
 
+/**
+ * Compact echo of the featured course, for the breakpoint where the
+ * showcase panel is hidden. Without it the admin's featured-course choice
+ * would simply vanish on phones, which is where most students sign in.
+ */
 export function AuthCourseStrip({ content }: { content?: AuthPosterContent | null }) {
   const course = getPosterCourse(content)
 
   return (
-    <div className="auth-course-strip">
-      <span className="auth-course-strip-icon ms">school</span>
-      <span>
+    <div className="cfa-course-strip">
+      <span className="cfa-course-strip-icon ms" aria-hidden="true">
+        school
+      </span>
+      <span className="cfa-course-strip-text">
         <strong>{course.title}</strong>
         <small>{course.teacherName}</small>
       </span>
@@ -60,7 +64,15 @@ export function AuthCourseStrip({ content }: { content?: AuthPosterContent | nul
   )
 }
 
-export function TeacherPoster({ content, isLoading = false }: {
+/**
+ * The featured-course card. Rendered in two places — the auth showcase
+ * panel and the live preview inside Settings > auth poster — so it takes
+ * all of its content from props and owns no layout beyond its own box.
+ */
+export function TeacherPoster({
+  content,
+  isLoading = false,
+}: {
   content?: AuthPosterContent | null
   isLoading?: boolean
 }) {
@@ -69,77 +81,65 @@ export function TeacherPoster({ content, isLoading = false }: {
     ...DEFAULT_AUTH_POSTER_CUSTOMIZATION,
     ...content?.customization,
   }
-  const studyStats = [
-    { label: customization.studyPlanLabel, value: customization.studyPlanValue },
-    { label: customization.quizLabel, value: customization.quizValue },
-    { label: customization.followUpLabel, value: customization.followUpValue },
-  ]
-  const [tilt, setTilt] = useState({ x: 0, y: 0 })
 
-  function handlePointerMove(event: MouseEvent<HTMLDivElement>) {
-    const rect = event.currentTarget.getBoundingClientRect()
-    setTilt({
-      x: (event.clientX - rect.left) / rect.width - 0.5,
-      y: (event.clientY - rect.top) / rect.height - 0.5,
-    })
-  }
+  const stats = [
+    { value: customization.studyPlanValue, label: customization.studyPlanLabel },
+    { value: customization.quizValue, label: customization.quizLabel },
+    { value: customization.followUpValue, label: customization.followUpLabel },
+  ]
 
   return (
-    <div
-      className={`poster-stage${isLoading ? ' loading' : ''}`}
-      style={{
-        '--poster-x': tilt.x,
-        '--poster-y': tilt.y,
-      } as CSSProperties}
-      onMouseMove={handlePointerMove}
-      onMouseLeave={() => setTilt({ x: 0, y: 0 })}
+    <article
+      className={`cfp-card${isLoading ? ' loading' : ''}`}
+      lang="ar"
+      dir="rtl"
+      aria-busy={isLoading || undefined}
     >
-      <div className="poster-light" aria-hidden="true" />
-      <div className="poster-grid-lines" aria-hidden="true" />
+      <div className="cfp-cover">
+        <CoverArt title={course.title} coverImageUrl={course.coverImageUrl} />
+        <span className="cfp-cover-scrim" aria-hidden="true" />
+        <span className="cfp-badge">
+          <span className="ms" aria-hidden="true">
+            verified
+          </span>
+          {customization.badgeText}
+        </span>
+      </div>
 
-      <div className="poster notranslate" lang="ar" dir="rtl" translate="no">
-        <div className="poster-hero">
-          <PosterAvatar title={course.title} coverImageUrl={course.coverImageUrl} />
-          <div className="poster-hero-overlay" />
-          <span className="poster-live-badge">
-            <span className="ms">verified</span>
-            {customization.badgeText}
+      <div className="cfp-body">
+        <div>
+          <span className="cfp-grade">{course.gradeLevel ?? 'برنامج دراسي كامل'}</span>
+          <h2 className="cfp-title">{course.title}</h2>
+        </div>
+
+        <div className="cfp-teacher">
+          <span className="cfp-teacher-icon ms" aria-hidden="true">
+            person
+          </span>
+          <span className="cfp-teacher-text">
+            <span className="prefix">{customization.teacherPrefix}</span>
+            <span className="name">{course.teacherName}</span>
           </span>
         </div>
 
-        <div className="poster-body">
-          <div className="poster-head">
-            <span className="poster-head-note">{course.gradeLevel ?? 'برنامج دراسي كامل'}</span>
-            <h2 className="poster-subject">{course.title}</h2>
-          </div>
+        <p className="cfp-desc">{getShortDescription(course.description)}</p>
 
-          <div className="poster-identity">
-            <span className="poster-teacher-icon ms">person</span>
-            <div className="poster-titles">
-              <p className="poster-eyebrow">{customization.teacherPrefix}</p>
-              <p className="poster-name">{course.teacherName}</p>
-            </div>
-          </div>
+        <ul className="cfp-stats">
+          {stats.map((stat) => (
+            <li key={stat.label}>
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </li>
+          ))}
+        </ul>
 
-          <p className="poster-description">{getShortDescription(course.description)}</p>
-
-          <ul className="poster-stats">
-            {studyStats.map((stat, index) => (
-              <li key={index}>
-                <strong>{stat.value}</strong>
-                <span>{stat.label}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="poster-progress">
-            <span>{customization.journeyLabel}</span>
-            <div className="poster-progress-track">
-              <span />
-            </div>
+        <div className="cfp-progress">
+          <span className="cfp-progress-label">{customization.journeyLabel}</span>
+          <div className="cfp-progress-track" aria-hidden="true">
+            <i />
           </div>
         </div>
       </div>
-    </div>
+    </article>
   )
 }

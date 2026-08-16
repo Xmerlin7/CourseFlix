@@ -2,7 +2,8 @@ import { Fragment, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
-import { PasswordField } from '../../../shared/components/PasswordField'
+import { AuthField, AuthPasswordField } from './AuthField'
+import { AuthAlert, AuthSubmit } from './AuthUi'
 import { requestOtp } from '../api/auth.api'
 import { useAuth } from '../hooks/useAuth'
 import { getRoleHomePath } from '../utils/get-role-home-path'
@@ -123,154 +124,160 @@ export function RegisterForm() {
   const verificationEmail = pendingRegistration?.email ?? resumeEmail
   const isResume = resumeEmail !== null
 
-  return verificationEmail ? (
-    <>
-      <p className="subtitle" style={{ marginBottom: '1rem' }}>
-        {isResume ? (
-          <>
-            البريد <strong>{verificationEmail}</strong> مسجل بالفعل — إن كنت أنشأت
-            الحساب ولم تفعّله بعد، أعد إرسال الرمز وأدخله بالأسفل.
-          </>
-        ) : (
-          <>
-            راسلنا رمز تحقق إلى <strong>{verificationEmail}</strong> — اكتبه
-            بالأسفل لتفعيل حسابك وتسجيل الدخول.
-          </>
-        )}
-      </p>
-      <VerifyCodeForm
-        email={verificationEmail}
-        purpose="register"
-        devCode={pendingRegistration?.devCode}
-        onResend={(email) => requestOtp({ email, purpose: 'register' })}
-        onResendResult={(response) => {
-          if (isResume && response.accountStatus === 'active') {
-            setStepError('هذا البريد مفعّل بالفعل — سجّل الدخول مباشرة بكلمة المرور')
-          } else if (isResume && response.accountStatus === 'unknown') {
-            setStepError('هذا البريد غير مسجل في المنصة — أنشئ حسابًا جديدًا من البداية')
-          }
-        }}
-        onVerified={(user) => navigate(getRoleHomePath(user.role), { replace: true })}
-      />
-      {stepError && (
-        <span className="error-text" role="alert" style={{ display: 'block', marginTop: '0.5rem' }}>
-          {stepError}
-        </span>
-      )}
-      {isResume && (
-        <button
-          type="button"
-          className="btn text btn-compact"
-          onClick={() => {
-            setResumeEmail(null)
-            setStep(0)
+  if (verificationEmail) {
+    return (
+      <>
+        <p className="cfa-sent-to">
+          <span className="ms" aria-hidden="true">
+            mark_email_unread
+          </span>
+          <span>
+            {isResume ? (
+              <>
+                البريد <strong>{verificationEmail}</strong> مسجل بالفعل — إن كنت أنشأت
+                الحساب ولم تفعّله بعد، أعد إرسال الرمز وأدخله بالأسفل.
+              </>
+            ) : (
+              <>
+                راسلنا رمز تحقق إلى <strong>{verificationEmail}</strong> — اكتبه بالأسفل
+                لتفعيل حسابك وتسجيل الدخول.
+              </>
+            )}
+          </span>
+        </p>
+
+        <VerifyCodeForm
+          email={verificationEmail}
+          purpose="register"
+          devCode={pendingRegistration?.devCode}
+          onResend={(target) => requestOtp({ email: target, purpose: 'register' })}
+          onResendResult={(response) => {
+            if (isResume && response.accountStatus === 'active') {
+              setStepError('هذا البريد مفعّل بالفعل — سجّل الدخول مباشرة بكلمة المرور')
+            } else if (isResume && response.accountStatus === 'unknown') {
+              setStepError('هذا البريد غير مسجل في المنصة — أنشئ حسابًا جديدًا من البداية')
+            }
           }}
-          style={{ marginTop: '0.5rem' }}
-        >
-          استخدم بريدًا آخر
-        </button>
-      )}
-    </>
-  ) : (
-    <form onSubmit={(event) => void handleSubmit(event)} noValidate className="register-wizard">
-      <div className="stepper" aria-label="خطوات إنشاء الحساب">
-        <div className="stepper-track">
-          {STEPS.map((label, index) => (
-            <Fragment key={label}>
-              {index > 0 && <span className={`stepper-line${index <= step ? ' done' : ''}`} aria-hidden="true" />}
-              <span
-                className={`stepper-circle${index === step ? ' current' : ''}${index < step ? ' done' : ''}`}
-                aria-current={index === step ? 'step' : undefined}
-              >
-                {index < step ? <span className="ms sm">check</span> : index + 1}
+          onVerified={(user) => navigate(getRoleHomePath(user.role), { replace: true })}
+        />
+
+        {stepError && <AuthAlert>{stepError}</AuthAlert>}
+
+        {isResume && (
+          <div className="cfa-row">
+            <button
+              type="button"
+              className="cfa-link-btn"
+              onClick={() => {
+                setResumeEmail(null)
+                setStep(0)
+              }}
+            >
+              <span className="ms" aria-hidden="true">
+                arrow_forward
               </span>
-            </Fragment>
-          ))}
-        </div>
-        <div className="stepper-labels">
-          {STEPS.map((label, index) => (
-            <span key={label} className={`stepper-label${index === step ? ' current' : ''}`}>
-              {label}
-            </span>
-          ))}
-        </div>
+              استخدم بريدًا آخر
+            </button>
+          </div>
+        )}
+      </>
+    )
+  }
+
+  return (
+    <form onSubmit={(event) => void handleSubmit(event)} noValidate>
+      <div className="cfa-steps" role="group" aria-label="خطوات إنشاء الحساب">
+        {STEPS.map((label, index) => (
+          <Fragment key={label}>
+            {index > 0 && (
+              <span
+                className={`cfa-step-line${index <= step ? ' done' : ''}`}
+                aria-hidden="true"
+              />
+            )}
+            <div
+              className={`cfa-step${index === step ? ' current' : ''}${index < step ? ' done' : ''}`}
+              aria-current={index === step ? 'step' : undefined}
+            >
+              <span className="cfa-step-dot">
+                {index < step ? (
+                  <span className="ms" aria-hidden="true">
+                    check
+                  </span>
+                ) : (
+                  index + 1
+                )}
+              </span>
+              <span className="cfa-step-label">{label}</span>
+            </div>
+          </Fragment>
+        ))}
       </div>
 
       {step === 0 && (
-        <div className="wizard-step">
-          <div className={`tf${fieldErrors.fullName ? ' invalid' : ''}`}>
-            <label htmlFor="fullName">الاسم الكامل</label>
-            <input
-              type="text"
-              id="fullName"
-              placeholder="أحمد محمد"
-              autoComplete="name"
-              autoFocus
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-            />
-            {fieldErrors.fullName && (
-              <span className="error-text" role="alert">
-                {fieldErrors.fullName}
-              </span>
-            )}
-          </div>
+        <div className="cfa-pane">
+          <AuthField
+            id="fullName"
+            label="الاسم الكامل"
+            icon="person"
+            type="text"
+            placeholder="أحمد محمد"
+            autoComplete="name"
+            autoFocus
+            value={fullName}
+            onChange={setFullName}
+            error={fieldErrors.fullName}
+          />
 
-          <div className={`tf${fieldErrors.email ? ' invalid' : ''}`}>
-            <label htmlFor="email">البريد الإلكتروني</label>
-            <input
-              type="email"
-              id="email"
-              placeholder="أدخل بريدك الإلكتروني"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            {fieldErrors.email && (
-              <span className="error-text" role="alert">
-                {fieldErrors.email}
-              </span>
-            )}
-          </div>
+          <AuthField
+            id="email"
+            label="البريد الإلكتروني"
+            icon="mail"
+            type="email"
+            inputMode="email"
+            placeholder="name@example.com"
+            autoComplete="email"
+            dir="ltr"
+            value={email}
+            onChange={setEmail}
+            error={fieldErrors.email}
+          />
         </div>
       )}
 
       {step === 1 && (
-        <div className="wizard-step">
-          <PasswordField
+        <div className="cfa-pane">
+          <AuthPasswordField
             id="password"
             label="كلمة المرور"
             placeholder="٨ أحرف على الأقل"
             autoComplete="new-password"
             autoFocus
+            showStrength
             value={password}
             onChange={setPassword}
-            invalid={Boolean(fieldErrors.password)}
             error={fieldErrors.password}
           />
 
-          <PasswordField
+          <AuthPasswordField
             id="confirmPassword"
             label="تأكيد كلمة المرور"
             placeholder="٨ أحرف على الأقل"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={setConfirmPassword}
-            invalid={Boolean(fieldErrors.confirmPassword)}
             error={fieldErrors.confirmPassword}
           />
         </div>
       )}
 
       {step === 2 && (
-        <div className="wizard-step">
-          <p className="subtitle" style={{ marginBottom: 0 }}>
-            لازم تقرأ وتوافق على الاثنين عشان تقدر تكمل
-          </p>
+        <div className="cfa-pane">
+          <p className="cfa-subtitle">لازم تقرأ وتوافق على الاثنين عشان تقدر تكمل</p>
 
-          <div className="legal-accept">
-            <div className="legal-accept-row">
-              <label className={`legal-check${acceptedTerms ? ' checked' : ''}`}>
+          <div className="cfa-consent">
+            <div className="cfa-consent-row">
+              <label className={`cfa-check${acceptedTerms ? ' checked' : ''}`}>
                 <input
                   type="checkbox"
                   checked={acceptedTerms}
@@ -278,14 +285,21 @@ export function RegisterForm() {
                 />
                 وافقت على الشروط والأحكام
               </label>
-              <Link to={ROUTE_PATHS.TERMS} target="_blank" rel="noopener noreferrer" className="btn text btn-compact">
-                <span className="ms">open_in_new</span>
+              <Link
+                to={ROUTE_PATHS.TERMS}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cfa-read"
+              >
+                <span className="ms" aria-hidden="true">
+                  open_in_new
+                </span>
                 قراءة
               </Link>
             </div>
 
-            <div className="legal-accept-row">
-              <label className={`legal-check${acceptedPrivacy ? ' checked' : ''}`}>
+            <div className="cfa-consent-row">
+              <label className={`cfa-check${acceptedPrivacy ? ' checked' : ''}`}>
                 <input
                   type="checkbox"
                   checked={acceptedPrivacy}
@@ -297,9 +311,11 @@ export function RegisterForm() {
                 to={ROUTE_PATHS.PRIVACY}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn text btn-compact"
+                className="cfa-read"
               >
-                <span className="ms">open_in_new</span>
+                <span className="ms" aria-hidden="true">
+                  open_in_new
+                </span>
                 قراءة
               </Link>
             </div>
@@ -307,37 +323,29 @@ export function RegisterForm() {
         </div>
       )}
 
-      {stepError && (
-        <span className="error-text" role="alert">
-          {stepError}
-        </span>
-      )}
+      {stepError && <AuthAlert>{stepError}</AuthAlert>}
 
-      <div className="wizard-actions">
+      {/* One actions row for every step — the submit button is `flex: 1`, so
+          it simply fills the row on step 0 where there is nothing to go back
+          to. */}
+      <div className="cfa-actions">
         {step > 0 && (
-          <button type="button" className="btn outline" onClick={goBack}>
-            <span className="ms">arrow_forward</span>
+          <button type="button" className="cfa-btn ghost" onClick={goBack}>
+            <span className="ms" aria-hidden="true">
+              arrow_forward
+            </span>
             السابق
           </button>
         )}
-        <button
-          type="submit"
-          className="btn big"
-          disabled={isSubmitting || (isLastStep && (!acceptedTerms || !acceptedPrivacy))}
-          style={step === 0 ? { width: '100%' } : undefined}
+
+        <AuthSubmit
+          icon={isLastStep ? 'person_add' : 'arrow_back'}
+          isPending={isSubmitting}
+          pendingLabel="جارٍ إنشاء الحساب..."
+          disabled={isLastStep && (!acceptedTerms || !acceptedPrivacy)}
         >
-          {isLastStep ? (
-            <>
-              <span className="ms">person_add</span>
-              {isSubmitting ? 'جارٍ إنشاء الحساب...' : 'إنشاء حساب'}
-            </>
-          ) : (
-            <>
-              التالي
-              <span className="ms">arrow_back</span>
-            </>
-          )}
-        </button>
+          {isLastStep ? 'إنشاء حساب' : 'التالي'}
+        </AuthSubmit>
       </div>
     </form>
   )

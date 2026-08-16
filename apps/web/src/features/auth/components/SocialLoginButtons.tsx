@@ -9,22 +9,24 @@ export function SocialLoginButtons() {
   }
 
   return (
-    <div className="social-login">
-      <div className="social-divider" aria-hidden="true">
-        <span>أو</span>
+    <>
+      <div className="cfa-divider">
+        <span>أو تابع باستخدام</span>
       </div>
 
-      <button type="button" className="btn outlined social-btn" onClick={startGoogle}>
-        <GoogleIcon />
-        المتابعة باستخدام Google
-      </button>
+      <div className="cfa-social">
+        <button type="button" className="cfa-social-btn" onClick={startGoogle}>
+          <GoogleIcon />
+          المتابعة باستخدام Google
+        </button>
 
-      <button type="button" className="btn outlined social-btn" disabled title="قريبًا">
-        <AppleIcon />
-        المتابعة باستخدام Apple
-        <span className="social-soon">قريبًا</span>
-      </button>
-    </div>
+        <button type="button" className="cfa-social-btn" disabled title="قريبًا">
+          <AppleIcon />
+          المتابعة باستخدام Apple
+          <span className="cfa-soon">قريبًا</span>
+        </button>
+      </div>
+    </>
   )
 }
 
