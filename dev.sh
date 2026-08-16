@@ -359,23 +359,15 @@ wait_for_postgres_container() {
       die "Postgres did not become healthy within 60s. Try: ./dev.sh logs"
     }
 
-    [ "$waited" -ge 60 ] && {
-      printf '\n'
-      die "Postgres did not become healthy within 60s. Try: ./dev.sh logs"
-    }
-
     printf '.'
     sleep 1
     waited=$((waited + 1))
   done
 
-
   printf '\n'
 }
 
 postgres_published_port() {
-  dk port courseflix-postgres 5432/tcp 2>/dev/null \
-    | awk -F: 'NR == 1 { print $NF }'
   dk port courseflix-postgres 5432/tcp 2>/dev/null \
     | awk -F: 'NR == 1 { print $NF }'
 }
