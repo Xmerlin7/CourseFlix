@@ -1,12 +1,11 @@
 import { Outlet } from 'react-router'
 import type { PropsWithChildren } from 'react'
 import '../../features/auth/auth.css'
-import { AuthCourseStrip, TeacherPoster } from '../../features/auth/components/TeacherPoster'
-import { useAuthPoster } from '../../features/auth/hooks/useAuthPoster'
+import { AuthShowcase } from '../../features/auth/components/AuthShowcase'
 
 const HIGHLIGHTS = [
   { icon: 'play_lesson', text: 'حصص مسجّلة منظّمة درس بدرس' },
-  { icon: 'neurology', text: 'مساعد ذكي يجاوب على أسئلتك من داخل الشرح' },
+  { icon: 'neurology', text: 'مساعد ذكي يجاوب من داخل الشرح نفسه' },
   { icon: 'trending_up', text: 'متابعة لتقدّمك بعد كل حصة واختبار' },
 ]
 
@@ -25,16 +24,11 @@ const HIGHLIGHTS = [
  * permanently out of reach.
  */
 export function AuthLayout({ children }: PropsWithChildren) {
-  const poster = useAuthPoster()
-
   return (
     <div className="cfa-shell">
       <main className="cfa-main">
         <div className="cfa-form-col">
           <span className="cfa-wordmark">COURSEFLIX</span>
-
-          {/* Only rendered under the showcase breakpoint — see auth.css. */}
-          <AuthCourseStrip content={poster.data} />
 
           {children ?? <Outlet />}
 
@@ -42,7 +36,7 @@ export function AuthLayout({ children }: PropsWithChildren) {
         </div>
       </main>
 
-      <aside className="cfa-aside" aria-label="الدورة المميزة">
+      <aside className="cfa-aside" aria-label="نبذة عن المنصة">
         <span className="cfa-orb one" aria-hidden="true" />
         <span className="cfa-orb two" aria-hidden="true" />
         <span className="cfa-grain" aria-hidden="true" />
@@ -54,12 +48,11 @@ export function AuthLayout({ children }: PropsWithChildren) {
             <div className="cfa-aside-head">
               <h2 className="cfa-aside-title">ذاكر بطريقة تخلّيك فاهم، مش بس حافظ</h2>
               <p className="cfa-aside-text">
-                منصة تجمع حصص أستاذك، تدريباتك، ومتابعة تقدّمك في مكان واحد — عشان
-                تعرف دايمًا إنت واقف فين وخطوتك الجاية إيه.
+                اسأل وانت جوّه الحصة، وخد إجابة مربوطة بالثانية اللي اتشرحت فيها.
               </p>
             </div>
 
-            <TeacherPoster content={poster.data} isLoading={poster.isLoading} />
+            <AuthShowcase />
 
             <ul className="cfa-points">
               {HIGHLIGHTS.map((highlight) => (

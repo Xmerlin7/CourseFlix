@@ -131,55 +131,6 @@
   margin-bottom: clamp(24px, 3.4vw, 36px);
 }
 
-/*
- * Compact featured-course line. Hidden by default and revealed only at the
- * breakpoint where the showcase panel is dropped, so the admin's featured
- * course still reaches phone users — where most students actually sign in —
- * without duplicating the card beside it on desktop.
- */
-.cfa-course-strip {
-  display: none;
-  align-items: center;
-  gap: 11px;
-  margin-bottom: 24px;
-  padding: 10px 12px;
-  border: 1px solid var(--cfa-line);
-  border-radius: var(--cfa-r-md);
-  background: var(--cfa-field);
-}
-
-.cfa-course-strip-icon {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 20px;
-  color: var(--primary);
-  background: color-mix(in oklab, var(--primary) 12%, transparent);
-}
-
-.cfa-course-strip-text {
-  min-width: 0;
-}
-
-.cfa-course-strip-text strong {
-  display: block;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--on-surface);
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.cfa-course-strip-text small {
-  display: block;
-  font-size: 12px;
-  color: var(--on-surface-variant);
-  line-height: 1.4;
-}
-
 .cfa-head {
   margin-bottom: 26px;
 }
@@ -1191,10 +1142,6 @@ form + .cfa-alert {
 
   .cfa-main {
     padding: clamp(28px, 5vw, 44px) 24px clamp(32px, 5vw, 48px);
-  }
-
-  .cfa-course-strip {
-    display: flex;
   }
 }
 
