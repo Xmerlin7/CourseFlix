@@ -1990,19 +1990,64 @@ textarea:placeholder-shown {
   color: var(--on-surface-variant);
 }
 
+/* ---------- Selection chips ----------
+   The single control behind every "pick one of these" row in the app:
+   the Settings choice groups (theme, corners, density, UI scale) and the
+   filter rows on every list page (users, courses, orders, notifications,
+   sales, agent logs, interventions, …).
+
+   Before this, the chosen chip was tinted secondary-container — the one
+   selection control in the app whose "chosen" state didn't actually look
+   chosen, while `.opt.selected` and `.font-option.selected` both already
+   spoke the accent. Now every pick-one row in the app has the same two
+   states, and both follow the user's accent for free. */
 .chip.clickable {
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.chip.clickable:hover {
-  filter: brightness(0.97);
+/* Unselected: a subtle raised fill rather than pure transparency, so a
+   group of options reads as a set of controls whether it sits on the page
+   background (filter rows) or inside a card (Settings). Scoped to
+   `.clickable` on purpose — `.chip.outline` is also worn by the read-only
+   status badges in tables, which keep their own green/red/pink colours. */
+.chip.clickable.outline:not(.selected) {
+  background: var(--surface-container-high);
+  border-color: var(--outline-variant);
+  color: var(--on-surface-variant);
 }
 
+/* Hover has to be a real colour change, not `filter: brightness()` —
+   nearly every clickable chip was `.outline`, i.e. transparent, and
+   brightening transparency is a no-op, so these rows had no hover
+   feedback at all. Must stay after the rule above: same specificity, so
+   source order is what makes it win. */
+.chip.clickable:hover:not(.selected) {
+  background: var(--surface-container-highest);
+  border-color: var(--outline);
+  color: var(--on-surface);
+}
+
+.chip.clickable:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* Filled with --primary, the same token the Switch track uses when it's
+   on — so a chosen chip and an enabled toggle read as the same "this one
+   is active" colour instead of two different accents on one screen. Both
+   halves come from the accent engine, which derives --on-primary for
+   contrast, so this stays legible at any accent the user picks.
+
+   `border` (not just `border-color`): `.chip` itself is border: none and
+   only `.chip.outline` adds one, but some rows swap `outline` off when a
+   chip becomes selected (see TeacherSalesPage's presets). Declaring the
+   full border here keeps every chip the same size in both states. */
 .chip.clickable.selected {
-  background: var(--secondary-container);
-  color: var(--on-secondary-container);
-  border-color: transparent;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 1px solid var(--primary);
+  font-weight: 700;
 }
 
 /* ---------- Sections / headings ---------- */
