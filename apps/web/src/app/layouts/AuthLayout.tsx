@@ -1,12 +1,12 @@
 import { Outlet } from 'react-router'
 import { useRef, type PointerEvent, type PropsWithChildren } from 'react'
 import { AuthMeshCanvas } from '../../features/auth/components/AuthMeshCanvas'
-import { AuthCourseStrip, TeacherPoster } from '../../features/auth/components/TeacherPoster'
+import { AuthCourseStrip } from '../../features/auth/components/TeacherPoster'
 import { useAuthPoster } from '../../features/auth/hooks/useAuthPoster'
 
-// Immersive auth shell shared by /login and /register. The form remains
-// first in the DOM and keeps the existing auth flow; the admin-selected
-// course is echoed in a compact strip and a responsive preview surface.
+// Immersive auth shell shared by /login and /register. The form card sits
+// centered on a full-page animated mesh; the admin-selected course is echoed
+// in a compact strip above the form (no side poster).
 export function AuthLayout({ children }: PropsWithChildren) {
   const poster = useAuthPoster()
   const shellRef = useRef<HTMLDivElement | null>(null)
@@ -64,10 +64,6 @@ export function AuthLayout({ children }: PropsWithChildren) {
           <p className="foot">جميع الحقوق محفوظة لمنصة CourseFlix · 2026</p>
         </div>
       </main>
-
-      <aside className="auth-panel-brand auth-floating-poster" aria-label="الدورة المميزة">
-        <TeacherPoster content={poster.data} isLoading={poster.isLoading} />
-      </aside>
     </div>
   )
 }
