@@ -91,9 +91,17 @@ export class AuthService {
    * Google "Continue with Google" sign-in. The Google email is already
    * verified, so an account is created active (student role, no password)
    * on first use, linked to the existing account when the same email is
-   * already registered — but signing in is never immediate: a one-time
-   * password is mailed (purpose 'google_oauth') and must be redeemed via
-   * `verifyOtp` before a session is opened.
+   * already registered.
+   *
+   * The one-time code (purpose 'google_oauth') only guards the two
+   * sensitive moments: creating a brand-new account, and linking Google to
+   * an existing password account for the first time — proving the current
+   * requester actually owns that inbox before either happens. A returning
+   * user whose Google account is already linked and active skips it and
+   * signs in immediately: Google's own auth already vouched for them once,
+   * re-proving inbox ownership on every single login bought no real
+   * security and broke the one thing "Continue with Google" promises — a
+   * one-click sign-in.
    */
   async loginViaGoogle(
     profile: GoogleProfile,
@@ -104,13 +112,15 @@ export class AuthService {
       );
     }
 
-    // Already linked to this Google account.
+    // Already linked to this Google account — the OTP already happened the
+    // first time this link was made (or at account creation); sign straight
+    // in.
     const byGoogle = await this.usersService.findByGoogleId(profile.id);
     if (byGoogle) {
       if (byGoogle.status !== 'active') {
         throw new UnauthorizedException('Account is suspended.');
       }
-      return this.issueGoogleOtp(byGoogle);
+      return this.buildLoginResult(byGoogle);
     }
 
     const normalizedEmail = profile.email.trim().toLowerCase();
