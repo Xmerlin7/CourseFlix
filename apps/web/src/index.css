@@ -410,6 +410,262 @@
   font-weight: 700;
 }
 
+/* ===== Sidebar docking (drag the grip to an edge) =====
+   Three positions, persisted in useSidebarPosition. Right and left are the
+   same vertical bar on opposite sides; bottom is a different component
+   shape entirely (see the bottom-bar block below).
+
+   All of this is desktop-only on purpose. Under 860px the sidebar is
+   already a slide-in drawer, for the reason spelled out in that media
+   query: ten admin nav entries in a phone-width strip leaves ~38px per
+   target. Docking can't fix that, so below the breakpoint the drawer wins
+   regardless of the stored position. */
+
+.sidebar-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 22px;
+}
+
+/* Replaces .rail-toggle's own margin now that the tools row owns the gap
+   below it — see the .sidebar .rail-toggle rule above. */
+.sidebar .sidebar-tools .rail-toggle {
+  margin-bottom: 0;
+}
+
+.sidebar-grip {
+  cursor: grab;
+  /* The gesture moves the whole bar, so the browser must not also read
+     the drag as a scroll or a text selection. */
+  touch-action: none;
+  color: var(--on-surface-variant);
+}
+
+.sidebar-grip:active {
+  cursor: grabbing;
+}
+
+.sidebar.dragging {
+  opacity: 0.6;
+}
+
+/* ---------- Drop zones ---------- */
+.sidebar-dropzones {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.sidebar-dropzone {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: calc(20px * var(--radius-scale));
+  border: 2px dashed var(--outline);
+  background: color-mix(in oklab, var(--surface) 82%, transparent);
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.sidebar-dropzone .ms {
+  font-size: 26px;
+}
+
+.sidebar-dropzone.right {
+  inset-block: 12px;
+  right: 12px;
+  width: 220px;
+}
+
+.sidebar-dropzone.left {
+  inset-block: 12px;
+  left: 12px;
+  width: 220px;
+}
+
+/* Sits between the two side zones so all three stay clickable targets
+   rather than overlapping in the corners. */
+.sidebar-dropzone.bottom {
+  left: 244px;
+  right: 244px;
+  bottom: 12px;
+  height: 132px;
+  flex-direction: row;
+}
+
+.sidebar-dropzone.active {
+  border-color: var(--primary);
+  border-style: solid;
+  background: color-mix(in oklab, var(--primary) 16%, var(--surface));
+  color: var(--primary);
+}
+
+/* ---------- Docked left ---------- */
+/* The document is RTL, so the sidebar is on the right by default simply
+   by being first in the DOM. `order` moves it without touching source
+   order, which keeps the nav ahead of the page content for screen
+   readers and tab order in every position. */
+.app[data-sidebar-pos='left'] .sidebar {
+  order: 2;
+}
+
+.app[data-sidebar-pos='left'] .main {
+  order: 1;
+  padding-inline: 0 14px;
+}
+
+/* ---------- Docked bottom ---------- */
+.app[data-sidebar-pos='bottom'] {
+  flex-direction: column;
+}
+
+.app[data-sidebar-pos='bottom'] .main {
+  order: 1;
+  height: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 14px 14px 0;
+}
+
+.app[data-sidebar-pos='bottom'] .sidebar {
+  order: 2;
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* The collapse toggle and drag grip stack vertically at the bar's start,
+   staying reachable without eating a nav slot's width. */
+.app[data-sidebar-pos='bottom'] .sidebar-tools {
+  flex-direction: column;
+  margin-bottom: 0;
+  margin-inline-end: 6px;
+  flex: none;
+}
+
+/* nav and the footer both become plain runs of destinations in the bar —
+   the footer's `margin-top: auto` would otherwise still be trying to push
+   itself down a column that no longer exists. */
+.app[data-sidebar-pos='bottom'] .sidebar nav,
+.app[data-sidebar-pos='bottom'] .side-footer {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0;
+}
+
+/* Nav takes the slack so the profile/logout pair sits at the far end of
+   the bar, keeping destinations and account actions visibly apart.
+   `flex-start`, not `center`: the bar scrolls once a role has enough
+   entries (admin has ten), and centred overflow puts the first items
+   permanently out of reach. */
+.app[data-sidebar-pos='bottom'] .sidebar nav {
+  flex: 1;
+  justify-content: flex-start;
+}
+
+/*
+ * M3 bottom-bar item: icon above label, and the active state is a pill
+ * "indicator" behind the icon only — not the whole row as in the vertical
+ * sidebar. The indicator is a ::before rather than a wrapper element so
+ * the same NavLink markup serves both layouts.
+ */
+.app[data-sidebar-pos='bottom'] .nav-item {
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: auto;
+  min-width: 72px;
+  padding: 8px 10px 6px;
+  border-radius: calc(16px * var(--radius-scale));
+  font-size: 12px;
+  text-align: center;
+  background: none;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item .ms {
+  position: relative;
+  z-index: 1;
+  /* Centres the glyph inside the pill that sits behind it. */
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 30px;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 56px;
+  height: 30px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item:hover::before {
+  background: var(--hover);
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item.active {
+  background: none;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item.active::before {
+  background: var(--secondary-container);
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item .lbl {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* Badges anchor to the indicator pill's corner instead of trailing the
+   label, which is the only place they fit once the item is a column. */
+.app[data-sidebar-pos='bottom'] .nav-count-badge {
+  position: absolute;
+  top: 2px;
+  inset-inline-end: 12px;
+  margin-inline-start: 0;
+  z-index: 2;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-unread-dot {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 18px;
+  margin: 0;
+  z-index: 2;
+}
+
+.app[data-sidebar-pos='bottom'] .side-footer .avatar {
+  width: 26px;
+  height: 26px;
+}
+
+/* Collapsed ("rail") is a vertical-bar idea — the bottom bar is already
+   icon-first, and hiding its labels would just make every target
+   anonymous. */
+.app[data-sidebar-pos='bottom'] .sidebar.rail .lbl {
+  display: inline;
+}
+
 .avatar {
   width: 34px;
   height: 34px;
@@ -1476,6 +1732,90 @@ code {
   .topbar .topbar-menu-btn {
     display: grid;
   }
+
+  /* Docking is a desktop-only idea, but its rules are attribute-scoped and
+     so outrank the plain `.sidebar` drawer rules above. Undo the parts
+     that would otherwise leave a stored "bottom" or "left" position
+     fighting the drawer on a phone. The stored value is kept, not reset —
+     it takes effect again as soon as the window is wide enough. */
+  .app[data-sidebar-pos='bottom'],
+  .app[data-sidebar-pos='left'] {
+    flex-direction: column;
+  }
+
+  .app[data-sidebar-pos='bottom'] .sidebar,
+  .app[data-sidebar-pos='left'] .sidebar,
+  .app[data-sidebar-pos='bottom'] .main,
+  .app[data-sidebar-pos='left'] .main {
+    order: 0;
+  }
+
+  .app[data-sidebar-pos='bottom'] .main {
+    padding: 10px;
+    height: 100vh;
+  }
+
+  .app[data-sidebar-pos='bottom'] .sidebar {
+    width: min(300px, 84vw) !important;
+    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app[data-sidebar-pos='bottom'] .sidebar nav,
+  .app[data-sidebar-pos='bottom'] .side-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app[data-sidebar-pos='bottom'] .side-footer {
+    margin-top: auto;
+  }
+
+  /* Back to the full-width row the drawer uses. */
+  .app[data-sidebar-pos='bottom'] .nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    padding: calc(12px * var(--space-scale)) calc(18px * var(--space-scale));
+    border-radius: calc(999px * var(--radius-scale));
+    font-size: 15px;
+    text-align: start;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-item::before {
+    display: none;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-item.active {
+    background: var(--secondary-container);
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-item .ms {
+    display: inline;
+    width: auto;
+    height: auto;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-count-badge,
+  .app[data-sidebar-pos='bottom'] .nav-unread-dot {
+    position: static;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-count-badge {
+    margin-inline-start: auto;
+  }
+
+  /* Nothing to dock to on a phone. */
+  .sidebar-grip {
+    display: none;
+  }
 }
 
 /* Count badge on a nav item (teacher's pending assistant actions).
@@ -1996,78 +2336,24 @@ textarea:placeholder-shown {
    filter rows on every list page (users, courses, orders, notifications,
    sales, agent logs, interventions, …).
 
-   Before this, the chosen chip was tinted secondary-container — the one
-   selection control in the app whose "chosen" state didn't actually look
-   chosen, while `.opt.selected` and `.font-option.selected` both already
-   spoke the accent. Now every pick-one row in the app has the same two
-   states, and both follow the user's accent for free. */
+   `selected` deliberately matches `.opt.selected` and
+   `.font-option.selected` — primary-container fill, primary border. Those
+   two already spoke the accent, while this one alone answered in
+   secondary-container, so the app's most-used selection control was the
+   only one whose "chosen" state didn't look chosen. One selected look,
+   everywhere, and it follows the user's accent for free. */
 .chip.clickable {
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-/* Unselected: a subtle raised fill and no visible outline — the fill alone
-   carries the shape, so a run of options reads as one quiet group instead
-   of a strip of boxes, and nothing competes with the selected chip. The
-   border stays declared but transparent: selected draws a real 1px border,
-   and dropping it here instead of clearing its colour would make every
-   chip jump 2px the moment it was picked.
-
-   Scoped to `.clickable` on purpose — `.chip.outline` is also worn by the
-   read-only status badges in tables, which keep their own outline and
-   green/red/pink colours. */
-.chip.clickable.outline:not(.selected) {
-  background: var(--surface-container-high);
-  border-color: transparent;
-  color: var(--on-surface-variant);
-}
-
-/* ---------- Group shape ----------
-   A run of chips is shaped as one connected group: the two ends of the run
-   keep the pill `.chip` already gives them, the edges facing a neighbour
-   square off, and the selected chip pops back to a full pill. Shape, not
-   just colour, marks the current choice.
-
-   Expressed as "square the edge that faces another chip" rather than
-   :first-child/:last-child, because a row is not always one group —
-   AdminUsersPage puts the role filters and the status filters in a single
-   .actions with a divider between them. Sibling-relative rules give each
-   run its own rounded ends; :first-child/:last-child would have rounded
-   the row and flattened the two inner ends.
-
-   Caveat: this reads DOM order, so when a long filter row wraps, the chips
-   at the visual line break keep their squared inner edge. Every group
-   short enough to stay on one line — which is all of Settings and most
-   filter rows — shapes correctly. */
-.chip.clickable + .chip.clickable:not(.selected) {
-  border-start-start-radius: calc(10px * var(--radius-scale));
-  border-end-start-radius: calc(10px * var(--radius-scale));
-}
-
-.chip.clickable:not(.selected):has(+ .chip.clickable) {
-  border-start-end-radius: calc(10px * var(--radius-scale));
-  border-end-end-radius: calc(10px * var(--radius-scale));
-}
-
-/* A row of selection chips sits tighter than `.actions`' default 10px,
-   which is spaced for standalone buttons that each mean something
-   different. These mean "one of these", so they belong close enough to
-   scan as a single control. Keyed off the content with :has() rather than
-   a new class, so every existing filter row and Settings group picks it
-   up without touching their markup. */
-.actions:has(> .chip.clickable) {
-  gap: calc(5px * var(--space-scale));
-}
-
 /* Hover has to be a real colour change, not `filter: brightness()` —
-   nearly every clickable chip was `.outline`, i.e. transparent, and
+   nearly every clickable chip is `.outline`, i.e. transparent, and
    brightening transparency is a no-op, so these rows had no hover
-   feedback at all. Lifts the fill only; bringing a border back on hover
-   would reintroduce the outline the rule above deliberately drops. Must
-   stay after that rule: same specificity, so source order is what makes
-   it win. */
+   feedback at all. */
 .chip.clickable:hover:not(.selected) {
-  background: var(--surface-container-highest);
+  background: var(--hover);
+  border-color: var(--outline);
   color: var(--on-surface);
 }
 

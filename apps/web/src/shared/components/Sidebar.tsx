@@ -1,6 +1,12 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router'
 import { ROUTE_PATHS } from '../../app/routes/route-paths'
+import { useSidebarDrag } from '../hooks/useSidebarDrag'
+import {
+  SIDEBAR_POSITIONS,
+  useSidebarPosition,
+  type SidebarPosition,
+} from '../hooks/useSidebarPosition'
 
 export type SidebarProps = {
   role: 'student' | 'teacher' | 'admin' | 'assistant'
@@ -113,6 +119,12 @@ const COMMUNITY_PATH_BY_ROLE: Partial<Record<SidebarProps['role'], string>> = {
   assistant: ROUTE_PATHS.TEACHER.COMMUNITY,
 }
 
+const POSITION_LABEL: Record<SidebarPosition, string> = {
+  right: 'يمين الشاشة',
+  left: 'يسار الشاشة',
+  bottom: 'أسفل الشاشة',
+}
+
 export function Sidebar({
   role,
   userName,
@@ -130,6 +142,11 @@ export function Sidebar({
   pendingActionCount = 0,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
+  const { position, setPosition } = useSidebarPosition()
+  const { isDragging, previewPosition, onHandlePointerDown } = useSidebarDrag({
+    position,
+    onDrop: setPosition,
+  })
 
   // Escape closes the drawer, matching every other overlay in the app.
   // Bound unconditionally (not behind `isMobileOpen`) so the hook order
@@ -142,6 +159,16 @@ export function Sidebar({
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isMobileOpen, onCloseMobile])
+
+  // Dragging is a pointer gesture, so the same control also answers to a
+  // plain click by cycling right → left → bottom → right. That keeps the
+  // feature reachable by keyboard and by anyone who won't manage a drag.
+  function cyclePosition() {
+    const next = SIDEBAR_POSITIONS[
+      (SIDEBAR_POSITIONS.indexOf(position) + 1) % SIDEBAR_POSITIONS.length
+    ]
+    setPosition(next)
+  }
 
   if (!isOpen) return null
 
@@ -165,17 +192,51 @@ export function Sidebar({
         <div className="sidebar-scrim" onClick={onCloseMobile} aria-hidden="true" />
       )}
 
+      {/* Drop targets, only mounted mid-drag. Rendered as an overlay
+          rather than by highlighting the real edges, because two of the
+          three targets are where the sidebar isn't — there'd be nothing
+          to light up. */}
+      {isDragging && (
+        <div className="sidebar-dropzones" aria-hidden="true">
+          {SIDEBAR_POSITIONS.map((zone) => (
+            <span
+              key={zone}
+              className={`sidebar-dropzone ${zone}${previewPosition === zone ? ' active' : ''}`}
+            >
+              <span className="ms">
+                {zone === 'bottom' ? 'dock_to_bottom' : 'dock_to_right'}
+              </span>
+              {POSITION_LABEL[zone]}
+            </span>
+          ))}
+        </div>
+      )}
+
       <aside
-        className={`sidebar${isRail ? ' rail' : ''}${isMobileOpen ? ' mobile-open' : ''}`}
+        className={`sidebar${isRail ? ' rail' : ''}${isMobileOpen ? ' mobile-open' : ''}${isDragging ? ' dragging' : ''}`}
       >
-      <button
-        onClick={onToggleRail ?? onToggle}
-        className="icon-btn rail-toggle"
-        aria-label={isRail ? 'توسيع القائمة' : 'طي القائمة'}
-        type="button"
-      >
-        <span className="ms">menu_open</span>
-      </button>
+      <div className="sidebar-tools">
+        <button
+          onClick={onToggleRail ?? onToggle}
+          className="icon-btn rail-toggle"
+          aria-label={isRail ? 'توسيع القائمة' : 'طي القائمة'}
+          type="button"
+        >
+          <span className="ms">menu_open</span>
+        </button>
+
+        {/* Drag to dock, click to cycle — see cyclePosition above. */}
+        <button
+          onPointerDown={onHandlePointerDown}
+          onClick={cyclePosition}
+          className="icon-btn sidebar-grip"
+          aria-label={`مكان القائمة: ${POSITION_LABEL[position]} — اسحب أو اضغط للتغيير`}
+          title="اسحب لتغيير مكان القائمة"
+          type="button"
+        >
+          <span className="ms">drag_indicator</span>
+        </button>
+      </div>
 
       {/* Phone-only close affordance. The scrim and Escape both work, but
           neither is discoverable, and the drawer covers the topbar button

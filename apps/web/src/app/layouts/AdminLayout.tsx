@@ -6,6 +6,7 @@ import { useUnreadNotificationsCount } from '../../features/notifications/hooks/
 import { Sidebar } from '../../shared/components/Sidebar'
 import { Topbar } from '../../shared/components/Topbar'
 import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
+import { useSidebarPosition } from '../../shared/hooks/useSidebarPosition'
 import { ROUTE_PATHS } from '../routes/route-paths'
 
 // No FloatingAssistant here — the AI course tutor doesn't have a role to
@@ -15,6 +16,7 @@ export function AdminLayout({ children }: PropsWithChildren) {
   const location = useLocation()
   const navigate = useNavigate()
   const { isCollapsed: isRail, setCollapsed: setIsRail } = useSidebarCollapsed()
+  const { position: sidebarPosition } = useSidebarPosition()
   // Phone nav drawer. Separate from `isRail` (the desktop collapse) —
   // they're different controls on different breakpoints, and sharing one
   // flag meant collapsing on desktop also armed the phone drawer.
@@ -27,7 +29,7 @@ export function AdminLayout({ children }: PropsWithChildren) {
   }
 
   return (
-    <div className="app">
+    <div className="app" data-sidebar-pos={sidebarPosition}>
       <Sidebar
         role="admin"
         userName={user?.fullName ?? ''}
