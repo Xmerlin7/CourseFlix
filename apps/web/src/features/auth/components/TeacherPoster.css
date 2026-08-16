@@ -1,0 +1,302 @@
+/*
+ * ============================================================================
+ * Featured course card (auth showcase + Settings preview)
+ * ============================================================================
+ *
+ * Lives beside the component rather than in index.css because the card has
+ * two homes: the /login + /register showcase panel, and the live preview
+ * inside Settings > auth poster (admin and teacher). Importing the sheet
+ * from TeacherPoster.tsx means it is present wherever the card is, and the
+ * settings preview cannot drift out of sync with the real thing.
+ *
+ * Both homes place the card on a dark, accent-tinted ground, so it is built
+ * as a light glass surface with its own fixed on-glass palette instead of
+ * inheriting --surface/--on-surface. Inheriting them would flip the card to
+ * dark-on-dark the moment the viewer's theme is dark, which is exactly the
+ * bug the previous version had in the settings preview.
+ * ============================================================================
+ */
+
+.cfp-card {
+  --cfp-glass: color-mix(in oklab, #FFFFFF 12%, transparent);
+  --cfp-glass-strong: color-mix(in oklab, #FFFFFF 17%, transparent);
+  --cfp-edge: color-mix(in oklab, #FFFFFF 20%, transparent);
+  --cfp-fg: #FFFFFF;
+  --cfp-fg-dim: color-mix(in oklab, #FFFFFF 72%, transparent);
+  --cfp-fg-faint: color-mix(in oklab, #FFFFFF 52%, transparent);
+  --cfp-r: calc(20px * var(--radius-scale));
+
+  width: 100%;
+  max-width: 380px;
+  border-radius: var(--cfp-r);
+  border: 1px solid var(--cfp-edge);
+  background: var(--cfp-glass);
+  /* backdrop-filter is the whole point of the glass read; the solid-ish
+     background above is the fallback for browsers without it. */
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow:
+    0 18px 44px rgba(6, 4, 16, 0.34),
+    inset 0 1px 0 color-mix(in oklab, #FFFFFF 22%, transparent);
+  overflow: hidden;
+  color: var(--cfp-fg);
+}
+
+.cfp-card.loading {
+  opacity: 0.6;
+}
+
+/* ---------- Cover ---------- */
+
+.cfp-cover {
+  position: relative;
+  aspect-ratio: 16 / 8.5;
+  overflow: hidden;
+  background: color-mix(in oklab, #FFFFFF 8%, transparent);
+}
+
+.cfp-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* No cover image on the course: initials over a tinted panel, so the card
+   keeps its proportions instead of collapsing to a text-only block. */
+.cfp-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background:
+    radial-gradient(80% 80% at 50% 12%, color-mix(in oklab, #FFFFFF 18%, transparent), transparent 70%),
+    color-mix(in oklab, #FFFFFF 6%, transparent);
+  color: var(--cfp-fg);
+}
+
+.cfp-cover-fallback .ms {
+  font-size: 26px;
+  opacity: 0.7;
+}
+
+.cfp-cover-fallback strong {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* Keeps the badge legible over an arbitrary teacher-uploaded photo. */
+.cfp-cover-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(8, 5, 18, 0.72) 0%, transparent 62%);
+  pointer-events: none;
+}
+
+.cfp-badge {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: calc(999px * var(--radius-scale));
+  border: 1px solid var(--cfp-edge);
+  background: color-mix(in oklab, #0A0714 52%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cfp-fg);
+}
+
+.cfp-badge .ms {
+  font-size: 15px;
+}
+
+/* ---------- Body ---------- */
+
+.cfp-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.cfp-grade {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--cfp-fg-faint);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.cfp-title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 0;
+  color: var(--cfp-fg);
+  overflow-wrap: anywhere;
+}
+
+.cfp-teacher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: calc(14px * var(--radius-scale));
+  background: var(--cfp-glass-strong);
+  border: 1px solid color-mix(in oklab, #FFFFFF 12%, transparent);
+}
+
+.cfp-teacher-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in oklab, #FFFFFF 16%, transparent);
+  font-size: 19px;
+  color: var(--cfp-fg);
+}
+
+.cfp-teacher-text {
+  min-width: 0;
+}
+
+.cfp-teacher-text .prefix {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cfp-fg-faint);
+  line-height: 1.4;
+}
+
+.cfp-teacher-text .name {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cfp-fg);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.cfp-desc {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--cfp-fg-dim);
+  margin: 0;
+}
+
+/* ---------- Stats ---------- */
+
+.cfp-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cfp-stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 8px;
+  border-radius: calc(13px * var(--radius-scale));
+  background: var(--cfp-glass-strong);
+  border: 1px solid color-mix(in oklab, #FFFFFF 10%, transparent);
+  text-align: center;
+}
+
+.cfp-stats strong {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--cfp-fg);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.cfp-stats span {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--cfp-fg-faint);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Progress ---------- */
+
+.cfp-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cfp-progress-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cfp-fg-faint);
+}
+
+.cfp-progress-track {
+  height: 6px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: color-mix(in oklab, #FFFFFF 14%, transparent);
+  overflow: hidden;
+}
+
+.cfp-progress-track i {
+  display: block;
+  height: 100%;
+  width: 68%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, #FFFFFF 88%, transparent),
+    color-mix(in oklab, #FFFFFF 55%, transparent)
+  );
+  animation: cfp-fill 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cfp-fill {
+  from { width: 0; }
+  to { width: 68%; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Settings preview container
+ * The admin/teacher "auth poster" settings forms render this same card on a
+ * standalone ground so the editor sees what visitors will see.
+ * ------------------------------------------------------------------------ */
+
+.auth-settings-preview {
+  display: grid;
+  place-items: center;
+  padding: 32px 24px;
+  border-radius: calc(16px * var(--radius-scale));
+  background:
+    radial-gradient(88% 72% at 78% 6%, color-mix(in oklab, var(--primary) 62%, #120C22), transparent 60%),
+    radial-gradient(80% 66% at 8% 96%, color-mix(in oklab, var(--primary) 44%, transparent), transparent 62%),
+    linear-gradient(158deg, color-mix(in oklab, var(--primary) 50%, #0A0711), color-mix(in oklab, var(--primary) 24%, #07050D));
+  overflow: hidden;
+}
+
+.auth-settings-preview .cfp-card {
+  max-width: 340px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfp-progress-track i {
+    animation: none;
+  }
+}
