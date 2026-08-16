@@ -5,6 +5,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { PASSWORD_HINT, PASSWORD_PATTERN } from './password-policy';
 
 export class PasswordResetDto {
   @IsEmail()
@@ -18,5 +19,6 @@ export class PasswordResetDto {
   @IsString()
   @MinLength(8)
   @MaxLength(128)
+  @Matches(PASSWORD_PATTERN, { message: PASSWORD_HINT })
   newPassword!: string;
 }

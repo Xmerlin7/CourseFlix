@@ -97,11 +97,8 @@ interface AuthPasswordFieldProps extends NativeInputProps {
 const STRENGTH_LABELS = ['', 'ضعيفة', 'مقبولة', 'جيدة', 'قوية'] as const
 
 /**
- * Rough, deliberately generous strength score (0–4).
- *
- * It is a nudge, not a gate — the API's real rule is the 8-character
- * minimum, and this exists so a user finds out their password is weak
- * while typing rather than after a round trip.
+ * Rough, deliberately generous strength score (0–4) driving the visual
+ * meter only — `validatePasswordPolicy` below is the actual gate.
  */
 function scorePassword(password: string): number {
   if (!password) return 0
@@ -115,6 +112,30 @@ function scorePassword(password: string): number {
   // A password under the API's own minimum should never show more than one
   // filled segment, however varied its characters are.
   return password.length < 8 ? 1 : Math.max(1, Math.min(4, score))
+}
+
+// Mirrors the API's PASSWORD_PATTERN (auth/dto/password-policy.ts) exactly —
+// a client-side reject that doesn't match the server's would let a password
+// through the wizard only to bounce off a 400 on the last step.
+const PASSWORD_POLICY_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
+
+/**
+ * Validates a new password against the same rule the API enforces
+ * (register, password reset). Returns an error message, or null when the
+ * password is acceptable. Not used for login — that authenticates
+ * whatever password already exists, not a new one.
+ */
+export function validatePasswordPolicy(password: string): string | null {
+  if (password.length === 0) {
+    return 'كلمة المرور مطلوبة'
+  }
+  if (password.length < 8) {
+    return 'كلمة المرور لازم تكون ٨ أحرف على الأقل'
+  }
+  if (!PASSWORD_POLICY_PATTERN.test(password)) {
+    return 'كلمة المرور لازم تحتوي على حرف كبير وحرف صغير ورقم على الأقل'
+  }
+  return null
 }
 
 export function AuthPasswordField({

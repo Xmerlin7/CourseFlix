@@ -2,7 +2,7 @@ import { Fragment, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
-import { AuthField, AuthPasswordField } from './AuthField'
+import { AuthField, AuthPasswordField, validatePasswordPolicy } from './AuthField'
 import { AuthAlert, AuthSubmit } from './AuthUi'
 import { requestOtp } from '../api/auth.api'
 import { useAuth } from '../hooks/useAuth'
@@ -17,7 +17,6 @@ type FieldName = 'fullName' | 'email' | 'password' | 'confirmPassword'
 
 interface PendingRegistration {
   email: string
-  devCode?: string
 }
 
 export function RegisterForm() {
@@ -60,10 +59,9 @@ export function RegisterForm() {
     }
 
     if (current === 1) {
-      if (password.length === 0) {
-        errors.password = 'كلمة المرور مطلوبة'
-      } else if (password.length < 8) {
-        errors.password = 'كلمة المرور لازم تكون ٨ أحرف على الأقل'
+      const passwordError = validatePasswordPolicy(password)
+      if (passwordError) {
+        errors.password = passwordError
       }
 
       if (confirmPassword.length === 0) {
@@ -103,7 +101,7 @@ export function RegisterForm() {
       // No session yet — the account is created inactive and a verification
       // code is emailed. The code step below activates + signs the user in.
       const response = await register({ fullName, email, password, acceptedTerms: true })
-      setPendingRegistration({ email: response.email, devCode: response.devCode })
+      setPendingRegistration({ email: response.email })
     } catch (caughtError) {
       if (caughtError instanceof ApiError && caughtError.status === 409) {
         // Email is taken. It might be their own earlier registration that was
@@ -112,7 +110,7 @@ export function RegisterForm() {
       } else if (caughtError instanceof ApiError && caughtError.status === 400) {
         setStep(0)
         setStepError(
-          'البيانات اللي بعتها مش صحيحة — تأكد إن الاسم ٣ أحرف على الأقل، البريد الإلكتروني بصيغة صحيحة، وكلمة المرور ٨ أحرف على الأقل',
+          'البيانات اللي بعتها مش صحيحة — تأكد إن الاسم ٣ أحرف على الأقل، البريد الإلكتروني بصيغة صحيحة، وكلمة المرور ٨ أحرف على الأقل وفيها حرف كبير وحرف صغير ورقم',
         )
       } else {
         setStepError('حصل خطأ غير متوقع أثناء إنشاء الحساب، حاول تاني كمان شوية')
@@ -149,7 +147,6 @@ export function RegisterForm() {
         <VerifyCodeForm
           email={verificationEmail}
           purpose="register"
-          devCode={pendingRegistration?.devCode}
           onResend={(target) => requestOtp({ email: target, purpose: 'register' })}
           onResendResult={(response) => {
             if (isResume && response.accountStatus === 'active') {
@@ -250,7 +247,7 @@ export function RegisterForm() {
           <AuthPasswordField
             id="password"
             label="كلمة المرور"
-            placeholder="٨ أحرف على الأقل"
+            placeholder="٨ أحرف: كبير وصغير ورقم"
             autoComplete="new-password"
             autoFocus
             showStrength
@@ -262,7 +259,7 @@ export function RegisterForm() {
           <AuthPasswordField
             id="confirmPassword"
             label="تأكيد كلمة المرور"
-            placeholder="٨ أحرف على الأقل"
+            placeholder="٨ أحرف: كبير وصغير ورقم"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={setConfirmPassword}

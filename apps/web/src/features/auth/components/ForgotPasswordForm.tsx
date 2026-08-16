@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
-import { AuthField, AuthPasswordField } from './AuthField'
+import { AuthField, AuthPasswordField, validatePasswordPolicy } from './AuthField'
 import { AuthAlert, AuthSubmit } from './AuthUi'
 import { requestPasswordReset, resetPassword } from '../api/auth.api'
 
@@ -8,7 +8,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface ResetStep {
   email: string
-  devCode?: string
 }
 
 interface ForgotPasswordFormProps {
@@ -40,7 +39,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
     setIsSubmitting(true)
     try {
       const response = await requestPasswordReset(trimmedEmail)
-      setResetStep({ email: response.email, devCode: response.devCode })
+      setResetStep({ email: response.email })
     } catch (caughtError) {
       setError(resolveError(caughtError))
     } finally {
@@ -57,8 +56,9 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
       setError('الرمز لازم يكون ٦ أرقام')
       return
     }
-    if (newPassword.length < 8) {
-      setError('كلمة المرور الجديدة لازم تكون ٨ أحرف على الأقل')
+    const passwordError = validatePasswordPolicy(newPassword)
+    if (passwordError) {
+      setError(passwordError)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -97,18 +97,6 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
   if (resetStep) {
     return (
       <form onSubmit={(event) => void handleReset(event)} noValidate>
-        {resetStep.devCode && (
-          <p className="cfa-devcode" role="note">
-            <span className="ms" aria-hidden="true">
-              code
-            </span>
-            وضع التطوير: إرسال الإيميل مش متظبط، الكود هو
-            <button type="button" onClick={() => setCode(resetStep.devCode ?? '')}>
-              {resetStep.devCode}
-            </button>
-          </p>
-        )}
-
         <p className="cfa-sent-to">
           <span className="ms" aria-hidden="true">
             mark_email_unread
@@ -143,7 +131,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
           <AuthPasswordField
             id="reset-password"
             label="كلمة المرور الجديدة"
-            placeholder="٨ أحرف على الأقل"
+            placeholder="٨ أحرف: كبير وصغير ورقم"
             autoComplete="new-password"
             required
             showStrength
@@ -154,7 +142,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
           <AuthPasswordField
             id="reset-confirm"
             label="تأكيد كلمة المرور"
-            placeholder="٨ أحرف على الأقل"
+            placeholder="٨ أحرف: كبير وصغير ورقم"
             autoComplete="new-password"
             required
             value={confirmPassword}
