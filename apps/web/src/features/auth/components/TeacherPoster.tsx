@@ -21,13 +21,8 @@ function getPosterCourse(content?: AuthPosterContent | null): AuthPosterCourse {
   return content?.course ?? FALLBACK_COURSE
 }
 
-// The card's description sits in a fixed-height rhythm beside the stats;
-// letting an arbitrarily long course description through pushes the stats
-// and progress bar out of the panel on shorter viewports.
-function getShortDescription(description: string | null): string {
-  const fallback = FALLBACK_COURSE.description ?? ''
-  const normalized = description?.trim() || fallback
-  return normalized.length > 130 ? `${normalized.slice(0, 127).trim()}...` : normalized
+function getDescription(description: string | null): string {
+  return description?.trim() || (FALLBACK_COURSE.description ?? '')
 }
 
 function CoverArt({ title, coverImageUrl }: Pick<AuthPosterCourse, 'title' | 'coverImageUrl'>) {
@@ -36,8 +31,7 @@ function CoverArt({ title, coverImageUrl }: Pick<AuthPosterCourse, 'title' | 'co
   }
 
   return (
-    <div className="cfp-cover-fallback" aria-hidden="true">
-      <span className="ms">auto_stories</span>
+    <div className="cfp-fallback" aria-hidden="true">
       <strong>{title.slice(0, 2)}</strong>
     </div>
   )
@@ -65,9 +59,12 @@ export function AuthCourseStrip({ content }: { content?: AuthPosterContent | nul
 }
 
 /**
- * The featured-course card. Rendered in two places — the auth showcase
- * panel and the live preview inside Settings > auth poster — so it takes
- * all of its content from props and owns no layout beyond its own box.
+ * The featured-course spotlight: a cover hero with the title set over it,
+ * and a detail panel overlapping its lower edge.
+ *
+ * Every string here is admin-configurable (Settings > auth poster), so the
+ * component renders all nine customization fields — dropping one would
+ * leave an editor field in Settings that changes nothing visible.
  */
 export function TeacherPoster({
   content,
@@ -90,30 +87,31 @@ export function TeacherPoster({
 
   return (
     <article
-      className={`cfp-card${isLoading ? ' loading' : ''}`}
+      className={`cfp${isLoading ? ' loading' : ''}`}
       lang="ar"
       dir="rtl"
       aria-busy={isLoading || undefined}
     >
-      <div className="cfp-cover">
+      <div className="cfp-hero">
         <CoverArt title={course.title} coverImageUrl={course.coverImageUrl} />
-        <span className="cfp-cover-scrim" aria-hidden="true" />
+        <span className="cfp-scrim" aria-hidden="true" />
+
         <span className="cfp-badge">
           <span className="ms" aria-hidden="true">
             verified
           </span>
           {customization.badgeText}
         </span>
-      </div>
 
-      <div className="cfp-body">
-        <div>
+        <div className="cfp-caption">
           <span className="cfp-grade">{course.gradeLevel ?? 'برنامج دراسي كامل'}</span>
           <h2 className="cfp-title">{course.title}</h2>
         </div>
+      </div>
 
+      <div className="cfp-detail">
         <div className="cfp-teacher">
-          <span className="cfp-teacher-icon ms" aria-hidden="true">
+          <span className="cfp-avatar ms" aria-hidden="true">
             person
           </span>
           <span className="cfp-teacher-text">
@@ -122,7 +120,9 @@ export function TeacherPoster({
           </span>
         </div>
 
-        <p className="cfp-desc">{getShortDescription(course.description)}</p>
+        <p className="cfp-desc">{getDescription(course.description)}</p>
+
+        <span className="cfp-rule" aria-hidden="true" />
 
         <ul className="cfp-stats">
           {stats.map((stat) => (
