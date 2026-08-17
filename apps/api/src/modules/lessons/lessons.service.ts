@@ -79,6 +79,20 @@ export interface CourseProgressSummary {
   lastCompletedLesson: CourseCurrentLesson | null;
 }
 
+// A finished video legitimately reports watchedSeconds a hair under
+// durationSeconds: the frontend floors both `video.currentTime` (read at
+// the `ended` event) and `video.duration` independently
+// (useProgressHeartbeat.ts), and browsers commonly fire `ended` a few
+// milliseconds before `currentTime` reaches a non-integer `duration` —
+// e.g. a 305.62s video ends with `watchedSeconds: 304` against
+// `durationSeconds: 305`, landing at 99.67%. A strict `>= 100` check
+// never completes that lesson (confirmed against the real heartbeat
+// payload shape), which silently keeps the next lesson locked despite
+// the student having watched to the end. This tolerance absorbs that
+// one-floored-second gap without treating a meaningfully-incomplete
+// watch (e.g. skipping the last 10% via seeking) as done.
+const COMPLETION_THRESHOLD_PERCENT = 99;
+
 @Injectable()
 export class LessonsService {
   constructor(
@@ -350,7 +364,7 @@ export class LessonsService {
       : 0;
     const nextPercentage = Math.max(previousPercentage, candidatePercentage);
     const status: ContentProgressStatus =
-      nextPercentage >= 100 ? 'completed' : 'in_progress';
+      nextPercentage >= COMPLETION_THRESHOLD_PERCENT ? 'completed' : 'in_progress';
 
     if (existing) {
       await this.progressRepository.update(existing.id, {
