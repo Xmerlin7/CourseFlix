@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useTheme } from '../../../shared/hooks/useTheme'
+import shotLogin from '../assets/shot-login.png'
+import shotRegister from '../assets/shot-register.png'
+import shotStudentDashboard from '../assets/shot-student-dashboard.png'
+import shotCourseDetail from '../assets/shot-course-detail.png'
+import shotNotifications from '../assets/shot-notifications.png'
+import shotCommunity from '../assets/shot-community.png'
+import shotSettings from '../assets/shot-settings.png'
 import './PresentationPage.css'
 
 // CourseFlix graduation-project presentation — a slide deck styled like
@@ -89,15 +97,17 @@ const SLIDES: DeckEntry[] = [
         {[
           ['1', 'Introduction'],
           ['2', 'Overview'],
-          ['3', 'Objectives'],
-          ['4', 'Technologies Used'],
-          ['5', 'System Features'],
-          ['6', 'System Architecture'],
-          ['7', 'Backend Walkthrough'],
-          ['8', 'Frontend Walkthrough'],
-          ['9', 'System Demonstration'],
-          ['10', 'Future Enhancements'],
-          ['11', 'Conclusion'],
+          ['3', 'User Journey'],
+          ['4', 'Objectives'],
+          ['5', 'Technologies Used'],
+          ['6', 'System Features'],
+          ['7', 'System Architecture'],
+          ['8', 'Backend Walkthrough'],
+          ['9', 'Frontend Walkthrough'],
+          ['10', 'Platform Screens'],
+          ['11', 'System Demonstration'],
+          ['12', 'Future Enhancements'],
+          ['13', 'Conclusion'],
         ].map(([num, label]) => (
           <li key={num} className="pres-agenda-item">
             <span className="pres-agenda-num">{num}</span>
@@ -148,6 +158,40 @@ const SLIDES: DeckEntry[] = [
           <div className="pres-overview-row">
             <span className="pres-overview-label">Feedback</span>
             <span className="pres-overview-desc">AI Tutor answers with citations, sales/analytics surface outcomes, and notifications keep everyone in sync.</span>
+          </div>
+        </div>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'USER JOURNEY', title: 'User Journey' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'USER JOURNEY', title: 'User Journey' }}>
+        <p className="pres-lead">
+          A full learning loop told from the student and teacher perspectives.
+        </p>
+        <div className="pres-journey">
+          <div className="pres-journey-col">
+            <span className="pres-journey-head">Student</span>
+            <ul className="pres-journey-list">
+              <li><b>Enroll</b> — browse published courses and sign up</li>
+              <li><b>Learn</b> — watch lessons, resume progress, gain attendance</li>
+              <li><b>Assess</b> — take server-graded quizzes</li>
+              <li><b>Ask</b> — query the AI Tutor with cited answers</li>
+              <li><b>Buy</b> — check out with Paymob and get a receipt</li>
+              <li><b>Get help</b> — interventions and support tickets</li>
+            </ul>
+          </div>
+          <div className="pres-journey-col">
+            <span className="pres-journey-head">Teacher</span>
+            <ul className="pres-journey-list">
+              <li><b>Structure</b> — courses → sections → lessons</li>
+              <li><b>Upload</b> — PDFs become searchable by the Tutor</li>
+              <li><b>Assess</b> — quizzes from a shared question bank</li>
+              <li><b>Monitor</b> — progress reports and interventions</li>
+              <li><b>Sell</b> — sales metrics and the Analytics Agent</li>
+              <li><b>Engage</b> — announcements, discussions, support</li>
+            </ul>
           </div>
         </div>
       </SlideShell>
@@ -336,6 +380,47 @@ const SLIDES: DeckEntry[] = [
     ),
   },
   {
+    meta: { kicker: 'UI OVERVIEW', title: 'Platform Screens' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'UI OVERVIEW', title: 'Platform Screens' }}>
+        <p className="pres-lead">
+          Real captures from the running platform — student dashboard, course, notifications,
+          community, and settings, plus the sign-in and registration screens.
+        </p>
+        <div className="pres-shots">
+          <figure className="pres-shot">
+            <img src={shotLogin} alt="Login screen" loading="lazy" />
+            <figcaption>Login</figcaption>
+          </figure>
+          <figure className="pres-shot">
+            <img src={shotRegister} alt="Register screen" loading="lazy" />
+            <figcaption>Register</figcaption>
+          </figure>
+          <figure className="pres-shot">
+            <img src={shotStudentDashboard} alt="Student dashboard" loading="lazy" />
+            <figcaption>Student Dashboard</figcaption>
+          </figure>
+          <figure className="pres-shot">
+            <img src={shotCourseDetail} alt="Course detail" loading="lazy" />
+            <figcaption>Course Detail</figcaption>
+          </figure>
+          <figure className="pres-shot">
+            <img src={shotNotifications} alt="Notifications" loading="lazy" />
+            <figcaption>Notifications</figcaption>
+          </figure>
+          <figure className="pres-shot">
+            <img src={shotCommunity} alt="Community" loading="lazy" />
+            <figcaption>Community</figcaption>
+          </figure>
+          <figure className="pres-shot">
+            <img src={shotSettings} alt="Settings" loading="lazy" />
+            <figcaption>Settings</figcaption>
+          </figure>
+        </div>
+      </SlideShell>
+    ),
+  },
+  {
     meta: { kicker: 'DEMONSTRATION', title: 'System Demonstration' },
     render: () => (
       <SlideShell meta={{ kicker: 'DEMONSTRATION', title: 'System Demonstration' }}>
@@ -483,10 +568,17 @@ function FrontendList({ items }: { items: Array<[string, string]> }) {
 // ─── Deck controller ───────────────────────────────────────────────────
 export function PresentationPage() {
   const navigate = useNavigate()
+  const { mode, resolvedTheme, setMode } = useTheme()
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState<1 | -1>(1)
   const total = SLIDES.length
   const touchX = useRef<number | null>(null)
+
+  const cycleTheme = useCallback(() => {
+    // light → dark → system
+    const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'system' : 'light'
+    setMode(nextMode)
+  }, [mode, setMode])
 
   const goTo = useCallback(
     (next: number, dir: 1 | -1) => {
@@ -571,6 +663,16 @@ export function PresentationPage() {
 
       <button type="button" className="pres-exit" onClick={() => navigate('/')} aria-label="Exit presentation">
         ✕
+      </button>
+
+      <button
+        type="button"
+        className="pres-theme"
+        onClick={cycleTheme}
+        aria-label={`Switch theme (current: ${resolvedTheme})`}
+        title={`Theme: ${resolvedTheme}`}
+      >
+        <span className="pres-theme-icon" aria-hidden="true">{resolvedTheme === 'dark' ? '☾' : '☀'}</span>
       </button>
     </div>
   )

@@ -523,6 +523,137 @@
   color: var(--pres-ink-soft);
 }
 
+/* ── User Journey ─────────────────────────────────────────────────── */
+.pres-journey {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.pres-journey-col {
+  background: var(--pres-card-bg);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(16px * var(--radius-scale));
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(56, 44, 85, 0.07);
+  animation: pres-journey-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pres-journey-col:nth-child(2) { animation-delay: 0.15s; }
+
+@keyframes pres-journey-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pres-journey-head {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--pres-brand);
+}
+
+.pres-journey-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pres-journey-list li {
+  font-size: 13px;
+  color: var(--pres-ink-soft);
+  padding-inline-start: 18px;
+  position: relative;
+}
+
+.pres-journey-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pres-teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pres-teal) 20%, transparent);
+}
+
+.pres-journey-list li b {
+  color: var(--pres-ink);
+  font-weight: 800;
+}
+
+/* ── Platform screens (UI Overview) ───────────────────────────────── */
+.pres-shots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.pres-shot {
+  margin: 0;
+  background: var(--pres-card-bg);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(12px * var(--radius-scale));
+  padding: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(56, 44, 85, 0.08);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+  animation: pres-shot-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pres-shot:nth-child(2) { animation-delay: 0.06s; }
+.pres-shot:nth-child(3) { animation-delay: 0.12s; }
+.pres-shot:nth-child(4) { animation-delay: 0.18s; }
+.pres-shot:nth-child(5) { animation-delay: 0.24s; }
+.pres-shot:nth-child(6) { animation-delay: 0.3s; }
+.pres-shot:nth-child(7) { animation-delay: 0.36s; }
+
+@keyframes pres-shot-in {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pres-shot:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--pres-brand) 45%, transparent);
+  box-shadow: 0 12px 26px rgba(56, 44, 85, 0.16);
+}
+
+.pres-shot img {
+  display: block;
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: calc(8px * var(--radius-scale));
+  background: var(--pres-card-alt);
+}
+
+.pres-shot figcaption {
+  padding: 7px 4px 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--pres-ink-soft);
+  text-align: center;
+}
+
 /* ── Agenda ───────────────────────────────────────────────────────── */
 .pres-agenda {
   list-style: none;
@@ -1259,6 +1390,34 @@
   background: var(--pres-brand-tint);
 }
 
+.pres-theme {
+  position: absolute;
+  top: 18px;
+  left: 66px;
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--outline-variant);
+  background: color-mix(in srgb, var(--pres-card-bg) 94%, transparent);
+  color: var(--pres-ink-soft);
+  font-size: 17px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(56, 44, 85, 0.14);
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.pres-theme:hover {
+  transform: scale(1.08);
+  background: var(--pres-brand-tint);
+  color: var(--pres-brand);
+}
+
+.pres-theme-icon {
+  display: grid;
+  place-items: center;
+}
+
 /* ── Responsive ───────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .pres-root {
@@ -1292,7 +1451,8 @@
   .pres-grid-4,
   .pres-features,
   .pres-agenda,
-  .pres-future {
+  .pres-future,
+  .pres-journey {
     grid-template-columns: 1fr;
   }
 
@@ -1337,6 +1497,8 @@
   .pres-table tbody tr,
   .pres-node,
   .pres-overview-row,
+  .pres-journey-col,
+  .pres-shot,
   .pres-logo,
   .pres-hero-sub,
   .pres-hero-tag,
