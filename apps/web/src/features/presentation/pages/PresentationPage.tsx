@@ -51,7 +51,7 @@ const SLIDES: DeckEntry[] = [
         <span className="pres-logo">COURSEFLIX</span>
         <p className="pres-hero-sub">An Arabic-First Online Learning Platform</p>
         <p className="pres-hero-tag">
-          Full-stack LMS · RAG AI Tutor · Learning Interventions · Test Commerce · Sales Analytics
+          Full-stack LMS · RAG AI Tutor · Learning Interventions · Paymob Payments · Sales Analytics
         </p>
         <div className="pres-hero-team">
           <span className="pres-hero-label">Team Members</span>
@@ -114,7 +114,7 @@ const SLIDES: DeckEntry[] = [
           <li>Let students watch lessons, track progress, and get server-graded quiz results.</li>
           <li>Provide a grounded, honest AI Tutor that answers only from the teacher's documents with citations.</li>
           <li>Add deterministic learning interventions that never auto-suspend a student.</li>
-          <li>Enable test commerce with authoritative backend-sourced orders and receipts.</li>
+          <li>Enable secure course payments via Paymob with backend-sourced orders and receipts.</li>
           <li>Give teachers backend-sourced sales metrics and a limited Analytics Agent.</li>
           <li>Keep everything traceable and privacy-safe (correlation IDs, redacted logs, PII-denylisted analytics).</li>
         </ul>
@@ -148,7 +148,7 @@ const SLIDES: DeckEntry[] = [
             ['Interventions', 'Weak-concept reports + mini-quiz, no auto-suspend'],
             ['Notifications', 'Filterable feed, mark-read, deep links'],
             ['Community', 'Discussions, announcements with attachments'],
-            ['Test Commerce', 'Deterministic checkout, backend order truth'],
+            ['Paymob Payments', 'Real checkout with Paymob gateway, backend order truth'],
             ['Sales & Analytics', 'Backend metrics + limited Analytics Agent'],
             ['Support', 'Tickets routed to support staff'],
             ['Admin Oversight', 'Users, courses, orders, logs, notifications'],
@@ -241,7 +241,7 @@ const SLIDES: DeckEntry[] = [
             ['/api/quizzes', 'POST', '/:quizId/submissions', 'Submit answers, server-side grading (409 on retry)'],
             ['/api/courses', 'POST', '/:courseId/tutor/messages', 'Ask the AI Tutor (RAG citations or no-answer)'],
             ['/api/checkout', 'POST', '/orders', 'Create draft order with server-set price'],
-            ['/api/checkout', 'POST', '/orders/:id/confirm', 'Confirm via deterministic test adapter'],
+            ['/api/checkout', 'POST', '/orders/:id/confirm', 'Confirm order, start Paymob payment flow'],
             ['/api/orders', 'GET', '/:orderId', 'Fetch order + receipt (backend financial truth)'],
             ['/api/teacher/sales', 'GET', '/summary', 'Revenue, order count, best-seller (paid only)'],
             ['/api/teacher/analytics', 'POST', '/questions', 'Analytics Agent (3 allowlisted intents)'],
@@ -308,7 +308,7 @@ const SLIDES: DeckEntry[] = [
       <SlideShell meta={{ kicker: 'FUTURE', title: 'Future Enhancements' }}>
         <ul className="pres-future">
           {[
-            'Real payments — integrate Paymob for live card payments.',
+            'Paymob expansion — recurring plans, coupons, and multi-currency support.',
             'Advanced AI Tutor — conversation memory summaries and expanded grounding.',
             'AI quiz generation — generate quizzes directly from uploaded documents.',
             'Progress reports — automated weekly teacher reports for at-risk students.',
