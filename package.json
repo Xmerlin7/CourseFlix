@@ -52,5 +52,8 @@
     "msgpackr-extract": true,
     "unrs-resolver": true,
     "msw@2.15.0": true
+  },
+  "devDependencies": {
+    "vitest": "^4.1.10"
   }
 }

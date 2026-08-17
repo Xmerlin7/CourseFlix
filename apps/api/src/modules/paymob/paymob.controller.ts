@@ -60,39 +60,6 @@ export class PaymobController {
     return { paymentUrl, paymobOrderId };
   }
 
-  @Get('orders/:orderId/status')
-  @UseGuards(AuthGuard, StudentRoleGuard)
-  async paymentStatus(
-    @Param('orderId') orderId: string,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    // Ownership + existence (404/403 for strangers) — mirrors the receipt
-    // endpoint, so polling can never leak another student's order.
-    const order = await this.commerceService.getOrder(user.id, orderId);
-
-    const inquiry = await this.paymobService.inquireTransaction(orderId);
-
-    if (inquiry && !inquiry.pending) {
-      try {
-        await this.commerceService.fulfillPaymobWebhook({
-          merchantOrderId: orderId,
-          paymobOrderId: inquiry.paymobOrderId,
-          transactionId: inquiry.id,
-          success: inquiry.success,
-        });
-        return this.commerceService.getOrder(user.id, orderId);
-      } catch (caught) {
-        this.logger.warn(
-          `Payment status inquiry for order ${orderId} could not be fulfilled: ${
-            caught instanceof Error ? caught.message : String(caught)
-          }`,
-        );
-      }
-    }
-
-    return order;
-  }
-
   @Post('webhook')
   @HttpCode(200)
   async handleWebhookPost(
@@ -157,14 +124,6 @@ export class PaymobController {
         }`,
       );
       return fallback('/student/courses');
-    }
-
-    if (!success) {
-      // Declined / abandoned — route back to the checkout so the student
-      // sees the "تم رفض عملية الدفع" state and can retry the payment.
-      return fallback(
-        `/student/checkout/${context.courseId}?order=${context.orderId}`,
-      );
     }
 
     // Route the browser to the checkout receipt page (which shows the
