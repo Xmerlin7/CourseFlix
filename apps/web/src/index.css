@@ -849,15 +849,15 @@
   background: var(--surface-container);
 }
 
-/* ── UNREAD row — soft light lavender, calm and clear ── */
+/* ── UNREAD row — soft lavender tint that follows the theme ── */
 .community-row.unread {
-  background: #F3EEFA;
-  border-color: #D8CBEA;
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .community-row.unread:hover {
-  background: #EAE0F5;
-  border-color: #CBB9E2;
+  background: color-mix(in srgb, var(--primary) 36%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
 }
 
 .community-row.unread .community-row-title {
@@ -894,9 +894,9 @@
   align-items: center;
   gap: 4px;
   padding: 2px 7px;
-  background: #EBE3F7;
+  background: color-mix(in srgb, var(--primary) 20%, var(--surface));
   color: var(--primary);
-  border: 1px solid #D8CBEA;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
   border-radius: calc(999px * var(--radius-scale));
   font-size: 11px;
   font-weight: 700;

@@ -132,27 +132,27 @@
 
 /* Status Chip Subtle Colors */
 .chip.status-open {
-  background: rgba(103, 58, 183, 0.08);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   color: var(--primary);
-  border-color: rgba(103, 58, 183, 0.22);
+  border-color: color-mix(in srgb, var(--primary) 24%, transparent);
 }
 
 .chip.status-pending {
-  background: rgba(255, 152, 0, 0.1);
-  color: #e65100;
-  border-color: rgba(255, 152, 0, 0.25);
+  background: color-mix(in srgb, #ff9800 12%, transparent);
+  color: color-mix(in srgb, #ff9800 62%, var(--on-surface));
+  border-color: color-mix(in srgb, #ff9800 32%, transparent);
 }
 
 .chip.status-resolved {
-  background: rgba(76, 175, 80, 0.1);
-  color: #2e7d32;
-  border-color: rgba(76, 175, 80, 0.25);
+  background: color-mix(in srgb, #4caf50 12%, transparent);
+  color: color-mix(in srgb, #4caf50 62%, var(--on-surface));
+  border-color: color-mix(in srgb, #4caf50 32%, transparent);
 }
 
 .chip.status-closed {
-  background: rgba(120, 120, 140, 0.1);
+  background: color-mix(in srgb, var(--on-surface-variant) 10%, transparent);
   color: var(--on-surface-variant);
-  border-color: var(--outline-variant);
+  border-color: color-mix(in srgb, var(--on-surface-variant) 24%, transparent);
 }
 
 /* ---------- Message group / bubble ---------- */
@@ -281,12 +281,13 @@
 }
 
 .chat-msg.from-support.is-unread {
-  background: #F3EEFA;
-  border-color: #D8CBEA;
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .chat-msg.from-student.is-unread {
-  box-shadow: 0 0 0 2px #D8CBEA, 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .chat-msg-meta {
@@ -789,14 +790,14 @@
 
 .support-ticket-card.unread,
 .discussion-card.unread {
-  background: #F3EEFA;
-  border-color: #D8CBEA;
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .support-ticket-card.unread:hover,
 .discussion-card.unread:hover {
-  background: #EAE0F5;
-  border-color: #CBB9E2;
+  background: color-mix(in srgb, var(--primary) 36%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -1033,8 +1034,8 @@
 }
 
 .discussion-reply-card--accepted {
-  border-color: color-mix(in srgb, #10b981 50%, var(--outline-variant));
-  background: color-mix(in srgb, #10b981 5%, var(--surface));
+  border-color: color-mix(in srgb, var(--success-container) 55%, var(--outline-variant));
+  background: color-mix(in srgb, var(--success-container) 40%, var(--surface));
 }
 
 /* ---------- Compact Discussion Thread & Reply Rows ---------- */
@@ -1178,13 +1179,13 @@
 }
 
 .discussion-reply-row.unread .discussion-reply-bubble {
-  --bubble-bg: #F3EEFA;
-  --bubble-border: #D8CBEA;
+  --bubble-bg: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  --bubble-border: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .discussion-reply-row.unread:hover .discussion-reply-bubble {
-  --bubble-bg: #EAE0F5;
-  --bubble-border: #CBB9E2;
+  --bubble-bg: color-mix(in srgb, var(--primary) 36%, var(--surface));
+  --bubble-border: color-mix(in srgb, var(--primary) 50%, transparent);
 }
 
 .discussion-reply-row.unread .discussion-reply-author-name {
@@ -1192,8 +1193,8 @@
 }
 
 .discussion-reply-row--accepted .discussion-reply-bubble {
-  --bubble-bg: color-mix(in srgb, var(--success-container) 35%, var(--surface));
-  --bubble-border: color-mix(in srgb, #10b981 45%, var(--outline-variant));
+  --bubble-bg: color-mix(in srgb, var(--success-container) 40%, var(--surface));
+  --bubble-border: color-mix(in srgb, var(--success-container) 55%, var(--outline-variant));
 }
 
 .discussion-reply-row--teacher .discussion-reply-bubble {
