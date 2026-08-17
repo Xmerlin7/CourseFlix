@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
@@ -47,66 +46,22 @@ function NoticeCard({ icon, title, message, actionLabel, actionTo }: NoticeCardP
   )
 }
 
-function ErrorBanner({ message, detail }: { message: string; detail?: string | null }) {
-  return (
-    <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
-      <p style={{ fontWeight: 700, color: 'var(--error)' }}>{message}</p>
-      {detail && (
-        <p className="meta" dir="ltr" style={{ marginTop: 4 }}>
-          {detail}
-        </p>
-      )}
-    </div>
-  )
-}
-
-function PaymobFrame({ url }: { url: string }) {
-  return (
-    <div className="pay-frame" role="region" aria-label="بوابة الدفع الآمنة">
-      <div className="pay-frame-head">
-        <span className="ms" aria-hidden="true">
-          lock
-        </span>
-        <strong>بوابة الدفع الآمنة</strong>
-      </div>
-      {/* sandbox without allow-top-navigation: Paymob's completion page
-          cannot navigate this window to the dashboard's redirect URL
-          (e.g. the deployed app) — keep the student on localhost while
-          the checkout polls the order to a settled state. */}
-      <iframe
-        src={url}
-        title="بوابة الدفع الآمنة"
-        className="pay-frame-iframe"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-      />
-    </div>
-  )
-}
-
-type CheckoutContentProps = {
-  courseId: string
-  existingOrderId: string | null
-  pollMs: number
-  onRetry: () => void
-}
-
-function CheckoutContent({ courseId, existingOrderId, pollMs, onRetry }: CheckoutContentProps) {
+export function CheckoutPage() {
+  const { courseId } = useParams<{ courseId: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const {
     order,
     isCreating,
+    isConfirming,
     isInitiatingPaymob,
-    paymentUrl,
     createError,
+    confirmError,
     paymobError,
+    pay,
     payWithPaymob,
-  } = useCheckout(courseId, existingOrderId, pollMs)
-
-  useEffect(() => {
-    if (window.top && window.top !== window.self) {
-      window.top.location.href = window.location.href
-    }
-  }, [])
+    retryCreate,
+  } = useCheckout(courseId ?? '', searchParams.get('order'))
 
   if (isCreating) {
     return <LoadingState variant="text" />
@@ -152,7 +107,7 @@ function CheckoutContent({ courseId, existingOrderId, pollMs, onRetry }: Checkou
       <ErrorState
         title="تعذر بدء عملية الشراء"
         message="حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
-        onRetry={onRetry}
+        onRetry={retryCreate}
       />
     )
   }
@@ -194,107 +149,101 @@ function CheckoutContent({ courseId, existingOrderId, pollMs, onRetry }: Checkou
   }
 
   const declined = order.paymentStatus === 'failed'
-  const opening = !paymentUrl && !paymobError && !declined
 
   return (
     <>
       <h1 className="page-title">إتمام الشراء</h1>
-      <p className="subtitle">راجع تفاصيل الطلب وأكمل الدفع بأمان</p>
+      <p className="subtitle">راجع تفاصيل الطلب وأكمل الدفع</p>
+
+      <div className="card section" style={{ gap: 8 }}>
+        <span className="meta">{order.items[0]?.title ?? 'الدورة'}</span>
+        <span style={{ fontSize: 26, fontWeight: 700 }}>
+          {formatMoney(order.amountMinor, order.currency)}
+        </span>
+      </div>
 
       {declined && (
-        <ErrorBanner message="تم رفض عملية الدفع" detail="لم تتم عملية الدفع بنجاح. يمكنك إعادة المحاولة." />
+        <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
+          <p style={{ fontWeight: 700, color: 'var(--on-error-container)' }}>تم رفض عملية الدفع</p>
+          <p className="meta">لم تتم عملية الدفع بنجاح. يمكنك إعادة المحاولة.</p>
+        </div>
+      )}
+
+      {confirmError && (
+        <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
+          <p style={{ color: 'var(--on-error-container)' }}>تعذر إتمام عملية الدفع. يرجى المحاولة مرة أخرى.</p>
+        </div>
       )}
 
       {paymobError && (
-        <ErrorBanner
-          message="تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى."
-          detail={getServerMessage(paymobError)}
-        />
+        <div
+          className="card section"
+          role="alert"
+          style={{ borderInlineStart: '4px solid var(--error)' }}
+        >
+          <p style={{ color: 'var(--on-error-container)' }}>
+            تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى.
+          </p>
+          {getServerMessage(paymobError) && (
+            <p className="meta" dir="ltr" style={{ marginTop: 4 }}>
+              {getServerMessage(paymobError)}
+            </p>
+          )}
+        </div>
       )}
 
-      <div className="checkout-grid">
-        <aside className="card checkout-aside">
-          <span className="ms checkout-aside-icon" aria-hidden="true">
-            shopping_bag
-          </span>
-          <div className="checkout-aside-body">
-            <h2>ملخص الطلب</h2>
-            <p className="meta">{order.items[0]?.title ?? 'الدورة'}</p>
-            <div className="checkout-aside-row">
-              <span>سعر الدورة</span>
-              <b>{formatMoney(order.amountMinor, order.currency)}</b>
-            </div>
-            <div className="checkout-aside-row checkout-aside-total">
-              <span>الإجمالي</span>
-              <b>{formatMoney(order.amountMinor, order.currency)}</b>
-            </div>
-            <p className="checkout-aside-secure">
-              <span className="ms" aria-hidden="true">
-                lock
-              </span>
-              دفع آمن ومشفّر
-            </p>
-          </div>
-        </aside>
+      <div className="actions">
+        <button
+          className="btn big"
+          onClick={() => void payWithPaymob()}
+          disabled={isInitiatingPaymob || isConfirming}
+        >
+          <span className="ms" aria-hidden="true">payments</span>
+          {isInitiatingPaymob ? 'جاري التحويل إلى صفحة الدفع...' : declined ? 'إعادة المحاولة' : 'ادفع الآن'}
+        </button>
 
-        <section className="card checkout-panel">
-          {paymentUrl ? (
-            <>
-              <PaymobFrame url={paymentUrl} />
-              <p className="ccard-frame-hint">
-                أكمل الدفع في النافذة الآمنة — بعد الإتمام سيتم تحويلك تلقائياً إلى صفحة التأكيد.
-              </p>
-            </>
-          ) : (
-            <div className="ccard-pay-cta">
-              {(paymobError || declined) && (
-                <button
-                  type="button"
-                  className="btn big"
-                  onClick={() => void payWithPaymob()}
-                  disabled={isInitiatingPaymob}
-                >
-                  <span className="ms" aria-hidden="true">
-                    lock
-                  </span>
-                  {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'إعادة المحاولة'}
-                </button>
-              )}
-              {opening && (
-                <p className="meta">
-                  <span className="ms" aria-hidden="true" style={{ fontSize: 16, verticalAlign: '-3px' }}>
-                    lock
-                  </span>{' '}
-                  جاري فتح بوابة الدفع الآمنة...
-                </p>
-              )}
-            </div>
-          )}
+        <button className="btn text" onClick={() => navigate(ROUTE_PATHS.STUDENT.BROWSE)}>
+          الرجوع للدورات
+        </button>
+      </div>
 
-          <div className="checkout-back">
-            <button type="button" className="btn text" onClick={() => navigate(ROUTE_PATHS.STUDENT.BROWSE)}>
-              الرجوع للدورات
+      {/* Development-only shortcuts around the payment provider.
+          `POST /checkout/orders/:ref/confirm` takes a `simulate` flag that
+          the deterministic test adapter honours, so both outcomes can be
+          reached without Paymob credentials or a real card — which is the
+          only way to exercise the post-purchase flows (enrollment, the
+          paid-order receipt, the decline retry) locally.
+
+          Gated on import.meta.env.DEV so the block is dropped at build
+          time and can never reach a production bundle. The previous
+          "محاكاة رفض الدفع" button shipped to every user and did not
+          simulate anything — it navigated to /student/browse. */}
+      {import.meta.env.DEV && (
+        <div className="card section dev-tools">
+          <p className="dev-tools-title">
+            <span className="ms sm">construction</span>
+            أدوات المطوّر — لا تظهر في الإصدار النهائي
+          </p>
+          <div className="actions">
+            <button
+              className="btn tonal"
+              onClick={() => void pay('success')}
+              disabled={isConfirming || isInitiatingPaymob}
+            >
+              <span className="ms" aria-hidden="true">check_circle</span>
+              {isConfirming ? 'جارٍ التأكيد...' : 'محاكاة نجاح الدفع'}
+            </button>
+            <button
+              className="btn outlined"
+              onClick={() => void pay('decline')}
+              disabled={isConfirming || isInitiatingPaymob}
+            >
+              <span className="ms" aria-hidden="true">cancel</span>
+              محاكاة رفض الدفع
             </button>
           </div>
-        </section>
-      </div>
+        </div>
+      )}
     </>
-  )
-}
-
-export function CheckoutPage({ pollMs = 2500 }: { pollMs?: number }) {
-  const { courseId } = useParams<{ courseId: string }>()
-  const [searchParams] = useSearchParams()
-  const [attempt, setAttempt] = useState(0)
-  const existingOrderId = searchParams.get('order')
-
-  return (
-    <CheckoutContent
-      key={`${courseId ?? ''}:${existingOrderId ?? ''}:${attempt}`}
-      courseId={courseId ?? ''}
-      existingOrderId={existingOrderId}
-      pollMs={pollMs}
-      onRetry={() => setAttempt((value) => value + 1)}
-    />
   )
 }
