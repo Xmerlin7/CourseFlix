@@ -56,9 +56,9 @@ const SLIDES: DeckEntry[] = [
         <div className="pres-hero-team">
           <span className="pres-hero-label">Team Members</span>
           <p className="pres-hero-names">
-            Mohamed Elgendy · Albraa Nawara · Nabile El-Ghannam · Abdullah Habsa · Seif El-Din
+            Abdallah Ahmed Hassan Habsa · Albraa Mahfouz Abdalaziz Nawara · Mahmoud Nabil Mahmoud Abohessain · Mohamed Reda Galal Elgendy · Seif-Allah Ahmed Mostafa Eldarageely
           </p>
-          <p className="pres-hero-supervisor">Supervisor: Eng. ………………</p>
+          <p className="pres-hero-supervisor">Supervisor: Eng. Ayaat Abdelazim</p>
         </div>
       </div>
     ),
@@ -362,7 +362,7 @@ const SLIDES: DeckEntry[] = [
         <h2 className="pres-thanks-title">Thank You!</h2>
         <p className="pres-thanks-sub">Feel free to ask any questions</p>
         <p className="pres-thanks-names">
-          Mohamed Elgendy · Albraa Nawara · Nabile El-Ghannam · Abdullah Habsa · Seif El-Din
+          Abdallah Ahmed Hassan Habsa · Albraa Mahfouz Abdalaziz Nawara · Mahmoud Nabil Mahmoud Abohessain · Mohamed Reda Galal Elgendy · Seif-Allah Ahmed Mostafa Eldarageely
         </p>
       </div>
     ),

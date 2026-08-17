@@ -248,10 +248,14 @@
 }
 
 .pres-hero-names {
-  font-size: 15.5px;
-  font-weight: 800;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.55;
   color: #1d1b20;
   margin: 8px 0 4px;
+  max-width: 720px;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
 }
 
 .pres-hero-supervisor {
@@ -713,10 +717,14 @@
 }
 
 .pres-thanks-names {
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.55;
   color: #1d1b20;
   margin: 0;
+  max-width: 760px;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
 }
 
 /* ── Controls ─────────────────────────────────────────────────────── */
