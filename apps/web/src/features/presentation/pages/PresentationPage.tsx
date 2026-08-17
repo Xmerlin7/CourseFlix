@@ -104,10 +104,13 @@ const SLIDES: DeckEntry[] = [
           ['7', 'System Architecture'],
           ['8', 'Backend Walkthrough'],
           ['9', 'Frontend Walkthrough'],
-          ['10', 'Platform Screens'],
-          ['11', 'System Demonstration'],
-          ['12', 'Future Enhancements'],
-          ['13', 'Conclusion'],
+          ['10', 'Screens · Auth'],
+          ['11', 'Screens · Student'],
+          ['12', 'Screens · In Sync'],
+          ['13', 'Screens · Settings'],
+          ['14', 'System Demonstration'],
+          ['15', 'Future Enhancements'],
+          ['16', 'Conclusion'],
         ].map(([num, label]) => (
           <li key={num} className="pres-agenda-item">
             <span className="pres-agenda-num">{num}</span>
@@ -380,42 +383,73 @@ const SLIDES: DeckEntry[] = [
     ),
   },
   {
-    meta: { kicker: 'UI OVERVIEW', title: 'Platform Screens' },
+    meta: { kicker: 'UI OVERVIEW · 1/4', title: 'Auth Screens' },
     render: () => (
-      <SlideShell meta={{ kicker: 'UI OVERVIEW', title: 'Platform Screens' }}>
-        <p className="pres-lead">
-          Real captures from the running platform — student dashboard, course, notifications,
-          community, and settings, plus the sign-in and registration screens.
-        </p>
-        <div className="pres-shots">
-          <figure className="pres-shot">
+      <SlideShell meta={{ kicker: 'UI OVERVIEW · 1/4', title: 'Auth Screens' }}>
+        <p className="pres-lead">Sign in with email/password or Google OTP, and student self-registration.</p>
+        <div className="pres-shots pres-shots--pair">
+          <figure className="pres-shot pres-shot--big">
             <img src={shotLogin} alt="Login screen" loading="lazy" />
             <figcaption>Login</figcaption>
           </figure>
-          <figure className="pres-shot">
+          <figure className="pres-shot pres-shot--big">
             <img src={shotRegister} alt="Register screen" loading="lazy" />
             <figcaption>Register</figcaption>
           </figure>
-          <figure className="pres-shot">
+        </div>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'UI OVERVIEW · 2/4', title: 'Student Experience' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'UI OVERVIEW · 2/4', title: 'Student Experience' }}>
+        <p className="pres-lead">Dashboard with enrolled courses, and a structured course detail page.</p>
+        <div className="pres-shots pres-shots--pair">
+          <figure className="pres-shot pres-shot--big">
             <img src={shotStudentDashboard} alt="Student dashboard" loading="lazy" />
             <figcaption>Student Dashboard</figcaption>
           </figure>
-          <figure className="pres-shot">
+          <figure className="pres-shot pres-shot--big">
             <img src={shotCourseDetail} alt="Course detail" loading="lazy" />
             <figcaption>Course Detail</figcaption>
           </figure>
-          <figure className="pres-shot">
+        </div>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'UI OVERVIEW · 3/4', title: 'Stay In Sync' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'UI OVERVIEW · 3/4', title: 'Stay In Sync' }}>
+        <p className="pres-lead">Notifications with deep-links, and the course community (discussions + announcements).</p>
+        <div className="pres-shots pres-shots--pair">
+          <figure className="pres-shot pres-shot--big">
             <img src={shotNotifications} alt="Notifications" loading="lazy" />
             <figcaption>Notifications</figcaption>
           </figure>
-          <figure className="pres-shot">
+          <figure className="pres-shot pres-shot--big">
             <img src={shotCommunity} alt="Community" loading="lazy" />
             <figcaption>Community</figcaption>
           </figure>
-          <figure className="pres-shot">
+        </div>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'UI OVERVIEW · 4/4', title: 'Personalize & Manage' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'UI OVERVIEW · 4/4', title: 'Personalize & Manage' }}>
+        <p className="pres-lead">Settings for theme, notifications and account preferences.</p>
+        <div className="pres-shots pres-shots--pair">
+          <figure className="pres-shot pres-shot--big">
             <img src={shotSettings} alt="Settings" loading="lazy" />
             <figcaption>Settings</figcaption>
           </figure>
+          <div className="pres-shot pres-shot--big pres-shot--placeholder">
+            <span className="pres-shot-placeholder-icon">☰</span>
+            <figcaption>Teacher & Admin dashboards</figcaption>
+          </div>
         </div>
       </SlideShell>
     ),
