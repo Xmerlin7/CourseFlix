@@ -5729,71 +5729,7 @@ table.mtable {
   color: rgba(255, 255, 255, 0.58);
 }
 
-/* ---------- Card form (dev simulation) ---------- */
-.ccard-fields-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.ccard-fields-row .tf {
-  margin-bottom: 0;
-}
-
-.ccard-form-wrap {
-  max-width: 440px;
-  margin-inline: auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ccard-form .btn {
-  width: 100%;
-  margin-top: 6px;
-}
-
-.ccard-dev-hint {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: calc(12px * var(--radius-scale));
-  background: var(--secondary-container);
-  color: var(--on-secondary-container);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.ccard-dev-hint .ms {
-  font-size: 16px;
-  margin-top: 2px;
-}
-
-.ccard-dev-hint b {
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.ccard-or {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--on-surface-variant);
-  font-size: 12px;
-  margin-block: 2px;
-}
-
-.ccard-or::before,
-.ccard-or::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--outline-variant);
-}
-
+/* ---------- Direct Paymob CTA ---------- */
 .ccard-pay-cta {
   gap: 16px;
   align-items: center;
@@ -5862,11 +5798,6 @@ table.mtable {
 @media (max-width: 600px) {
   .checkout-panel {
     padding: calc(18px * var(--space-scale));
-  }
-
-  .ccard-fields-row {
-    grid-template-columns: 1fr;
-    gap: 0;
   }
 
   .pay-frame-iframe {

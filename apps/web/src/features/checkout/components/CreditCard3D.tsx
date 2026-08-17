@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
-import type { CardBrand } from '../lib/card-utils'
+
+export type CardBrand = 'visa' | 'mastercard' | 'amex' | 'mada' | 'unknown'
 
 interface CreditCard3DProps {
   number: string
@@ -139,7 +140,7 @@ export function CreditCard3D({ number, holderName, expiry, cvv, brand, flipped }
               <BrandMark brand={brand} />
             </div>
           </div>
-          <p className="ccard-back-note">بطاقة تجريبية — بياناتها لا تُرسل خارج المتصفح</p>
+          <p className="ccard-back-note">بطاقة عرض توضيحية — الدفع يتم عبر بوابة Paymob الآمنة</p>
         </div>
         </div>
       </div>

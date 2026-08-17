@@ -7,8 +7,6 @@ import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { ApiError } from '../../../shared/api/api-error'
 import { useCheckout } from '../hooks/useCheckout'
 import { CreditCard3D } from '../components/CreditCard3D'
-import { CardPaymentForm } from '../components/CardPaymentForm'
-import { detectBrand, formatCardNumber } from '../lib/card-utils'
 
 function formatMoney(minor: number, currency: string) {
   return `${(minor / 100).toLocaleString('ar-EG')} ${currency}`
@@ -63,7 +61,7 @@ function ErrorBanner({ message, detail }: { message: string; detail?: string | n
   )
 }
 
-function PaymobFrame({ url, onClose }: { url: string; onClose: () => void }) {
+function PaymobFrame({ url }: { url: string }) {
   return (
     <div className="pay-frame" role="region" aria-label="بوابة الدفع الآمنة">
       <div className="pay-frame-head">
@@ -71,51 +69,35 @@ function PaymobFrame({ url, onClose }: { url: string; onClose: () => void }) {
           lock
         </span>
         <strong>بوابة الدفع الآمنة</strong>
-        <button type="button" className="btn text" onClick={onClose}>
-          إلغاء
-        </button>
       </div>
       <iframe src={url} title="بوابة الدفع الآمنة" className="pay-frame-iframe" />
     </div>
   )
 }
 
-export function CheckoutPage() {
-  const { courseId } = useParams<{ courseId: string }>()
-  const [searchParams] = useSearchParams()
+type CheckoutContentProps = {
+  courseId: string
+  existingOrderId: string | null
+  onRetry: () => void
+}
+
+function CheckoutContent({ courseId, existingOrderId, onRetry }: CheckoutContentProps) {
   const navigate = useNavigate()
   const {
     order,
     isCreating,
-    isConfirming,
     isInitiatingPaymob,
+    paymentUrl,
     createError,
-    confirmError,
     paymobError,
-    pay,
     payWithPaymob,
-    retryCreate,
-  } = useCheckout(courseId ?? '', searchParams.get('order'))
-
-  const [cardName, setCardName] = useState('')
-  const [cardNumber, setCardNumber] = useState('')
-  const [cardExpiry, setCardExpiry] = useState('')
-  const [cardCvv, setCardCvv] = useState('')
-  const [cvvFocused, setCvvFocused] = useState(false)
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+  } = useCheckout(courseId, existingOrderId)
 
   useEffect(() => {
     if (window.top && window.top !== window.self) {
       window.top.location.href = window.location.href
     }
   }, [])
-
-  const handlePaymob = async () => {
-    const url = await payWithPaymob()
-    if (url) {
-      setPaymentUrl(url)
-    }
-  }
 
   if (isCreating) {
     return <LoadingState variant="text" />
@@ -161,7 +143,7 @@ export function CheckoutPage() {
       <ErrorState
         title="تعذر بدء عملية الشراء"
         message="حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
-        onRetry={retryCreate}
+        onRetry={onRetry}
       />
     )
   }
@@ -203,7 +185,7 @@ export function CheckoutPage() {
   }
 
   const declined = order.paymentStatus === 'failed'
-  const item = order.items[0]
+  const opening = !paymentUrl && !paymobError && !declined
 
   return (
     <>
@@ -214,10 +196,11 @@ export function CheckoutPage() {
         <ErrorBanner message="تم رفض عملية الدفع" detail="لم تتم عملية الدفع بنجاح. يمكنك إعادة المحاولة." />
       )}
 
-      {confirmError && <ErrorBanner message="تعذر إتمام عملية الدفع. يرجى المحاولة مرة أخرى." />}
-
       {paymobError && (
-        <ErrorBanner message="تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى." detail={getServerMessage(paymobError)} />
+        <ErrorBanner
+          message="تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى."
+          detail={getServerMessage(paymobError)}
+        />
       )}
 
       <div className="checkout-grid">
@@ -227,7 +210,7 @@ export function CheckoutPage() {
           </span>
           <div className="checkout-aside-body">
             <h2>ملخص الطلب</h2>
-            <p className="meta">{item?.title ?? 'الدورة'}</p>
+            <p className="meta">{order.items[0]?.title ?? 'الدورة'}</p>
             <div className="checkout-aside-row">
               <span>سعر الدورة</span>
               <b>{formatMoney(order.amountMinor, order.currency)}</b>
@@ -248,50 +231,18 @@ export function CheckoutPage() {
         <section className="card checkout-panel">
           {paymentUrl ? (
             <>
-              <PaymobFrame url={paymentUrl} onClose={() => setPaymentUrl(null)} />
+              <CreditCard3D
+                number=""
+                holderName=""
+                expiry=""
+                cvv=""
+                brand="unknown"
+                flipped={false}
+              />
+              <PaymobFrame url={paymentUrl} />
               <p className="ccard-frame-hint">
                 أكمل الدفع في النافذة الآمنة — بعد الإتمام سيتم تحويلك تلقائياً إلى صفحة التأكيد.
               </p>
-            </>
-          ) : import.meta.env.DEV ? (
-            <>
-              <CreditCard3D
-                number={formatCardNumber(cardNumber)}
-                holderName={cardName}
-                expiry={cardExpiry}
-                cvv={cardCvv}
-                brand={detectBrand(cardNumber)}
-                flipped={cvvFocused}
-              />
-              <div className="ccard-form-wrap">
-                <CardPaymentForm
-                  name={cardName}
-                  number={cardNumber}
-                  expiry={cardExpiry}
-                  cvv={cardCvv}
-                  isConfirming={isConfirming}
-                  onNameChange={setCardName}
-                  onNumberChange={setCardNumber}
-                  onExpiryChange={setCardExpiry}
-                  onCvvChange={setCardCvv}
-                  onCvvFocusChange={setCvvFocused}
-                  onPay={pay}
-                />
-                <div className="ccard-or" aria-hidden="true">
-                  <span>أو</span>
-                </div>
-                <button
-                  type="button"
-                  className="btn outlined"
-                  onClick={() => void handlePaymob()}
-                  disabled={isInitiatingPaymob || isConfirming}
-                >
-                  <span className="ms" aria-hidden="true">
-                    payments
-                  </span>
-                  {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'الدفع عبر بوابة Paymob'}
-                </button>
-              </div>
             </>
           ) : (
             <>
@@ -303,22 +254,28 @@ export function CheckoutPage() {
                 brand="unknown"
                 flipped={false}
               />
-              <div className="ccard-form-wrap ccard-pay-cta">
-                <p className="meta" style={{ textAlign: 'center' }}>
-                  سيتم تحويلك إلى بوابة الدفع الآمنة لإتمام العملية — بيانات البطاقة لا تمر أبداً عبر
-                  خوادمنا.
-                </p>
-                <button
-                  type="button"
-                  className="btn big"
-                  onClick={() => void handlePaymob()}
-                  disabled={isInitiatingPaymob}
-                >
-                  <span className="ms" aria-hidden="true">
-                    lock
-                  </span>
-                  {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'ادفع الآن'}
-                </button>
+              <div className="ccard-pay-cta">
+                {(paymobError || declined) && (
+                  <button
+                    type="button"
+                    className="btn big"
+                    onClick={() => void payWithPaymob()}
+                    disabled={isInitiatingPaymob}
+                  >
+                    <span className="ms" aria-hidden="true">
+                      lock
+                    </span>
+                    {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'إعادة المحاولة'}
+                  </button>
+                )}
+                {opening && (
+                  <p className="meta">
+                    <span className="ms" aria-hidden="true" style={{ fontSize: 16, verticalAlign: '-3px' }}>
+                      lock
+                    </span>{' '}
+                    جاري فتح بوابة الدفع الآمنة...
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -331,5 +288,21 @@ export function CheckoutPage() {
         </section>
       </div>
     </>
+  )
+}
+
+export function CheckoutPage() {
+  const { courseId } = useParams<{ courseId: string }>()
+  const [searchParams] = useSearchParams()
+  const [attempt, setAttempt] = useState(0)
+  const existingOrderId = searchParams.get('order')
+
+  return (
+    <CheckoutContent
+      key={`${courseId ?? ''}:${existingOrderId ?? ''}:${attempt}`}
+      courseId={courseId ?? ''}
+      existingOrderId={existingOrderId}
+      onRetry={() => setAttempt((value) => value + 1)}
+    />
   )
 }
