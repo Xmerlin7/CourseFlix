@@ -42,10 +42,6 @@ function Card({ title, body }: { title: string; body: string }) {
   )
 }
 
-function Badge({ label }: { label: string }) {
-  return <span className="pres-badge">{label}</span>
-}
-
 // ─── Slides ────────────────────────────────────────────────────────────
 const SLIDES: DeckEntry[] = [
   {
