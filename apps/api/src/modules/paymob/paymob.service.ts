@@ -26,6 +26,29 @@ export function toSafeString(value: unknown): string {
   return '';
 }
 
+/**
+ * Paymob's webhook/GET-redirect payloads send real JSON booleans, but the
+ * Transaction Inquiry API (`inquireTransaction` below) sends the same
+ * fields as the *strings* `"true"`/`"false"` — confirmed against a real
+ * pending-3DS inquiry response (`{"pending":"true","success":"false",...}`).
+ * Without this, a strict `typeof x === 'boolean'` check silently discards
+ * every inquiry response as "transaction not found", which breaks local
+ * payment-status polling (the whole reason `inquireTransaction` exists —
+ * see its docblock) for every transaction, not just 3DS ones.
+ */
+function toBool(value: unknown): boolean | null {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (value === 'true') {
+    return true;
+  }
+  if (value === 'false') {
+    return false;
+  }
+  return null;
+}
+
 export interface PaymobInitiateResult {
   paymobOrderId: string;
   paymentUrl: string;
@@ -303,8 +326,8 @@ export class PaymobService {
         return null;
       }
 
-      const success = transaction['success'];
-      if (typeof success !== 'boolean') {
+      const success = toBool(transaction['success']);
+      if (success === null) {
         return null;
       }
 
@@ -314,7 +337,7 @@ export class PaymobService {
         id: String(transaction['id'] ?? ''),
         paymobOrderId: String(order?.['id'] ?? ''),
         success,
-        pending: transaction['pending'] === true,
+        pending: toBool(transaction['pending']) === true,
       };
     } catch (caught) {
       this.logger.warn(
