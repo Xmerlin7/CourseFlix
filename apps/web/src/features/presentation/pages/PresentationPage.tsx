@@ -55,9 +55,28 @@ const SLIDES: DeckEntry[] = [
         </p>
         <div className="pres-hero-team">
           <span className="pres-hero-label">Team Members</span>
-          <p className="pres-hero-names">
-            Abdallah Ahmed Hassan Habsa · Albraa Mahfouz Abdalaziz Nawara · Mahmoud Nabil Mahmoud Abohessain · Mohamed Reda Galal Elgendy · Seif-Allah Ahmed Mostafa Eldarageely
-          </p>
+          <div className="pres-avatars">
+            <div className="pres-avatar" title="Abdallah Ahmed Hassan Habsa">
+              <span className="pres-avatar-initials">AH</span>
+              <span className="pres-avatar-name">Abdallah Habsa</span>
+            </div>
+            <div className="pres-avatar" title="Albraa Mahfouz Abdalaziz Nawara">
+              <span className="pres-avatar-initials">AN</span>
+              <span className="pres-avatar-name">Albraa Nawara</span>
+            </div>
+            <div className="pres-avatar" title="Mahmoud Nabil Mahmoud Abohessain">
+              <span className="pres-avatar-initials">MA</span>
+              <span className="pres-avatar-name">Mahmoud Abohessain</span>
+            </div>
+            <div className="pres-avatar" title="Mohamed Reda Galal Elgendy">
+              <span className="pres-avatar-initials">ME</span>
+              <span className="pres-avatar-name">Mohamed Elgendy</span>
+            </div>
+            <div className="pres-avatar" title="Seif-Allah Ahmed Mostafa Eldarageely">
+              <span className="pres-avatar-initials">SE</span>
+              <span className="pres-avatar-name">Seif-Allah Eldarageely</span>
+            </div>
+          </div>
           <p className="pres-hero-supervisor">Supervisor: Eng. Ayaat Abdelazim</p>
         </div>
       </div>
@@ -69,15 +88,16 @@ const SLIDES: DeckEntry[] = [
       <ol className="pres-agenda">
         {[
           ['1', 'Introduction'],
-          ['2', 'Objectives'],
-          ['3', 'Technologies Used'],
-          ['4', 'System Features'],
-          ['5', 'System Architecture'],
-          ['6', 'Backend Walkthrough'],
-          ['7', 'Frontend Walkthrough'],
-          ['8', 'System Demonstration'],
-          ['9', 'Future Enhancements'],
-          ['10', 'Conclusion'],
+          ['2', 'Overview'],
+          ['3', 'Objectives'],
+          ['4', 'Technologies Used'],
+          ['5', 'System Features'],
+          ['6', 'System Architecture'],
+          ['7', 'Backend Walkthrough'],
+          ['8', 'Frontend Walkthrough'],
+          ['9', 'System Demonstration'],
+          ['10', 'Future Enhancements'],
+          ['11', 'Conclusion'],
         ].map(([num, label]) => (
           <li key={num} className="pres-agenda-item">
             <span className="pres-agenda-num">{num}</span>
@@ -100,6 +120,35 @@ const SLIDES: DeckEntry[] = [
           <Card title="Student Experience" body="Enrolled-course dashboard, lessons with resume + attendance, server-graded quizzes, course-scoped AI Tutor, notifications, interventions, and checkout." />
           <Card title="Teacher Experience" body="Course/section/lesson management, PDF upload with ingestion, quizzes, announcements, discussions, sales metrics, a limited Analytics Agent, and agent logs." />
           <Card title="Assistant & Admin" body="Assistants share the teacher course/student surface; admins oversee users, courses, orders, quizzes, documents, notifications, and agent logs." />
+        </div>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'OVERVIEW', title: 'Platform Overview' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'OVERVIEW', title: 'Platform Overview' }}>
+        <p className="pres-lead">
+          A single platform covering the whole learning loop — from how a course is structured to
+          how students learn, get assessed, and receive help.
+        </p>
+        <div className="pres-overview">
+          <div className="pres-overview-row">
+            <span className="pres-overview-label">Publish</span>
+            <span className="pres-overview-desc">Teachers structure courses into sections and lessons, upload PDFs, and post announcements.</span>
+          </div>
+          <div className="pres-overview-row">
+            <span className="pres-overview-label">Practice</span>
+            <span className="pres-overview-desc">Students watch lessons with resume + attendance and take objective quizzes.</span>
+          </div>
+          <div className="pres-overview-row">
+            <span className="pres-overview-label">Assess</span>
+            <span className="pres-overview-desc">Server-side grading, interventions, and weak-concept reports flag struggles early.</span>
+          </div>
+          <div className="pres-overview-row">
+            <span className="pres-overview-label">Feedback</span>
+            <span className="pres-overview-desc">AI Tutor answers with citations, sales/analytics surface outcomes, and notifications keep everyone in sync.</span>
+          </div>
         </div>
       </SlideShell>
     ),
@@ -361,9 +410,29 @@ const SLIDES: DeckEntry[] = [
       <div className="pres-thanks">
         <h2 className="pres-thanks-title">Thank You!</h2>
         <p className="pres-thanks-sub">Feel free to ask any questions</p>
-        <p className="pres-thanks-names">
-          Abdallah Ahmed Hassan Habsa · Albraa Mahfouz Abdalaziz Nawara · Mahmoud Nabil Mahmoud Abohessain · Mohamed Reda Galal Elgendy · Seif-Allah Ahmed Mostafa Eldarageely
-        </p>
+        <div className="pres-avatars pres-avatars--thanks">
+          <div className="pres-avatar" title="Abdallah Ahmed Hassan Habsa">
+            <span className="pres-avatar-initials">AH</span>
+            <span className="pres-avatar-name">Abdallah Habsa</span>
+          </div>
+          <div className="pres-avatar" title="Albraa Mahfouz Abdalaziz Nawara">
+            <span className="pres-avatar-initials">AN</span>
+            <span className="pres-avatar-name">Albraa Nawara</span>
+          </div>
+          <div className="pres-avatar" title="Mahmoud Nabil Mahmoud Abohessain">
+            <span className="pres-avatar-initials">MA</span>
+            <span className="pres-avatar-name">Mahmoud Abohessain</span>
+          </div>
+          <div className="pres-avatar" title="Mohamed Reda Galal Elgendy">
+            <span className="pres-avatar-initials">ME</span>
+            <span className="pres-avatar-name">Mohamed Elgendy</span>
+          </div>
+          <div className="pres-avatar" title="Seif-Allah Ahmed Mostafa Eldarageely">
+            <span className="pres-avatar-initials">SE</span>
+            <span className="pres-avatar-name">Seif-Allah Eldarageely</span>
+          </div>
+        </div>
+        <p className="pres-thanks-supervisor">Supervisor: Eng. Ayaat Abdelazim</p>
       </div>
     ),
   },
