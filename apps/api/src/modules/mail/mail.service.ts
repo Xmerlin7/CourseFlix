@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { createTransport, type Transporter } from 'nodemailer';
 import type { OtpPurpose } from '../otp/entities/otp-code.entity';
 
 const OTP_SUBJECTS: Record<OtpPurpose, { en: string; ar: string }> = {
@@ -16,62 +17,105 @@ const OTP_SUBJECTS: Record<OtpPurpose, { en: string; ar: string }> = {
   },
 };
 
+// Gmail's own SMTP endpoint — the default host/port whenever SMTP_HOST isn't
+// set explicitly, so a Gmail App Password (SMTP_USER + SMTP_PASSWORD) is all
+// a developer needs to configure. Any other SMTP provider (a verified Resend/
+// SendGrid/Brevo domain, a company mail server, etc.) works the same way by
+// just setting SMTP_HOST/SMTP_PORT/SMTP_SECURE to match it.
+const DEFAULT_SMTP_HOST = 'smtp.gmail.com';
+const DEFAULT_SMTP_PORT = 465;
+
 /**
- * Sends transactional email through the Resend HTTP API (no SDK dependency —
- * the rest of the app already talks to external APIs with plain fetch).
+ * Sends transactional email over SMTP via nodemailer.
  *
- * When RESEND_API_KEY is unset or left as the `replace-me` placeholder the
- * mail is not sent; the code is logged instead so local dev still works
- * (same fallback philosophy as MockEmbeddingProvider for embeddings). The
- * OTP controllers additionally echo the code as `devCode` when
- * NODE_ENV !== 'production', so a developer can read it straight from the
- * API response.
+ * Defaults to Gmail: set SMTP_USER to a real Gmail address and SMTP_PASSWORD
+ * to an App Password for that account (myaccount.google.com/apppasswords —
+ * requires 2-Step Verification), and mail sends immediately with no domain
+ * to own or verify. Gmail requires the `From` header to match the
+ * authenticated account (or a configured "Send As" alias), so EMAIL_FROM
+ * defaults to SMTP_USER unless overridden.
+ *
+ * When SMTP_USER/SMTP_PASSWORD are unset or left as the `replace-me`
+ * placeholder, mail is not sent; the code is logged instead so local dev
+ * still works (same fallback philosophy as MockEmbeddingProvider for
+ * embeddings). The OTP controllers additionally echo the code as `devCode`
+ * when NODE_ENV !== 'production' AND delivery didn't actually happen, so a
+ * developer can still read it straight from the API response if needed.
+ *
+ * `sendOtp` never throws — bad credentials, a network hiccup, or the SMTP
+ * server being unreachable would otherwise take the whole register/login/
+ * reset request down with it (a 500, with the account or reset request
+ * already half-created in the DB). The OTP itself was already persisted by
+ * OtpService before this runs, so a delivery failure only means the *email*
+ * didn't go out; the code is still valid. Returns whether delivery actually
+ * happened, so callers know whether `devCode` is the only way the user will
+ * see the code.
  */
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
+  private transporter: Transporter | null = null;
 
   isConfigured(): boolean {
-    const apiKey = process.env.RESEND_API_KEY;
-    return Boolean(apiKey && apiKey !== 'replace-me');
+    const user = process.env.SMTP_USER;
+    const password = process.env.SMTP_PASSWORD;
+    return Boolean(
+      user && password && user !== 'replace-me' && password !== 'replace-me',
+    );
   }
 
-  async sendOtp(to: string, code: string, purpose: OtpPurpose): Promise<void> {
-    const apiKey = process.env.RESEND_API_KEY;
+  async sendOtp(
+    to: string,
+    code: string,
+    purpose: OtpPurpose,
+  ): Promise<boolean> {
     if (!this.isConfigured()) {
       this.logger.warn(
-        `RESEND_API_KEY not configured — OTP for ${to} (${purpose}): ${code}`,
+        `SMTP not configured — OTP for ${to} (${purpose}): ${code}`,
       );
-      return;
+      return false;
     }
 
-    const from =
-      process.env.EMAIL_FROM ?? 'CourseFlix <noreply@courseflix.local>';
+    const from = process.env.EMAIL_FROM ?? (process.env.SMTP_USER as string);
     const subject = OTP_SUBJECTS[purpose];
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    try {
+      await this.getTransporter().sendMail({
         from,
-        to: [to],
+        to,
         subject: subject.en,
         html: this.renderOtpHtml(code, purpose),
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
+      });
+      return true;
+    } catch (error) {
       this.logger.error(
-        `Resend send failed (${response.status}): ${errorText}`,
+        `SMTP send failed for ${to} (${purpose}): ${error instanceof Error ? error.message : String(error)} — OTP: ${code}`,
       );
-      throw new Error(
-        `Failed to send email (status ${response.status}): ${errorText}`,
-      );
+      return false;
     }
+  }
+
+  // Built once and reused — nodemailer's transporter pools its SMTP
+  // connection internally, so recreating it per send would throw that away
+  // on every single email.
+  private getTransporter(): Transporter {
+    if (!this.transporter) {
+      const port = Number(process.env.SMTP_PORT ?? DEFAULT_SMTP_PORT);
+      this.transporter = createTransport({
+        host: process.env.SMTP_HOST ?? DEFAULT_SMTP_HOST,
+        port,
+        // Defaults to whatever the default port implies (465 = implicit
+        // TLS, anything else = STARTTLS) unless SMTP_SECURE says otherwise.
+        secure: process.env.SMTP_SECURE
+          ? process.env.SMTP_SECURE === 'true'
+          : port === 465,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASSWORD,
+        },
+      });
+    }
+    return this.transporter;
   }
 
   private renderOtpHtml(code: string, purpose: OtpPurpose): string {

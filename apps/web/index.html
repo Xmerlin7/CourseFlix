@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link id="favicon-icon" rel="icon" type="image/svg+xml" href="/favicon-light.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CourseFlix</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +21,44 @@
       var theme=localStorage.getItem('cf-theme');
       var isDark=theme==='dark'||((!theme||theme==='system')&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches);
       if(isDark)document.documentElement.classList.add('dark');
+
+      // Favicon mirrors the logo: it re-renders from the SAME tokens the
+      // logo uses (--logo stroke, --bg tile), so it follows the light/
+      // dark mode AND the accent color the user picked in Appearance. A
+      // linked SVG file can't read the page's CSS, so the icon is
+      // generated here as a fresh blob URL every time those tokens
+      // change — a brand-new URL also defeats per-URL favicon caches.
+      var favIcon=document.getElementById('favicon-icon');
+      if(favIcon){
+        var favLastLogo='',favLastBg='',favBlobUrl=null;
+        function favFallback(name,isDark){return isDark?(name==='logo'?'#D9CCFF':'#0F0D13'):(name==='logo'?'#432B87':'#EFE6F5')}
+        function favHex(token,fallback){return /^#[0-9a-fA-F]{6}$/.test(token)?token.toLowerCase():fallback}
+        function syncFavIcon(){
+          var root=document.documentElement,cs=getComputedStyle(root);
+          var isDark=root.classList.contains('dark');
+          var logo=favHex((cs.getPropertyValue('--logo')||'').trim(),favFallback('logo',isDark));
+          var bg=favHex((cs.getPropertyValue('--bg')||'').trim(),favFallback('bg',isDark));
+          if(logo===favLastLogo&&bg===favLastBg)return;
+          favLastLogo=logo;favLastBg=bg;
+          var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><rect width="64" height="64" rx="14" fill="'+bg+'"/><path d="M42.93 18.98 A17 17 0 1 0 42.93 45.02" fill="none" stroke="'+logo+'" stroke-width="10" stroke-linecap="round"/></svg>';
+          var href;
+          try{
+            if(favBlobUrl)try{URL.revokeObjectURL(favBlobUrl)}catch(e){}
+            favBlobUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+            href=favBlobUrl;
+          }catch(e){
+            href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+          }
+          var fresh=document.createElement('link');
+          fresh.id='favicon-icon';fresh.rel='icon';fresh.type='image/svg+xml';fresh.href=href;
+          favIcon.replaceWith(fresh);
+          favIcon=fresh;
+        }
+        syncFavIcon();
+        new MutationObserver(syncFavIcon).observe(document.documentElement,{attributes:true});
+        if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncFavIcon);
+        window.addEventListener('load',syncFavIcon);
+      }
 
       var corners=localStorage.getItem('cf-corners');
       if(corners&&corners!=='default')document.documentElement.setAttribute('data-corners',corners);

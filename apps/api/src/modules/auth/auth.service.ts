@@ -1,6 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { MailService } from '../mail/mail.service';
 import { OtpService } from '../otp/otp.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
@@ -39,11 +42,12 @@ export interface GoogleProfile {
 }
 
 // Response shape shared by every flow that emails an OTP. `devCode` is only
-// present when email delivery is NOT configured AND we're not in production —
-// once a real mail key is set the code never leaves the server. The
-// `accountStatus` field is only set for the register flow (where the user has
-// already proven they own the email), so the client can tell "code sent" from
-// "account already active".
+// present when email delivery did NOT actually happen (unconfigured OR a
+// failed send) AND we're not in production — once mail is genuinely
+// delivered the code never leaves the server. The `accountStatus` field is
+// only set for the register flow (where the user has already proven they
+// own the email), so the client can tell "code sent" from "account already
+// active".
 export interface OtpResponse {
   message: string;
   email: string;
@@ -57,7 +61,6 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly sessionsService: SessionsService,
     private readonly otpService: OtpService,
-    private readonly mailService: MailService,
   ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResult> {
@@ -88,9 +91,17 @@ export class AuthService {
    * Google "Continue with Google" sign-in. The Google email is already
    * verified, so an account is created active (student role, no password)
    * on first use, linked to the existing account when the same email is
-   * already registered — but signing in is never immediate: a one-time
-   * password is mailed (purpose 'google_oauth') and must be redeemed via
-   * `verifyOtp` before a session is opened.
+   * already registered.
+   *
+   * The one-time code (purpose 'google_oauth') only guards the two
+   * sensitive moments: creating a brand-new account, and linking Google to
+   * an existing password account for the first time — proving the current
+   * requester actually owns that inbox before either happens. A returning
+   * user whose Google account is already linked and active skips it and
+   * signs in immediately: Google's own auth already vouched for them once,
+   * re-proving inbox ownership on every single login bought no real
+   * security and broke the one thing "Continue with Google" promises — a
+   * one-click sign-in.
    */
   async loginViaGoogle(
     profile: GoogleProfile,
@@ -101,13 +112,15 @@ export class AuthService {
       );
     }
 
-    // Already linked to this Google account.
+    // Already linked to this Google account — the OTP already happened the
+    // first time this link was made (or at account creation); sign straight
+    // in.
     const byGoogle = await this.usersService.findByGoogleId(profile.id);
     if (byGoogle) {
       if (byGoogle.status !== 'active') {
         throw new UnauthorizedException('Account is suspended.');
       }
-      return this.issueGoogleOtp(byGoogle);
+      return this.buildLoginResult(byGoogle);
     }
 
     const normalizedEmail = profile.email.trim().toLowerCase();
@@ -151,7 +164,7 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<OtpResponse> {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
-      throw new UnauthorizedException('Email already in use.');
+      throw new ConflictException('Email already in use.');
     }
 
     const passwordHash = await argon2.hash(dto.password);
@@ -163,7 +176,7 @@ export class AuthService {
       'student', // Default role for new registrations
     );
 
-    const code = await this.otpService.issue(
+    const { code, delivered } = await this.otpService.issue(
       newUser.id,
       newUser.email,
       'register',
@@ -174,7 +187,7 @@ export class AuthService {
         'Registration successful. Check your email for your verification code.',
       email: newUser.email,
       accountStatus: 'pending' as const,
-      ...this.devCode(code),
+      ...this.devCode(code, delivered),
     };
   }
 
@@ -203,12 +216,16 @@ export class AuthService {
               : ('unknown' as const),
         };
       }
-      const code = await this.otpService.issue(user.id, user.email, 'register');
+      const { code, delivered } = await this.otpService.issue(
+        user.id,
+        user.email,
+        'register',
+      );
       return {
         message: 'Check your email for your verification code.',
         email: user.email,
         accountStatus: 'pending' as const,
-        ...this.devCode(code),
+        ...this.devCode(code, delivered),
       };
     }
 
@@ -217,7 +234,7 @@ export class AuthService {
     // the endpoint can't be used to enumerate registered emails — only an
     // active account gets a code.
     if (user && user.status === 'active') {
-      const code = await this.otpService.issue(
+      const { code, delivered } = await this.otpService.issue(
         user.id,
         user.email,
         'google_oauth',
@@ -225,7 +242,7 @@ export class AuthService {
       return {
         message: 'Check your email for your Google sign-in code.',
         email: user.email,
-        ...this.devCode(code),
+        ...this.devCode(code, delivered),
       };
     }
 
@@ -267,7 +284,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
 
     if (user && user.status === 'active') {
-      const code = await this.otpService.issue(
+      const { code, delivered } = await this.otpService.issue(
         user.id,
         user.email,
         'password_reset',
@@ -275,7 +292,7 @@ export class AuthService {
       return {
         message: 'Check your email for your password reset code.',
         email: user.email,
-        ...this.devCode(code),
+        ...this.devCode(code, delivered),
       };
     }
 
@@ -348,11 +365,15 @@ export class AuthService {
     };
   }
 
-  private devCode(code: string): { devCode: string } | {} {
+  // Gated on `delivered`, not on whether Resend is configured — a
+  // configured-but-failing key (revoked, unverified sender domain, Resend
+  // down) must fall back to devCode exactly like being unconfigured does,
+  // or the code becomes unreachable: not emailed, and not returned either.
+  private devCode(code: string, delivered: boolean): { devCode: string } | {} {
     if (process.env.NODE_ENV === 'production') {
       return {};
     }
-    if (this.mailService.isConfigured()) {
+    if (delivered) {
       return {};
     }
     return { devCode: code };
@@ -364,7 +385,7 @@ export class AuthService {
   private async issueGoogleOtp(
     user: Pick<UserEntity, 'id' | 'email'>,
   ): Promise<GoogleOtpRequired> {
-    const code = await this.otpService.issue(
+    const { code, delivered } = await this.otpService.issue(
       user.id,
       user.email,
       'google_oauth',
@@ -372,7 +393,7 @@ export class AuthService {
     return {
       requiresOtp: true,
       email: user.email,
-      ...this.devCode(code),
+      ...this.devCode(code, delivered),
     };
   }
 }

@@ -410,6 +410,272 @@
   font-weight: 700;
 }
 
+/* ===== Sidebar docking (drag the grip to an edge) =====
+   Three positions, persisted in useSidebarPosition. Right and left are the
+   same vertical bar on opposite sides; bottom is a different component
+   shape entirely (see the bottom-bar block below).
+
+   All of this is desktop-only on purpose. Under 860px the sidebar is
+   already a slide-in drawer, for the reason spelled out in that media
+   query: ten admin nav entries in a phone-width strip leaves ~38px per
+   target. Docking can't fix that, so below the breakpoint the drawer wins
+   regardless of the stored position. */
+
+/* The whole bar is the drag surface, so its empty space advertises that
+   with a grab cursor. Links and buttons inside reset to `pointer`, since
+   the hook deliberately ignores presses that start on them. */
+.sidebar {
+  cursor: grab;
+  /* The gesture moves the bar, so the browser must not also read it as a
+     scroll or a text selection. */
+  touch-action: none;
+}
+
+.sidebar .nav-item,
+.sidebar .icon-btn {
+  cursor: pointer;
+  touch-action: auto;
+}
+
+.sidebar.dragging {
+  cursor: grabbing;
+  opacity: 0.6;
+}
+
+/* ---------- Drop zones ---------- */
+.sidebar-dropzones {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.sidebar-dropzone {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: calc(20px * var(--radius-scale));
+  border: 2px dashed var(--outline);
+  background: color-mix(in oklab, var(--surface) 82%, transparent);
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.sidebar-dropzone .ms {
+  font-size: 26px;
+}
+
+/* Geometry mirrors resolveEdge() in useSidebarDrag: side zones cover the
+   outer ~28% of the width but stop above the bottom band, and the bottom
+   zone owns the full width below it — because that function gives the
+   bottom edge the corners. Drawing the side zones full-height (as this
+   first did) meant the lower third of the visible "right" target actually
+   resolved to bottom, so the preview kept contradicting the box the
+   pointer was sitting in. Keep the two in step if either changes. */
+.sidebar-dropzone.right {
+  top: 12px;
+  bottom: 29%;
+  right: 12px;
+  width: 26%;
+}
+
+.sidebar-dropzone.left {
+  top: 12px;
+  bottom: 29%;
+  left: 12px;
+  width: 26%;
+}
+
+.sidebar-dropzone.bottom {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  height: 26%;
+  flex-direction: row;
+}
+
+.sidebar-dropzone.active {
+  border-color: var(--primary);
+  border-style: solid;
+  background: color-mix(in oklab, var(--primary) 16%, var(--surface));
+  color: var(--primary);
+}
+
+/* ---------- Docked left ---------- */
+/* The document is RTL, so the sidebar is on the right by default simply
+   by being first in the DOM. `order` moves it without touching source
+   order, which keeps the nav ahead of the page content for screen
+   readers and tab order in every position. */
+.app[data-sidebar-pos='left'] .sidebar {
+  order: 2;
+}
+
+.app[data-sidebar-pos='left'] .main {
+  order: 1;
+  padding-inline: 0 14px;
+}
+
+/* ---------- Docked bottom ---------- */
+.app[data-sidebar-pos='bottom'] {
+  flex-direction: column;
+}
+
+.app[data-sidebar-pos='bottom'] .main {
+  order: 1;
+  height: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 14px 14px 0;
+}
+
+.app[data-sidebar-pos='bottom'] .sidebar {
+  order: 2;
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Collapsing is a vertical-bar idea: the bottom bar is already icon-first
+   and full width, so there is nothing to reclaim by collapsing it. The
+   toggle would just be a control that does nothing visible. */
+.app[data-sidebar-pos='bottom'] .rail-toggle {
+  display: none;
+}
+
+/* nav and the footer both become plain runs of destinations in the bar —
+   the footer's `margin-top: auto` would otherwise still be trying to push
+   itself down a column that no longer exists. */
+.app[data-sidebar-pos='bottom'] .sidebar nav,
+.app[data-sidebar-pos='bottom'] .side-footer {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0;
+}
+
+/* True centring, not "centred in whatever the footer left over". An empty
+   flex: 1 spacer on the leading side mirrors the footer's flex: 1 on the
+   trailing side, so both flanks resolve to the same width and the nav —
+   sized to its content between them — lands on the bar's real centre.
+
+   Both flanks are flex: 1 (basis 0, shrinkable), so when a role has enough
+   entries to overflow (admin has ten) they collapse instead of forcing the
+   nav off-screen, and the bar just scrolls. */
+.app[data-sidebar-pos='bottom'] .sidebar::before {
+  content: '';
+  flex: 1;
+}
+
+.app[data-sidebar-pos='bottom'] .sidebar nav {
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.app[data-sidebar-pos='bottom'] .side-footer {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+/*
+ * M3 bottom-bar item: icon above label, and the active state is a pill
+ * "indicator" behind the icon only — not the whole row as in the vertical
+ * sidebar. The indicator is a ::before rather than a wrapper element so
+ * the same NavLink markup serves both layouts.
+ */
+.app[data-sidebar-pos='bottom'] .nav-item {
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: auto;
+  min-width: 72px;
+  padding: 8px 10px 6px;
+  border-radius: calc(16px * var(--radius-scale));
+  font-size: 12px;
+  text-align: center;
+  background: none;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item .ms {
+  position: relative;
+  z-index: 1;
+  /* Centres the glyph inside the pill that sits behind it. */
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 30px;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 56px;
+  height: 30px;
+  border-radius: calc(999px * var(--radius-scale));
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item:hover::before {
+  background: var(--hover);
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item.active {
+  background: none;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item.active::before {
+  background: var(--secondary-container);
+}
+
+.app[data-sidebar-pos='bottom'] .nav-item .lbl {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* Badges anchor to the indicator pill's corner instead of trailing the
+   label, which is the only place they fit once the item is a column. */
+.app[data-sidebar-pos='bottom'] .nav-count-badge {
+  position: absolute;
+  top: 2px;
+  inset-inline-end: 12px;
+  margin-inline-start: 0;
+  z-index: 2;
+}
+
+.app[data-sidebar-pos='bottom'] .nav-unread-dot {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 18px;
+  margin: 0;
+  z-index: 2;
+}
+
+.app[data-sidebar-pos='bottom'] .side-footer .avatar {
+  width: 26px;
+  height: 26px;
+}
+
+/* Collapsed ("rail") is a vertical-bar idea — the bottom bar is already
+   icon-first, and hiding its labels would just make every target
+   anonymous. */
+.app[data-sidebar-pos='bottom'] .sidebar.rail .lbl {
+  display: inline;
+}
+
 .avatar {
   width: 34px;
   height: 34px;
@@ -557,7 +823,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: 920px;
+  width: 100%;
 }
 
 /* ── Base row (READ state) ── */
@@ -583,15 +849,15 @@
   background: var(--surface-container);
 }
 
-/* ── UNREAD row — soft light lavender, calm and clear ── */
+/* ── UNREAD row — soft lavender tint that follows the theme ── */
 .community-row.unread {
-  background: #F3EEFA;
-  border-color: #D8CBEA;
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .community-row.unread:hover {
-  background: #EAE0F5;
-  border-color: #CBB9E2;
+  background: color-mix(in srgb, var(--primary) 36%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
 }
 
 .community-row.unread .community-row-title {
@@ -628,9 +894,9 @@
   align-items: center;
   gap: 4px;
   padding: 2px 7px;
-  background: #EBE3F7;
+  background: color-mix(in srgb, var(--primary) 20%, var(--surface));
   color: var(--primary);
-  border: 1px solid #D8CBEA;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
   border-radius: calc(999px * var(--radius-scale));
   font-size: 11px;
   font-weight: 700;
@@ -1476,6 +1742,96 @@ code {
   .topbar .topbar-menu-btn {
     display: grid;
   }
+
+  /* Docking is a desktop-only idea, but its rules are attribute-scoped and
+     so outrank the plain `.sidebar` drawer rules above. Undo the parts
+     that would otherwise leave a stored "bottom" or "left" position
+     fighting the drawer on a phone. The stored value is kept, not reset —
+     it takes effect again as soon as the window is wide enough. */
+  .app[data-sidebar-pos='bottom'],
+  .app[data-sidebar-pos='left'] {
+    flex-direction: column;
+  }
+
+  .app[data-sidebar-pos='bottom'] .sidebar,
+  .app[data-sidebar-pos='left'] .sidebar,
+  .app[data-sidebar-pos='bottom'] .main,
+  .app[data-sidebar-pos='left'] .main {
+    order: 0;
+  }
+
+  .app[data-sidebar-pos='bottom'] .main {
+    padding: 10px;
+    height: 100vh;
+  }
+
+  .app[data-sidebar-pos='bottom'] .sidebar {
+    width: min(300px, 84vw) !important;
+    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app[data-sidebar-pos='bottom'] .sidebar nav,
+  .app[data-sidebar-pos='bottom'] .side-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app[data-sidebar-pos='bottom'] .side-footer {
+    margin-top: auto;
+  }
+
+  /* Back to the full-width row the drawer uses. */
+  .app[data-sidebar-pos='bottom'] .nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    padding: calc(12px * var(--space-scale)) calc(18px * var(--space-scale));
+    border-radius: calc(999px * var(--radius-scale));
+    font-size: 15px;
+    text-align: start;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-item::before {
+    display: none;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-item.active {
+    background: var(--secondary-container);
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-item .ms {
+    display: inline;
+    width: auto;
+    height: auto;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-count-badge,
+  .app[data-sidebar-pos='bottom'] .nav-unread-dot {
+    position: static;
+  }
+
+  .app[data-sidebar-pos='bottom'] .nav-count-badge {
+    margin-inline-start: auto;
+  }
+
+  /* Nothing to dock to on a phone, so the bar goes back to being an
+     ordinary scrollable drawer rather than a drag surface. */
+  .sidebar {
+    cursor: default;
+    touch-action: auto;
+  }
+
+  .app[data-sidebar-pos='bottom'] .rail-toggle {
+    display: none;
+  }
 }
 
 /* Count badge on a nav item (teacher's pending assistant actions).
@@ -1635,35 +1991,6 @@ textarea:placeholder-shown {
 
 .tf.invalid input {
   border-color: var(--error);
-}
-
-.password-field {
-  position: relative;
-}
-
-.password-field input {
-  padding-inline-end: calc(44px * var(--space-scale));
-}
-
-.password-toggle {
-  position: absolute;
-  inset-inline-end: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: calc(999px * var(--radius-scale));
-  background: none;
-  display: grid;
-  place-items: center;
-  color: var(--on-surface-variant);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.password-toggle:hover {
-  background: var(--hover);
 }
 
 /* ---------- Quiz (ported from ui5/) ---------- */
@@ -1917,778 +2244,17 @@ textarea:placeholder-shown {
   }
 }
 
-/* ---------- Auth shell: immersive mesh login/register ---------- */
-.auth-shell {
-  /* The auth experience deliberately stays in UI5's welcoming light
-     Material palette, even when the signed-in application uses dark mode. */
-  --primary: #65558F;
-  --on-primary: #FFFFFF;
-  --primary-container: #E9DDFF;
-  --on-primary-container: #4F378B;
-  --secondary-container: #E8DEF8;
-  --on-secondary-container: #4A4458;
-  --tertiary-container: #D7F4FA;
-  --on-tertiary-container: #155E75;
-  --success-container: #C9EFD4;
-  --on-success-container: #14532D;
-  --error: #B3261E;
-  --on-error: #FFFFFF;
-  --error-container: #F9DEDC;
-  --on-error-container: #852221;
-  --danger-text: #8C3A34;
-  --bg: #EEF7FC;
-  --surface: #FEFBFF;
-  --surface-container-low: #F7F1FA;
-  --surface-container: #F1EAF6;
-  --surface-container-high: #EBE3F1;
-  --surface-container-highest: #E4DBEC;
-  --on-surface: #1D1B20;
-  --on-surface-variant: #4A4458;
-  --outline: #7A757F;
-  --outline-variant: #D5CCDD;
-  --logo: #432B87;
-  --hover: rgba(29, 27, 32, 0.08);
-  --shadow: 0 1px 3px rgba(30, 20, 50, 0.12), 0 4px 14px rgba(30, 20, 50, 0.08);
-  --shadow-lg: 0 6px 24px rgba(30, 20, 50, 0.18);
-  --auth-mesh-accent: #0891B2;
-  --auth-mesh-edge: #4F378B;
-  --auth-pointer-x: 50%;
-  --auth-pointer-y: 50%;
-  --auth-pointer-px: 50%;
-  --auth-pointer-py: 50%;
-  --auth-pointer-nx: 0;
-  --auth-pointer-ny: 0;
-  min-height: 100vh;
-  width: 100%;
-  max-width: 100%;
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(340px, 440px) minmax(300px, 370px);
-  align-items: center;
-  justify-content: center;
-  gap: clamp(42px, 7vw, 112px);
-  padding: clamp(24px, 5vw, 72px);
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 11% 12%, rgba(255, 255, 255, 0.98), transparent 25%),
-    radial-gradient(circle at 83% 18%, rgba(214, 244, 250, 0.9), transparent 31%),
-    radial-gradient(circle at 46% 104%, rgba(233, 221, 255, 0.78), transparent 36%),
-    linear-gradient(135deg, #F8FCFF 0%, #EEF7FC 48%, #F4EFFB 100%);
-  letter-spacing: 0;
-  isolation: isolate;
-  color-scheme: light;
-}
-
-.auth-mesh-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  display: block;
-  opacity: 0.94;
-  pointer-events: none;
-}
-
-.auth-pointer-aura {
-  position: fixed;
-  left: var(--auth-pointer-x);
-  top: var(--auth-pointer-y);
-  z-index: 0;
-  width: 170px;
-  height: 170px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(8, 145, 178, 0.16) 0%, rgba(233, 221, 255, 0.1) 42%, transparent 72%);
-  filter: blur(10px);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.82);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-.auth-shell[data-pointer="active"] .auth-pointer-aura {
-  opacity: 0.72;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.auth-shell::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background:
-    radial-gradient(circle at var(--auth-pointer-x) var(--auth-pointer-y), rgba(8, 145, 178, 0.08), transparent 16%),
-    radial-gradient(circle at 18% 18%, rgba(101, 85, 143, 0.08), transparent 25%),
-    radial-gradient(circle at 54% 82%, rgba(215, 244, 250, 0.3), transparent 31%);
-  pointer-events: none;
-}
-
-.auth-shell::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(233, 221, 255, 0.06)),
-    radial-gradient(circle at center, transparent 42%, rgba(79, 55, 139, 0.045) 100%);
-  pointer-events: none;
-}
-
-.auth-panel-form {
-  width: min(460px, 100%);
-  min-width: 0;
-  max-width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 2;
-  padding: 0;
-  background: transparent;
-}
-
-.auth-form-inner {
-  width: min(440px, 100%);
-  min-width: 0;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 2;
-  padding: clamp(24px, 4vw, 36px);
-  border: 1px solid color-mix(in srgb, var(--outline-variant) 76%, white);
-  border-radius: calc(28px * var(--radius-scale));
-  background:
-    linear-gradient(145deg, rgba(254, 251, 255, 0.97), rgba(247, 241, 250, 0.91));
-  box-shadow:
-    0 1px 3px rgba(30, 20, 50, 0.1),
-    0 18px 52px rgba(56, 44, 85, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.72) inset;
-  backdrop-filter: blur(22px) saturate(1.06);
-  transition: box-shadow 0.18s ease, border-color 0.18s ease;
-}
-
-.auth-form-inner::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(circle at var(--auth-pointer-px) var(--auth-pointer-py), rgba(8, 145, 178, 0.09), transparent 30%);
-  opacity: 0.8;
-  pointer-events: none;
-}
-
-.auth-form-logo {
-  font-size: 30px;
-  text-align: center;
-  margin-bottom: 20px;
-  color: var(--logo);
-  text-shadow: none;
-}
-
-.auth-course-strip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
-  padding: 9px 12px;
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(16px * var(--radius-scale));
-  background:
-    linear-gradient(90deg, rgba(215, 244, 250, 0.72), var(--surface-container-low));
-}
-
-.auth-course-strip-icon {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: #0E7490;
-  background: rgba(8, 145, 178, 0.12);
-}
-
-.auth-course-strip strong,
-.auth-course-strip small {
-  display: block;
-  line-height: 1.35;
-}
-
-.auth-course-strip > span:last-child {
-  min-width: 0;
-}
-
-.auth-course-strip strong {
-  color: var(--on-surface);
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
-.auth-course-strip small {
-  color: var(--on-surface-variant);
-  font-size: 12px;
-}
-
-.foot {
-  text-align: center;
-  color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
-  font-size: 12.5px;
-  margin-top: 26px;
-}
-
-.auth-panel-brand {
-  position: relative;
-  width: min(370px, 100%);
-  display: block;
-  padding: 0;
-  overflow: visible;
-  background: transparent;
-  z-index: 1;
-  pointer-events: auto;
-  transform: translate3d(calc(var(--auth-pointer-nx) * -8px), calc(var(--auth-pointer-ny) * -6px), 0);
-  transition: transform 0.18s ease-out;
-}
-
-.auth-floating-poster .poster-stage {
-  pointer-events: auto;
-}
-
-/* ---------- Interactive auth course poster ---------- */
-.poster-stage {
-  --poster-x: 0;
-  --poster-y: 0;
-  width: 100%;
-  position: relative;
-  display: grid;
-  place-items: center;
-  perspective: 1100px;
-  isolation: isolate;
-}
-
-.poster-light {
-  position: absolute;
-  inset: -28%;
-  background:
-    radial-gradient(circle at calc(50% + (var(--poster-x) * 28%)) calc(48% + (var(--poster-y) * 28%)), rgba(8, 145, 178, 0.12), transparent 34%),
-    radial-gradient(circle at 70% 74%, rgba(101, 85, 143, 0.11), transparent 42%);
-  opacity: 1;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.poster-grid-lines {
-  position: absolute;
-  inset: -24px;
-  border: 1px solid rgba(79, 55, 139, 0.08);
-  background-image: radial-gradient(rgba(79, 55, 139, 0.14) 1px, transparent 1px);
-  background-size: 24px 24px;
-  transform: translate3d(calc((var(--poster-x) * -12px) + (var(--auth-pointer-nx) * -10px)), calc((var(--poster-y) * -12px) + (var(--auth-pointer-ny) * -10px)), 0);
-  opacity: 0.42;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.poster {
-  width: 100%;
-  border-radius: calc(22px * var(--radius-scale));
-  overflow: hidden;
-  color: var(--on-surface);
-  background: rgba(254, 251, 255, 0.92);
-  border: 1px solid rgba(213, 204, 221, 0.9);
-  box-shadow:
-    0 1px 3px rgba(30, 20, 50, 0.1),
-    0 18px 46px rgba(56, 44, 85, 0.13),
-    0 1px 0 rgba(255, 255, 255, 0.8) inset;
-  backdrop-filter: blur(20px) saturate(1.08);
-  transform:
-    rotateX(calc(var(--poster-y) * -7deg))
-    rotateY(calc(var(--poster-x) * 9deg))
-    translate3d(calc(var(--poster-x) * 8px), calc(var(--poster-y) * 8px), 0);
-  transition: transform 0.16s ease, box-shadow 0.2s ease;
-}
-
-.poster-stage.loading .poster {
-  opacity: 0.82;
-}
-
-.poster-hero {
-  position: relative;
-  height: 168px;
-  overflow: hidden;
-  background:
-    linear-gradient(135deg, #D7F4FA, #E9DDFF);
-}
-
-.poster-cover-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.05) translate3d(calc(var(--poster-x) * -7px), calc(var(--poster-y) * -7px), 0);
-  filter: saturate(1.1) contrast(1.04);
-  transition: transform 0.2s ease;
-}
-
-.poster-cover-fallback {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 8px;
-  color: var(--on-primary-container);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.72), transparent 30%),
-    linear-gradient(135deg, #D7F4FA, #E9DDFF);
-}
-
-.poster-cover-fallback .ms {
-  font-size: 50px;
-}
-
-.poster-cover-fallback strong {
-  font-family: var(--heading);
-  font-size: 32px;
-}
-
-.poster-hero-overlay {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, transparent 32%, rgba(79, 55, 139, 0.12)),
-    linear-gradient(90deg, rgba(8, 145, 178, 0.08), transparent 48%);
-}
-
-.poster-live-badge {
-  position: absolute;
-  top: 14px;
-  inset-inline-start: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 11px;
-  border: 1px solid rgba(213, 204, 221, 0.92);
-  border-radius: 999px;
-  color: var(--on-primary-container);
-  background: rgba(254, 251, 255, 0.86);
-  backdrop-filter: blur(10px);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.poster-live-badge .ms {
-  font-size: 17px;
-}
-
-.poster-body {
-  padding: 18px 20px 20px;
-}
-
-.poster-head {
-  margin-bottom: 14px;
-}
-
-.poster-subject {
-  display: block;
-  font-family: var(--heading);
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.18;
-  color: var(--on-surface);
-  overflow-wrap: anywhere;
-}
-
-.poster-head-note {
-  display: inline-flex;
-  margin-bottom: 5px;
-  color: #0E7490;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.poster-identity {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 11px;
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(8px * var(--radius-scale));
-  background: var(--surface-container-low);
-}
-
-.poster-teacher-icon {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--on-primary-container);
-  background: var(--primary-container);
-}
-
-.poster-titles {
-  min-width: 0;
-}
-
-.poster-eyebrow {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--on-surface-variant);
-}
-
-.poster-name {
-  font-family: var(--heading);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--on-surface);
-  overflow-wrap: anywhere;
-}
-
-.poster-description {
-  margin: 14px 0;
-  min-height: 3.2em;
-  color: var(--on-surface-variant);
-  font-size: 13.5px;
-  font-weight: 600;
-  line-height: 1.6;
-}
-
-.poster-stats {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 7px;
-}
-
-.poster-stats li {
-  min-width: 0;
-  padding: 9px 7px;
-  border-radius: calc(8px * var(--radius-scale));
-  border: 1px solid var(--outline-variant);
-  background: color-mix(in srgb, var(--surface-container-low) 88%, transparent);
-  text-align: center;
-}
-
-.poster-stats strong,
-.poster-stats span {
-  display: block;
-}
-
-.poster-stats strong {
-  color: var(--on-primary-container);
-  font-size: 12.5px;
-}
-
-.poster-stats span {
-  margin-top: 2px;
-  color: var(--on-surface-variant);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.poster-progress {
-  margin-top: 16px;
-  display: grid;
-  gap: 7px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--on-surface-variant);
-}
-
-.poster-progress-track {
-  height: 9px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--surface-container-high);
-}
-
-.poster-progress-track span {
-  display: block;
-  width: 72%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--primary), #0891B2);
-  animation: auth-progress-glow 2.8s ease-in-out infinite;
-}
-
-.auth-shell .tf input,
-.auth-shell .tf textarea,
-.auth-shell .tf select {
-  background: var(--surface);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, transform 0.18s ease;
-}
-
-.auth-shell .tf input:hover,
-.auth-shell .tf textarea:hover,
-.auth-shell .tf select:hover {
-  border-color: color-mix(in srgb, #0891B2 52%, var(--outline));
-}
-
-.auth-shell .tf input:focus,
-.auth-shell .tf textarea:focus,
-.auth-shell .tf select:focus {
-  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.14);
-  transform: translateY(-1px);
-}
-
-.auth-shell .btn.big {
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 24%, transparent);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-}
-
-.auth-shell .btn.big:hover:not(:disabled) {
-  transform: translateY(-2px);
-  filter: saturate(1.06);
-  box-shadow: 0 14px 36px color-mix(in srgb, var(--primary) 30%, transparent);
-}
-
-.auth-shell .wizard-step {
-  animation: auth-step-in 0.26s ease both;
-}
-
-.auth-settings-preview {
-  min-height: 600px;
-  display: grid;
-  place-items: center;
-  padding: 28px;
-  border-radius: calc(8px * var(--radius-scale));
-  background:
-    radial-gradient(circle at 24% 24%, rgba(20, 184, 166, 0.56), transparent 30%),
-    radial-gradient(circle at 78% 70%, rgba(245, 158, 11, 0.46), transparent 34%),
-    linear-gradient(135deg, #07181C, #171233);
-  overflow: hidden;
-}
-
-.auth-settings-preview .poster-stage {
-  width: min(390px, 100%);
-}
-
-.auth-copy-customizer {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding-top: 4px;
-}
-
-.auth-copy-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.auth-copy-heading h4,
-.auth-copy-heading .meta {
-  margin: 0;
-}
-
-.auth-copy-heading .meta {
-  margin-top: 5px;
-}
-
-.auth-copy-heading .btn {
-  flex: none;
-}
-
-.auth-copy-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 12px;
-}
-
-@media (max-width: 700px) {
-  .auth-copy-heading {
-    flex-direction: column;
-  }
-
-  .auth-copy-fields {
-    grid-template-columns: 1fr;
-  }
-}
-
-@keyframes auth-step-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes auth-progress-glow {
-  0%,
-  100% {
-    filter: saturate(1);
-  }
-
-  50% {
-    filter: saturate(1.3) brightness(1.08);
-  }
-}
-
-@media (max-width: 1180px) {
-  .auth-shell {
-    grid-template-columns: minmax(330px, 440px) minmax(280px, 320px);
-    gap: clamp(30px, 5vw, 62px);
-  }
-
-  .auth-panel-brand {
-    width: min(320px, 100%);
-  }
-}
-
-@media (max-width: 980px) {
-  .auth-shell {
-    min-height: 100svh;
-    grid-template-columns: minmax(0, 440px);
-    padding: 22px 16px;
-  }
-
-  .auth-panel-brand {
-    display: none;
-  }
-
-  .auth-panel-form {
-    width: 100%;
-  }
-}
-
-@media (max-width: 520px) {
-  .auth-shell {
-    align-items: start;
-    padding: 10px 8px;
-  }
-
-  .auth-form-inner {
-    padding: clamp(18px, 6vw, 24px) clamp(14px, 5vw, 20px);
-    border-radius: calc(22px * var(--radius-scale));
-  }
-
-  .auth-form-logo {
-    margin-bottom: 16px;
-    font-size: 27px;
-  }
-
-  .auth-course-strip {
-    margin-bottom: 20px;
-  }
-}
-
-@media (max-width: 360px) {
-  .auth-shell {
-    padding: 6px;
-  }
-
-  .auth-form-inner {
-    padding: 18px 12px;
-    border-radius: calc(18px * var(--radius-scale));
-  }
-
-  .auth-form-logo {
-    margin-bottom: 14px;
-    font-size: 24px;
-  }
-
-  .auth-course-strip {
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: calc(13px * var(--radius-scale));
-  }
-
-  .auth-course-strip-icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .auth-shell .tf input,
-  .auth-shell .tf textarea,
-  .auth-shell .tf select {
-    padding-inline: 12px;
-  }
-
-  .auth-shell .password-field input {
-    padding-inline-end: 42px;
-  }
-
-  .auth-shell .btn.big,
-  .auth-shell .social-btn {
-    padding-inline: 10px;
-  }
-
-  .stepper {
-    margin-bottom: 20px;
-  }
-
-  .stepper-circle {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-
-  .stepper-labels .stepper-label {
-    padding-inline: 2px;
-    font-size: 10px;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-  }
-
-  .legal-accept-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .legal-check {
-    min-width: 0;
-    padding: 10px;
-    overflow-wrap: anywhere;
-  }
-
-  .wizard-actions {
-    gap: 8px;
-  }
-
-  .wizard-actions .btn {
-    min-width: 0;
-    padding-inline: 8px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-panel-brand,
-  .auth-form-inner,
-  .poster,
-  .poster-cover-img,
-  .auth-shell .tf input,
-  .auth-shell .tf textarea,
-  .auth-shell .tf select,
-  .auth-shell .btn.big,
-  .auth-shell .wizard-step {
-    animation: none;
-    transition: none;
-    transform: none;
-  }
-
-  .auth-pointer-aura {
-    display: none;
-  }
-
-  .poster-progress-track span {
-    animation: none;
-  }
-}
-
-/* ---------- Standalone legal document pages (/terms, /privacy) ---------- */
+/* ---------- Standalone legal document pages (/terms, /privacy) ----------
+   These render outside the signed-in shell, so they have to scroll
+   themselves: `body.shell` above is pinned to 100vh with overflow hidden
+   so the app's sidebar and main pane can scroll independently, which
+   leaves the document unable to scroll at all. A plain `min-height: 100vh`
+   block therefore had everything past the first viewport permanently cut
+   off — on a legal page, that is most of the text. */
 .legal-page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
   background: var(--bg);
 }
 
@@ -2703,205 +2269,6 @@ textarea:placeholder-shown {
   width: min(720px, 100%);
   margin: 0 auto 60px;
   padding: 0 24px;
-}
-
-.auth-switch {
-  text-align: center;
-  color: var(--on-surface-variant);
-  font-size: 14px;
-  margin-top: 22px;
-  padding-top: 22px;
-  border-top: 1px solid var(--outline-variant);
-}
-
-.auth-switch a {
-  color: var(--primary);
-  font-weight: 700;
-}
-
-.auth-switch a:hover {
-  text-decoration: underline;
-}
-
-/* Social login (Continue with Google / Apple) */
-.social-login {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.social-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--on-surface-variant);
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.social-divider::before,
-.social-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--outline-variant);
-}
-
-.social-btn {
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: transparent;
-  border: 1px solid var(--outline);
-  color: var(--on-surface);
-  font-weight: 600;
-}
-
-.social-btn svg {
-  flex: none;
-}
-
-.social-soon {
-  color: var(--on-surface-variant);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.oauth-note {
-  text-align: center;
-  color: var(--on-surface-variant);
-  font-size: 14px;
-  margin: 0 0 16px;
-}
-
-/* ---------- Register wizard ---------- */
-.stepper {
-  margin-bottom: 26px;
-}
-
-.stepper-track {
-  display: flex;
-  align-items: center;
-}
-
-.stepper-line {
-  flex: 1;
-  height: 2px;
-  background: var(--outline-variant);
-  transition: background 0.25s ease;
-}
-
-.stepper-line.done {
-  background: var(--primary);
-}
-
-.stepper-circle {
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 13.5px;
-  background: var(--surface-container-high);
-  color: var(--on-surface-variant);
-  border: 2px solid var(--outline-variant);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.stepper-circle.current {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--on-primary);
-}
-
-.stepper-circle.done {
-  border-color: var(--primary);
-  background: var(--primary-container);
-  color: var(--on-primary-container);
-}
-
-.stepper-labels {
-  display: flex;
-  margin-top: 8px;
-}
-
-.stepper-labels .stepper-label {
-  flex: 1;
-  text-align: center;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--on-surface-variant);
-}
-
-.stepper-labels .stepper-label.current {
-  color: var(--on-surface);
-  font-weight: 700;
-}
-
-/* Local-dev-only fallback shown on the OTP step when the API isn't
-   configured to actually send email (RESEND_API_KEY unset/placeholder) —
-   the backend echoes the code in the response instead, and this surfaces
-   it so testing doesn't require digging through server logs. Never
-   rendered in production: the backend omits `devCode` there. */
-.otp-dev-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 16px;
-  padding: 10px 14px;
-  border-radius: calc(14px * var(--radius-scale));
-  background: var(--tertiary-container);
-  color: var(--on-tertiary-container);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.6;
-}
-
-.otp-dev-hint-code {
-  border: none;
-  background: none;
-  padding: 0 2px;
-  font: inherit;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.wizard-step {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  animation: wizard-step-in 0.22s ease;
-}
-
-@keyframes wizard-step-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.wizard-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 22px;
-}
-
-.wizard-actions .btn {
-  flex: 1;
 }
 
 .legal-section {
@@ -2924,45 +2291,6 @@ textarea:placeholder-shown {
   font-size: 11px;
   color: var(--on-surface-variant);
   margin-top: 4px;
-}
-
-.legal-accept {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.legal-accept-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.legal-check {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: calc(14px * var(--radius-scale));
-  border: 1.5px solid var(--outline-variant);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
-}
-
-.legal-check input {
-  accent-color: var(--primary);
-  width: 18px;
-  height: 18px;
-  flex: none;
-}
-
-.legal-check.checked {
-  border-color: var(--primary);
-  background: var(--primary-container);
-  color: var(--on-primary-container);
 }
 
 /* ===================================================================
@@ -3018,19 +2346,101 @@ textarea:placeholder-shown {
   color: var(--on-surface-variant);
 }
 
+/* ---------- Selection chips ----------
+   The single control behind every "pick one of these" row in the app:
+   the Settings choice groups (theme, corners, density, UI scale) and the
+   filter rows on every list page (users, courses, orders, notifications,
+   sales, agent logs, interventions, …).
+
+   `selected` deliberately matches `.opt.selected` and
+   `.font-option.selected` — primary-container fill, primary border. Those
+   two already spoke the accent, while this one alone answered in
+   secondary-container, so the app's most-used selection control was the
+   only one whose "chosen" state didn't look chosen. One selected look,
+   everywhere, and it follows the user's accent for free. */
 .chip.clickable {
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.chip.clickable:hover {
-  filter: brightness(0.97);
-}
+/* Unselected: a subtle raised fill and no visible outline — the fill alone
+   carries the shape, so a run of options reads as one quiet group instead
+   of a strip of boxes, and nothing competes with the selected chip. The
+   border stays declared but transparent: selected draws a real 1px border,
+   and dropping it here instead of clearing its colour would make every
+   chip jump 2px the moment it was picked.
 
-.chip.clickable.selected {
-  background: var(--secondary-container);
-  color: var(--on-secondary-container);
+   Scoped to `.clickable` on purpose — `.chip.outline` is also worn by the
+   read-only status badges in tables, which keep their own outline and
+   green/red/pink colours. */
+.chip.clickable.outline:not(.selected) {
+  background: var(--surface-container-high);
   border-color: transparent;
+  color: var(--on-surface-variant);
+}
+
+/* Hover has to be a real colour change, not `filter: brightness()` —
+   nearly every clickable chip was `.outline`, i.e. transparent, and
+   brightening transparency is a no-op, so these rows had no hover
+   feedback at all. Lifts the fill only; bringing a border back on hover
+   would reintroduce the outline the rule above deliberately drops. Must
+   stay after that rule: same specificity, so source order is what makes
+   it win. */
+.chip.clickable:hover:not(.selected) {
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+}
+
+.chip.clickable:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* ---------- Group shape ----------
+   A run of chips is shaped as one connected group: the two ends of the run
+   keep the pill `.chip` already gives them, the edges facing a neighbour
+   square off, and the selected chip pops back to a full pill. Shape, not
+   just colour, marks the current choice.
+
+   Expressed as "square the edge that faces another chip" rather than
+   :first-child/:last-child, because a row is not always one group —
+   AdminUsersPage puts the role filters and the status filters in a single
+   .actions with a divider between them. Sibling-relative rules give each
+   run its own rounded ends; :first-child/:last-child would have rounded
+   the row and flattened the two inner ends. */
+.chip.clickable + .chip.clickable:not(.selected) {
+  border-start-start-radius: calc(10px * var(--radius-scale));
+  border-end-start-radius: calc(10px * var(--radius-scale));
+}
+
+.chip.clickable:not(.selected):has(+ .chip.clickable) {
+  border-start-end-radius: calc(10px * var(--radius-scale));
+  border-end-end-radius: calc(10px * var(--radius-scale));
+}
+
+/* A row of selection chips sits tighter than `.actions`' default 10px,
+   which is spaced for standalone buttons that each mean something
+   different. These mean "one of these", so they belong close enough to
+   scan as a single control. */
+.actions:has(> .chip.clickable) {
+  gap: calc(5px * var(--space-scale));
+}
+
+/* Filled with --primary, the same token the Switch track uses when it's
+   on — so a chosen chip and an enabled toggle read as the same "this one
+   is active" colour instead of two different accents on one screen. Both
+   halves come from the accent engine, which derives --on-primary for
+   contrast, so this stays legible at any accent the user picks.
+
+   `border` (not just `border-color`): `.chip` itself is border: none and
+   only `.chip.outline` adds one, but some rows swap `outline` off when a
+   chip becomes selected (see TeacherSalesPage's presets). Declaring the
+   full border here keeps every chip the same size in both states. */
+.chip.clickable.selected {
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 1px solid var(--primary);
+  font-weight: 700;
 }
 
 /* ---------- Sections / headings ---------- */
@@ -3884,20 +3294,20 @@ a.list-item.unread:hover,
   color: var(--on-surface);
 }
 
-/* 3. READ state: clean white card background (#FFFFFF), distinct from surface-container-high panel */
+/* 3. READ state: clean card background (surface, dark-aware), distinct from surface-container-high panel */
 .list-item.read,
 .notif-item.read {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent);
 }
 
-/* 4. READ + HOVER state: soft lavender-tinted background (#F4EEF8), subtle purple border & soft shadow */
+/* 4. READ + HOVER state: soft lavender-tinted background, subtle purple border & soft shadow */
 .list-item.read:hover,
 .notif-item.read:hover,
 a.list-item.read:hover,
 .list-item.read.hoverable:hover,
 .notif-item.read.hoverable:hover {
-  background: color-mix(in srgb, var(--primary) 10%, #ffffff);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
   border-color: color-mix(in srgb, var(--primary) 35%, transparent);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 12%, transparent);
 }
@@ -5856,5 +5266,179 @@ table.mtable {
   .avatar-picker-grid {
     grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
     gap: 10px;
+  }
+}
+
+/* ============================================================
+   Checkout (CF-S4): order summary aside + payment panel with
+   the 3D interactive card. Everything derives from the theme
+   tokens (--primary, --surface*, --radius-scale, --space-scale)
+   so light/dark, accent color and shape settings all apply.
+   ============================================================ */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.checkout-aside {
+  padding: calc(24px * var(--space-scale));
+  gap: 16px;
+}
+
+.checkout-aside-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.checkout-aside h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.checkout-aside-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 8px;
+  border-top: 1px solid var(--outline-variant);
+  font-size: 14px;
+  color: var(--on-surface-variant);
+}
+
+.checkout-aside-row b {
+  color: var(--on-surface);
+  font-weight: 700;
+}
+
+.checkout-aside-total {
+  border-top-width: 2px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.checkout-aside-total b {
+  font-size: 17px;
+  color: var(--primary);
+}
+
+.checkout-aside-secure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-success-container);
+  background: var(--success-container);
+  border-radius: calc(12px * var(--radius-scale));
+  padding: 10px 14px;
+}
+
+.checkout-aside-secure .ms {
+  font-size: 17px;
+}
+
+.checkout-panel {
+  padding: calc(26px * var(--space-scale));
+  gap: 22px;
+}
+
+.checkout-panel .meta {
+  text-align: center;
+  margin: 0;
+}
+
+.checkout-back {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--outline-variant);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+/* ---------- Direct Paymob CTA ---------- */
+.ccard-pay-cta {
+  gap: 16px;
+  align-items: center;
+}
+
+.ccard-pay-cta .btn {
+  min-width: 220px;
+}
+
+/* ---------- Embedded Paymob frame (production) ---------- */
+.pay-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  border: 1.5px solid var(--outline-variant);
+  border-radius: calc(18px * var(--radius-scale));
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.pay-frame-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--surface-container-high);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.pay-frame-head .ms {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.pay-frame-head strong {
+  font-size: 14px;
+}
+
+.pay-frame-head .btn {
+  margin-inline-start: auto;
+}
+
+.pay-frame-iframe {
+  width: 100%;
+  height: 620px;
+  border: none;
+  display: block;
+}
+
+.ccard-frame-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+}
+
+@media (max-width: 920px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .checkout-panel {
+    padding: calc(18px * var(--space-scale));
+  }
+
+  .pay-frame-iframe {
+    height: 540px;
   }
 }

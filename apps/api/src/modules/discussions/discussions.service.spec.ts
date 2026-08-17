@@ -56,6 +56,7 @@ describe('DiscussionsService', () => {
   let filesRepository: Record<string, jest.Mock>;
   let coursesRepository: Record<string, jest.Mock>;
   let usersRepository: Record<string, jest.Mock>;
+  let notificationsRepository: Record<string, jest.Mock>;
   let enrollmentsService: { assertStudentEnrolled: jest.Mock };
   let attachmentsService: { saveAttachment: jest.Mock };
   let notifications: { notify: jest.Mock };
@@ -367,7 +368,7 @@ describe('DiscussionsService', () => {
   });
 
   describe('acceptAnswer & unacceptAnswer', () => {
-    it('lets the question author mark multiple replies as accepted answers', async () => {
+    it('lets the course teacher mark multiple replies as accepted answers', async () => {
       threadsRepository.findOne.mockResolvedValue({ ...baseThread });
       const reply1 = {
         id: 'reply-1',
@@ -401,7 +402,7 @@ describe('DiscussionsService', () => {
       const result = await service.acceptAnswer(
         'thread-1',
         'reply-1',
-        makeUser({ id: 'student-1' }),
+        makeUser({ id: 'teacher-1', role: 'teacher' }),
       );
 
       expect(repliesRepository.save).toHaveBeenCalledWith(
@@ -414,7 +415,43 @@ describe('DiscussionsService', () => {
       expect(result.replies[1].isAccepted).toBe(true);
     });
 
-    it('lets the question author unaccept a specific reply', async () => {
+    it("lets the course teacher's assistant accept answers", async () => {
+      threadsRepository.findOne.mockResolvedValue({ ...baseThread });
+      repliesRepository.findOne.mockResolvedValue({
+        id: 'reply-1',
+        threadId: 'thread-1',
+        authorId: 'student-2',
+        authorRole: 'student',
+        body: 'الشرح الأول',
+        isAccepted: false,
+        createdAt: new Date(),
+      });
+      repliesRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
+      threadsRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
+      repliesRepository.find.mockResolvedValue([]);
+
+      await expect(
+        service.acceptAnswer(
+          'thread-1',
+          'reply-1',
+          makeUser({
+            id: 'assistant-1',
+            role: 'assistant',
+            managedByTeacherId: 'teacher-1',
+          }),
+        ),
+      ).resolves.toBeDefined();
+
+      expect(repliesRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'reply-1', isAccepted: true }),
+      );
+    });
+
+    it('lets the course teacher unaccept a specific reply', async () => {
       threadsRepository.findOne.mockResolvedValue({ ...baseThread, acceptedReplyId: 'reply-1' });
       repliesRepository.findOne
         .mockResolvedValueOnce({
@@ -430,7 +467,7 @@ describe('DiscussionsService', () => {
 
       await service.unacceptAnswer(
         'thread-1',
-        makeUser({ id: 'student-1' }),
+        makeUser({ id: 'teacher-1', role: 'teacher' }),
         'reply-1',
       );
 
@@ -442,8 +479,23 @@ describe('DiscussionsService', () => {
       );
     });
 
-    it('rejects anyone other than the question author', async () => {
+    it('rejects the question author when they are a student', async () => {
       threadsRepository.findOne.mockResolvedValue({ ...baseThread });
+
+      await expect(
+        service.acceptAnswer(
+          'thread-1',
+          'reply-1',
+          makeUser({ id: 'student-1' }),
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rejects students who are not enrolled in the course', async () => {
+      threadsRepository.findOne.mockResolvedValue({ ...baseThread });
+      enrollmentsService.assertStudentEnrolled.mockRejectedValue(
+        new ForbiddenException('You are not enrolled in this course.'),
+      );
 
       await expect(
         service.acceptAnswer(

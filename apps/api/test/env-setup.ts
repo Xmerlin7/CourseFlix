@@ -5,8 +5,11 @@ import { resolve } from 'path';
 // so the root .env is never loaded unless we do it explicitly here.
 //
 // Tests must always run in "email not configured" mode so the devCode is
-// returned in API responses — regardless of what key the developer has set in
-// their local .env. dotenv won't override an env var that's already set.
-process.env.RESEND_API_KEY = 'replace-me';
+// returned in API responses, and so the suite never fires real SMTP sends
+// through a developer's own Gmail account — regardless of what credentials
+// they have set in their local .env. dotenv won't override an env var
+// that's already set.
+process.env.SMTP_USER = 'replace-me';
+process.env.SMTP_PASSWORD = 'replace-me';
 process.env.NODE_ENV = 'test';
 config({ path: resolve(process.cwd(), '../../.env') });

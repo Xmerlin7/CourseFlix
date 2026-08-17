@@ -28,6 +28,7 @@ import { SettingsSkeleton } from '../../features/settings/components/SettingsSke
 import { StudentProfileSkeleton } from '../../features/profile/components/StudentProfileSkeleton'
 import { LoginSkeleton } from '../../features/auth/components/LoginSkeleton'
 import { RegisterSkeleton } from '../../features/auth/components/RegisterSkeleton'
+import { LegalDocumentSkeleton } from '../../features/auth/pages/LegalDocumentSkeleton'
 import { DiscussionDetailSkeleton } from '../../features/community/components/DiscussionDetailSkeleton'
 import { StudentCommunitySkeleton } from '../../features/community/components/StudentCommunitySkeleton'
 import { SupportTicketsPageSkeleton } from '../../features/support/components/SupportTicketsPageSkeleton'
@@ -296,7 +297,7 @@ export const router = createBrowserRouter([
     path: ROUTE_PATHS.TERMS,
     errorElement: <RouteErrorBoundary />,
     element: (
-      <SuspenseWrapper>
+      <SuspenseWrapper fallback={<LegalDocumentSkeleton />}>
         <TermsPage />
       </SuspenseWrapper>
     ),
@@ -305,7 +306,7 @@ export const router = createBrowserRouter([
     path: ROUTE_PATHS.PRIVACY,
     errorElement: <RouteErrorBoundary />,
     element: (
-      <SuspenseWrapper>
+      <SuspenseWrapper fallback={<LegalDocumentSkeleton />}>
         <PrivacyPage />
       </SuspenseWrapper>
     ),

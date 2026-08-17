@@ -85,11 +85,18 @@ export class OAuthController {
       // Google identity is verified but a one-time code was mailed (and no
       // session opened) — send the browser to the login page's code step,
       // pre-filled with the account email. The user signs in by redeeming
-      // the code via POST /auth/otp/verify (purpose 'google_oauth').
+      // the code via POST /auth/otp/verify (purpose 'google_oauth'). Never
+      // carries `devCode` in the redirect — a code sitting in the URL ends
+      // up in browser history and server access logs either way, and the
+      // frontend no longer surfaces it regardless of source.
       if ('requiresOtp' in result) {
+        const params = new URLSearchParams({
+          oauth: 'otp',
+          email: result.email,
+        });
         response.redirect(
           302,
-          `${this.oauthService.getRedirectBaseUrl()}/login?oauth=otp&email=${encodeURIComponent(result.email)}`,
+          `${this.oauthService.getRedirectBaseUrl()}/login?${params.toString()}`,
         );
         return;
       }

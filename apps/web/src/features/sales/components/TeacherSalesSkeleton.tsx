@@ -23,7 +23,9 @@ export function TeacherSalesSkeleton() {
             <div className="skeleton" style={{ height: 44, width: 90, borderRadius: 999 }} />
             <div className="skeleton" style={{ height: 44, width: 120, borderRadius: 999 }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {/* Same 5px chip-row gap as the loaded preset filters, so the
+              swap from skeleton to real chips doesn't shift the row. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
             <div className="skeleton" style={{ height: 14, width: 70, borderRadius: 6 }} />
             <div className="skeleton" style={{ height: 32, width: 55, borderRadius: 999 }} />
             <div className="skeleton" style={{ height: 32, width: 85, borderRadius: 999 }} />

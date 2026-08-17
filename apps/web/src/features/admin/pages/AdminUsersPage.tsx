@@ -75,7 +75,7 @@ export function AdminUsersPage() {
         }
       />
 
-      <div className="actions section" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="actions section">
         {(['all', 'student', 'teacher', 'assistant', 'admin'] as const).map((option) => (
           <button
             key={option}
