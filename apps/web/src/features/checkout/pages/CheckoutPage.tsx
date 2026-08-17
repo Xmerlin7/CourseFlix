@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { LoadingState } from '../../../shared/components/LoadingState'
@@ -5,6 +6,9 @@ import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { ApiError } from '../../../shared/api/api-error'
 import { useCheckout } from '../hooks/useCheckout'
+import { CreditCard3D } from '../components/CreditCard3D'
+import { CardPaymentForm } from '../components/CardPaymentForm'
+import { detectBrand, formatCardNumber } from '../lib/card-utils'
 
 function formatMoney(minor: number, currency: string) {
   return `${(minor / 100).toLocaleString('ar-EG')} ${currency}`
@@ -46,6 +50,36 @@ function NoticeCard({ icon, title, message, actionLabel, actionTo }: NoticeCardP
   )
 }
 
+function ErrorBanner({ message, detail }: { message: string; detail?: string | null }) {
+  return (
+    <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
+      <p style={{ fontWeight: 700, color: 'var(--error)' }}>{message}</p>
+      {detail && (
+        <p className="meta" dir="ltr" style={{ marginTop: 4 }}>
+          {detail}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function PaymobFrame({ url, onClose }: { url: string; onClose: () => void }) {
+  return (
+    <div className="pay-frame" role="region" aria-label="بوابة الدفع الآمنة">
+      <div className="pay-frame-head">
+        <span className="ms" aria-hidden="true">
+          lock
+        </span>
+        <strong>بوابة الدفع الآمنة</strong>
+        <button type="button" className="btn text" onClick={onClose}>
+          إلغاء
+        </button>
+      </div>
+      <iframe src={url} title="بوابة الدفع الآمنة" className="pay-frame-iframe" />
+    </div>
+  )
+}
+
 export function CheckoutPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const [searchParams] = useSearchParams()
@@ -62,6 +96,26 @@ export function CheckoutPage() {
     payWithPaymob,
     retryCreate,
   } = useCheckout(courseId ?? '', searchParams.get('order'))
+
+  const [cardName, setCardName] = useState('')
+  const [cardNumber, setCardNumber] = useState('')
+  const [cardExpiry, setCardExpiry] = useState('')
+  const [cardCvv, setCardCvv] = useState('')
+  const [cvvFocused, setCvvFocused] = useState(false)
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (window.top && window.top !== window.self) {
+      window.top.location.href = window.location.href
+    }
+  }, [])
+
+  const handlePaymob = async () => {
+    const url = await payWithPaymob()
+    if (url) {
+      setPaymentUrl(url)
+    }
+  }
 
   if (isCreating) {
     return <LoadingState variant="text" />
@@ -149,101 +203,133 @@ export function CheckoutPage() {
   }
 
   const declined = order.paymentStatus === 'failed'
+  const item = order.items[0]
 
   return (
     <>
       <h1 className="page-title">إتمام الشراء</h1>
-      <p className="subtitle">راجع تفاصيل الطلب وأكمل الدفع</p>
-
-      <div className="card section" style={{ gap: 8 }}>
-        <span className="meta">{order.items[0]?.title ?? 'الدورة'}</span>
-        <span style={{ fontSize: 26, fontWeight: 700 }}>
-          {formatMoney(order.amountMinor, order.currency)}
-        </span>
-      </div>
+      <p className="subtitle">راجع تفاصيل الطلب وأكمل الدفع بأمان</p>
 
       {declined && (
-        <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
-          <p style={{ fontWeight: 700, color: 'var(--on-error-container)' }}>تم رفض عملية الدفع</p>
-          <p className="meta">لم تتم عملية الدفع بنجاح. يمكنك إعادة المحاولة.</p>
-        </div>
+        <ErrorBanner message="تم رفض عملية الدفع" detail="لم تتم عملية الدفع بنجاح. يمكنك إعادة المحاولة." />
       )}
 
-      {confirmError && (
-        <div className="card section" role="alert" style={{ borderInlineStart: '4px solid var(--error)' }}>
-          <p style={{ color: 'var(--on-error-container)' }}>تعذر إتمام عملية الدفع. يرجى المحاولة مرة أخرى.</p>
-        </div>
-      )}
+      {confirmError && <ErrorBanner message="تعذر إتمام عملية الدفع. يرجى المحاولة مرة أخرى." />}
 
       {paymobError && (
-        <div
-          className="card section"
-          role="alert"
-          style={{ borderInlineStart: '4px solid var(--error)' }}
-        >
-          <p style={{ color: 'var(--on-error-container)' }}>
-            تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى.
-          </p>
-          {getServerMessage(paymobError) && (
-            <p className="meta" dir="ltr" style={{ marginTop: 4 }}>
-              {getServerMessage(paymobError)}
-            </p>
-          )}
-        </div>
+        <ErrorBanner message="تعذر الاتصال بمزود الدفع. يرجى المحاولة مرة أخرى." detail={getServerMessage(paymobError)} />
       )}
 
-      <div className="actions">
-        <button
-          className="btn big"
-          onClick={() => void payWithPaymob()}
-          disabled={isInitiatingPaymob || isConfirming}
-        >
-          <span className="ms" aria-hidden="true">payments</span>
-          {isInitiatingPaymob ? 'جاري التحويل إلى صفحة الدفع...' : declined ? 'إعادة المحاولة' : 'ادفع الآن'}
-        </button>
+      <div className="checkout-grid">
+        <aside className="card checkout-aside">
+          <span className="ms checkout-aside-icon" aria-hidden="true">
+            shopping_bag
+          </span>
+          <div className="checkout-aside-body">
+            <h2>ملخص الطلب</h2>
+            <p className="meta">{item?.title ?? 'الدورة'}</p>
+            <div className="checkout-aside-row">
+              <span>سعر الدورة</span>
+              <b>{formatMoney(order.amountMinor, order.currency)}</b>
+            </div>
+            <div className="checkout-aside-row checkout-aside-total">
+              <span>الإجمالي</span>
+              <b>{formatMoney(order.amountMinor, order.currency)}</b>
+            </div>
+            <p className="checkout-aside-secure">
+              <span className="ms" aria-hidden="true">
+                lock
+              </span>
+              دفع آمن ومشفّر
+            </p>
+          </div>
+        </aside>
 
-        <button className="btn text" onClick={() => navigate(ROUTE_PATHS.STUDENT.BROWSE)}>
-          الرجوع للدورات
-        </button>
-      </div>
+        <section className="card checkout-panel">
+          {paymentUrl ? (
+            <>
+              <PaymobFrame url={paymentUrl} onClose={() => setPaymentUrl(null)} />
+              <p className="ccard-frame-hint">
+                أكمل الدفع في النافذة الآمنة — بعد الإتمام سيتم تحويلك تلقائياً إلى صفحة التأكيد.
+              </p>
+            </>
+          ) : import.meta.env.DEV ? (
+            <>
+              <CreditCard3D
+                number={formatCardNumber(cardNumber)}
+                holderName={cardName}
+                expiry={cardExpiry}
+                cvv={cardCvv}
+                brand={detectBrand(cardNumber)}
+                flipped={cvvFocused}
+              />
+              <div className="ccard-form-wrap">
+                <CardPaymentForm
+                  name={cardName}
+                  number={cardNumber}
+                  expiry={cardExpiry}
+                  cvv={cardCvv}
+                  isConfirming={isConfirming}
+                  onNameChange={setCardName}
+                  onNumberChange={setCardNumber}
+                  onExpiryChange={setCardExpiry}
+                  onCvvChange={setCardCvv}
+                  onCvvFocusChange={setCvvFocused}
+                  onPay={pay}
+                />
+                <div className="ccard-or" aria-hidden="true">
+                  <span>أو</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn outlined"
+                  onClick={() => void handlePaymob()}
+                  disabled={isInitiatingPaymob || isConfirming}
+                >
+                  <span className="ms" aria-hidden="true">
+                    payments
+                  </span>
+                  {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'الدفع عبر بوابة Paymob'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <CreditCard3D
+                number=""
+                holderName=""
+                expiry=""
+                cvv=""
+                brand="unknown"
+                flipped={false}
+              />
+              <div className="ccard-form-wrap ccard-pay-cta">
+                <p className="meta" style={{ textAlign: 'center' }}>
+                  سيتم تحويلك إلى بوابة الدفع الآمنة لإتمام العملية — بيانات البطاقة لا تمر أبداً عبر
+                  خوادمنا.
+                </p>
+                <button
+                  type="button"
+                  className="btn big"
+                  onClick={() => void handlePaymob()}
+                  disabled={isInitiatingPaymob}
+                >
+                  <span className="ms" aria-hidden="true">
+                    lock
+                  </span>
+                  {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'ادفع الآن'}
+                </button>
+              </div>
+            </>
+          )}
 
-      {/* Development-only shortcuts around the payment provider.
-          `POST /checkout/orders/:ref/confirm` takes a `simulate` flag that
-          the deterministic test adapter honours, so both outcomes can be
-          reached without Paymob credentials or a real card — which is the
-          only way to exercise the post-purchase flows (enrollment, the
-          paid-order receipt, the decline retry) locally.
-
-          Gated on import.meta.env.DEV so the block is dropped at build
-          time and can never reach a production bundle. The previous
-          "محاكاة رفض الدفع" button shipped to every user and did not
-          simulate anything — it navigated to /student/browse. */}
-      {import.meta.env.DEV && (
-        <div className="card section dev-tools">
-          <p className="dev-tools-title">
-            <span className="ms sm">construction</span>
-            أدوات المطوّر — لا تظهر في الإصدار النهائي
-          </p>
-          <div className="actions">
-            <button
-              className="btn tonal"
-              onClick={() => void pay('success')}
-              disabled={isConfirming || isInitiatingPaymob}
-            >
-              <span className="ms" aria-hidden="true">check_circle</span>
-              {isConfirming ? 'جارٍ التأكيد...' : 'محاكاة نجاح الدفع'}
-            </button>
-            <button
-              className="btn outlined"
-              onClick={() => void pay('decline')}
-              disabled={isConfirming || isInitiatingPaymob}
-            >
-              <span className="ms" aria-hidden="true">cancel</span>
-              محاكاة رفض الدفع
+          <div className="checkout-back">
+            <button type="button" className="btn text" onClick={() => navigate(ROUTE_PATHS.STUDENT.BROWSE)}>
+              الرجوع للدورات
             </button>
           </div>
-        </div>
-      )}
+        </section>
+      </div>
     </>
   )
 }

@@ -5268,3 +5268,608 @@ table.mtable {
     gap: 10px;
   }
 }
+
+/* ============================================================
+   Checkout (CF-S4): order summary aside + payment panel with
+   the 3D interactive card. Everything derives from the theme
+   tokens (--primary, --surface*, --radius-scale, --space-scale)
+   so light/dark, accent color and shape settings all apply.
+   ============================================================ */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.checkout-aside {
+  padding: calc(24px * var(--space-scale));
+  gap: 16px;
+}
+
+.checkout-aside-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.checkout-aside h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.checkout-aside-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 8px;
+  border-top: 1px solid var(--outline-variant);
+  font-size: 14px;
+  color: var(--on-surface-variant);
+}
+
+.checkout-aside-row b {
+  color: var(--on-surface);
+  font-weight: 700;
+}
+
+.checkout-aside-total {
+  border-top-width: 2px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.checkout-aside-total b {
+  font-size: 17px;
+  color: var(--primary);
+}
+
+.checkout-aside-secure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-success-container);
+  background: var(--success-container);
+  border-radius: calc(12px * var(--radius-scale));
+  padding: 10px 14px;
+}
+
+.checkout-aside-secure .ms {
+  font-size: 17px;
+}
+
+.checkout-panel {
+  padding: calc(26px * var(--space-scale));
+  gap: 22px;
+}
+
+.checkout-panel .meta {
+  text-align: center;
+  margin: 0;
+}
+
+.checkout-back {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--outline-variant);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+/* ---------- 3D credit card ---------- */
+.ccard-wrap {
+  width: 100%;
+  max-width: 400px;
+  margin-inline: auto;
+  perspective: 900px;
+}
+
+.ccard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.586;
+  transform-style: preserve-3d;
+  transition: transform 0.16s ease-out;
+  will-change: transform;
+  user-select: none;
+  cursor: pointer;
+}
+
+.ccard-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+
+.ccard-wrap.flipped .ccard-inner {
+  transform: rotateY(180deg);
+}
+
+.ccard-face {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(18px * var(--radius-scale));
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background:
+    radial-gradient(130% 100% at 88% -8%, color-mix(in srgb, var(--primary) 45%, transparent), transparent 55%),
+    radial-gradient(120% 90% at -15% 118%, color-mix(in srgb, var(--primary) 30%, transparent), transparent 55%),
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 30%, #0b0712) 0%, #0b0712 70%);
+  box-shadow: var(--shadow-lg), 0 22px 44px rgba(10, 5, 20, 0.35);
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+.ccard-back {
+  transform: rotateY(180deg);
+}
+
+.ccard-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.ccard-blob-a {
+  width: 52%;
+  height: 52%;
+  top: -18%;
+  right: -14%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.13), transparent 66%);
+}
+
+.ccard-blob-b {
+  width: 62%;
+  height: 62%;
+  bottom: -26%;
+  left: -18%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 66%);
+}
+
+.ccard-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    420px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.2),
+    transparent 46%
+  );
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.ccard-wrap:hover .ccard-glare {
+  opacity: 1;
+}
+
+.ccard-front {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px;
+  color: #fff;
+}
+
+.ccard-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ccard-chip {
+  width: 45px;
+  height: 33px;
+  border-radius: 7px;
+  background: linear-gradient(150deg, #f7da82, #dcae50 55%, #b98c33);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.55),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.ccard-chip::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 50%;
+  border-left: 1.5px solid rgba(40, 25, 5, 0.4);
+}
+
+.ccard-chip::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 50%;
+  border-top: 1.5px solid rgba(40, 25, 5, 0.4);
+}
+
+.ccard-contactless {
+  position: relative;
+  width: 30px;
+  height: 30px;
+}
+
+.ccard-contactless i {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+}
+
+.ccard-contactless i:first-child {
+  inset: 12px auto auto 12px;
+  width: 6px;
+  height: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.ccard-contactless i:nth-child(2) {
+  width: 14px;
+  height: 14px;
+  inset: 8px auto auto 8px;
+  border-color: rgba(255, 255, 255, 0.92) transparent transparent rgba(255, 255, 255, 0.92);
+}
+
+.ccard-contactless i:nth-child(3) {
+  width: 22px;
+  height: 22px;
+  inset: 4px auto auto 4px;
+  border-color: rgba(255, 255, 255, 0.92) transparent transparent rgba(255, 255, 255, 0.92);
+}
+
+.ccard-number {
+  font-size: clamp(18px, 2.4vw, 25px);
+  font-weight: 600;
+  letter-spacing: 2.6px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.ccard-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ccard-holder {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ccard-holder strong {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ccard-expiry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+}
+
+.ccard-expiry strong {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.ccard-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.ccard-brand {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 32px;
+}
+
+.cbrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+}
+
+.cbrand-visa {
+  font-style: italic;
+  font-weight: 800;
+  font-size: 25px;
+  letter-spacing: 0.5px;
+}
+
+.cbrand-mastercard {
+  position: relative;
+  width: 47px;
+  height: 30px;
+}
+
+.cbrand-mastercard i {
+  position: absolute;
+  top: 2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+
+.cbrand-mastercard i:first-child {
+  left: 0;
+  background: #eb001b;
+}
+
+.cbrand-mastercard i:last-child {
+  right: 0;
+  background: #f79e1b;
+  mix-blend-mode: screen;
+}
+
+.cbrand-amex {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: #2565ae;
+}
+
+.cbrand-mada {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.cbrand-mada .ms {
+  font-size: 18px;
+}
+
+.cbrand-unknown {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cbrand-unknown .ms {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ccard-magstripe {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 36px;
+  height: 44px;
+  background: linear-gradient(180deg, #232327, #050508);
+}
+
+.ccard-back-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 98px;
+  padding: 0 26px;
+}
+
+.ccard-signature {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: 38px;
+  padding-inline: 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background:
+    repeating-linear-gradient(45deg, rgba(20, 10, 30, 0.13) 0 5px, transparent 5px 11px),
+    linear-gradient(180deg, #f4f1f4, #e3dee3);
+}
+
+.ccard-signature-svg {
+  font-style: italic;
+  font-size: 12.5px;
+  color: rgba(30, 20, 40, 0.38);
+}
+
+.ccard-cvv {
+  min-width: 54px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 3.5px;
+  color: #1a1420;
+  background: #fff;
+  border-radius: 4px;
+  padding: 4px 9px;
+}
+
+.ccard-back-body .ccard-brand {
+  margin-top: 16px;
+}
+
+.ccard-back-note {
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  bottom: 18px;
+  margin: 0;
+  text-align: center;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+/* ---------- Card form (dev simulation) ---------- */
+.ccard-fields-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.ccard-fields-row .tf {
+  margin-bottom: 0;
+}
+
+.ccard-form-wrap {
+  max-width: 440px;
+  margin-inline: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ccard-form .btn {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.ccard-dev-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: calc(12px * var(--radius-scale));
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.ccard-dev-hint .ms {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.ccard-dev-hint b {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.ccard-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  margin-block: 2px;
+}
+
+.ccard-or::before,
+.ccard-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--outline-variant);
+}
+
+.ccard-pay-cta {
+  gap: 16px;
+  align-items: center;
+}
+
+.ccard-pay-cta .btn {
+  min-width: 220px;
+}
+
+/* ---------- Embedded Paymob frame (production) ---------- */
+.pay-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  border: 1.5px solid var(--outline-variant);
+  border-radius: calc(18px * var(--radius-scale));
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.pay-frame-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--surface-container-high);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.pay-frame-head .ms {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.pay-frame-head strong {
+  font-size: 14px;
+}
+
+.pay-frame-head .btn {
+  margin-inline-start: auto;
+}
+
+.pay-frame-iframe {
+  width: 100%;
+  height: 620px;
+  border: none;
+  display: block;
+}
+
+.ccard-frame-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--on-surface-variant);
+}
+
+@media (max-width: 920px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .checkout-panel {
+    padding: calc(18px * var(--space-scale));
+  }
+
+  .ccard-fields-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .pay-frame-iframe {
+    height: 540px;
+  }
+}

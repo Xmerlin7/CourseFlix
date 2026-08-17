@@ -19,7 +19,7 @@ interface UseCheckoutResult {
   confirmError: ApiError | null
   paymobError: ApiError | null
   pay: (simulate?: PaymentSimulation) => Promise<void>
-  payWithPaymob: () => Promise<void>
+  payWithPaymob: () => Promise<string | null>
   retryCreate: () => void
 }
 
@@ -151,8 +151,8 @@ export function useCheckout(
     [order],
   )
 
-  const payWithPaymob = useCallback(async () => {
-    if (!order) return
+  const payWithPaymob = useCallback(async (): Promise<string | null> => {
+    if (!order) return null
 
     setIsInitiatingPaymob(true)
     setPaymobError(null)
@@ -162,11 +162,12 @@ export function useCheckout(
         courseId,
         orderReference: order.orderReference,
       })
-      // Full-page navigation to Paymob's hosted iframe page. On completion
-      // Paymob redirects the browser back to the API's GET webhook, which
-      // routes to the checkout receipt page (success) or /student/courses
-      // (decline).
-      window.location.href = paymentUrl
+      // The page decides how to present the Paymob session: embed the
+      // acceptance iframe inside the checkout, or navigate the browser.
+      // On completion Paymob redirects the browser back to the API's GET
+      // webhook, which fulfils the order and routes to the receipt page
+      // (success) or back to the checkout to retry (decline).
+      return paymentUrl
     } catch (err) {
       const apiError = err instanceof ApiError ? err : new ApiError('Unknown error', 0)
       setPaymobError(apiError)
@@ -175,6 +176,7 @@ export function useCheckout(
         stage: 'paymob_init',
         statusCode: apiError.status,
       })
+      return null
     } finally {
       setIsInitiatingPaymob(false)
     }
