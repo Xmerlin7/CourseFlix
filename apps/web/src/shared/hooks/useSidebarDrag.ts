@@ -23,8 +23,14 @@ interface UseSidebarDragResult {
   isDragging: boolean
   /** Edge the bar would land on if released now — drives the preview. */
   previewPosition: SidebarPosition | null
-  onHandlePointerDown: (event: ReactPointerEvent<HTMLElement>) => void
+  /** Put on the sidebar itself; ignores presses aimed at its controls. */
+  onSurfacePointerDown: (event: ReactPointerEvent<HTMLElement>) => void
 }
+
+// A press on any of these is aimed at the control, not the bar, so it must
+// never start a drag — otherwise nudging the pointer while clicking a nav
+// link would move the whole sidebar instead of navigating.
+const INTERACTIVE = 'a, button, input, select, textarea, [role="button"]'
 
 /**
  * Resolves a pointer position to the edge it's closest to.
@@ -73,9 +79,10 @@ export function useSidebarDrag({
     setPreviewPosition(null)
   }, [])
 
-  const onHandlePointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+  const onSurfacePointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
     // Left button / touch / pen only — a right-click shouldn't start a drag.
     if (event.button !== 0) return
+    if ((event.target as HTMLElement).closest(INTERACTIVE)) return
     originRef.current = { x: event.clientX, y: event.clientY }
     startedRef.current = false
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -109,9 +116,25 @@ export function useSidebarDrag({
       const wasDragging = startedRef.current
       const target = resolveEdge(event.clientX, event.clientY)
       endDrag()
+      if (!wasDragging) return
+
+      // Pointer capture makes the browser fire a click on the captured
+      // element after the release, wherever the pointer ended up. Left
+      // alone that click lands on whatever is under the cursor — which is
+      // how dropping the bar used to also trigger the control underneath.
+      // Swallowed once, in the capture phase, before anything sees it.
+      window.addEventListener(
+        'click',
+        (click: MouseEvent) => {
+          click.stopPropagation()
+          click.preventDefault()
+        },
+        { capture: true, once: true },
+      )
+
       // A drop outside any edge zone, or onto the edge it already lives
       // on, is a no-op rather than a surprise move.
-      if (wasDragging && target && target !== position) onDrop(target)
+      if (target && target !== position) onDrop(target)
     }
 
     function handleCancel() {
@@ -128,5 +151,5 @@ export function useSidebarDrag({
     }
   }, [position, onDrop, endDrag])
 
-  return { isDragging, previewPosition, onHandlePointerDown }
+  return { isDragging, previewPosition, onSurfacePointerDown }
 }

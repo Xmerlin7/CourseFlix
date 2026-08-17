@@ -143,7 +143,7 @@ export function Sidebar({
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
   const { position, setPosition } = useSidebarPosition()
-  const { isDragging, previewPosition, onHandlePointerDown } = useSidebarDrag({
+  const { isDragging, previewPosition, onSurfacePointerDown } = useSidebarDrag({
     position,
     onDrop: setPosition,
   })
@@ -159,16 +159,6 @@ export function Sidebar({
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isMobileOpen, onCloseMobile])
-
-  // Dragging is a pointer gesture, so the same control also answers to a
-  // plain click by cycling right → left → bottom → right. That keeps the
-  // feature reachable by keyboard and by anyone who won't manage a drag.
-  function cyclePosition() {
-    const next = SIDEBAR_POSITIONS[
-      (SIDEBAR_POSITIONS.indexOf(position) + 1) % SIDEBAR_POSITIONS.length
-    ]
-    setPosition(next)
-  }
 
   if (!isOpen) return null
 
@@ -212,31 +202,22 @@ export function Sidebar({
         </div>
       )}
 
+      {/* The bar itself is the drag surface — press any empty part of it
+          and drag to an edge to re-dock. The hook ignores presses that
+          land on a link or button, so navigating still works normally. */}
       <aside
+        onPointerDown={onSurfacePointerDown}
+        title={`اسحب القائمة لتغيير مكانها (حاليًا: ${POSITION_LABEL[position]})`}
         className={`sidebar${isRail ? ' rail' : ''}${isMobileOpen ? ' mobile-open' : ''}${isDragging ? ' dragging' : ''}`}
       >
-      <div className="sidebar-tools">
-        <button
-          onClick={onToggleRail ?? onToggle}
-          className="icon-btn rail-toggle"
-          aria-label={isRail ? 'توسيع القائمة' : 'طي القائمة'}
-          type="button"
-        >
-          <span className="ms">menu_open</span>
-        </button>
-
-        {/* Drag to dock, click to cycle — see cyclePosition above. */}
-        <button
-          onPointerDown={onHandlePointerDown}
-          onClick={cyclePosition}
-          className="icon-btn sidebar-grip"
-          aria-label={`مكان القائمة: ${POSITION_LABEL[position]} — اسحب أو اضغط للتغيير`}
-          title="اسحب لتغيير مكان القائمة"
-          type="button"
-        >
-          <span className="ms">drag_indicator</span>
-        </button>
-      </div>
+      <button
+        onClick={onToggleRail ?? onToggle}
+        className="icon-btn rail-toggle"
+        aria-label={isRail ? 'توسيع القائمة' : 'طي القائمة'}
+        type="button"
+      >
+        <span className="ms">menu_open</span>
+      </button>
 
       {/* Phone-only close affordance. The scrim and Escape both work, but
           neither is discoverable, and the drawer covers the topbar button

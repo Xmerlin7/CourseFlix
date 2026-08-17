@@ -421,32 +421,24 @@
    target. Docking can't fix that, so below the breakpoint the drawer wins
    regardless of the stored position. */
 
-.sidebar-tools {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 22px;
-}
-
-/* Replaces .rail-toggle's own margin now that the tools row owns the gap
-   below it — see the .sidebar .rail-toggle rule above. */
-.sidebar .sidebar-tools .rail-toggle {
-  margin-bottom: 0;
-}
-
-.sidebar-grip {
+/* The whole bar is the drag surface, so its empty space advertises that
+   with a grab cursor. Links and buttons inside reset to `pointer`, since
+   the hook deliberately ignores presses that start on them. */
+.sidebar {
   cursor: grab;
-  /* The gesture moves the whole bar, so the browser must not also read
-     the drag as a scroll or a text selection. */
+  /* The gesture moves the bar, so the browser must not also read it as a
+     scroll or a text selection. */
   touch-action: none;
-  color: var(--on-surface-variant);
 }
 
-.sidebar-grip:active {
-  cursor: grabbing;
+.sidebar .nav-item,
+.sidebar .icon-btn {
+  cursor: pointer;
+  touch-action: auto;
 }
 
 .sidebar.dragging {
+  cursor: grabbing;
   opacity: 0.6;
 }
 
@@ -478,25 +470,32 @@
   font-size: 26px;
 }
 
+/* Geometry mirrors resolveEdge() in useSidebarDrag: side zones cover the
+   outer ~28% of the width but stop above the bottom band, and the bottom
+   zone owns the full width below it — because that function gives the
+   bottom edge the corners. Drawing the side zones full-height (as this
+   first did) meant the lower third of the visible "right" target actually
+   resolved to bottom, so the preview kept contradicting the box the
+   pointer was sitting in. Keep the two in step if either changes. */
 .sidebar-dropzone.right {
-  inset-block: 12px;
+  top: 12px;
+  bottom: 29%;
   right: 12px;
-  width: 220px;
+  width: 26%;
 }
 
 .sidebar-dropzone.left {
-  inset-block: 12px;
+  top: 12px;
+  bottom: 29%;
   left: 12px;
-  width: 220px;
+  width: 26%;
 }
 
-/* Sits between the two side zones so all three stay clickable targets
-   rather than overlapping in the corners. */
 .sidebar-dropzone.bottom {
-  left: 244px;
-  right: 244px;
+  left: 12px;
+  right: 12px;
   bottom: 12px;
-  height: 132px;
+  height: 26%;
   flex-direction: row;
 }
 
@@ -546,13 +545,11 @@
   overflow-y: hidden;
 }
 
-/* The collapse toggle and drag grip stack vertically at the bar's start,
-   staying reachable without eating a nav slot's width. */
-.app[data-sidebar-pos='bottom'] .sidebar-tools {
-  flex-direction: column;
-  margin-bottom: 0;
-  margin-inline-end: 6px;
-  flex: none;
+/* Collapsing is a vertical-bar idea: the bottom bar is already icon-first
+   and full width, so there is nothing to reclaim by collapsing it. The
+   toggle would just be a control that does nothing visible. */
+.app[data-sidebar-pos='bottom'] .rail-toggle {
+  display: none;
 }
 
 /* nav and the footer both become plain runs of destinations in the bar —
@@ -566,14 +563,27 @@
   margin-top: 0;
 }
 
-/* Nav takes the slack so the profile/logout pair sits at the far end of
-   the bar, keeping destinations and account actions visibly apart.
-   `flex-start`, not `center`: the bar scrolls once a role has enough
-   entries (admin has ten), and centred overflow puts the first items
-   permanently out of reach. */
-.app[data-sidebar-pos='bottom'] .sidebar nav {
+/* True centring, not "centred in whatever the footer left over". An empty
+   flex: 1 spacer on the leading side mirrors the footer's flex: 1 on the
+   trailing side, so both flanks resolve to the same width and the nav —
+   sized to its content between them — lands on the bar's real centre.
+
+   Both flanks are flex: 1 (basis 0, shrinkable), so when a role has enough
+   entries to overflow (admin has ten) they collapse instead of forcing the
+   nav off-screen, and the bar just scrolls. */
+.app[data-sidebar-pos='bottom'] .sidebar::before {
+  content: '';
   flex: 1;
-  justify-content: flex-start;
+}
+
+.app[data-sidebar-pos='bottom'] .sidebar nav {
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.app[data-sidebar-pos='bottom'] .side-footer {
+  flex: 1;
+  justify-content: flex-end;
 }
 
 /*
@@ -1812,8 +1822,14 @@ code {
     margin-inline-start: auto;
   }
 
-  /* Nothing to dock to on a phone. */
-  .sidebar-grip {
+  /* Nothing to dock to on a phone, so the bar goes back to being an
+     ordinary scrollable drawer rather than a drag surface. */
+  .sidebar {
+    cursor: default;
+    touch-action: auto;
+  }
+
+  .app[data-sidebar-pos='bottom'] .rail-toggle {
     display: none;
   }
 }
@@ -2347,19 +2363,67 @@ textarea:placeholder-shown {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
+/* Unselected: a subtle raised fill and no visible outline — the fill alone
+   carries the shape, so a run of options reads as one quiet group instead
+   of a strip of boxes, and nothing competes with the selected chip. The
+   border stays declared but transparent: selected draws a real 1px border,
+   and dropping it here instead of clearing its colour would make every
+   chip jump 2px the moment it was picked.
+
+   Scoped to `.clickable` on purpose — `.chip.outline` is also worn by the
+   read-only status badges in tables, which keep their own outline and
+   green/red/pink colours. */
+.chip.clickable.outline:not(.selected) {
+  background: var(--surface-container-high);
+  border-color: transparent;
+  color: var(--on-surface-variant);
+}
+
 /* Hover has to be a real colour change, not `filter: brightness()` —
-   nearly every clickable chip is `.outline`, i.e. transparent, and
+   nearly every clickable chip was `.outline`, i.e. transparent, and
    brightening transparency is a no-op, so these rows had no hover
-   feedback at all. */
+   feedback at all. Lifts the fill only; bringing a border back on hover
+   would reintroduce the outline the rule above deliberately drops. Must
+   stay after that rule: same specificity, so source order is what makes
+   it win. */
 .chip.clickable:hover:not(.selected) {
-  background: var(--hover);
-  border-color: var(--outline);
+  background: var(--surface-container-highest);
   color: var(--on-surface);
 }
 
 .chip.clickable:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* ---------- Group shape ----------
+   A run of chips is shaped as one connected group: the two ends of the run
+   keep the pill `.chip` already gives them, the edges facing a neighbour
+   square off, and the selected chip pops back to a full pill. Shape, not
+   just colour, marks the current choice.
+
+   Expressed as "square the edge that faces another chip" rather than
+   :first-child/:last-child, because a row is not always one group —
+   AdminUsersPage puts the role filters and the status filters in a single
+   .actions with a divider between them. Sibling-relative rules give each
+   run its own rounded ends; :first-child/:last-child would have rounded
+   the row and flattened the two inner ends. */
+.chip.clickable + .chip.clickable:not(.selected) {
+  border-start-start-radius: calc(10px * var(--radius-scale));
+  border-end-start-radius: calc(10px * var(--radius-scale));
+}
+
+.chip.clickable:not(.selected):has(+ .chip.clickable) {
+  border-start-end-radius: calc(10px * var(--radius-scale));
+  border-end-end-radius: calc(10px * var(--radius-scale));
+}
+
+/* A row of selection chips sits tighter than `.actions`' default 10px,
+   which is spaced for standalone buttons that each mean something
+   different. These mean "one of these", so they belong close enough to
+   scan as a single control. */
+.actions:has(> .chip.clickable) {
+  gap: calc(5px * var(--space-scale));
 }
 
 /* Filled with --primary, the same token the Switch track uses when it's
