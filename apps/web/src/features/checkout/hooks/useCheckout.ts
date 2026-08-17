@@ -25,6 +25,7 @@ function makeIdempotencyKey(courseId: string): string {
 export function useCheckout(
   courseId: string,
   existingOrderId?: string | null,
+  pollMs = 2500,
 ): UseCheckoutResult {
   const [order, setOrder] = useState<Order | null>(null)
   const [isCreating, setIsCreating] = useState(true)
@@ -68,6 +69,32 @@ export function useCheckout(
     if (!order) return Promise.resolve()
     return openPaymobFor(order)
   }, [order, openPaymobFor])
+
+  useEffect(() => {
+    if (!order || !paymentUrl) return
+    if (order.status === 'paid' || order.paymentStatus === 'failed') return
+
+    let cancelled = false
+
+    const timer = window.setInterval(() => {
+      getOrder(order.orderReference)
+        .then((current) => {
+          if (cancelled) return
+          if (current.status === 'paid' || current.paymentStatus === 'failed') {
+            setOrder(current)
+            setPaymentUrl(null)
+          }
+        })
+        .catch(() => {
+          // transient failure — keep polling until the order settles
+        })
+    }, pollMs)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [order, paymentUrl, pollMs])
 
   useEffect(() => {
     const controller = new AbortController()

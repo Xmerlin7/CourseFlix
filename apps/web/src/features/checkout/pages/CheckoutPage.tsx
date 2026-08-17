@@ -6,7 +6,6 @@ import { NotFoundState } from '../../../shared/components/NotFoundState'
 import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 import { ApiError } from '../../../shared/api/api-error'
 import { useCheckout } from '../hooks/useCheckout'
-import { CreditCard3D } from '../components/CreditCard3D'
 
 function formatMoney(minor: number, currency: string) {
   return `${(minor / 100).toLocaleString('ar-EG')} ${currency}`
@@ -78,10 +77,11 @@ function PaymobFrame({ url }: { url: string }) {
 type CheckoutContentProps = {
   courseId: string
   existingOrderId: string | null
+  pollMs: number
   onRetry: () => void
 }
 
-function CheckoutContent({ courseId, existingOrderId, onRetry }: CheckoutContentProps) {
+function CheckoutContent({ courseId, existingOrderId, pollMs, onRetry }: CheckoutContentProps) {
   const navigate = useNavigate()
   const {
     order,
@@ -91,7 +91,7 @@ function CheckoutContent({ courseId, existingOrderId, onRetry }: CheckoutContent
     createError,
     paymobError,
     payWithPaymob,
-  } = useCheckout(courseId, existingOrderId)
+  } = useCheckout(courseId, existingOrderId, pollMs)
 
   useEffect(() => {
     if (window.top && window.top !== window.self) {
@@ -231,53 +231,35 @@ function CheckoutContent({ courseId, existingOrderId, onRetry }: CheckoutContent
         <section className="card checkout-panel">
           {paymentUrl ? (
             <>
-              <CreditCard3D
-                number=""
-                holderName=""
-                expiry=""
-                cvv=""
-                brand="unknown"
-                flipped={false}
-              />
               <PaymobFrame url={paymentUrl} />
               <p className="ccard-frame-hint">
                 أكمل الدفع في النافذة الآمنة — بعد الإتمام سيتم تحويلك تلقائياً إلى صفحة التأكيد.
               </p>
             </>
           ) : (
-            <>
-              <CreditCard3D
-                number=""
-                holderName=""
-                expiry=""
-                cvv=""
-                brand="unknown"
-                flipped={false}
-              />
-              <div className="ccard-pay-cta">
-                {(paymobError || declined) && (
-                  <button
-                    type="button"
-                    className="btn big"
-                    onClick={() => void payWithPaymob()}
-                    disabled={isInitiatingPaymob}
-                  >
-                    <span className="ms" aria-hidden="true">
-                      lock
-                    </span>
-                    {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'إعادة المحاولة'}
-                  </button>
-                )}
-                {opening && (
-                  <p className="meta">
-                    <span className="ms" aria-hidden="true" style={{ fontSize: 16, verticalAlign: '-3px' }}>
-                      lock
-                    </span>{' '}
-                    جاري فتح بوابة الدفع الآمنة...
-                  </p>
-                )}
-              </div>
-            </>
+            <div className="ccard-pay-cta">
+              {(paymobError || declined) && (
+                <button
+                  type="button"
+                  className="btn big"
+                  onClick={() => void payWithPaymob()}
+                  disabled={isInitiatingPaymob}
+                >
+                  <span className="ms" aria-hidden="true">
+                    lock
+                  </span>
+                  {isInitiatingPaymob ? 'جاري فتح بوابة الدفع...' : 'إعادة المحاولة'}
+                </button>
+              )}
+              {opening && (
+                <p className="meta">
+                  <span className="ms" aria-hidden="true" style={{ fontSize: 16, verticalAlign: '-3px' }}>
+                    lock
+                  </span>{' '}
+                  جاري فتح بوابة الدفع الآمنة...
+                </p>
+              )}
+            </div>
           )}
 
           <div className="checkout-back">
@@ -291,7 +273,7 @@ function CheckoutContent({ courseId, existingOrderId, onRetry }: CheckoutContent
   )
 }
 
-export function CheckoutPage() {
+export function CheckoutPage({ pollMs = 2500 }: { pollMs?: number }) {
   const { courseId } = useParams<{ courseId: string }>()
   const [searchParams] = useSearchParams()
   const [attempt, setAttempt] = useState(0)
@@ -302,6 +284,7 @@ export function CheckoutPage() {
       key={`${courseId ?? ''}:${existingOrderId ?? ''}:${attempt}`}
       courseId={courseId ?? ''}
       existingOrderId={existingOrderId}
+      pollMs={pollMs}
       onRetry={() => setAttempt((value) => value + 1)}
     />
   )

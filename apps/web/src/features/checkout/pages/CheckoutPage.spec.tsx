@@ -8,10 +8,10 @@ import { server } from '../../../testing/mocks/server'
 import { renderWithProviders } from '../../../testing/renderWithProviders'
 import { CheckoutPage } from './CheckoutPage'
 
-function renderPage(courseId = 'course-1') {
+function renderPage(courseId = 'course-1', pollMs?: number) {
   return renderWithProviders(
     <Routes>
-      <Route path="/student/checkout/:courseId" element={<CheckoutPage />} />
+      <Route path="/student/checkout/:courseId" element={<CheckoutPage pollMs={pollMs} />} />
     </Routes>,
     { initialEntries: [`/student/checkout/${courseId}`] },
   )
@@ -229,6 +229,60 @@ describe('CheckoutPage', () => {
     expect(screen.getByText(/order-1/)).toBeInTheDocument()
     const start = screen.getByRole('link', { name: /بدء التعلم/ })
     expect(start).toHaveAttribute('href', '/student/courses/course-1')
+  })
+
+  it('detects payment completion via local polling and shows the receipt even if the Paymob iframe redirects to the deployed URL', async () => {
+    let orderCalls = 0
+
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json(pendingOrder(), { status: 201 }),
+      ),
+      http.post(`${env.apiBaseUrl}/paymob/orders/order-1/pay`, () =>
+        HttpResponse.json({ paymentUrl: PAY_URL, paymobOrderId: '9001' }),
+      ),
+      http.get(`${env.apiBaseUrl}/orders/order-1`, () => {
+        orderCalls += 1
+        return HttpResponse.json(
+          orderCalls > 1
+            ? pendingOrder({ status: 'paid', paymentStatus: 'paid', paidAt: '2026-08-04T10:05:00.000Z' })
+            : pendingOrder(),
+        )
+      }),
+    )
+
+    renderPage('course-1', 50)
+
+    await waitFor(() => {
+      expect(screen.getByTitle('بوابة الدفع الآمنة')).toBeInTheDocument()
+    })
+
+    expect(await screen.findByText('تم الدفع بنجاح')).toBeInTheDocument()
+    expect(screen.queryByTitle('بوابة الدفع الآمنة')).not.toBeInTheDocument()
+  })
+
+  it('detects a declined payment via local polling and offers a manual retry', async () => {
+    server.use(
+      http.post(`${env.apiBaseUrl}/checkout/orders`, () =>
+        HttpResponse.json(pendingOrder(), { status: 201 }),
+      ),
+      http.post(`${env.apiBaseUrl}/paymob/orders/order-1/pay`, () =>
+        HttpResponse.json({ paymentUrl: PAY_URL, paymobOrderId: '9001' }),
+      ),
+      http.get(`${env.apiBaseUrl}/orders/order-1`, () =>
+        HttpResponse.json(pendingOrder({ status: 'failed', paymentStatus: 'failed' })),
+      ),
+    )
+
+    renderPage('course-1', 50)
+
+    await waitFor(() => {
+      expect(screen.getByTitle('بوابة الدفع الآمنة')).toBeInTheDocument()
+    })
+
+    expect(await screen.findByText('تم رفض عملية الدفع')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'إعادة المحاولة' })).toBeInTheDocument()
+    expect(screen.queryByTitle('بوابة الدفع الآمنة')).not.toBeInTheDocument()
   })
 
   it('opens the Paymob gateway for a pending order passed via the order query param', async () => {
