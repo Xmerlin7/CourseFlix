@@ -8,6 +8,17 @@ interface RequestOptions {
   searchParams?: object
 }
 
+// Free-tier ngrok shows a one-time "you are about to visit..." interstitial
+// to any request that looks like a real browser and doesn't carry this
+// header — including our own `fetch()` calls, if `VITE_API_BASE_URL` (local
+// dev, or a shared preview link) ever points at an ngrok tunnel instead of
+// localhost/a real domain. A `fetch()` call can set this; a third party's
+// server-side redirect (e.g. Paymob bouncing the browser back to our API)
+// can't, so this only covers requests this app itself initiates — see
+// CONTRIBUTING/dev notes on the Paymob GET-webhook interstitial for that
+// separate, unavoidable case.
+const NGROK_SKIP_WARNING_HEADERS = { 'ngrok-skip-browser-warning': '1' } as const
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     throw new ApiError('Request failed', response.status, await response.json().catch(() => null))
@@ -74,6 +85,7 @@ async function request<T>(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...NGROK_SKIP_WARNING_HEADERS,
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   })
@@ -91,6 +103,7 @@ async function requestMultipart<T>(
   const response = await fetch(new URL(`${env.apiBaseUrl}${path}`), {
     method,
     credentials: 'include',
+    headers: NGROK_SKIP_WARNING_HEADERS,
     body: formData,
   })
 
@@ -102,6 +115,7 @@ async function requestMultipart<T>(
 async function requestBlob(path: string): Promise<Blob> {
   const response = await fetch(new URL(`${env.apiBaseUrl}${path}`), {
     credentials: 'include',
+    headers: NGROK_SKIP_WARNING_HEADERS,
   })
 
   if (!response.ok) {
