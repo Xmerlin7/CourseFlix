@@ -1068,11 +1068,11 @@
 
 .discussion-reply-row--other {
   justify-content: flex-start;
+  flex-direction: row-reverse;
 }
 
 .discussion-reply-row--me {
   justify-content: flex-start;
-  flex-direction: row-reverse;
 }
 
 .discussion-reply-avatar-col {
@@ -1129,13 +1129,13 @@
 }
 
 .discussion-reply-row--other .discussion-reply-bubble {
-  border-start-start-radius: 2px;
+  border-start-end-radius: 2px;
 }
 
 .discussion-reply-row--me .discussion-reply-bubble {
   --bubble-bg: color-mix(in srgb, var(--primary) 12%, var(--surface));
   --bubble-border: color-mix(in srgb, var(--primary) 30%, var(--outline-variant));
-  border-start-end-radius: 2px;
+  border-start-start-radius: 2px;
 }
 
 /* Telegram / WhatsApp SVG curved speech tail */
@@ -1165,16 +1165,16 @@
   fill: none;
 }
 
-/* Incoming tail (avatar on the right in RTL) */
+/* Incoming tail — other messages sit on the LEFT in RTL, avatar far left */
 .discussion-reply-row--other .discussion-reply-tail {
-  inset-inline-start: -8.5px;
-  transform: scaleX(-1);
-}
-
-/* Outgoing tail (avatar on the left in RTL) */
-.discussion-reply-row--me .discussion-reply-tail {
   inset-inline-end: -8.5px;
   transform: scaleX(1);
+}
+
+/* Outgoing tail — my messages sit on the RIGHT in RTL, avatar far right */
+.discussion-reply-row--me .discussion-reply-tail {
+  inset-inline-start: -8.5px;
+  transform: scaleX(-1);
 }
 
 .discussion-reply-row.unread .discussion-reply-bubble {
