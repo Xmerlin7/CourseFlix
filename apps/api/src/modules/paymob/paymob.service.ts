@@ -105,35 +105,48 @@ export class PaymobService {
     body: Record<string, unknown>,
     headers: Record<string, string> = {},
   ): Promise<T> {
-    let response: Response;
-    try {
-      response = await fetch(`${this.baseUrl}${path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify(body),
-      });
-    } catch (caught) {
-      // fetch throws on network-level failures (DNS, TLS, blocked egress,
-      // timeouts) — surface the real cause instead of a bare 500. This is
-      // what "تعذر الاتصال بمزود الدفع" shows when Paymob is unreachable.
-      const reason = caught instanceof Error ? caught.message : String(caught);
-      this.logger.error(`Paymob ${path} unreachable: ${reason}`);
-      throw new BadGatewayException(
-        `Could not reach Paymob at ${path} (${reason})`,
-      );
+    // Transient network failures (DNS, TLS, proxy, timeouts) are retried a
+    // couple of times with short backoff — a single blip must not kill the
+    // whole checkout. Paymob's HTTP answers (4xx/5xx) are never retried.
+    let lastReason = 'unknown';
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      let response: Response;
+      try {
+        response = await fetch(`${this.baseUrl}${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch (caught) {
+        lastReason = caught instanceof Error ? caught.message : String(caught);
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+          continue;
+        }
+        this.logger.error(`Paymob ${path} unreachable: ${lastReason}`);
+        throw new BadGatewayException(
+          `Could not reach Paymob at ${path} (${lastReason})`,
+        );
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        this.logger.error(
+          `Paymob ${path} failed (${response.status}): ${errorText}`,
+        );
+        throw new BadGatewayException(
+          `Paymob ${path} failed with status ${response.status}`,
+        );
+      }
+
+      return (await response.json()) as T;
     }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      this.logger.error(
-        `Paymob ${path} failed (${response.status}): ${errorText}`,
-      );
-      throw new BadGatewayException(
-        `Paymob ${path} failed with status ${response.status}`,
-      );
-    }
-
-    return (await response.json()) as T;
+    throw new BadGatewayException(
+      `Could not reach Paymob at ${path} (${lastReason})`,
+    );
   }
 
   async authenticate(): Promise<string> {
@@ -229,21 +242,61 @@ export class PaymobService {
    * finish payments end-to-end even though the dashboard callbacks point
    * at the deployed API: the local API verifies the outcome directly.
    *
-   * Returns null when there is no transaction yet (still inside the
-   * iframe, abandoned, or an unreachable Paymob) — never throws.
+   * 404 ("Transaction Not Found") is the normal answer while the customer
+   * is still inside the iframe/3DS flow, so it returns null silently.
+   * Other failures are logged and also return null — never throws.
    */
   async inquireTransaction(
     merchantOrderId: string,
   ): Promise<PaymobTransactionInquiry | null> {
     try {
       const token = await this.authenticate();
-      const data = await this.postJson<
-        Record<string, unknown> | Array<Record<string, unknown>>
-      >(
-        '/ecommerce/orders/transaction_inquiry',
-        { merchant_order_id: merchantOrderId },
-        { Authorization: `Bearer ${token}` },
-      );
+
+      let data: Record<string, unknown> | null = null;
+
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        let response: Response;
+        try {
+          response = await fetch(
+            `${this.baseUrl}/ecommerce/orders/transaction_inquiry`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ merchant_order_id: merchantOrderId }),
+              signal: AbortSignal.timeout(10_000),
+            },
+          );
+        } catch (caught) {
+          const reason =
+            caught instanceof Error ? caught.message : String(caught);
+          if (attempt < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+            continue;
+          }
+          this.logger.warn(
+            `Paymob transaction inquiry for ${merchantOrderId} unreachable: ${reason}`,
+          );
+          return null;
+        }
+
+        if (response.status === 404) {
+          return null;
+        }
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          this.logger.warn(
+            `Paymob transaction inquiry for ${merchantOrderId} failed (${response.status}): ${errorText}`,
+          );
+          return null;
+        }
+
+        data = (await response.json()) as Record<string, unknown>;
+        break;
+      }
 
       const transaction = Array.isArray(data) ? data[0] : data;
       if (!transaction || typeof transaction !== 'object') {
