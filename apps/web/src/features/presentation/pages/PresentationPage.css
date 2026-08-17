@@ -4,11 +4,12 @@
 
 .pres-root {
   min-height: 100vh;
+  min-height: 100svh;
   width: 100%;
   position: relative;
   display: grid;
   place-items: center;
-  padding: 40px 24px;
+  padding: 6vh 4vw;
   overflow: hidden;
   isolation: isolate;
   color-scheme: light dark;
@@ -34,6 +35,7 @@
   --pres-glow-3: rgba(233, 221, 255, 0.78);
   --pres-card-bg: #ffffff;
   --pres-card-alt: #f7f1fa;
+  --pres-card-muted: #f1eaf6;
   --pres-line: #d5ccdd;
   --pres-ink: #1d1b20;
   --pres-ink-soft: #4a4458;
@@ -54,6 +56,7 @@
   --pres-glow-3: rgba(101, 85, 143, 0.22);
   --pres-card-bg: var(--surface);
   --pres-card-alt: var(--surface-container-low);
+  --pres-card-muted: var(--surface-container);
   --pres-line: var(--outline-variant);
   --pres-ink: var(--on-surface);
   --pres-ink-soft: var(--on-surface-variant);
@@ -78,7 +81,7 @@
 /* ── Slide stage + transition animation ───────────────────────────── */
 .pres-stage {
   width: min(1080px, 100%);
-  min-height: 560px;
+  min-height: 62vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,7 +128,7 @@
     0 1px 3px rgba(30, 20, 50, 0.1),
     0 18px 52px rgba(56, 44, 85, 0.12);
   backdrop-filter: blur(22px) saturate(1.06);
-  padding: clamp(26px, 4vw, 44px);
+  padding: clamp(24px, 4.5vh, 48px) clamp(18px, 4vw, 44px);
   animation:
     pres-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
     pres-float 7s ease-in-out 1s infinite;
@@ -267,11 +270,11 @@
 }
 
 .pres-card {
-  background: var(--pres-card-bg);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(16px * var(--radius-scale));
-  padding: 16px 18px;
-  box-shadow: 0 4px 16px rgba(56, 44, 85, 0.07);
+  background: var(--pres-card-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(22px * var(--radius-scale));
+  padding: clamp(14px, 2vh, 22px);
+  box-shadow: var(--shadow);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   animation: pres-card-pop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -294,9 +297,9 @@
 }
 
 .pres-card:hover {
-  transform: translateY(-5px);
-  border-color: color-mix(in srgb, var(--pres-brand) 45%, transparent);
-  box-shadow: 0 14px 30px rgba(56, 44, 85, 0.16);
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--pres-brand) 40%, transparent);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-card-title {
@@ -480,7 +483,7 @@
   display: flex;
   align-items: baseline;
   gap: 18px;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--pres-line);
   border-radius: calc(14px * var(--radius-scale));
   padding: 13px 16px;
@@ -531,7 +534,7 @@
 }
 
 .pres-journey-col {
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--pres-line);
   border-radius: calc(16px * var(--radius-scale));
   padding: 18px;
@@ -605,7 +608,7 @@
 
 .pres-shot {
   margin: 0;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--pres-line);
   border-radius: calc(14px * var(--radius-scale));
   padding: 10px;
@@ -683,7 +686,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   padding: 13px 16px;
@@ -750,7 +753,7 @@
 .pres-objectives li {
   position: relative;
   padding: 13px 18px 13px 52px;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   font-size: 14.5px;
@@ -801,7 +804,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   padding: 12px 14px;
@@ -889,7 +892,7 @@
 }
 
 .pres-node {
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   padding: 12px 16px;
@@ -956,7 +959,7 @@
 
 .pres-node-api {
   border: 2px solid var(--pres-brand);
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   padding: 18px 20px;
 }
 
@@ -970,7 +973,7 @@
   overflow-x: auto;
   border-radius: calc(16px * var(--radius-scale));
   border: 1px solid var(--outline-variant);
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   box-shadow: 0 4px 16px rgba(56, 44, 85, 0.07);
 }
 
@@ -1054,7 +1057,7 @@
   display: flex;
   align-items: baseline;
   gap: 18px;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   padding: 13px 16px;
@@ -1155,7 +1158,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   padding: 12px 14px;
@@ -1207,7 +1210,7 @@
 .pres-conclusion p {
   margin: 0;
   padding: 14px 18px;
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   font-size: 14.5px;
@@ -1254,7 +1257,7 @@
 }
 
 .pres-references li {
-  background: var(--pres-card-bg);
+  background: var(--pres-card-alt);
   border: 1px solid var(--outline-variant);
   border-radius: calc(14px * var(--radius-scale));
   padding: 14px 18px;
@@ -1315,7 +1318,7 @@
 /* ── Controls ─────────────────────────────────────────────────────── */
 .pres-controls {
   position: absolute;
-  bottom: 26px;
+  bottom: 3vh;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1325,21 +1328,23 @@
 }
 
 .pres-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
   border: 1px solid var(--outline-variant);
-  background: color-mix(in srgb, var(--pres-card-bg) 94%, transparent);
+  background: var(--pres-card-bg);
   color: var(--pres-brand);
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(56, 44, 85, 0.14);
-  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .pres-btn:hover:not(:disabled) {
-  transform: scale(1.08);
+  transform: translateY(-1px);
   background: var(--pres-brand-tint);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-btn:disabled {
@@ -1357,9 +1362,9 @@
 
 .pres-dots {
   position: absolute;
-  top: 22px;
-  right: 24px;
-  left: 24px;
+  top: 2.5vh;
+  right: 1.5vw;
+  left: 1.5vw;
   display: flex;
   justify-content: center;
   gap: 7px;
@@ -1385,47 +1390,51 @@
 
 .pres-exit {
   position: absolute;
-  top: 18px;
-  left: 20px;
+  top: 2.5vh;
+  left: 1.5vw;
   z-index: 5;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 999px;
   border: 1px solid var(--outline-variant);
-  background: color-mix(in srgb, var(--pres-card-bg) 94%, transparent);
+  background: var(--pres-card-bg);
   color: var(--pres-ink-soft);
   font-size: 15px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(56, 44, 85, 0.14);
-  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .pres-exit:hover {
-  transform: scale(1.08);
+  transform: translateY(-1px);
   background: var(--pres-brand-tint);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-theme {
   position: absolute;
-  top: 18px;
-  left: 66px;
+  top: 2.5vh;
+  left: calc(1.5vw + 52px);
   z-index: 5;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 999px;
   border: 1px solid var(--outline-variant);
-  background: color-mix(in srgb, var(--pres-card-bg) 94%, transparent);
+  background: var(--pres-card-bg);
   color: var(--pres-ink-soft);
   font-size: 17px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(56, 44, 85, 0.14);
-  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .pres-theme:hover {
-  transform: scale(1.08);
+  transform: translateY(-1px);
   background: var(--pres-brand-tint);
   color: var(--pres-brand);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-theme-icon {
@@ -1436,7 +1445,7 @@
 /* ── Responsive ───────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .pres-root {
-    padding: 34px 14px;
+    padding: 4vh 4vw;
   }
 
   .pres-stage {
@@ -1473,7 +1482,7 @@
   }
 
   .pres-slide {
-    padding: 20px 14px;
+    padding: 3vh 3vw;
   }
 
   .pres-dots {

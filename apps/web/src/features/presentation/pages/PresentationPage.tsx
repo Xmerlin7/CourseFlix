@@ -383,74 +383,79 @@ const SLIDES: DeckEntry[] = [
     ),
   },
   {
-    meta: { kicker: 'UI OVERVIEW · 1/4', title: 'Auth Screens' },
+    meta: { kicker: 'SCREEN · 1/7', title: 'Login' },
     render: () => (
-      <SlideShell meta={{ kicker: 'UI OVERVIEW · 1/4', title: 'Auth Screens' }}>
-        <p className="pres-lead">Sign in with email/password or Google OTP, and student self-registration.</p>
-        <div className="pres-shots pres-shots--pair">
-          <figure className="pres-shot pres-shot--big">
-            <img src={shotLogin} alt="Login screen" loading="lazy" />
-            <figcaption>Login</figcaption>
-          </figure>
-          <figure className="pres-shot pres-shot--big">
-            <img src={shotRegister} alt="Register screen" loading="lazy" />
-            <figcaption>Register</figcaption>
-          </figure>
-        </div>
+      <SlideShell meta={{ kicker: 'SCREEN · 1/7', title: 'Login' }}>
+        <p className="pres-lead">Sign in with email/password or Google OTP.</p>
+        <figure className="pres-shot pres-shot--full">
+          <img src={shotLogin} alt="Login screen" loading="lazy" />
+        </figure>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'UI OVERVIEW · 2/4', title: 'Student Experience' },
+    meta: { kicker: 'SCREEN · 2/7', title: 'Register' },
     render: () => (
-      <SlideShell meta={{ kicker: 'UI OVERVIEW · 2/4', title: 'Student Experience' }}>
-        <p className="pres-lead">Dashboard with enrolled courses, and a structured course detail page.</p>
-        <div className="pres-shots pres-shots--pair">
-          <figure className="pres-shot pres-shot--big">
-            <img src={shotStudentDashboard} alt="Student dashboard" loading="lazy" />
-            <figcaption>Student Dashboard</figcaption>
-          </figure>
-          <figure className="pres-shot pres-shot--big">
-            <img src={shotCourseDetail} alt="Course detail" loading="lazy" />
-            <figcaption>Course Detail</figcaption>
-          </figure>
-        </div>
+      <SlideShell meta={{ kicker: 'SCREEN · 2/7', title: 'Register' }}>
+        <p className="pres-lead">Student self-registration wizard.</p>
+        <figure className="pres-shot pres-shot--full">
+          <img src={shotRegister} alt="Register screen" loading="lazy" />
+        </figure>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'UI OVERVIEW · 3/4', title: 'Stay In Sync' },
+    meta: { kicker: 'SCREEN · 3/7', title: 'Student Dashboard' },
     render: () => (
-      <SlideShell meta={{ kicker: 'UI OVERVIEW · 3/4', title: 'Stay In Sync' }}>
-        <p className="pres-lead">Notifications with deep-links, and the course community (discussions + announcements).</p>
-        <div className="pres-shots pres-shots--pair">
-          <figure className="pres-shot pres-shot--big">
-            <img src={shotNotifications} alt="Notifications" loading="lazy" />
-            <figcaption>Notifications</figcaption>
-          </figure>
-          <figure className="pres-shot pres-shot--big">
-            <img src={shotCommunity} alt="Community" loading="lazy" />
-            <figcaption>Community</figcaption>
-          </figure>
-        </div>
+      <SlideShell meta={{ kicker: 'SCREEN · 3/7', title: 'Student Dashboard' }}>
+        <p className="pres-lead">Enrolled courses with progress and status.</p>
+        <figure className="pres-shot pres-shot--full">
+          <img src={shotStudentDashboard} alt="Student dashboard" loading="lazy" />
+        </figure>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'UI OVERVIEW · 4/4', title: 'Personalize & Manage' },
+    meta: { kicker: 'SCREEN · 4/7', title: 'Course Detail' },
     render: () => (
-      <SlideShell meta={{ kicker: 'UI OVERVIEW · 4/4', title: 'Personalize & Manage' }}>
-        <p className="pres-lead">Settings for theme, notifications and account preferences.</p>
-        <div className="pres-shots pres-shots--pair">
-          <figure className="pres-shot pres-shot--big">
-            <img src={shotSettings} alt="Settings" loading="lazy" />
-            <figcaption>Settings</figcaption>
-          </figure>
-          <div className="pres-shot pres-shot--big pres-shot--placeholder">
-            <span className="pres-shot-placeholder-icon">☰</span>
-            <figcaption>Teacher & Admin dashboards</figcaption>
-          </div>
-        </div>
+      <SlideShell meta={{ kicker: 'SCREEN · 4/7', title: 'Course Detail' }}>
+        <p className="pres-lead">A structured course page with sections and lessons.</p>
+        <figure className="pres-shot pres-shot--full">
+          <img src={shotCourseDetail} alt="Course detail" loading="lazy" />
+        </figure>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'SCREEN · 5/7', title: 'Notifications' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'SCREEN · 5/7', title: 'Notifications' }}>
+        <p className="pres-lead">Filterable feed with deep-links to the exact entity.</p>
+        <figure className="pres-shot pres-shot--full">
+          <img src={shotNotifications} alt="Notifications" loading="lazy" />
+        </figure>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'SCREEN · 6/7', title: 'Community' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'SCREEN · 6/7', title: 'Community' }}>
+        <p className="pres-lead">Course discussions and teacher announcements.</p>
+        <figure className="pres-shot pres-shot--full">
+          <img src={shotCommunity} alt="Community" loading="lazy" />
+        </figure>
+      </SlideShell>
+    ),
+  },
+  {
+    meta: { kicker: 'SCREEN · 7/7', title: 'Settings' },
+    render: () => (
+      <SlideShell meta={{ kicker: 'SCREEN · 7/7', title: 'Settings' }}>
+        <p className="pres-lead">Theme, notifications and account preferences.</p>
+        <figure className="pres-shot pres-shot--full">
+          <img src={shotSettings} alt="Settings" loading="lazy" />
+        </figure>
       </SlideShell>
     ),
   },
