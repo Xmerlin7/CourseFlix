@@ -548,7 +548,13 @@ setup_database() {
       die "seed failed — see $LOG_DIR/seed.log"
     }
 
-  grep -A 20 '^Seed complete:' "$LOG_DIR/seed.log" | sed 's/^/  /' || true
+  # -A 40: the seed fixture now covers a lot more than courses/users (PDF
+  # handouts, quizzes, community, commerce, agent logs, ...), so the
+  # summary block seed-runner.ts prints is longer than the "-A 20" this
+  # used to be — that was silently truncating the last several lines of
+  # every `./dev.sh up`. Generous headroom so it keeps up as the summary
+  # grows further without needing another bump.
+  grep -A 40 '^Seed complete:' "$LOG_DIR/seed.log" | sed 's/^/  /' || true
 
   printf '  backfilling missing/failed video transcripts ...\n'
 
