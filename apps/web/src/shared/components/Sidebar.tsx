@@ -1,6 +1,12 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router'
 import { ROUTE_PATHS } from '../../app/routes/route-paths'
+import { useSidebarDrag } from '../hooks/useSidebarDrag'
+import {
+  SIDEBAR_POSITIONS,
+  useSidebarPosition,
+  type SidebarPosition,
+} from '../hooks/useSidebarPosition'
 
 export type SidebarProps = {
   role: 'student' | 'teacher' | 'admin' | 'assistant'
@@ -113,6 +119,12 @@ const COMMUNITY_PATH_BY_ROLE: Partial<Record<SidebarProps['role'], string>> = {
   assistant: ROUTE_PATHS.TEACHER.COMMUNITY,
 }
 
+const POSITION_LABEL: Record<SidebarPosition, string> = {
+  right: 'يمين الشاشة',
+  left: 'يسار الشاشة',
+  bottom: 'أسفل الشاشة',
+}
+
 export function Sidebar({
   role,
   userName,
@@ -130,6 +142,11 @@ export function Sidebar({
   pendingActionCount = 0,
 }: SidebarProps) {
   const navItems = NAV_ITEMS_BY_ROLE[role]
+  const { position, setPosition } = useSidebarPosition()
+  const { isDragging, previewPosition, onSurfacePointerDown } = useSidebarDrag({
+    position,
+    onDrop: setPosition,
+  })
 
   // Escape closes the drawer, matching every other overlay in the app.
   // Bound unconditionally (not behind `isMobileOpen`) so the hook order
@@ -165,8 +182,33 @@ export function Sidebar({
         <div className="sidebar-scrim" onClick={onCloseMobile} aria-hidden="true" />
       )}
 
+      {/* Drop targets, only mounted mid-drag. Rendered as an overlay
+          rather than by highlighting the real edges, because two of the
+          three targets are where the sidebar isn't — there'd be nothing
+          to light up. */}
+      {isDragging && (
+        <div className="sidebar-dropzones" aria-hidden="true">
+          {SIDEBAR_POSITIONS.map((zone) => (
+            <span
+              key={zone}
+              className={`sidebar-dropzone ${zone}${previewPosition === zone ? ' active' : ''}`}
+            >
+              <span className="ms">
+                {zone === 'bottom' ? 'dock_to_bottom' : 'dock_to_right'}
+              </span>
+              {POSITION_LABEL[zone]}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* The bar itself is the drag surface — press any empty part of it
+          and drag to an edge to re-dock. The hook ignores presses that
+          land on a link or button, so navigating still works normally. */}
       <aside
-        className={`sidebar${isRail ? ' rail' : ''}${isMobileOpen ? ' mobile-open' : ''}`}
+        onPointerDown={onSurfacePointerDown}
+        title={`اسحب القائمة لتغيير مكانها (حاليًا: ${POSITION_LABEL[position]})`}
+        className={`sidebar${isRail ? ' rail' : ''}${isMobileOpen ? ' mobile-open' : ''}${isDragging ? ' dragging' : ''}`}
       >
       <button
         onClick={onToggleRail ?? onToggle}

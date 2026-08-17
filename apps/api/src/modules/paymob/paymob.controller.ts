@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Logger,
   Param,
   Post,
   Query,
@@ -32,6 +33,8 @@ import { PaymobService, toSafeString } from './paymob.service';
  */
 @Controller('api/v1/paymob')
 export class PaymobController {
+  private readonly logger = new Logger(PaymobController.name);
+
   constructor(
     private readonly commerceService: CommerceService,
     private readonly paymobService: PaymobService,
@@ -55,6 +58,39 @@ export class PaymobController {
       paymobOrderId,
     );
     return { paymentUrl, paymobOrderId };
+  }
+
+  @Get('orders/:orderId/status')
+  @UseGuards(AuthGuard, StudentRoleGuard)
+  async paymentStatus(
+    @Param('orderId') orderId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    // Ownership + existence (404/403 for strangers) — mirrors the receipt
+    // endpoint, so polling can never leak another student's order.
+    const order = await this.commerceService.getOrder(user.id, orderId);
+
+    const inquiry = await this.paymobService.inquireTransaction(orderId);
+
+    if (inquiry && !inquiry.pending) {
+      try {
+        await this.commerceService.fulfillPaymobWebhook({
+          merchantOrderId: orderId,
+          paymobOrderId: inquiry.paymobOrderId,
+          transactionId: inquiry.id,
+          success: inquiry.success,
+        });
+        return this.commerceService.getOrder(user.id, orderId);
+      } catch (caught) {
+        this.logger.warn(
+          `Payment status inquiry for order ${orderId} could not be fulfilled: ${
+            caught instanceof Error ? caught.message : String(caught)
+          }`,
+        );
+      }
+    }
+
+    return order;
   }
 
   @Post('webhook')
@@ -92,17 +128,45 @@ export class PaymobController {
       return fallback('/student/courses');
     }
 
-    if (query.success !== 'true') {
-      // Declined / abandoned — send them back to explore courses.
-      return fallback('/student/courses');
-    }
-
-    const context = await this.commerceService.findOrderContextByPaymobOrderId(
-      String(query.order ?? ''),
-    );
+    const paymobOrderId = String(query.order ?? '');
+    const context =
+      await this.commerceService.findOrderContextByPaymobOrderId(paymobOrderId);
     if (!context) {
       return fallback('/student/courses');
     }
+
+    const success = query.success === 'true';
+
+    // Fulfil straight from the browser callback (idempotent — the same
+    // order can be resolved by the POST webhook again without side
+    // effects). This keeps the flow working end-to-end even when the
+    // server-to-server POST webhook can't reach the API (e.g. local dev
+    // without a public tunnel), since the GET redirect always lands on
+    // the API from the student's own browser.
+    try {
+      await this.commerceService.fulfillPaymobWebhook({
+        merchantOrderId: context.orderId,
+        paymobOrderId,
+        transactionId: String(query.id ?? ''),
+        success,
+      });
+    } catch (caught) {
+      this.logger.error(
+        `GET webhook fulfillment failed for order ${context.orderId}: ${
+          caught instanceof Error ? caught.message : String(caught)
+        }`,
+      );
+      return fallback('/student/courses');
+    }
+
+    if (!success) {
+      // Declined / abandoned — route back to the checkout so the student
+      // sees the "تم رفض عملية الدفع" state and can retry the payment.
+      return fallback(
+        `/student/checkout/${context.courseId}?order=${context.orderId}`,
+      );
+    }
+
     // Route the browser to the checkout receipt page (which shows the
     // "تم الدفع بنجاح" state for a paid order), passing our internal order
     // id so the page can fetch the paid receipt.

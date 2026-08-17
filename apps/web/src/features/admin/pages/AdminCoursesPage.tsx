@@ -45,7 +45,7 @@ export function AdminCoursesPage() {
     <>
       <PageHeader title="الدورات" description="كل الدورات على المنصة، بغض النظر عن المعلم" />
 
-      <div className="actions section" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="actions section">
         {(['all', 'draft', 'published', 'archived'] as const).map((option) => (
           <button
             key={option}

@@ -1,13 +1,14 @@
+import '../../support/components/SupportChat.css'
 import type { DiscussionReply } from '../types/community.types'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-function roleLabel(role: DiscussionReply['author']['role']): string | null {
-  if (role === 'teacher') return 'المدرس'
-  if (role === 'assistant') return 'مساعد المدرس'
-  return null
+function roleTag(reply: DiscussionReply): { label: string; className: string } | null {
+  if (reply.author.role === 'teacher') return { label: 'المدرس', className: 'support-tag' }
+  if (reply.author.role === 'assistant') return { label: 'مساعد المدرس', className: 'support-tag' }
+  return { label: 'الطالب', className: 'student-tag' }
 }
 
 export interface DiscussionReplyRowProps {
@@ -25,92 +26,63 @@ export function DiscussionReplyRow({
   onAccept,
   onUnaccept,
 }: DiscussionReplyRowProps) {
+  const variant = isMe ? 'student' : 'support'
+  const tag = roleTag(reply)
   const isTeacherReply = reply.author.role === 'teacher' || reply.author.role === 'assistant'
-  const authorRole = roleLabel(reply.author.role)
 
   return (
-    <div
-      className={`discussion-reply-row${reply.isUnread ? ' unread' : ''}${reply.isAccepted ? ' discussion-reply-row--accepted' : ''}${isTeacherReply ? ' discussion-reply-row--teacher' : ''}${isMe ? ' discussion-reply-row--me' : ' discussion-reply-row--other'}`}
-    >
-      <div className="discussion-reply-avatar-col">
-        {reply.author.avatarUrl ? (
-          <span className="avatar discussion-reply-avatar">
+    <div className={`chat-msg-group from-${variant}`}>
+      <div className="chat-msg-group-label">
+        {reply.isUnread && <span className="unread-dot" aria-label="غير مقروء" />}
+        <span className="chat-msg-avatar" aria-hidden="true">
+          {reply.author.avatarUrl ? (
             <img src={reply.author.avatarUrl} alt="" />
-          </span>
-        ) : (
-          <span className="discussion-reply-avatar-placeholder">
+          ) : (
+            <span className="ms">{isTeacherReply ? 'verified_user' : 'person'}</span>
+          )}
+        </span>
+        <span className="chat-msg-author-name">{reply.author.fullName}</span>
+        {tag && <span className={`chat-role-tag ${tag.className}`}>{tag.label}</span>}
+        {reply.isAccepted && (
+          <span className="chip green sm">
             <span className="ms sm" aria-hidden="true">
-              {isTeacherReply ? 'verified_user' : 'account_circle'}
+              check_circle
             </span>
+            إجابة مقبولة
           </span>
         )}
+        {reply.isAccepted ? (
+          canAccept &&
+          onUnaccept && (
+            <button
+              type="button"
+              className="btn outline sm"
+              style={{ fontSize: 11, padding: '2px 8px' }}
+              onClick={() => onUnaccept(reply.id)}
+            >
+              إلغاء الاعتماد
+            </button>
+          )
+        ) : (
+          canAccept &&
+          onAccept && (
+            <button
+              type="button"
+              className="btn outline sm"
+              style={{ fontSize: 11, padding: '2px 8px' }}
+              onClick={() => onAccept(reply.id)}
+            >
+              اعتماد كإجابة
+            </button>
+          )
+        )}
       </div>
-
-      <div className="discussion-reply-bubble">
-        <svg
-          className="discussion-reply-tail"
-          viewBox="0 0 9 16"
-          width="9"
-          height="16"
-          aria-hidden="true"
-        >
-          <path d="M 0,0 L 9,0 L 9,14 C 8,6 4,1 0,0 Z" className="tail-fill" />
-          <path d="M 0,0 L 9,0" className="tail-top-stroke" />
-          <path d="M 0,0 C 4,1 8,6 9,14" className="tail-curve-stroke" />
-        </svg>
-
-        <div className="discussion-reply-header">
-          <div className="discussion-reply-author">
-            {reply.isUnread && <span className="unread-dot" aria-label="غير مقروء" />}
-            <span className="discussion-reply-author-name">{reply.author.fullName}</span>
-            {authorRole && (
-              <span className="chip sm primary discussion-reply-role-chip">{authorRole}</span>
-            )}
-          </div>
-
-          <div className="discussion-reply-badge-action">
-            {reply.isAccepted ? (
-              <>
-                <span className="chip green sm">
-                  <span className="ms sm" aria-hidden="true">check_circle</span>
-                  إجابة مقبولة
-                </span>
-                {canAccept && onUnaccept && (
-                  <button
-                    type="button"
-                    className="btn outline sm"
-                    style={{ fontSize: 11, padding: '2px 8px' }}
-                    onClick={() => onUnaccept(reply.id)}
-                  >
-                    إلغاء الاعتماد
-                  </button>
-                )}
-              </>
-            ) : (
-              canAccept && onAccept && (
-                <button
-                  type="button"
-                  className="btn outline sm"
-                  style={{ fontSize: 11, padding: '2px 8px' }}
-                  onClick={() => onAccept(reply.id)}
-                >
-                  اعتماد كإجابة
-                </button>
-              )
-            )}
-          </div>
-        </div>
-
-        <p className="discussion-reply-body">{reply.body}</p>
-
-        <div className="discussion-reply-footer">
-          <span className="discussion-reply-time">
-            <span className="ms sm" aria-hidden="true">schedule</span>
-            {formatDate(reply.createdAt)}
-          </span>
+      <div className={`chat-msg from-${variant}${reply.isUnread ? ' is-unread' : ''}`}>
+        <p>{reply.body}</p>
+        <div className="chat-msg-meta">
+          <span className="chat-msg-time">{formatDate(reply.createdAt)}</span>
         </div>
       </div>
     </div>
   )
 }
-

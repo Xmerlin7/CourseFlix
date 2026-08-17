@@ -1,33 +1,42 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { ApiError } from '../../../shared/api/api-error'
-import { PasswordField } from '../../../shared/components/PasswordField'
+import { AuthField, AuthPasswordField } from './AuthField'
+import { AuthAlert, AuthSubmit } from './AuthUi'
 import { useAuth } from '../hooks/useAuth'
 import { getRoleHomePath } from '../utils/get-role-home-path'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+interface FieldErrors {
+  email?: string
+  password?: string
+}
+
 // Client-side mirror of LoginDto's shape (IsEmail + MinLength(8)) so
 // "required"/format problems are caught before a round trip — never the
 // actual authority, the API still validates independently.
-function resolveClientError(email: string, password: string): string | null {
+//
+// Split per field (rather than the single combined string this used to
+// return) so each message can be rendered against the input it belongs to
+// and announced through that input's aria-describedby.
+function resolveClientErrors(email: string, password: string): FieldErrors {
+  const errors: FieldErrors = {}
   const trimmedEmail = email.trim()
-  if (!trimmedEmail && !password) {
-    return 'من فضلك أدخل البريد الإلكتروني وكلمة المرور'
-  }
+
   if (!trimmedEmail) {
-    return 'البريد الإلكتروني مطلوب'
+    errors.email = 'البريد الإلكتروني مطلوب'
+  } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
+    errors.email = 'صيغة البريد الإلكتروني غير صحيحة'
   }
-  if (!EMAIL_PATTERN.test(trimmedEmail)) {
-    return 'صيغة البريد الإلكتروني غير صحيحة'
-  }
+
   if (!password) {
-    return 'كلمة المرور مطلوبة'
+    errors.password = 'كلمة المرور مطلوبة'
+  } else if (password.length < 8) {
+    errors.password = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
   }
-  if (password.length < 8) {
-    return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
-  }
-  return null
+
+  return errors
 }
 
 // Never distinguish "email not found" from "wrong password" — that would
@@ -52,23 +61,29 @@ function resolveApiError(error: unknown): string {
   return 'حدث خطأ ما، حاول مرة أخرى'
 }
 
+interface LoginFormProps {
+  /** Switches the page to the forgot-password flow. */
+  onForgotPassword?: () => void
+}
+
 // Standard login: email + password, straight to a session. The password is
 // verified server-side; a session cookie is set on success.
-export function LoginForm() {
+export function LoginForm({ onForgotPassword }: LoginFormProps) {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+  const [formError, setFormError] = useState<string | null>(null)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError(null)
+    setFormError(null)
 
-    const clientError = resolveClientError(email, password)
-    if (clientError) {
-      setError(clientError)
+    const clientErrors = resolveClientErrors(email, password)
+    setFieldErrors(clientErrors)
+    if (Object.keys(clientErrors).length > 0) {
       return
     }
 
@@ -77,7 +92,7 @@ export function LoginForm() {
       const user = await login({ email, password })
       navigate(getRoleHomePath(user.role), { replace: true })
     } catch (caughtError) {
-      setError(resolveApiError(caughtError))
+      setFormError(resolveApiError(caughtError))
     } finally {
       setIsSubmitting(false)
     }
@@ -85,34 +100,46 @@ export function LoginForm() {
 
   return (
     <form onSubmit={(event) => void handleSubmit(event)} noValidate>
-      <div className="tf">
-        <label htmlFor="email">البريد الإلكتروني</label>
-        <input
-          type="email"
+      {formError && <AuthAlert>{formError}</AuthAlert>}
+
+      <div className="cfa-fields">
+        <AuthField
           id="email"
-          placeholder="أدخل بريدك الإلكتروني"
+          label="البريد الإلكتروني"
+          icon="mail"
+          type="email"
+          inputMode="email"
+          placeholder="name@example.com"
           autoComplete="email"
-          required
+          dir="ltr"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={setEmail}
+          error={fieldErrors.email}
+        />
+
+        <AuthPasswordField
+          id="password"
+          label="كلمة المرور"
+          placeholder="أدخل كلمة المرور"
+          autoComplete="current-password"
+          value={password}
+          onChange={setPassword}
+          error={fieldErrors.password}
         />
       </div>
 
-      <PasswordField
-        id="password"
-        label="كلمة المرور"
-        placeholder="أدخل كلمة المرور"
-        autoComplete="current-password"
-        minLength={8}
-        value={password}
-        onChange={setPassword}
-        error={error}
-      />
+      {onForgotPassword && (
+        <div className="cfa-row">
+          <span />
+          <button type="button" className="cfa-link-btn" onClick={onForgotPassword}>
+            نسيت كلمة المرور؟
+          </button>
+        </div>
+      )}
 
-      <button className="btn big" type="submit" disabled={isSubmitting} style={{ width: '100%' }}>
-        <span className="ms">login</span>
-        {isSubmitting ? 'جارٍ الدخول...' : 'تسجيل الدخول'}
-      </button>
+      <AuthSubmit icon="login" isPending={isSubmitting} pendingLabel="جارٍ الدخول...">
+        تسجيل الدخول
+      </AuthSubmit>
     </form>
   )
 }

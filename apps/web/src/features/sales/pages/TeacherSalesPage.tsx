@@ -231,7 +231,7 @@ export function TeacherSalesPage() {
           </div>
 
           {/* Quick Filter Presets */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div className="actions">
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--on-surface-variant)' }}>
               فترات سريعة:
             </span>

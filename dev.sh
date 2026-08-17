@@ -3,10 +3,15 @@
 # CourseFlix local development launcher.
 #
 #   ./dev.sh            bring the whole stack up (infra + migrations + seed + API + web)
+#   ./dev.sh fast       restart just the API/web/worker — skips Docker,
+#                       migrations, seeding and ngrok. Use once the full
+#                       `up` has already been run and infra is still up;
+#                       this is the ~10s "I just changed code" restart.
 #   ./dev.sh stop       stop the API/web processes and the Docker services
 #   ./dev.sh reset      drop the database volume and rebuild it from scratch
 #   ./dev.sh status     show what is currently running
 #   ./dev.sh logs       follow the API and web logs
+#   ./dev.sh payment    check the Paymob payment setup and print the callback URL
 #
 # ngrok is auto-installed (if missing) and tunnels the API port so Paymob
 # callbacks can reach the local server: https://<subdomain>.ngrok-free.dev
@@ -14,6 +19,7 @@
 # Flags (for the default "up" command):
 #   --no-seed           run migrations but skip seeding
 #   --no-infra          assume Postgres/Redis/Chroma are already running
+#   --no-payment-check  skip the Paymob setup check
 #
 set -Eeuo pipefail
 
@@ -332,6 +338,59 @@ stop_ngrok() {
   ok "ngrok was not running"
 }
 
+# ─── payment setup ───────────────────────────────────────────────────────
+PAYMOB_BASE_URL_FALLBACK="https://accept.paymob.com/api"
+
+check_payment_config() {
+  step "Checking Paymob payment setup"
+
+  local base key integration iframe hmac missing url
+
+  base="$(env_value PAYMOB_BASE_URL)"
+  base="${base:-$PAYMOB_BASE_URL_FALLBACK}"
+  key="$(env_value PAYMOB_API_KEY)"
+  integration="$(env_value PAYMOB_INTEGRATION_ID)"
+  iframe="$(env_value PAYMOB_IFRAME_ID)"
+  hmac="$(env_value PAYMOB_HMAC_SECRET)"
+
+  missing=""
+
+  [ -n "$key" ] && [ "$key" != "replace-me" ] || missing="${missing} PAYMOB_API_KEY"
+  [ -n "$integration" ] && [ "$integration" != "replace-me" ] || missing="${missing} PAYMOB_INTEGRATION_ID"
+  [ -n "$iframe" ] && [ "$iframe" != "replace-me" ] || missing="${missing} PAYMOB_IFRAME_ID"
+  [ -n "$hmac" ] && [ "$hmac" != "replace-me" ] || missing="${missing} PAYMOB_HMAC_SECRET"
+
+  if [ -n "$missing" ]; then
+    warn "payment will not work — missing in .env:$missing"
+    return 0
+  fi
+
+  ok "integration $integration · iframe $iframe · key ${key:0:6}… · HMAC ${hmac:0:4}…"
+
+  printf '  verifying the API key against %s ...\n' "$base"
+
+  if curl -fsSL --connect-timeout 8 --max-time 15 \
+      -X POST "$base/auth/tokens" \
+      -H 'Content-Type: application/json' \
+      -d "{\"api_key\":\"$key\"}" 2>/dev/null \
+      | grep -q '"token"'; then
+    ok "Paymob API key accepted"
+  else
+    warn "Paymob rejected the API key or is unreachable — real payments will fail"
+    warn "  check PAYMOB_API_KEY and PAYMOB_BASE_URL in .env"
+  fi
+
+  url="$(ngrok_public_url || true)"
+
+  if [ -n "$url" ]; then
+    ok "webhook callback: $url/api/v1/paymob/webhook"
+    warn "set this exact URL as the Paymob 'transaction processed' callback in the dashboard"
+  else
+    warn "ngrok is not running — Paymob's server-to-server webhook cannot reach this API"
+    warn "  (the browser GET redirect still fulfils orders end-to-end)"
+  fi
+}
+
 # ─── infrastructure ──────────────────────────────────────────────────────
 start_infra() {
   step "Starting infrastructure (Postgres, Redis, Chroma)"
@@ -468,7 +527,7 @@ setup_database() {
 
   printf '  running migrations ...\n'
 
-  npm run migration:run --prefix apps/api --silent > "$LOG_DIR/migrations.log" 2>&1 \
+  TS_NODE_TRANSPILE_ONLY=true npm run migration:run --prefix apps/api --silent > "$LOG_DIR/migrations.log" 2>&1 \
     || {
       tail -20 "$LOG_DIR/migrations.log"
       die "migrations failed — see $LOG_DIR/migrations.log"
@@ -483,17 +542,23 @@ setup_database() {
 
   printf '  seeding demo data ...\n'
 
-  npm run seed --prefix apps/api --silent > "$LOG_DIR/seed.log" 2>&1 \
+  TS_NODE_TRANSPILE_ONLY=true npm run seed --prefix apps/api --silent > "$LOG_DIR/seed.log" 2>&1 \
     || {
       tail -20 "$LOG_DIR/seed.log"
       die "seed failed — see $LOG_DIR/seed.log"
     }
 
-  grep -A 20 '^Seed complete:' "$LOG_DIR/seed.log" | sed 's/^/  /' || true
+  # -A 40: the seed fixture now covers a lot more than courses/users (PDF
+  # handouts, quizzes, community, commerce, agent logs, ...), so the
+  # summary block seed-runner.ts prints is longer than the "-A 20" this
+  # used to be — that was silently truncating the last several lines of
+  # every `./dev.sh up`. Generous headroom so it keeps up as the summary
+  # grows further without needing another bump.
+  grep -A 40 '^Seed complete:' "$LOG_DIR/seed.log" | sed 's/^/  /' || true
 
   printf '  backfilling missing/failed video transcripts ...\n'
 
-  npm run backfill:video-transcripts --prefix apps/api --silent > "$LOG_DIR/backfill.log" 2>&1 \
+  TS_NODE_TRANSPILE_ONLY=true npm run backfill:video-transcripts --prefix apps/api --silent > "$LOG_DIR/backfill.log" 2>&1 \
     && grep '^Backfill complete:' "$LOG_DIR/backfill.log" | sed 's/^/  /' \
     || warn "video transcript backfill failed — see $LOG_DIR/backfill.log (non-fatal, continuing)"
 }
@@ -601,24 +666,6 @@ start_apps() {
   free_port "$API_PORT"
   free_port "$WEB_PORT"
 
-  setsid npm run start:dev --prefix apps/api > "$API_LOG" 2>&1 < /dev/null &
-
-  wait_for_http \
-    "http://localhost:$API_PORT/api/v1/health" \
-    "API"
-
-  ok "API listening on http://localhost:$API_PORT"
-
-  start_ngrok
-
-  setsid npm run dev --prefix apps/web > "$WEB_LOG" 2>&1 < /dev/null &
-
-  wait_for_http \
-    "http://localhost:$WEB_PORT" \
-    "web app"
-
-  ok "web app listening on http://localhost:$WEB_PORT"
-
   if [ -f "$WORKER_PID_FILE" ]; then
     local old_worker_pid
 
@@ -631,8 +678,30 @@ start_apps() {
     fi
   fi
 
+  # Launch API, web and worker together, and kick off the ngrok tunnel
+  # right away too — none of these actually depend on each other being
+  # *ready*, only on their ports being free (handled above). Waiting for
+  # each one in turn before starting the next serializes work that can
+  # run concurrently, so every wait below is really just waiting out
+  # whichever of these was slowest to boot.
+  setsid npm run start:dev --prefix apps/api > "$API_LOG" 2>&1 < /dev/null &
+  setsid npm run dev --prefix apps/web > "$WEB_LOG" 2>&1 < /dev/null &
   setsid npm run start:dev --prefix apps/worker > "$WORKER_LOG" 2>&1 < /dev/null &
   echo "$!" > "$WORKER_PID_FILE"
+
+  start_ngrok
+
+  wait_for_http \
+    "http://localhost:$API_PORT/api/v1/health" \
+    "API"
+
+  ok "API listening on http://localhost:$API_PORT"
+
+  wait_for_http \
+    "http://localhost:$WEB_PORT" \
+    "web app"
+
+  ok "web app listening on http://localhost:$WEB_PORT"
 
   wait_for_log \
     "$WORKER_LOG" \
@@ -708,7 +777,35 @@ cmd_up() {
 
   setup_database
   start_apps
+
+  [ "$SKIP_PAYMENT_CHECK" = "true" ] \
+    && warn "skipping Paymob setup check (--no-payment-check)" \
+    || check_payment_config
+
   print_summary
+}
+
+cmd_fast() {
+  mkdir -p "$LOG_DIR"
+
+  step "Fast restart — API + web + worker only (no Docker/migrations/seed/ngrok)"
+  warn "the ngrok tunnel is not (re)started in fast mode — Paymob callbacks rely on an existing tunnel"
+
+  start_apps
+
+  [ "$SKIP_PAYMENT_CHECK" = "true" ] \
+    && warn "skipping Paymob setup check (--no-payment-check)" \
+    || check_payment_config
+
+  print_summary
+}
+
+cmd_payment() {
+  mkdir -p "$LOG_DIR"
+
+  [ -f "$ROOT/.env" ] || die "no .env yet — run ./dev.sh up first."
+
+  check_payment_config
 }
 
 cmd_stop() {
@@ -843,10 +940,11 @@ cmd_logs() {
 COMMAND="up"
 SKIP_SEED="false"
 SKIP_INFRA="false"
+SKIP_PAYMENT_CHECK="false"
 
 for arg in "$@"; do
   case "$arg" in
-    up|stop|reset|status|logs)
+    up|fast|stop|reset|status|logs|payment)
       COMMAND="$arg"
       ;;
 
@@ -858,8 +956,12 @@ for arg in "$@"; do
       SKIP_INFRA="true"
       ;;
 
+    --no-payment-check)
+      SKIP_PAYMENT_CHECK="true"
+      ;;
+
     -h|--help)
-      sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,21p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
 
@@ -876,6 +978,10 @@ case "$COMMAND" in
     cmd_up
     ;;
 
+  fast)
+    cmd_fast
+    ;;
+
   stop)
     cmd_stop
     ;;
@@ -890,5 +996,9 @@ case "$COMMAND" in
 
   logs)
     cmd_logs
+    ;;
+
+  payment)
+    cmd_payment
     ;;
 esac

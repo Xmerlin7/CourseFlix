@@ -5,6 +5,7 @@ import {
 } from '../../modules/courses/entities/course.entity';
 import { SectionEntity } from '../../modules/courses/entities/section.entity';
 import { LessonEntity } from '../../modules/courses/entities/lesson.entity';
+import { findCourseContent } from './content';
 
 export interface SeededCourse {
   /** The primary demo course — a named field because the rest of the
@@ -212,6 +213,12 @@ export async function seedCourse(
   let primaryLessons: LessonEntity[] = [];
 
   for (const [blueprintIndex, blueprint] of COURSE_BLUEPRINTS.entries()) {
+    // A real, reachable Wikimedia Commons photo per course — chosen to
+    // match the subject (Newton's cradle for mechanics, a prism for
+    // optics, the solar system for astronomy) so `CourseThumb.tsx` never
+    // falls back to the placeholder for a seeded course.
+    const coverImageUrl = findCourseContent(blueprint.slug)?.coverImageUrl ?? null;
+
     let course = await courseRepository.findOne({
       where: { slug: blueprint.slug },
     });
@@ -222,11 +229,15 @@ export async function seedCourse(
           title: blueprint.title,
           slug: blueprint.slug,
           description: blueprint.description,
-          coverImageUrl: null,
+          coverImageUrl,
           gradeLevel: blueprint.gradeLevel,
           status: blueprint.status,
         }),
       );
+    } else if (course.coverImageUrl !== coverImageUrl) {
+      // Backfill for any course seeded before cover images existed.
+      course.coverImageUrl = coverImageUrl;
+      course = await courseRepository.save(course);
     }
     courses.push(course);
 

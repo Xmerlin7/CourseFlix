@@ -36,7 +36,7 @@ export function AdminOrdersPage() {
     <>
       <PageHeader title="الطلبات" description="كل طلبات الشراء على المنصة" />
 
-      <div className="actions section" style={{ flexWrap: 'wrap', gap: 8 }}>
+      <div className="actions section">
         {(['all', 'pending', 'paid', 'failed'] as const).map((option) => (
           <button
             key={option}

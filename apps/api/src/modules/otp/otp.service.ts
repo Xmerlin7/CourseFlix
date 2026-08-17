@@ -27,12 +27,20 @@ export class OtpService {
     private readonly mailService: MailService,
   ) {}
 
-  /** Issues a new code for the user, emails it, and returns the plaintext. */
+  /**
+   * Issues a new code for the user and emails it.
+   *
+   * The code is persisted first and mailed second, so a delivery failure
+   * (see MailService.sendOtp) never loses the code — it's already valid
+   * and verifiable, just not delivered. `delivered` tells the caller
+   * whether the email actually went out, so it can fall back to `devCode`
+   * outside production when it didn't.
+   */
   async issue(
     userId: string,
     email: string,
     purpose: OtpPurpose,
-  ): Promise<string> {
+  ): Promise<{ code: string; delivered: boolean }> {
     const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
     const codeHash = await argon2.hash(code);
 
@@ -45,8 +53,8 @@ export class OtpService {
       }),
     );
 
-    await this.mailService.sendOtp(email, code, purpose);
-    return code;
+    const delivered = await this.mailService.sendOtp(email, code, purpose);
+    return { code, delivered };
   }
 
   /** Throws unless `code` matches any of the user's unconsumed codes. */

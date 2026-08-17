@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent } from 'react'
+import '../../support/components/SupportChat.css'
 
 export interface DiscussionReplyComposerProps {
   value: string

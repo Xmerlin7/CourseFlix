@@ -23,10 +23,12 @@ export interface RegisterPayload {
 
 // Every OTP-issuing endpoint (`auth/otp/request`, `auth/register`,
 // `auth/password/request`) returns this shape. `devCode` is only present when
-// email delivery is NOT configured AND we're not in production — once a real
-// mail key is set, the code never leaves the server. `accountStatus` is set
-// only for the register flow so the client can tell "code sent" from "account
-// already active / not registered".
+// email delivery did not actually happen AND we're not in production — see
+// auth.service.ts's OtpResponse doc for the full rule. No UI here reads it;
+// the product always sends the user to check their real inbox, matching
+// production. `accountStatus` is set only for the register flow so the
+// client can tell "code sent" from "account already active / not
+// registered".
 export interface OtpResponse {
   message: string;
   email: string;

@@ -120,7 +120,7 @@ describe('DiscussionReplyRow', () => {
       <DiscussionReplyRow reply={{ ...baseReply, isUnread: true }} />,
     )
 
-    expect(container.querySelector('.discussion-reply-row')).toHaveClass('unread')
+    expect(container.querySelector('.chat-msg')).toHaveClass('is-unread')
     expect(container.querySelector('.unread-dot')).toBeInTheDocument()
   })
 

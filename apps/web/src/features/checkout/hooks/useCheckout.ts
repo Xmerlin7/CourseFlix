@@ -1,26 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { pushDataLayerEvent } from '../../../shared/analytics/dataLayer'
 import { uuid } from '../../../shared/lib/uuid'
 import {
-  confirmOrder,
   createOrder,
   getOrder,
+  getPaymobPaymentStatus,
   initiatePaymob,
 } from '../api/checkout.api'
-import type { Order, PaymentSimulation } from '../types/checkout.types'
+import type { Order } from '../types/checkout.types'
 
 interface UseCheckoutResult {
   order: Order | null
   isCreating: boolean
-  isConfirming: boolean
   isInitiatingPaymob: boolean
+  paymentUrl: string | null
   createError: ApiError | null
-  confirmError: ApiError | null
   paymobError: ApiError | null
-  pay: (simulate?: PaymentSimulation) => Promise<void>
   payWithPaymob: () => Promise<void>
-  retryCreate: () => void
 }
 
 // One idempotency key per checkout attempt (bumped by retryCreate) so a
@@ -33,26 +30,83 @@ function makeIdempotencyKey(courseId: string): string {
 export function useCheckout(
   courseId: string,
   existingOrderId?: string | null,
+  pollMs = 2500,
 ): UseCheckoutResult {
   const [order, setOrder] = useState<Order | null>(null)
   const [isCreating, setIsCreating] = useState(true)
-  const [isConfirming, setIsConfirming] = useState(false)
   const [isInitiatingPaymob, setIsInitiatingPaymob] = useState(false)
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
   const [createError, setCreateError] = useState<ApiError | null>(null)
-  const [confirmError, setConfirmError] = useState<ApiError | null>(null)
   const [paymobError, setPaymobError] = useState<ApiError | null>(null)
-  const [attempt, setAttempt] = useState(0)
-  // Dedupes the purchase event: `order` can re-render with the same paid
-  // order (e.g. a retried confirm returning the same authoritative state)
-  // without pushing a second purchase event for the same reference.
-  const purchaseEventSentFor = useRef<string | null>(null)
+
+  const openPaymobFor = useCallback(
+    async (target: Order): Promise<void> => {
+      setIsInitiatingPaymob(true)
+      setPaymobError(null)
+      try {
+        const { paymentUrl: url } = await initiatePaymob(target.orderReference)
+        pushDataLayerEvent('checkout_redirect', {
+          courseId,
+          orderReference: target.orderReference,
+        })
+        // Present the Paymob session as the acceptance iframe embedded in
+        // the checkout page. On completion Paymob redirects the browser
+        // back to the API's GET webhook, which fulfils the order and
+        // routes to the receipt page (success) or back to the checkout
+        // to retry (decline).
+        setPaymentUrl(url)
+      } catch (err) {
+        const apiError = err instanceof ApiError ? err : new ApiError('Unknown error', 0)
+        setPaymobError(apiError)
+        pushDataLayerEvent('checkout_error', {
+          courseId,
+          stage: 'paymob_init',
+          statusCode: apiError.status,
+        })
+      } finally {
+        setIsInitiatingPaymob(false)
+      }
+    },
+    [courseId],
+  )
+
+  const payWithPaymob = useCallback((): Promise<void> => {
+    if (!order) return Promise.resolve()
+    return openPaymobFor(order)
+  }, [order, openPaymobFor])
+
+  useEffect(() => {
+    if (!order || !paymentUrl) return
+    if (order.status === 'paid' || order.paymentStatus === 'failed') return
+
+    let cancelled = false
+
+    const timer = window.setInterval(() => {
+      // The API answers this by asking Paymob directly (transaction
+      // inquiry), so the local order settles even when the Paymob
+      // dashboard callbacks point at the deployed API instead of this
+      // developer machine.
+      getPaymobPaymentStatus(order.orderReference)
+        .then((current) => {
+          if (cancelled) return
+          if (current.status === 'paid' || current.paymentStatus === 'failed') {
+            setOrder(current)
+            setPaymentUrl(null)
+          }
+        })
+        .catch(() => {
+          // transient failure — keep polling until the order settles
+        })
+    }, pollMs)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [order, paymentUrl, pollMs])
 
   useEffect(() => {
     const controller = new AbortController()
-
-    setIsCreating(true)
-    setCreateError(null)
-    setOrder(null)
 
     // After a real Paymob success the browser lands here with the paid
     // order id (see the API's GET webhook redirect); fetch the receipt
@@ -62,6 +116,12 @@ export function useCheckout(
         .then((fetched) => {
           if (!controller.signal.aborted) {
             setOrder(fetched)
+            // Open the Paymob gateway right away for a fresh pending
+            // order; a declined order stays open for a manual retry and
+            // a paid one is a receipt, not a new payment.
+            if (fetched.status !== 'paid' && fetched.paymentStatus !== 'failed') {
+              void openPaymobFor(fetched)
+            }
           }
         })
         .catch((err) => {
@@ -86,6 +146,9 @@ export function useCheckout(
       .then((created) => {
         if (!controller.signal.aborted) {
           setOrder(created)
+          if (created.status !== 'paid' && created.paymentStatus !== 'failed') {
+            void openPaymobFor(created)
+          }
         }
       })
       .catch((err) => {
@@ -106,94 +169,15 @@ export function useCheckout(
       })
 
     return () => controller.abort()
-  }, [courseId, attempt, existingOrderId])
-
-  const pay = useCallback(
-    async (simulate: PaymentSimulation = 'success') => {
-      if (!order) return
-
-      setIsConfirming(true)
-      setConfirmError(null)
-      try {
-        const confirmed = await confirmOrder(order.orderReference, { simulate })
-        setOrder(confirmed)
-
-        if (
-          confirmed.status === 'paid' &&
-          purchaseEventSentFor.current !== confirmed.orderReference
-        ) {
-          purchaseEventSentFor.current = confirmed.orderReference
-          pushDataLayerEvent('purchase', {
-            orderReference: confirmed.orderReference,
-            courseId,
-            amountMinor: confirmed.amountMinor,
-            currency: confirmed.currency,
-          })
-        } else if (confirmed.status === 'failed') {
-          pushDataLayerEvent('checkout_error', {
-            courseId,
-            stage: 'confirm',
-            reason: 'declined',
-          })
-        }
-      } catch (err) {
-        const apiError = err instanceof ApiError ? err : new ApiError('Unknown error', 0)
-        setConfirmError(apiError)
-        pushDataLayerEvent('checkout_error', {
-          courseId,
-          stage: 'confirm',
-          statusCode: apiError.status,
-        })
-      } finally {
-        setIsConfirming(false)
-      }
-    },
-    [order],
-  )
-
-  const payWithPaymob = useCallback(async () => {
-    if (!order) return
-
-    setIsInitiatingPaymob(true)
-    setPaymobError(null)
-    try {
-      const { paymentUrl } = await initiatePaymob(order.orderReference)
-      pushDataLayerEvent('checkout_redirect', {
-        courseId,
-        orderReference: order.orderReference,
-      })
-      // Full-page navigation to Paymob's hosted iframe page. On completion
-      // Paymob redirects the browser back to the API's GET webhook, which
-      // routes to the checkout receipt page (success) or /student/courses
-      // (decline).
-      window.location.href = paymentUrl
-    } catch (err) {
-      const apiError = err instanceof ApiError ? err : new ApiError('Unknown error', 0)
-      setPaymobError(apiError)
-      pushDataLayerEvent('checkout_error', {
-        courseId,
-        stage: 'paymob_init',
-        statusCode: apiError.status,
-      })
-    } finally {
-      setIsInitiatingPaymob(false)
-    }
-  }, [order, courseId])
-
-  const retryCreate = useCallback(() => {
-    setAttempt((value) => value + 1)
-  }, [])
+  }, [courseId, existingOrderId, openPaymobFor])
 
   return {
     order,
     isCreating,
-    isConfirming,
     isInitiatingPaymob,
+    paymentUrl,
     createError,
-    confirmError,
     paymobError,
-    pay,
     payWithPaymob,
-    retryCreate,
   }
 }

@@ -242,7 +242,7 @@ export class DiscussionsService {
         isAccepted: Boolean(r.isAccepted),
         createdAt: r.createdAt.toISOString(),
       })),
-      canAccept: thread.authorId === user.id,
+      canAccept: isTeacherOfCourse,
       canPin: isTeacherOfCourse,
     };
   }
@@ -428,11 +428,11 @@ export class DiscussionsService {
     user: AuthenticatedUser,
   ): Promise<DiscussionThreadDetailResponse> {
     const thread = await this.loadThreadOrThrow(threadId);
-    await this.assertCanAccessCourse(user, thread.courseId);
+    const course = await this.assertCanAccessCourse(user, thread.courseId);
 
-    if (thread.authorId !== user.id) {
+    if (!this.isEffectiveTeacher(user, course)) {
       throw new ForbiddenException(
-        'صاحب السؤال فقط يقدر يحدد الإجابة المقبولة.',
+        'المدرس أو المساعد فقط يقدر يحدد الإجابة المقبولة.',
       );
     }
 
@@ -471,11 +471,11 @@ export class DiscussionsService {
     replyId?: string,
   ): Promise<DiscussionThreadDetailResponse> {
     const thread = await this.loadThreadOrThrow(threadId);
-    await this.assertCanAccessCourse(user, thread.courseId);
+    const course = await this.assertCanAccessCourse(user, thread.courseId);
 
-    if (thread.authorId !== user.id) {
+    if (!this.isEffectiveTeacher(user, course)) {
       throw new ForbiddenException(
-        'صاحب السؤال فقط يقدر يلغي الإجابة المقبولة.',
+        'المدرس أو المساعد فقط يقدر يلغي الإجابة المقبولة.',
       );
     }
 

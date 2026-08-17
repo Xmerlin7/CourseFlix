@@ -19,9 +19,14 @@ import { DOCUMENT_BLUEPRINTS } from './seeds/document.seed';
  * drifted values, so an exact-count check there would fail for reasons
  * unrelated to the actual documented risk.
  *
- * `orders` and `agent_logs` get the opposite check: `reset` clears them
- * outright rather than upserting (see `transactional-reset.seed.ts`), so a
- * non-zero count here means rehearsal drift, not a missing fixture.
+ * `orders` and `agent_logs` get a variant of the zero check: `reset`
+ * clears them outright rather than upserting (see
+ * `transactional-reset.seed.ts`), then `order.seed.ts`/`agent-log.seed.ts`
+ * immediately recreate their own small, marker-tagged fixture rows
+ * (`idempotency_key`/`correlation_id` prefixed `seed-`). So the invariant
+ * this checks is "zero *non-fixture* rows", not "zero rows" — a non-seed
+ * row surviving a reset is rehearsal drift (a real checkout click-through,
+ * say); the seed's own fixture rows are expected and fine.
  */
 async function run(): Promise<void> {
   AppDataSource.setOptions({ logging: [] });
@@ -56,13 +61,39 @@ async function run(): Promise<void> {
         `SELECT count(*)::text AS count FROM notifications WHERE deleted_at IS NULL`,
         'notification',
       )),
-      ...(await checkZero(
-        `SELECT count(*)::text AS count FROM orders`,
-        'order',
+      ...(await checkNonZero(
+        `SELECT count(*)::text AS count FROM quizzes WHERE deleted_at IS NULL`,
+        'quiz',
+      )),
+      ...(await checkNonZero(
+        `SELECT count(*)::text AS count FROM document_chunks WHERE is_active = true`,
+        'document chunk',
+      )),
+      ...(await checkNonZero(
+        `SELECT count(*)::text AS count FROM posts WHERE deleted_at IS NULL`,
+        'announcement post',
+      )),
+      ...(await checkNonZero(
+        `SELECT count(*)::text AS count FROM discussion_threads WHERE deleted_at IS NULL`,
+        'discussion thread',
+      )),
+      ...(await checkNonZero(
+        `SELECT count(*)::text AS count FROM support_tickets WHERE deleted_at IS NULL`,
+        'support ticket',
+      )),
+      ...(await checkNonZero(
+        `SELECT count(*)::text AS count FROM chat_conversations WHERE deleted_at IS NULL`,
+        'tutor conversation',
       )),
       ...(await checkZero(
-        `SELECT count(*)::text AS count FROM agent_logs`,
-        'agent log',
+        `SELECT count(*)::text AS count FROM orders
+          WHERE idempotency_key IS NULL OR idempotency_key NOT LIKE 'seed-order-%'`,
+        'non-fixture order',
+      )),
+      ...(await checkZero(
+        `SELECT count(*)::text AS count FROM agent_logs
+          WHERE correlation_id IS NULL OR correlation_id NOT LIKE 'seed-agent-log-%'`,
+        'non-fixture agent log',
       )),
     ];
   } finally {

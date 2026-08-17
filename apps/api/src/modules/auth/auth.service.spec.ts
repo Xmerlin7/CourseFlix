@@ -1,7 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as argon2 from 'argon2';
-import { MailService } from '../mail/mail.service';
 import { OtpService } from '../otp/otp.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
@@ -16,7 +15,6 @@ describe('AuthService', () => {
     findActiveSession: jest.Mock;
   };
   let otpService: { issue: jest.Mock; verify: jest.Mock };
-  let mailService: { isConfigured: jest.Mock };
 
   const activeUser = {
     id: 'user-1',
@@ -36,7 +34,6 @@ describe('AuthService', () => {
       findActiveSession: jest.fn(),
     };
     otpService = { issue: jest.fn(), verify: jest.fn() };
-    mailService = { isConfigured: jest.fn().mockReturnValue(false) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -44,7 +41,6 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: usersService },
         { provide: SessionsService, useValue: sessionsService },
         { provide: OtpService, useValue: otpService },
-        { provide: MailService, useValue: mailService },
       ],
     }).compile();
 
@@ -124,7 +120,7 @@ describe('AuthService', () => {
       avatarUrl: null,
       managedByTeacherId: null,
     });
-    otpService.issue.mockResolvedValue('123456');
+    otpService.issue.mockResolvedValue({ code: '123456', delivered: false });
 
     const result = await authService.register({
       fullName: 'New User',
@@ -135,6 +131,7 @@ describe('AuthService', () => {
 
     expect(result.accountStatus).toBe('pending');
     expect(result.email).toBe('new@test.com');
+    expect(result.devCode).toBe('123456');
     expect(usersService.createUser).toHaveBeenCalled();
     expect(otpService.issue).toHaveBeenCalledWith(
       'new-user',

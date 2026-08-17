@@ -7,6 +7,7 @@ import { Sidebar } from '../../shared/components/Sidebar'
 import { FloatingAssistant } from '../../shared/components/FloatingAssistant'
 import { Topbar } from '../../shared/components/Topbar'
 import { useSidebarCollapsed } from '../../shared/hooks/useSidebarCollapsed'
+import { useSidebarPosition } from '../../shared/hooks/useSidebarPosition'
 import { useStudentSidebarUnread } from '../../shared/hooks/useStudentSidebarUnread'
 import { usePendingActionCount } from '../../features/assistant-actions/hooks/usePendingActionCount'
 import { useTeacherQuota } from '../../features/teacher-billing/hooks/useTeacherQuota'
@@ -17,6 +18,7 @@ export function TeacherLayout({ children }: PropsWithChildren) {
   const location = useLocation()
   const navigate = useNavigate()
   const { isCollapsed: isRail, setCollapsed: setIsRail } = useSidebarCollapsed()
+  const { position: sidebarPosition } = useSidebarPosition()
   // Phone nav drawer. Separate from `isRail` (the desktop collapse) —
   // they're different controls on different breakpoints, and sharing one
   // flag meant collapsing on desktop also armed the phone drawer.
@@ -37,7 +39,7 @@ export function TeacherLayout({ children }: PropsWithChildren) {
   const isAssistant = user?.role === 'assistant'
 
   return (
-    <div className="app">
+    <div className="app" data-sidebar-pos={sidebarPosition}>
       <Sidebar
         role={isAssistant ? 'assistant' : 'teacher'}
         userName={user?.fullName ?? ''}

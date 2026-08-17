@@ -1,4 +1,5 @@
 import '../../../shared/components/Skeleton.css'
+import '../../support/components/SupportChat.css'
 
 export function DiscussionDetailSkeleton() {
   return (

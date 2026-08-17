@@ -23,6 +23,7 @@
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
+    "db:wipe": "ts-node -r tsconfig-paths/register src/database/wipe.ts",
     "reset": "ts-node -r tsconfig-paths/register src/database/reset.ts",
     "reset:check": "ts-node -r tsconfig-paths/register src/database/reset-check.ts",
     "backfill:video-transcripts": "ts-node -r tsconfig-paths/register src/database/backfill-video-transcripts.ts"
@@ -42,6 +43,7 @@
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
+    "nodemailer": "^6.9.16",
     "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
@@ -58,6 +60,7 @@
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.2.0",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "^6.4.17",
     "@types/supertest": "^7.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",

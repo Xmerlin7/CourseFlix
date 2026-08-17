@@ -1,0 +1,1185 @@
+/*
+ * ============================================================================
+ * CourseFlix — Auth experience (/login, /register)
+ * ============================================================================
+ *
+ * A self-contained design layer for the two screens every user meets before
+ * they meet the product. It is namespaced `cfa-*` (CourseFlix Auth) so it
+ * never collides with the global `.btn`/`.tf`/`.stepper` chrome in
+ * index.css: auth is a signature surface with its own field anatomy (icon
+ * slots, strength meter, segmented OTP), and pinning it to the generic
+ * form primitives meant every future tweak to those primitives quietly
+ * redesigned the sign-in page.
+ *
+ * Two rules this file holds itself to:
+ *
+ *   1. Everything is token-driven. The previous auth shell hard-coded a
+ *      light violet palette and `color-scheme: light`, which meant the two
+ *      screens ignored both the user's dark-mode preference and the accent
+ *      colour they picked in Settings. Every colour below is derived from
+ *      --primary / --surface / --on-surface, so auth follows the theme the
+ *      way the rest of the app does.
+ *
+ *   2. Logical properties only (inset-inline-*, padding-inline, margin-
+ *      inline). The document is dir="rtl" and the layout must mirror
+ *      cleanly without a single RTL-specific override.
+ * ============================================================================
+ */
+
+/* ---------------------------------------------------------------------------
+ * 1. Shell
+ * ------------------------------------------------------------------------ */
+
+.cfa-shell {
+  /* Local scale so the whole surface can be tuned from one place, and so
+     the app-wide radius/density settings still reach it. */
+  --cfa-r-sm: calc(10px * var(--radius-scale));
+  --cfa-r-md: calc(14px * var(--radius-scale));
+  --cfa-r-lg: calc(22px * var(--radius-scale));
+  --cfa-r-pill: calc(999px * var(--radius-scale));
+
+  /* The showcase panel's ground. Mixing the accent toward a near-black in
+     oklab (not srgb) keeps the hue stable as it darkens instead of drifting
+     grey, and it resolves to a deep, rich accent in BOTH themes: light mode
+     starts from a mid-tone --primary, dark mode from a pastel one, and both
+     land somewhere legible with white text on top. */
+  --cfa-ink: color-mix(in oklab, var(--primary) 52%, #0A0711);
+  --cfa-ink-deep: color-mix(in oklab, var(--primary) 26%, #07050D);
+  --cfa-ink-lift: color-mix(in oklab, var(--primary) 72%, #120C22);
+  --cfa-on-ink: #FFFFFF;
+  --cfa-on-ink-dim: color-mix(in oklab, #FFFFFF 68%, transparent);
+
+  --cfa-line: color-mix(in oklab, var(--on-surface) 14%, transparent);
+  --cfa-line-strong: color-mix(in oklab, var(--on-surface) 24%, transparent);
+  --cfa-field: color-mix(in oklab, var(--on-surface) 4%, var(--surface));
+  --cfa-ring: color-mix(in oklab, var(--primary) 22%, transparent);
+
+  /*
+   * The auth shell owns its scrolling, because the page around it cannot:
+   * index.css pins `body.shell { height: 100vh; overflow: hidden }` so the
+   * signed-in app can scroll its sidebar and main pane independently. That
+   * makes the document itself unscrollable, so anything an auth screen
+   * renders past the viewport is simply clipped — the register wizard's
+   * last step, the consent rows, the footer. Hence: the shell is exactly
+   * one viewport tall and each column scrolls inside it.
+   *
+   * dvh rather than vh: on mobile Safari/Chrome, 100vh is the viewport
+   * with the URL bar *hidden*, so while the bar is showing, the bottom of
+   * a 100vh box sits underneath it — unreachable, given the body cannot
+   * scroll either. dvh tracks what is actually on screen.
+   */
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  background: var(--surface);
+  color: var(--on-surface);
+  letter-spacing: 0;
+  isolation: isolate;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2. Form side
+ * ------------------------------------------------------------------------ */
+
+.cfa-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /*
+   * NOT `justify-content: center`.
+   *
+   * When the column is taller than the viewport — the register wizard on a
+   * short laptop window, or any step with an error message on a phone —
+   * centred flex content overflows in *both* directions, and the overflow
+   * past the start edge cannot be scrolled to. That is the "cut off at the
+   * bottom" symptom. An `auto` block margin on the child centres it
+   * exactly the same way when there is free space, but resolves to 0 the
+   * moment there is not, so tall content simply starts at the top and
+   * scrolls normally.
+   */
+  justify-content: flex-start;
+  padding: clamp(24px, 3.5vw, 52px) clamp(20px, 4vw, 60px);
+  /* This column is the scroller — on one-column layouts it is the only
+     one, so it carries the whole screen. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.cfa-form-col {
+  width: 100%;
+  max-width: 432px;
+  margin-block: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The wordmark is the page's brand anchor: centred over the form, and the
+   only mark on the screen — the showcase panel deliberately leads with its
+   headline instead of repeating it. */
+.cfa-wordmark {
+  font-family: "Anton", var(--sans);
+  font-size: clamp(34px, 4.4vw, 46px);
+  letter-spacing: 2.5px;
+  line-height: 1;
+  text-align: center;
+  color: var(--logo);
+  margin-bottom: clamp(24px, 3.4vw, 36px);
+}
+
+.cfa-head {
+  margin-bottom: 26px;
+}
+
+.cfa-title {
+  font-size: clamp(25px, 2.8vw, 31px);
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+  margin: 0 0 8px;
+  color: var(--on-surface);
+}
+
+.cfa-subtitle {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+.cfa-subtitle strong {
+  color: var(--on-surface);
+  font-weight: 700;
+}
+
+/* Footer line — deliberately quiet, pinned under the form rather than the
+   viewport so it never fights the content on a short screen. */
+.cfa-foot {
+  margin-top: 34px;
+  padding-top: 18px;
+  border-top: 1px solid var(--cfa-line);
+  font-size: 12px;
+  color: color-mix(in oklab, var(--on-surface-variant) 78%, transparent);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. Fields
+ * ------------------------------------------------------------------------ */
+
+.cfa-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cfa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.cfa-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* The input and its icons share one relatively-positioned box so the icons
+   can be absolutely placed inside the field's padding gutters. */
+.cfa-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cfa-input {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--on-surface);
+  background: var(--cfa-field);
+  border: 1.5px solid var(--cfa-line);
+  border-radius: var(--cfa-r-md);
+  padding: calc(13px * var(--space-scale)) calc(15px * var(--space-scale));
+  /* Leading gutter for the field icon. */
+  padding-inline-start: 46px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+/* Fields that carry a trailing control (password eye) need the matching
+   gutter on the other side. */
+.cfa-input.has-action {
+  padding-inline-end: 46px;
+}
+
+.cfa-input::placeholder {
+  color: color-mix(in oklab, var(--on-surface-variant) 58%, transparent);
+}
+
+.cfa-input:hover:not(:focus) {
+  border-color: var(--cfa-line-strong);
+}
+
+.cfa-input:focus {
+  outline: none;
+  background: var(--surface);
+  border-color: var(--primary);
+  /* Soft halo rather than a hard outline — reads as depth, still gives the
+     2px+ visible focus indicator keyboard users need. */
+  box-shadow: 0 0 0 4px var(--cfa-ring);
+}
+
+.cfa-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cfa-input-icon {
+  position: absolute;
+  inset-inline-start: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  color: color-mix(in oklab, var(--on-surface-variant) 74%, transparent);
+  pointer-events: none;
+  transition: color 0.16s ease;
+}
+
+.cfa-input:focus ~ .cfa-input-icon {
+  color: var(--primary);
+}
+
+/* Trailing action (show/hide password). Sits inside the field, keeps a
+   36px hit area, and never overlaps the text because of `has-action`. */
+.cfa-input-action {
+  position: absolute;
+  inset-inline-end: 6px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--cfa-r-pill);
+  background: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cfa-input-action:hover {
+  background: var(--hover);
+  color: var(--on-surface);
+}
+
+.cfa-input-action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* Invalid state — the border does the heavy lifting, the halo tints to
+   match so focus still reads as focus while the error is live. */
+.cfa-field.invalid .cfa-input {
+  border-color: var(--error);
+}
+
+.cfa-field.invalid .cfa-input:focus {
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--error) 20%, transparent);
+}
+
+.cfa-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--error);
+  animation: cfa-slip 0.2s ease both;
+}
+
+.cfa-error .ms {
+  font-size: 15px;
+  flex: none;
+}
+
+.cfa-hint {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+/* Form-level alerts (a failed submit, an OAuth error) — distinct from the
+   per-field errors above so a page-wide problem is not mistaken for a
+   single bad input. */
+.cfa-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border-radius: var(--cfa-r-md);
+  border: 1px solid color-mix(in oklab, var(--error) 32%, transparent);
+  background: color-mix(in oklab, var(--error) 10%, var(--surface));
+  color: var(--danger-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  animation: cfa-slip 0.22s ease both;
+}
+
+.cfa-alert .ms {
+  font-size: 18px;
+  flex: none;
+  margin-top: 1px;
+}
+
+/* An alert that answers something the user just did sits *below* the thing
+   they did, so the default "introduce the form" margin has to flip. */
+.cfa-pane + .cfa-alert,
+form + .cfa-alert {
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
+.cfa-alert.info {
+  border-color: color-mix(in oklab, var(--primary) 32%, transparent);
+  background: color-mix(in oklab, var(--primary) 9%, var(--surface));
+  color: var(--on-surface);
+}
+
+.cfa-alert.success {
+  border-color: color-mix(in oklab, var(--on-success-container) 28%, transparent);
+  background: var(--success-container);
+  color: var(--on-success-container);
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. Password strength
+ * Shown on register only: four segments that fill as the password clears
+ * length/variety checks, so the 8-character minimum stops being a surprise
+ * the API delivers after submit.
+ * ------------------------------------------------------------------------ */
+
+.cfa-strength {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+}
+
+.cfa-strength-track {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+}
+
+.cfa-strength-track i {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--cfa-r-pill);
+  background: var(--cfa-line);
+  transition: background 0.28s ease;
+}
+
+.cfa-strength[data-score="1"] .cfa-strength-track i:nth-child(-n + 1),
+.cfa-strength[data-score="2"] .cfa-strength-track i:nth-child(-n + 2),
+.cfa-strength[data-score="3"] .cfa-strength-track i:nth-child(-n + 3),
+.cfa-strength[data-score="4"] .cfa-strength-track i:nth-child(-n + 4) {
+  background: var(--cfa-strength-color);
+}
+
+.cfa-strength[data-score="1"] { --cfa-strength-color: var(--error); }
+.cfa-strength[data-score="2"] { --cfa-strength-color: #D97706; }
+.cfa-strength[data-score="3"] { --cfa-strength-color: color-mix(in oklab, var(--primary) 80%, #10B981); }
+.cfa-strength[data-score="4"] { --cfa-strength-color: #059669; }
+
+.cfa-strength-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  flex: none;
+  min-width: 52px;
+  text-align: start;
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. Buttons
+ * ------------------------------------------------------------------------ */
+
+.cfa-btn {
+  --cfa-btn-bg: var(--primary);
+  --cfa-btn-fg: var(--on-primary);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: calc(14px * var(--space-scale)) calc(22px * var(--space-scale));
+  border: 1.5px solid transparent;
+  border-radius: var(--cfa-r-md);
+  background: var(--cfa-btn-bg);
+  color: var(--cfa-btn-fg);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.18s ease, filter 0.16s ease,
+    background 0.16s ease, border-color 0.16s ease;
+}
+
+.cfa-btn .ms {
+  font-size: 19px;
+}
+
+.cfa-btn:hover:not(:disabled) {
+  filter: brightness(1.07);
+  box-shadow: 0 6px 18px color-mix(in oklab, var(--primary) 32%, transparent);
+  transform: translateY(-1px);
+}
+
+.cfa-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.cfa-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--cfa-ring);
+}
+
+.cfa-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.cfa-btn.ghost {
+  --cfa-btn-bg: transparent;
+  --cfa-btn-fg: var(--on-surface);
+  border-color: var(--cfa-line-strong);
+}
+
+.cfa-btn.ghost:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--on-surface-variant);
+  box-shadow: none;
+  filter: none;
+}
+
+/* Text-only affordance: "forgot password", "use another email". Inline
+   sized so it does not read as a second primary action. */
+.cfa-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 2px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  border-radius: var(--cfa-r-sm);
+  transition: color 0.15s ease;
+}
+
+.cfa-link-btn:hover {
+  color: color-mix(in oklab, var(--primary) 78%, var(--on-surface));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cfa-link-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.cfa-link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* Spinner inside a submitting button. */
+.cfa-spinner {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklab, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: cfa-spin 0.62s linear infinite;
+}
+
+.cfa-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cfa-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.cfa-actions .cfa-btn {
+  flex: 1;
+}
+
+/* The back button in the register wizard should not compete with "next". */
+.cfa-actions .cfa-btn.ghost {
+  flex: 0 1 38%;
+}
+
+.cfa-submit {
+  margin-top: 22px;
+}
+
+/* The row already carries the top gap; the submit inside it must not add a
+   second one. */
+.cfa-actions .cfa-submit {
+  margin-top: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * 6. Social sign-in
+ * ------------------------------------------------------------------------ */
+
+.cfa-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 24px 0 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.cfa-divider::before,
+.cfa-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--cfa-line);
+}
+
+.cfa-social {
+  display: grid;
+  gap: 10px;
+}
+
+.cfa-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: calc(12px * var(--space-scale)) 16px;
+  border: 1.5px solid var(--cfa-line-strong);
+  border-radius: var(--cfa-r-md);
+  background: var(--surface);
+  color: var(--on-surface);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.14s ease;
+}
+
+.cfa-social-btn:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--on-surface-variant);
+  transform: translateY(-1px);
+}
+
+.cfa-social-btn:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--cfa-ring);
+}
+
+.cfa-social-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cfa-social-btn svg {
+  flex: none;
+}
+
+.cfa-soon {
+  margin-inline-start: auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--cfa-r-pill);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+/* Bottom "new here? create an account" line. */
+.cfa-switch {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--on-surface-variant);
+}
+
+.cfa-switch a {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+  margin-inline-start: 4px;
+}
+
+.cfa-switch a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 7. Register wizard
+ * ------------------------------------------------------------------------ */
+
+.cfa-steps {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 26px;
+}
+
+.cfa-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  width: 76px;
+}
+
+.cfa-step-dot {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--cfa-line-strong);
+  background: var(--surface);
+  color: var(--on-surface-variant);
+  font-size: 13px;
+  font-weight: 800;
+  transition: background 0.24s ease, border-color 0.24s ease, color 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.cfa-step-dot .ms {
+  font-size: 17px;
+}
+
+.cfa-step.current .cfa-step-dot {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 0 0 4px var(--cfa-ring);
+}
+
+.cfa-step.done .cfa-step-dot {
+  background: var(--primary-container);
+  border-color: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.cfa-step-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--on-surface-variant);
+}
+
+.cfa-step.current .cfa-step-label {
+  color: var(--on-surface);
+}
+
+/* The connector is a sibling of the steps, aligned to the dot's vertical
+   centre (30px dot ÷ 2 = 15px) rather than the flex row's, so the label
+   text underneath cannot drag it off-centre. */
+.cfa-step-line {
+  flex: 1;
+  height: 2px;
+  margin-top: 14px;
+  background: var(--cfa-line-strong);
+  transition: background 0.28s ease;
+}
+
+.cfa-step-line.done {
+  background: var(--primary);
+}
+
+.cfa-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: cfa-slip 0.24s ease both;
+}
+
+/* Terms/privacy acceptance rows. */
+.cfa-consent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cfa-consent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cfa-check {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1.5px solid var(--cfa-line-strong);
+  border-radius: var(--cfa-r-md);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.cfa-check:hover {
+  border-color: var(--on-surface-variant);
+}
+
+.cfa-check input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.cfa-check:has(input:focus-visible) {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--cfa-ring);
+}
+
+.cfa-check.checked {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 8%, var(--surface));
+}
+
+.cfa-read {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--cfa-r-md);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.cfa-read:hover {
+  background: var(--hover);
+}
+
+.cfa-read .ms {
+  font-size: 16px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 8. OTP entry
+ * A single input styled as a segmented code field: one value, one caret,
+ * one paste target — but visually spaced like the six boxes people expect
+ * from a verification screen. Six separate inputs look the same and cost a
+ * pile of focus-shuffling logic that breaks autofill and paste.
+ * ------------------------------------------------------------------------ */
+
+.cfa-otp {
+  width: 100%;
+  font: inherit;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 14px;
+  text-indent: 14px;
+  color: var(--on-surface);
+  background: var(--cfa-field);
+  border: 1.5px solid var(--cfa-line);
+  border-radius: var(--cfa-r-md);
+  padding: 15px 12px;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.cfa-otp::placeholder {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-indent: 0;
+  color: color-mix(in oklab, var(--on-surface-variant) 52%, transparent);
+}
+
+.cfa-otp:focus {
+  outline: none;
+  background: var(--surface);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--cfa-ring);
+}
+
+.cfa-field.invalid .cfa-otp {
+  border-color: var(--error);
+}
+
+/* Where the verification code was sent — reassures the user they typed the
+   right address before they go hunting in their inbox. */
+.cfa-sent-to {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border-radius: var(--cfa-r-md);
+  border: 1px solid var(--cfa-line);
+  background: var(--cfa-field);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--on-surface-variant);
+}
+
+.cfa-sent-to .ms {
+  flex: none;
+  font-size: 20px;
+  color: var(--primary);
+}
+
+.cfa-sent-to strong {
+  color: var(--on-surface);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------------
+ * 9. Showcase side
+ *
+ * A single marbled artwork with type set over it — no cards, no panels, no
+ * mock UI. The previous version put a glass card in the middle of this
+ * column, which meant the eye had to parse a miniature interface before it
+ * reached a single word; the panel is a poster, and a poster is art plus a
+ * sentence.
+ * ------------------------------------------------------------------------ */
+
+.cfa-aside {
+  /* The artwork's palette. Every stop is mixed from --primary so the piece
+     follows the accent the user picked, with two fixed hues blended in to
+     give a real pour its colour range — a marble in a single hue reads as
+     a gradient, not as paint. */
+  --cfa-art-base: color-mix(in oklab, var(--primary) 62%, #100A22);
+  --cfa-art-deep: color-mix(in oklab, var(--primary) 26%, #070511);
+  --cfa-art-light: color-mix(in oklab, var(--primary) 34%, #FFFFFF);
+  --cfa-art-cool: color-mix(in oklab, var(--primary) 58%, #38BDF8);
+  --cfa-art-warm: color-mix(in oklab, var(--primary) 54%, #F472B6);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(34px, 4vw, 62px);
+  background: var(--cfa-art-deep);
+  color: #FFFFFF;
+  overflow: hidden;
+}
+
+.cfa-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+/*
+ * Legibility veil. The artwork is deliberately high-contrast, so the type
+ * needs a floor under it rather than a text-shadow — a shadow on a 30px
+ * Arabic heading muddies the letterforms, a gradient behind it does not.
+ * Weighted to the block-end because that is where the copy sits.
+ */
+.cfa-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(6, 4, 14, 0.88) 0%,
+    rgba(6, 4, 14, 0.62) 34%,
+    rgba(6, 4, 14, 0.18) 62%,
+    transparent 88%
+  );
+}
+
+.cfa-aside-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 30ch;
+}
+
+.cfa-aside-title {
+  font-size: clamp(30px, 3.4vw, 44px);
+  font-weight: 800;
+  line-height: 1.32;
+  letter-spacing: -0.4px;
+  margin: 0 0 14px;
+  color: #FFFFFF;
+}
+
+.cfa-aside-text {
+  font-size: 15px;
+  line-height: 1.85;
+  margin: 0;
+  color: color-mix(in oklab, #FFFFFF 76%, transparent);
+}
+
+/* Quiet rule between the pitch and the proof points. */
+.cfa-points {
+  display: grid;
+  gap: 14px;
+  margin: 26px 0 0;
+  padding: 22px 0 0;
+  border-top: 1px solid color-mix(in oklab, #FFFFFF 18%, transparent);
+  list-style: none;
+}
+
+.cfa-points li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: color-mix(in oklab, #FFFFFF 88%, transparent);
+}
+
+.cfa-points .ms {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 18px;
+  color: #FFFFFF;
+  background: color-mix(in oklab, #FFFFFF 14%, transparent);
+  border: 1px solid color-mix(in oklab, #FFFFFF 22%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ---------------------------------------------------------------------------
+ * 10. Motion
+ * ------------------------------------------------------------------------ */
+
+@keyframes cfa-slip {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cfa-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Staggered entrance for the form column. Applied on the wrapper's direct
+   children so every screen (login, register, OTP, reset) gets it without
+   each one opting in. */
+.cfa-enter > * {
+  animation: cfa-slip 0.42s ease both;
+}
+
+.cfa-enter > *:nth-child(1) { animation-delay: 0.02s; }
+.cfa-enter > *:nth-child(2) { animation-delay: 0.07s; }
+.cfa-enter > *:nth-child(3) { animation-delay: 0.12s; }
+.cfa-enter > *:nth-child(4) { animation-delay: 0.17s; }
+.cfa-enter > *:nth-child(5) { animation-delay: 0.22s; }
+
+/* ---------------------------------------------------------------------------
+ * 11. Responsive
+ * ------------------------------------------------------------------------ */
+
+/* --- Small desktop -------------------------------------------------------
+   The form column has a hard 432px cap, so as the window narrows the
+   showcase is what should give up room, not the task. */
+@media (max-width: 1240px) {
+  .cfa-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.86fr);
+  }
+
+  .cfa-aside-title {
+    font-size: clamp(21px, 2.2vw, 26px);
+  }
+}
+
+/* --- Landscape tablet ----------------------------------------------------
+   Still wide enough for the split, but not for everything in the panel.
+   The proof-points list is the most expendable thing there — the headline
+   over the artwork carries the message on its own. */
+@media (max-width: 1080px) {
+  .cfa-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.78fr);
+  }
+
+  .cfa-points {
+    display: none;
+  }
+
+  .cfa-aside-text {
+    font-size: 13.5px;
+  }
+}
+
+/* --- Portrait tablet and below ------------------------------------------
+   Below this the split stops paying for itself: the showcase column gets
+   too narrow for the artwork's type to breathe. The form takes the full
+   viewport and the showcase is dropped outright. */
+@media (max-width: 900px) {
+  .cfa-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cfa-aside {
+    display: none;
+  }
+
+  .cfa-main {
+    padding: clamp(28px, 5vw, 44px) 24px clamp(32px, 5vw, 48px);
+  }
+}
+
+/* --- Phone --------------------------------------------------------------- */
+@media (max-width: 560px) {
+  .cfa-main {
+    padding: 24px 16px 32px;
+  }
+
+  .cfa-wordmark {
+    font-size: 32px;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  .cfa-title {
+    font-size: 23px;
+  }
+
+  .cfa-step {
+    width: 62px;
+  }
+
+  .cfa-step-label {
+    font-size: 10px;
+  }
+
+  .cfa-otp {
+    font-size: 22px;
+    letter-spacing: 10px;
+    text-indent: 10px;
+  }
+
+  /* Stacking keeps the "read" link from squeezing the checkbox label to
+     two characters a line on narrow phones. */
+  .cfa-consent-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .cfa-read {
+    align-self: flex-start;
+  }
+
+  .cfa-foot {
+    margin-top: 28px;
+  }
+}
+
+@media (max-width: 380px) {
+  .cfa-main {
+    padding: 20px 12px 26px;
+  }
+
+  .cfa-wordmark {
+    font-size: 27px;
+    letter-spacing: 1.5px;
+  }
+
+  /* Two full-width buttons beat two cramped ones; reversed so the primary
+     action stays closest to the thumb. */
+  .cfa-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cfa-actions .cfa-btn.ghost {
+    flex: 1;
+  }
+
+  .cfa-step {
+    width: 54px;
+  }
+
+  .cfa-otp {
+    font-size: 19px;
+    letter-spacing: 7px;
+    text-indent: 7px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 12. Reduced motion
+ * Honour the OS setting as well as the in-app toggle (index.css handles
+ * the latter via [data-reduce-motion]). Ambient drift is the first thing
+ * to go — it is decoration with no informational value.
+ * ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .cfa-enter > *,
+  .cfa-pane,
+  .cfa-error,
+  .cfa-alert {
+    animation: none;
+  }
+
+  .cfa-btn:hover:not(:disabled),
+  .cfa-social-btn:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .cfa-spinner {
+    animation-duration: 1.4s;
+  }
+}

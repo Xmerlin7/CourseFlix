@@ -11,9 +11,9 @@
 
 @keyframes announcement-focus-ring {
   0% {
-    border-color: rgba(103, 58, 183, 0.7);
-    box-shadow: 0 0 0 4px rgba(103, 58, 183, 0.18);
-    background: rgba(103, 58, 183, 0.06);
+    border-color: color-mix(in srgb, var(--primary) 70%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
   }
   100% {
     border-color: var(--outline-variant);

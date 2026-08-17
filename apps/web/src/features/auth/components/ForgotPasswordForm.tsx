@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
+import { AuthField, AuthPasswordField, validatePasswordPolicy } from './AuthField'
+import { AuthAlert, AuthSubmit } from './AuthUi'
 import { requestPasswordReset, resetPassword } from '../api/auth.api'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface ResetStep {
   email: string
-  devCode?: string
 }
 
 interface ForgotPasswordFormProps {
@@ -38,7 +39,7 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
     setIsSubmitting(true)
     try {
       const response = await requestPasswordReset(trimmedEmail)
-      setResetStep({ email: response.email, devCode: response.devCode })
+      setResetStep({ email: response.email })
     } catch (caughtError) {
       setError(resolveError(caughtError))
     } finally {
@@ -55,8 +56,9 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
       setError('الرمز لازم يكون ٦ أرقام')
       return
     }
-    if (newPassword.length < 8) {
-      setError('كلمة المرور الجديدة لازم تكون ٨ أحرف على الأقل')
+    const passwordError = validatePasswordPolicy(newPassword)
+    if (passwordError) {
+      setError(passwordError)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -79,10 +81,13 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
   if (isDone) {
     return (
       <>
-        <p className="subtitle" style={{ marginBottom: '1rem' }}>
+        <AuthAlert tone="success">
           تم تغيير كلمة المرور بنجاح — سجّل الدخول بالكلمة الجديدة.
-        </p>
-        <button type="button" className="btn big" onClick={onDone} style={{ width: '100%' }}>
+        </AuthAlert>
+        <button type="button" className="cfa-btn" onClick={onDone}>
+          <span className="ms" aria-hidden="true">
+            login
+          </span>
           العودة لتسجيل الدخول
         </button>
       </>
@@ -92,102 +97,101 @@ export function ForgotPasswordForm({ onDone }: ForgotPasswordFormProps) {
   if (resetStep) {
     return (
       <form onSubmit={(event) => void handleReset(event)} noValidate>
-        {resetStep.devCode && (
-          <p className="otp-dev-hint" role="note">
-            <span className="ms sm" aria-hidden="true">code</span>
-            وضع التطوير: إرسال الإيميل مش متظبط، الكود هو{' '}
-            <button
-              type="button"
-              className="otp-dev-hint-code"
-              onClick={() => setCode(resetStep.devCode ?? '')}
-            >
-              {resetStep.devCode}
-            </button>
-          </p>
-        )}
-        <div className="tf">
-          <label htmlFor="reset-code">رمز التحقق</label>
-          <input
-            type="text"
-            inputMode="numeric"
-            id="reset-code"
-            placeholder="أدخل الرمز المكوّن من ٦ أرقام"
-            autoComplete="one-time-code"
-            autoFocus
-            required
-            maxLength={6}
-            value={code}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
-          />
-        </div>
+        <p className="cfa-sent-to">
+          <span className="ms" aria-hidden="true">
+            mark_email_unread
+          </span>
+          <span>
+            راسلنا رمز إعادة التعيين إلى <strong>{resetStep.email}</strong>
+          </span>
+        </p>
 
-        <div className="tf">
-          <label htmlFor="reset-password">كلمة المرور الجديدة</label>
-          <input
-            type="password"
+        {error && <AuthAlert>{error}</AuthAlert>}
+
+        <div className="cfa-fields">
+          <div className="cfa-field">
+            <label className="cfa-label" htmlFor="reset-code">
+              رمز التحقق
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              id="reset-code"
+              className="cfa-otp"
+              placeholder="––––––"
+              autoComplete="one-time-code"
+              autoFocus
+              required
+              maxLength={6}
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+            />
+          </div>
+
+          <AuthPasswordField
             id="reset-password"
-            placeholder="٨ أحرف على الأقل"
+            label="كلمة المرور الجديدة"
+            placeholder="٨ أحرف: كبير وصغير ورقم"
             autoComplete="new-password"
             required
-            minLength={8}
+            showStrength
             value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
+            onChange={setNewPassword}
           />
-        </div>
 
-        <div className="tf">
-          <label htmlFor="reset-confirm">تأكيد كلمة المرور</label>
-          <input
-            type="password"
+          <AuthPasswordField
             id="reset-confirm"
-            placeholder="٨ أحرف على الأقل"
+            label="تأكيد كلمة المرور"
+            placeholder="٨ أحرف: كبير وصغير ورقم"
             autoComplete="new-password"
             required
-            minLength={8}
             value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
+            onChange={setConfirmPassword}
           />
-          {error && (
-            <span className="error-text" role="alert">
-              {error}
-            </span>
-          )}
         </div>
 
-        <button className="btn big" type="submit" disabled={isSubmitting} style={{ width: '100%' }}>
-          {isSubmitting ? 'جارٍ الحفظ...' : 'تغيير كلمة المرور'}
-        </button>
+        <AuthSubmit icon="lock_reset" isPending={isSubmitting} pendingLabel="جارٍ الحفظ...">
+          تغيير كلمة المرور
+        </AuthSubmit>
       </form>
     )
   }
 
   return (
     <form onSubmit={(event) => void handleRequestCode(event)} noValidate>
-      <p className="subtitle" style={{ marginBottom: '1rem' }}>
-        أدخل بريدك الإلكتروني وسنرسل لك رمزًا لإعادة تعيين كلمة المرور.
-      </p>
+      {error && <AuthAlert>{error}</AuthAlert>}
 
-      <div className="tf">
-        <label htmlFor="reset-email">البريد الإلكتروني</label>
-        <input
-          type="email"
+      <div className="cfa-fields">
+        <AuthField
           id="reset-email"
-          placeholder="أدخل بريدك الإلكتروني"
+          label="البريد الإلكتروني"
+          icon="mail"
+          type="email"
+          inputMode="email"
+          placeholder="name@example.com"
           autoComplete="email"
+          dir="ltr"
+          autoFocus
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={setEmail}
+          hint="هنبعتلك رمزًا من ٦ أرقام على البريد ده."
         />
-        {error && (
-          <span className="error-text" role="alert">
-            {error}
-          </span>
-        )}
       </div>
 
-      <button className="btn big" type="submit" disabled={isSubmitting} style={{ width: '100%' }}>
-        {isSubmitting ? 'جارٍ الإرسال...' : 'إرسال الرمز'}
-      </button>
+      <AuthSubmit icon="send" isPending={isSubmitting} pendingLabel="جارٍ الإرسال...">
+        إرسال الرمز
+      </AuthSubmit>
+
+      <div className="cfa-row">
+        <span />
+        <button type="button" className="cfa-link-btn" onClick={onDone}>
+          <span className="ms" aria-hidden="true">
+            arrow_forward
+          </span>
+          رجوع لتسجيل الدخول
+        </button>
+      </div>
     </form>
   )
 }
