@@ -11,6 +11,7 @@
 #   ./dev.sh reset      drop the database volume and rebuild it from scratch
 #   ./dev.sh status     show what is currently running
 #   ./dev.sh logs       follow the API and web logs
+#   ./dev.sh payment    check the Paymob payment setup and print the callback URL
 #
 # ngrok is auto-installed (if missing) and tunnels the API port so Paymob
 # callbacks can reach the local server: https://<subdomain>.ngrok-free.dev
@@ -18,6 +19,7 @@
 # Flags (for the default "up" command):
 #   --no-seed           run migrations but skip seeding
 #   --no-infra          assume Postgres/Redis/Chroma are already running
+#   --no-payment-check  skip the Paymob setup check
 #
 set -Eeuo pipefail
 
@@ -334,6 +336,59 @@ stop_ngrok() {
 
 
   ok "ngrok was not running"
+}
+
+# ─── payment setup ───────────────────────────────────────────────────────
+PAYMOB_BASE_URL_FALLBACK="https://accept.paymob.com/api"
+
+check_payment_config() {
+  step "Checking Paymob payment setup"
+
+  local base key integration iframe hmac missing url
+
+  base="$(env_value PAYMOB_BASE_URL)"
+  base="${base:-$PAYMOB_BASE_URL_FALLBACK}"
+  key="$(env_value PAYMOB_API_KEY)"
+  integration="$(env_value PAYMOB_INTEGRATION_ID)"
+  iframe="$(env_value PAYMOB_IFRAME_ID)"
+  hmac="$(env_value PAYMOB_HMAC_SECRET)"
+
+  missing=""
+
+  [ -n "$key" ] && [ "$key" != "replace-me" ] || missing="${missing} PAYMOB_API_KEY"
+  [ -n "$integration" ] && [ "$integration" != "replace-me" ] || missing="${missing} PAYMOB_INTEGRATION_ID"
+  [ -n "$iframe" ] && [ "$iframe" != "replace-me" ] || missing="${missing} PAYMOB_IFRAME_ID"
+  [ -n "$hmac" ] && [ "$hmac" != "replace-me" ] || missing="${missing} PAYMOB_HMAC_SECRET"
+
+  if [ -n "$missing" ]; then
+    warn "payment will not work — missing in .env:$missing"
+    return 0
+  fi
+
+  ok "integration $integration · iframe $iframe · key ${key:0:6}… · HMAC ${hmac:0:4}…"
+
+  printf '  verifying the API key against %s ...\n' "$base"
+
+  if curl -fsSL --connect-timeout 8 --max-time 15 \
+      -X POST "$base/auth/tokens" \
+      -H 'Content-Type: application/json' \
+      -d "{\"api_key\":\"$key\"}" 2>/dev/null \
+      | grep -q '"token"'; then
+    ok "Paymob API key accepted"
+  else
+    warn "Paymob rejected the API key or is unreachable — real payments will fail"
+    warn "  check PAYMOB_API_KEY and PAYMOB_BASE_URL in .env"
+  fi
+
+  url="$(ngrok_public_url || true)"
+
+  if [ -n "$url" ]; then
+    ok "webhook callback: $url/api/v1/paymob/webhook"
+    warn "set this exact URL as the Paymob 'transaction processed' callback in the dashboard"
+  else
+    warn "ngrok is not running — Paymob's server-to-server webhook cannot reach this API"
+    warn "  (the browser GET redirect still fulfils orders end-to-end)"
+  fi
 }
 
 # ─── infrastructure ──────────────────────────────────────────────────────
@@ -716,6 +771,11 @@ cmd_up() {
 
   setup_database
   start_apps
+
+  [ "$SKIP_PAYMENT_CHECK" = "true" ] \
+    && warn "skipping Paymob setup check (--no-payment-check)" \
+    || check_payment_config
+
   print_summary
 }
 
@@ -723,9 +783,23 @@ cmd_fast() {
   mkdir -p "$LOG_DIR"
 
   step "Fast restart — API + web + worker only (no Docker/migrations/seed/ngrok)"
+  warn "the ngrok tunnel is not (re)started in fast mode — Paymob callbacks rely on an existing tunnel"
 
   start_apps
+
+  [ "$SKIP_PAYMENT_CHECK" = "true" ] \
+    && warn "skipping Paymob setup check (--no-payment-check)" \
+    || check_payment_config
+
   print_summary
+}
+
+cmd_payment() {
+  mkdir -p "$LOG_DIR"
+
+  [ -f "$ROOT/.env" ] || die "no .env yet — run ./dev.sh up first."
+
+  check_payment_config
 }
 
 cmd_stop() {
@@ -860,10 +934,11 @@ cmd_logs() {
 COMMAND="up"
 SKIP_SEED="false"
 SKIP_INFRA="false"
+SKIP_PAYMENT_CHECK="false"
 
 for arg in "$@"; do
   case "$arg" in
-    up|fast|stop|reset|status|logs)
+    up|fast|stop|reset|status|logs|payment)
       COMMAND="$arg"
       ;;
 
@@ -873,6 +948,10 @@ for arg in "$@"; do
 
     --no-infra)
       SKIP_INFRA="true"
+      ;;
+
+    --no-payment-check)
+      SKIP_PAYMENT_CHECK="true"
       ;;
 
     -h|--help)
@@ -911,5 +990,9 @@ case "$COMMAND" in
 
   logs)
     cmd_logs
+    ;;
+
+  payment)
+    cmd_payment
     ;;
 esac
