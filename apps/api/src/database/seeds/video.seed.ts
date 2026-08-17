@@ -1,86 +1,88 @@
 import { DataSource, IsNull } from 'typeorm';
 import { LessonEntity } from '../../modules/courses/entities/lesson.entity';
+import { CourseEntity } from '../../modules/courses/entities/course.entity';
 import { VideoEntity } from '../../modules/lessons/entities/video.entity';
-
-interface VideoSource {
-  url: string;
-  durationSeconds: number;
-}
+import { findLessonContent } from './content';
 
 /**
- * CC0 clips hosted by MDN (`interactive-examples.mdn.mozilla.net`) — real,
- * browser-playable, CORS-enabled (`Access-Control-Allow-Origin: *`) MP4s.
- * `durationSeconds` was measured directly with `ffprobe` against the
- * actually-served file, not copied from a listing — reverify the same way
- * if MDN ever changes the encode.
+ * Seeds one real YouTube video per lesson, sourced from `seeds/content/`.
  *
- * An earlier version of this file used Google's
- * `storage.googleapis.com/gtv-videos-bucket/sample/*` URLs (the commonly
- * quoted Big Buck Bunny/Sintel/etc. test set). That bucket now returns
- * `403 AccessDenied` for anonymous requests — caught during manual
- * browser verification of the lesson player (CF-US-007), not in a unit
- * test, since no test in this slice actually fetches the video byte
- * stream. These MDN clips are a few seconds long rather than full films;
- * that is a feature for this fixture, not a shortcoming — it makes the
- * attendance threshold and completion state reachable in a manual QA
- * pass in seconds instead of minutes.
- */
-export const VIDEO_SOURCES: VideoSource[] = [
-  {
-    url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-    durationSeconds: 5,
-  },
-  {
-    url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4',
-    durationSeconds: 6,
-  },
-  {
-    url: 'https://interactive-examples.mdn.mozilla.net/media/examples/stream-of-water.mp4',
-    durationSeconds: 3,
-  },
-];
-
-/**
- * Seeds one `recorded` video per seeded lesson, across every course — not
- * just the primary one — so every lesson in the catalogue is playable
- * (sprint2-plan.md §A-1).
+ * Every video is a real, public, embeddable Arabic physics explanation —
+ * verified individually (public + `playable_in_embed` + under five
+ * minutes) before being written into the content data, not a placeholder
+ * clip. `moderationStatus: 'approved'` matches what `CoursesService
+ * .syncLessonVideo` sets for a teacher-entered YouTube URL once the
+ * worker's caption-safety check clears it — seeded videos skip the queue
+ * and start pre-cleared, the same posture Sprint 2's MDN fixture used.
  *
  * Safe to run on every reseed: upserts by `lessonId`.
  */
 export async function seedVideo(dataSource: DataSource): Promise<number> {
   const lessonRepository = dataSource.getRepository(LessonEntity);
+  const courseRepository = dataSource.getRepository(CourseEntity);
   const videoRepository = dataSource.getRepository(VideoEntity);
 
   const lessons = await lessonRepository.find({
     where: { deletedAt: IsNull() },
     order: { courseId: 'ASC', sortOrder: 'ASC' },
   });
+  const courses = await courseRepository.find();
+  const courseSlugById = new Map(courses.map((course) => [course.id, course.slug]));
 
   let created = 0;
+  let updated = 0;
 
-  for (const [index, lesson] of lessons.entries()) {
-    const existing = await videoRepository.findOne({
-      where: { lessonId: lesson.id },
-    });
-    if (existing) {
+  for (const lesson of lessons) {
+    const courseSlug = courseSlugById.get(lesson.courseId);
+    const content = courseSlug
+      ? findLessonContent(courseSlug, lesson.title)
+      : undefined;
+
+    if (!content) {
+      // Every seeded lesson has matching content (enforced by
+      // `content/index.ts`'s title join) — this only fires for a lesson
+      // a developer added by hand outside the fixture, which this seed
+      // has no video for and must leave untouched.
       continue;
     }
 
-    const source = VIDEO_SOURCES[index % VIDEO_SOURCES.length];
+    const videoUrl = `https://www.youtube.com/watch?v=${content.videoId}`;
+    const existing = await videoRepository.findOne({
+      where: { lessonId: lesson.id },
+    });
 
-    await videoRepository.save(
-      videoRepository.create({
-        courseId: lesson.courseId,
-        sectionId: lesson.sectionId,
-        lessonId: lesson.id,
-        title: lesson.title,
-        videoUrl: source.url,
-        type: 'recorded',
-        durationSeconds: source.durationSeconds,
-        status: 'recorded',
-      }),
-    );
-    created += 1;
+    if (!existing) {
+      await videoRepository.save(
+        videoRepository.create({
+          courseId: lesson.courseId,
+          sectionId: lesson.sectionId,
+          lessonId: lesson.id,
+          title: lesson.title,
+          videoUrl,
+          type: 'recorded',
+          durationSeconds: content.videoDurationSeconds,
+          status: 'recorded',
+          moderationStatus: 'approved',
+        }),
+      );
+      created += 1;
+      continue;
+    }
+
+    if (
+      existing.videoUrl !== videoUrl ||
+      existing.durationSeconds !== content.videoDurationSeconds
+    ) {
+      existing.videoUrl = videoUrl;
+      existing.durationSeconds = content.videoDurationSeconds;
+      existing.moderationStatus = 'approved';
+      await videoRepository.save(existing);
+      updated += 1;
+    }
+  }
+
+  if (updated > 0) {
+    console.log(`    videos:         ${updated} updated to match content`);
   }
 
   return created;

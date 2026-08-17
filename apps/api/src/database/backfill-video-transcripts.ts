@@ -18,9 +18,19 @@ import { AppModule } from '../app.module';
 import { VideoEntity } from '../modules/lessons/entities/video.entity';
 import { VideoTranscriptEntity } from '../modules/video-ingestion/entities/video-transcript.entity';
 import { VideoIngestionService } from '../modules/video-ingestion/video-ingestion.service';
-import { VIDEO_SOURCES } from './seeds/video.seed';
+import { COURSE_CONTENT } from './seeds/content';
 
-const SEED_VIDEO_URLS = new Set(VIDEO_SOURCES.map((source) => source.url));
+// The exact YouTube URLs `video.seed.ts` writes — every one already gets a
+// real, hand-authored transcript from `seedVideoTranscripts`
+// (`video-transcript.seed.ts`), so this backfill must never re-queue them
+// through the real ingestion pipeline and overwrite that content.
+const SEED_VIDEO_URLS = new Set(
+  COURSE_CONTENT.flatMap((course) =>
+    course.lessons.map(
+      (lesson) => `https://www.youtube.com/watch?v=${lesson.videoId}`,
+    ),
+  ),
+);
 
 interface BackfillOptions {
   // Before seedVideoTranscripts was scoped to only the known MDN seed
