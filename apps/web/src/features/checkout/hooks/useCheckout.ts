@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { pushDataLayerEvent } from '../../../shared/analytics/dataLayer'
 import { uuid } from '../../../shared/lib/uuid'
-import { createOrder, getOrder, initiatePaymob } from '../api/checkout.api'
+import {
+  createOrder,
+  getOrder,
+  getPaymobPaymentStatus,
+  initiatePaymob,
+} from '../api/checkout.api'
 import type { Order } from '../types/checkout.types'
 
 interface UseCheckoutResult {
@@ -77,7 +82,11 @@ export function useCheckout(
     let cancelled = false
 
     const timer = window.setInterval(() => {
-      getOrder(order.orderReference)
+      // The API answers this by asking Paymob directly (transaction
+      // inquiry), so the local order settles even when the Paymob
+      // dashboard callbacks point at the deployed API instead of this
+      // developer machine.
+      getPaymobPaymentStatus(order.orderReference)
         .then((current) => {
           if (cancelled) return
           if (current.status === 'paid' || current.paymentStatus === 'failed') {

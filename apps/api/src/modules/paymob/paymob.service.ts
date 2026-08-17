@@ -31,6 +31,13 @@ export interface PaymobInitiateResult {
   paymentUrl: string;
 }
 
+export interface PaymobTransactionInquiry {
+  id: string;
+  paymobOrderId: string;
+  success: boolean;
+  pending: boolean;
+}
+
 interface PaymobAuthResponse {
   token: string;
 }
@@ -96,12 +103,13 @@ export class PaymobService {
   private async postJson<T>(
     path: string,
     body: Record<string, unknown>,
+    headers: Record<string, string> = {},
   ): Promise<T> {
     let response: Response;
     try {
       response = await fetch(`${this.baseUrl}${path}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify(body),
       });
     } catch (caught) {
@@ -213,6 +221,56 @@ export class PaymobService {
     const paymentUrl = `${this.baseUrl}/acceptance/iframes/${this.iframeId}?payment_token=${paymentKey}`;
 
     return { paymobOrderId: String(paymobOrder.id), paymentUrl };
+  }
+
+  /**
+   * Asks Paymob for the most recent transaction of our merchant order
+   * (Transaction Inquiry API). This is what lets a local developer machine
+   * finish payments end-to-end even though the dashboard callbacks point
+   * at the deployed API: the local API verifies the outcome directly.
+   *
+   * Returns null when there is no transaction yet (still inside the
+   * iframe, abandoned, or an unreachable Paymob) — never throws.
+   */
+  async inquireTransaction(
+    merchantOrderId: string,
+  ): Promise<PaymobTransactionInquiry | null> {
+    try {
+      const token = await this.authenticate();
+      const data = await this.postJson<
+        Record<string, unknown> | Array<Record<string, unknown>>
+      >(
+        '/ecommerce/orders/transaction_inquiry',
+        { merchant_order_id: merchantOrderId },
+        { Authorization: `Bearer ${token}` },
+      );
+
+      const transaction = Array.isArray(data) ? data[0] : data;
+      if (!transaction || typeof transaction !== 'object') {
+        return null;
+      }
+
+      const success = transaction['success'];
+      if (typeof success !== 'boolean') {
+        return null;
+      }
+
+      const order = transaction['order'] as Record<string, unknown> | undefined;
+
+      return {
+        id: String(transaction['id'] ?? ''),
+        paymobOrderId: String(order?.['id'] ?? ''),
+        success,
+        pending: transaction['pending'] === true,
+      };
+    } catch (caught) {
+      this.logger.warn(
+        `Paymob transaction inquiry for ${merchantOrderId} failed: ${
+          caught instanceof Error ? caught.message : String(caught)
+        }`,
+      );
+      return null;
+    }
   }
 
   private buildBillingData(user: AuthenticatedUser): Record<string, unknown> {

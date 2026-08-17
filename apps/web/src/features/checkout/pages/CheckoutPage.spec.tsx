@@ -241,7 +241,7 @@ describe('CheckoutPage', () => {
       http.post(`${env.apiBaseUrl}/paymob/orders/order-1/pay`, () =>
         HttpResponse.json({ paymentUrl: PAY_URL, paymobOrderId: '9001' }),
       ),
-      http.get(`${env.apiBaseUrl}/orders/order-1`, () => {
+      http.get(`${env.apiBaseUrl}/paymob/orders/order-1/status`, () => {
         orderCalls += 1
         return HttpResponse.json(
           orderCalls > 1
@@ -269,7 +269,7 @@ describe('CheckoutPage', () => {
       http.post(`${env.apiBaseUrl}/paymob/orders/order-1/pay`, () =>
         HttpResponse.json({ paymentUrl: PAY_URL, paymobOrderId: '9001' }),
       ),
-      http.get(`${env.apiBaseUrl}/orders/order-1`, () =>
+      http.get(`${env.apiBaseUrl}/paymob/orders/order-1/status`, () =>
         HttpResponse.json(pendingOrder({ status: 'failed', paymentStatus: 'failed' })),
       ),
     )

@@ -69,7 +69,16 @@ function PaymobFrame({ url }: { url: string }) {
         </span>
         <strong>بوابة الدفع الآمنة</strong>
       </div>
-      <iframe src={url} title="بوابة الدفع الآمنة" className="pay-frame-iframe" />
+      {/* sandbox without allow-top-navigation: Paymob's completion page
+          cannot navigate this window to the dashboard's redirect URL
+          (e.g. the deployed app) — keep the student on localhost while
+          the checkout polls the order to a settled state. */}
+      <iframe
+        src={url}
+        title="بوابة الدفع الآمنة"
+        className="pay-frame-iframe"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+      />
     </div>
   )
 }
