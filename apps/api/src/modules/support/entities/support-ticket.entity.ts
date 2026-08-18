@@ -31,6 +31,9 @@ export class SupportTicketEntity {
   @Column({ name: 'course_id', type: 'uuid', nullable: true })
   courseId!: string | null;
 
+  @Column({ name: 'is_course_chat', type: 'boolean', default: false })
+  isCourseChat!: boolean;
+
   @Column({
     type: 'enum',
     enum: ['technical', 'course', 'payment', 'account', 'other'],

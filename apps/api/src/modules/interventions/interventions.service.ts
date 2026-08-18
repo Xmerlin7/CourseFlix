@@ -15,6 +15,7 @@ import {
 } from '../../common/ports/notification-producer.port';
 import { CoursesService } from '../courses/courses.service';
 import { UserEntity } from '../users/entities/user.entity';
+import { SupportService } from '../support/support.service';
 import { InterventionEvidenceEntity } from './entities/intervention-evidence.entity';
 import {
   InterventionEntity,
@@ -63,6 +64,7 @@ export class InterventionsService implements InterventionEvaluatorPort {
     @Inject(AGENT_LOG_PORT)
     private readonly agentLogPort: AgentLogPort,
     private readonly miniQuizService: MiniQuizService,
+    private readonly supportService: SupportService,
   ) {}
 
   // InterventionEvaluatorPort implementation — called by the quiz
@@ -168,11 +170,27 @@ export class InterventionsService implements InterventionEvaluatorPort {
     const miniQuizId =
       await this.miniQuizService.generateForIntervention(intervention);
 
+    let supportTicketId: string | null = null;
+    try {
+      supportTicketId =
+        await this.supportService.ensureCourseChatForIntervention({
+          studentId: intervention.studentId,
+          courseId: intervention.courseId,
+          courseTitle: course.title,
+          weakConcept,
+        });
+    } catch (error) {
+      this.logger.warn(
+        `Could not create support chat for intervention=${intervention.id}: ${String(error)}`,
+      );
+    }
+
     await this.notifyAndLog(
       intervention,
       course.teacherId,
       weakConcept,
       miniQuizId,
+      supportTicketId,
     );
   }
 
@@ -223,6 +241,7 @@ export class InterventionsService implements InterventionEvaluatorPort {
     teacherId: string,
     weakConcept: string,
     miniQuizId: string | null,
+    supportTicketId: string | null,
   ): Promise<void> {
     const studentNotification = miniQuizId
       ? {
@@ -242,16 +261,8 @@ export class InterventionsService implements InterventionEvaluatorPort {
           relatedEntityId: intervention.id,
         };
 
-    const results = await Promise.allSettled([
+    const sideEffects: Promise<unknown>[] = [
       this.notificationPort.notify(studentNotification),
-      this.notificationPort.notify({
-        userId: teacherId,
-        type: 'progress_report',
-        title: 'تقرير تقدم جديد',
-        message: `طالب محتاج متابعة في "${weakConcept}".`,
-        relatedEntityType: 'intervention',
-        relatedEntityId: intervention.id,
-      }),
       this.agentLogPort.record({
         agentType: 'proactive_proctor',
         action: 'intervention.created',
@@ -264,7 +275,22 @@ export class InterventionsService implements InterventionEvaluatorPort {
           ruleVersion: intervention.ruleVersion,
         },
       }),
-    ]);
+    ];
+
+    if (!supportTicketId) {
+      sideEffects.push(
+        this.notificationPort.notify({
+          userId: teacherId,
+          type: 'progress_report',
+          title: 'تقرير تقدم جديد',
+          message: `طالب محتاج متابعة في "${weakConcept}".`,
+          relatedEntityType: 'intervention',
+          relatedEntityId: intervention.id,
+        }),
+      );
+    }
+
+    const results = await Promise.allSettled(sideEffects);
 
     results.forEach((result) => {
       if (result.status === 'rejected') {

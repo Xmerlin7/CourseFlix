@@ -66,6 +66,7 @@ export interface SupportTicketListItemResponse {
   createdAt: string;
   updatedAt: string;
   hasUnread: boolean;
+  isCourseChat: boolean;
 }
 
 export interface SupportTicketDetailResponse extends SupportTicketListItemResponse {
@@ -205,6 +206,22 @@ export class SupportService {
       .createQueryBuilder('t')
       .where('t.deletedAt IS NULL');
 
+    if (user?.role === 'teacher') {
+      qb.andWhere(
+        '(t.isCourseChat = false OR EXISTS (SELECT 1 FROM courses c WHERE c.id = t.course_id AND c.teacher_id = :teacherId AND c.deleted_at IS NULL))',
+        {
+          teacherId: user.id,
+        },
+      );
+    } else if (user?.role === 'assistant') {
+      qb.andWhere(
+        '(t.isCourseChat = false OR EXISTS (SELECT 1 FROM courses c WHERE c.id = t.course_id AND c.teacher_id = :teacherId AND c.deleted_at IS NULL))',
+        {
+          teacherId: user.managedByTeacherId,
+        },
+      );
+    }
+
     if (filters.status)
       qb.andWhere('t.status = :status', { status: filters.status });
     if (filters.category)
@@ -227,7 +244,7 @@ export class SupportService {
     user: AuthenticatedUser,
   ): Promise<SupportTicketDetailResponse> {
     const ticket = await this.loadTicketOrThrow(ticketId);
-    this.assertCanAccessTicket(ticket, user);
+    await this.assertCanAccessTicket(ticket, user);
 
     this.notifications
       .markEntityRead?.(user.id, 'support_ticket', ticketId)
@@ -242,7 +259,7 @@ export class SupportService {
     dto: CreateMessageDto,
   ): Promise<SupportMessageResponse> {
     const ticket = await this.loadTicketOrThrow(ticketId);
-    this.assertCanAccessTicket(ticket, user);
+    await this.assertCanAccessTicket(ticket, user);
 
     const isStaff = this.isSupportStaff(user);
     const message = await this.messagesRepository.save(
@@ -267,6 +284,13 @@ export class SupportService {
           relatedEntityId: ticketId,
         })
         .catch(() => {});
+    } else if (ticket.isCourseChat && ticket.courseId) {
+      await this.notifyCourseStaff(
+        ticket,
+        'رسالة جديدة من الطالب',
+        `${user.fullName} أرسل رسالة في محادثة الدورة.`,
+        user.id,
+      );
     } else if (ticket.assignedTo) {
       this.notifications
         .notify({
@@ -308,6 +332,7 @@ export class SupportService {
     if (!this.isSupportStaff(user)) {
       throw new ForbiddenException('Support staff only.');
     }
+    await this.assertCanAccessTicket(ticket, user);
 
     ticket.status = dto.status;
     ticket.assignedTo = ticket.assignedTo ?? user.id;
@@ -328,6 +353,104 @@ export class SupportService {
       .catch(() => {});
 
     return this.toDetailResponse(ticket);
+  }
+
+  async openCourseChat(
+    courseId: string,
+    studentId: string,
+    user: AuthenticatedUser,
+  ): Promise<SupportTicketDetailResponse> {
+    const course = await this.assertCourseStaffAccess(courseId, user);
+    await this.enrollmentsService.assertStudentEnrolled(studentId, courseId);
+
+    let ticket = await this.ticketsRepository.findOne({
+      where: {
+        studentId,
+        courseId,
+        isCourseChat: true,
+        deletedAt: IsNull(),
+      },
+    });
+
+    if (!ticket) {
+      ticket = await this.ticketsRepository.save(
+        this.ticketsRepository.create({
+          studentId,
+          courseId,
+          isCourseChat: true,
+          category: 'course',
+          subject: `متابعة دورة ${course.title}`,
+          description: 'محادثة مباشرة بين الطالب وفريق الدورة.',
+          status: 'open',
+          assignedTo: null,
+        }),
+      );
+    }
+
+    return this.toDetailResponse(ticket, user.id);
+  }
+
+  async ensureCourseChatForIntervention(input: {
+    studentId: string;
+    courseId: string;
+    courseTitle: string;
+    weakConcept: string;
+  }): Promise<string> {
+    let ticket = await this.ticketsRepository.findOne({
+      where: {
+        studentId: input.studentId,
+        courseId: input.courseId,
+        isCourseChat: true,
+        deletedAt: IsNull(),
+      },
+    });
+
+    const subject = `طالب محتاج متابعة: ${input.weakConcept}`;
+    const description =
+      `رصد النظام أن الطالب محتاج متابعة في "${input.weakConcept}" داخل دورة ${input.courseTitle}. ` +
+      'يمكن للمدرس أو الأسيستانت التواصل معه من المحادثة بالأسفل.';
+
+    if (ticket) {
+      ticket.subject = subject;
+      ticket.description = description;
+      ticket.status = 'open';
+      ticket.closedAt = null;
+      ticket.resolvedAt = null;
+      ticket = await this.ticketsRepository.save(ticket);
+    } else {
+      try {
+        ticket = await this.ticketsRepository.save(
+          this.ticketsRepository.create({
+            studentId: input.studentId,
+            courseId: input.courseId,
+            isCourseChat: true,
+            category: 'course',
+            subject,
+            description,
+            status: 'open',
+            assignedTo: null,
+          }),
+        );
+      } catch (error) {
+        if (!this.isUniqueViolation(error)) throw error;
+        ticket = await this.ticketsRepository.findOne({
+          where: {
+            studentId: input.studentId,
+            courseId: input.courseId,
+            isCourseChat: true,
+            deletedAt: IsNull(),
+          },
+        });
+        if (!ticket) throw error;
+      }
+    }
+
+    await this.notifyCourseStaff(
+      ticket,
+      'طالب محتاج متابعة',
+      `${subject} في دورة ${input.courseTitle}.`,
+    );
+    return ticket.id;
   }
 
   // ---------------------------------------------------------------------
@@ -354,14 +477,88 @@ export class SupportService {
 
   // A student may only ever see their own ticket, by ID — never another
   // student's, even with a valid ticket ID. Support staff can see any.
-  private assertCanAccessTicket(
+  private async assertCanAccessTicket(
     ticket: SupportTicketEntity,
     user: AuthenticatedUser,
-  ): void {
+  ): Promise<void> {
+    if (ticket.isCourseChat && ticket.courseId && user.role !== 'admin') {
+      if (user.role === 'student' && ticket.studentId === user.id) return;
+      await this.assertCourseStaffAccess(ticket.courseId, user);
+      return;
+    }
     if (this.isSupportStaff(user)) return;
     if (ticket.studentId !== user.id) {
       throw new ForbiddenException('You do not own this support ticket.');
     }
+  }
+
+  private async assertCourseStaffAccess(
+    courseId: string,
+    user: AuthenticatedUser,
+  ): Promise<CourseEntity> {
+    const course = await this.coursesRepository.findOne({
+      where: { id: courseId, deletedAt: IsNull() },
+    });
+    if (!course) throw new NotFoundException('Course not found.');
+
+    const teacherId =
+      user.role === 'teacher'
+        ? user.id
+        : user.role === 'assistant'
+          ? user.managedByTeacherId
+          : null;
+    if (!teacherId || course.teacherId !== teacherId) {
+      throw new ForbiddenException('You cannot access this course chat.');
+    }
+    return course;
+  }
+
+  private async notifyCourseStaff(
+    ticket: SupportTicketEntity,
+    title: string,
+    message: string,
+    excludeUserId?: string,
+  ): Promise<void> {
+    if (!ticket.courseId) return;
+    const course = await this.coursesRepository.findOne({
+      where: { id: ticket.courseId },
+      select: { teacherId: true },
+    });
+    if (!course) return;
+    const assistants = await this.usersRepository.find({
+      where: {
+        role: 'assistant',
+        managedByTeacherId: course.teacherId,
+        deletedAt: IsNull(),
+      },
+      select: { id: true },
+    });
+    const recipientIds = new Set([
+      course.teacherId,
+      ...assistants.map((assistant) => assistant.id),
+    ]);
+    if (excludeUserId) recipientIds.delete(excludeUserId);
+    await Promise.allSettled(
+      [...recipientIds].map((userId) =>
+        this.notifications.notify({
+          userId,
+          type: 'support_ticket_update',
+          title,
+          message,
+          relatedEntityType: 'support_ticket',
+          relatedEntityId: ticket.id,
+        }),
+      ),
+    );
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === '23505'
+    );
   }
 
   private statusLabel(status: SupportTicketStatus): string {
@@ -457,6 +654,7 @@ export class SupportService {
       createdAt: t.createdAt.toISOString(),
       updatedAt: t.updatedAt.toISOString(),
       hasUnread: unreadTicketIds.has(t.id),
+      isCourseChat: t.isCourseChat,
     }));
   }
 

@@ -16,8 +16,11 @@ import {
   RetrievedChunk,
   RetrievalPort,
 } from '../../common/ports/retrieval.port';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { DocumentEntity } from '../documents/entities/document.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { CREDIT_COSTS } from '../teacher-billing/teacher-billing.constants';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import { LLM_PROVIDER, LlmProvider } from './adapters/llm.adapter';
 import { ConversationsService } from './conversations.service';
 import { AnswerPolicyService } from './prompt/answer-policy.service';
@@ -42,6 +45,10 @@ describe('TutorService', () => {
   let documentsRepository: jest.Mocked<
     Pick<Repository<DocumentEntity>, 'find'>
   >;
+  let coursesRepository: jest.Mocked<
+    Pick<Repository<CourseEntity>, 'findOne' | 'createQueryBuilder'>
+  >;
+  let teacherBillingService: jest.Mocked<Pick<TeacherBillingService, 'consumeCredits'>>;
   let interventionEvaluator: jest.Mocked<InterventionEvaluatorPort>;
 
   const relevantChunk: RetrievedChunk = {
@@ -75,12 +82,40 @@ describe('TutorService', () => {
       searchVideo: jest.fn(),
     };
     llmProvider = {
-      generateAnswer: jest.fn().mockResolvedValue({
-        answer: 'الإجابة من المادة.',
-        citedChunkIds: ['chunk-db-1'],
-        modelName: 'mock-model',
-        provider: 'mock',
-        tokensUsed: 12,
+      generateAnswer: jest.fn().mockImplementation(async (input) => {
+        if (input.chunks.length === 0) {
+          if (input.prompt.includes('broad request')) {
+            return {
+              answer:
+                'أكيد، اختار درس محدد أشرحهولك من المواد المرفوعة، مثل درس الكثافة أو قانون نيوتن الأول.',
+              citedChunkIds: [],
+              modelName: 'mock-model',
+              provider: 'mock',
+              tokensUsed: 12,
+            };
+          }
+
+          const duration = input.prompt.includes('شهر')
+            ? 'شهر'
+            : input.prompt.includes('أسبوعين')
+              ? 'أسبوعين'
+              : 'أسبوع';
+          return {
+            answer: `تمام، دي خطة ${duration} مبنية على دروس الدورة: درس الكثافة، قانون نيوتن الأول. استخدم المواد المرفوعة للمراجعة.`,
+            citedChunkIds: [],
+            modelName: 'mock-model',
+            provider: 'mock',
+            tokensUsed: 12,
+          };
+        }
+
+        return {
+          answer: 'الإجابة من المادة.',
+          citedChunkIds: ['chunk-db-1'],
+          modelName: 'mock-model',
+          provider: 'mock',
+          tokensUsed: 12,
+        };
       }),
     };
     documentsRepository = {
@@ -89,6 +124,44 @@ describe('TutorService', () => {
         .mockResolvedValue([
           { id: 'doc-1', fileName: 'physics.pdf' } as DocumentEntity,
         ]),
+    };
+    coursesRepository = {
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: 'course-1', teacherId: 'teacher-1' } as CourseEntity),
+      createQueryBuilder: jest.fn(),
+    };
+    const courseOutlineQuery = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
+        id: 'course-1',
+        sections: [
+          {
+            lessons: [
+              { title: 'درس الكثافة' },
+              { title: 'قانون نيوتن الأول' },
+              { title: 'الشغل والطاقة' },
+            ],
+          },
+        ],
+      }),
+    };
+    coursesRepository.createQueryBuilder.mockReturnValue(
+      courseOutlineQuery as never,
+    );
+    teacherBillingService = {
+      consumeCredits: jest.fn().mockResolvedValue({
+        monthlyAllowance: 100,
+        totalCredits: 100,
+        usedCredits: 1,
+        remainingCredits: 99,
+        percentUsed: 1,
+        resetAt: new Date('2026-09-01T00:00:00.000Z').toISOString(),
+      }),
     };
     interventionEvaluator = {
       evaluateSignal: jest.fn().mockResolvedValue(undefined),
@@ -125,8 +198,16 @@ describe('TutorService', () => {
           useValue: documentsRepository,
         },
         {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
+        {
           provide: INTERVENTION_EVALUATOR_PORT,
           useValue: interventionEvaluator,
+        },
+        {
+          provide: TeacherBillingService,
+          useValue: teacherBillingService,
         },
       ],
     }).compile();
@@ -171,6 +252,7 @@ describe('TutorService', () => {
     expect(result.citations).toEqual([]);
     expect(retrievalPort.search).not.toHaveBeenCalled();
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('introduces Saif on Arabic greetings', async () => {
@@ -183,6 +265,143 @@ describe('TutorService', () => {
     expect(result.status).toBe('answered');
     expect(result.answer).toContain('أنا سيف');
     expect(retrievalPort.search).not.toHaveBeenCalled();
+  });
+
+  it('guides students when they ask what course materials they can ask about', async () => {
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'ايه هي مواد الدورة؟',
+    });
+
+    expect(result.status).toBe('answered');
+    expect(result.answer).toContain('المذكرة والمواد المرفوعة');
+    expect(result.answer).toContain('اسألني عن جزء محدد');
+    expect(result.citations).toEqual([]);
+    expect(retrievalPort.search).not.toHaveBeenCalled();
+    expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
+  });
+
+  it('gives a useful study plan for schedule questions without pretending it came from sources', async () => {
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'عايز أخلص المادة دي في اسبوع أذاكر ازاي؟',
+    });
+
+    expect(result.status).toBe('answered');
+    expect(result.answer).toContain('خطة أسبوع مبنية على دروس الدورة');
+    expect(result.answer).toContain('درس الكثافة');
+    expect(result.answer).toContain('قانون نيوتن الأول');
+    expect(result.answer).toContain('المواد المرفوعة');
+    expect(result.citations).toEqual([]);
+    expect(retrievalPort.search).not.toHaveBeenCalled();
+    expect(llmProvider.generateAnswer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chunks: [],
+        prompt: expect.stringContaining('درس الكثافة'),
+      }),
+    );
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
+  });
+
+  it.each(['خليها اسبوعين', 'خلي جدول المذاكرة في اسبوعين'])(
+    'gives a two-week study plan for "%s"',
+    async (message) => {
+      const result = await service.sendMessage({
+        courseId: 'course-1',
+        studentId: 'student-1',
+        message,
+      });
+
+      expect(result.status).toBe('answered');
+      expect(result.answer).toContain('خطة أسبوعين مبنية على دروس الدورة');
+      expect(result.answer).toContain('درس الكثافة');
+      expect(result.answer).toContain('قانون نيوتن الأول');
+      expect(result.citations).toEqual([]);
+      expect(retrievalPort.search).not.toHaveBeenCalled();
+      expect(llmProvider.generateAnswer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chunks: [],
+          prompt: expect.stringContaining('أسبوعين'),
+        }),
+      );
+      expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
+    },
+  );
+
+  it('matches month schedule questions with a month plan', async () => {
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'اعملي جدول مذاكرة أخلص بيه المادة دي في شهر',
+    });
+
+    expect(result.status).toBe('answered');
+    expect(result.answer).toContain('خطة شهر مبنية على دروس الدورة');
+    expect(result.answer).toContain('درس الكثافة');
+    expect(result.answer).toContain('المواد المرفوعة');
+    expect(result.answer).not.toContain('خطة أسبوع مبنية على دروس الدورة');
+    expect(result.citations).toEqual([]);
+    expect(retrievalPort.search).not.toHaveBeenCalled();
+    expect(llmProvider.generateAnswer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chunks: [],
+        prompt: expect.stringContaining('شهر'),
+      }),
+    );
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
+  });
+
+  it('guides broad explain requests instead of returning a no-answer bubble', async () => {
+    retrievalPort.search.mockResolvedValueOnce([]);
+
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'اشرحلي الدرس دا كله',
+    });
+
+    expect(result.status).toBe('answered');
+    expect(result.answer).toContain('اختار درس محدد');
+    expect(result.answer).toContain('درس الكثافة');
+    expect(result.citations).toEqual([]);
+    expect(retrievalPort.search).not.toHaveBeenCalled();
+    expect(llmProvider.generateAnswer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chunks: [],
+        prompt: expect.stringContaining('درس الكثافة'),
+      }),
+    );
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
+  });
+
+  it('uses guidance when explain requests have no relevant retrieved chunks', async () => {
+    retrievalPort.search.mockResolvedValueOnce([]);
+
+    const result = await service.sendMessage({
+      courseId: 'course-1',
+      studentId: 'student-1',
+      message: 'اشرحلي القانون',
+    });
+
+    expect(result.status).toBe('answered');
+    expect(result.answer).toContain('اختار درس محدد');
+    expect(result.answer).not.toContain('المواد المرفوعة لا تغطي');
+    expect(result.citations).toEqual([]);
+    expect(retrievalPort.search).toHaveBeenCalledWith({
+      courseId: 'course-1',
+      query: 'اشرحلي القانون',
+      topK: 5,
+    });
+    expect(llmProvider.generateAnswer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chunks: [],
+        prompt: expect.stringContaining('درس الكثافة'),
+      }),
+    );
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('politely rejects clearly out-of-scope questions before retrieval', async () => {
@@ -198,6 +417,7 @@ describe('TutorService', () => {
     expect(result.citations).toEqual([]);
     expect(retrievalPort.search).not.toHaveBeenCalled();
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns no_answer without calling the provider when relevance is too low', async () => {
@@ -214,6 +434,7 @@ describe('TutorService', () => {
     expect(result.status).toBe('no_answer');
     expect(result.citations).toEqual([]);
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns a cited answer and persists source chunks', async () => {
@@ -245,6 +466,10 @@ describe('TutorService', () => {
         vectorId: 'doc-1:1:0',
       },
     ]);
+    expect(teacherBillingService.consumeCredits).toHaveBeenCalledWith(
+      'teacher-1',
+      CREDIT_COSTS.tutorMessage,
+    );
   });
 
   it('reports explicit confusion chat messages to the intervention evaluator', async () => {
@@ -283,6 +508,7 @@ describe('TutorService', () => {
     expect(result.status).toBe('no_answer');
     expect(result.citations).toEqual([]);
     expect(conversationsService.saveSourceChunks).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns safe 503 when the provider fails', async () => {

@@ -49,6 +49,7 @@ describe('SupportService', () => {
     id: 'ticket-1',
     studentId: 'student-1',
     courseId: null,
+    isCourseChat: false,
     category: 'technical',
     subject: 'الفيديو بيتوقف',
     description: 'الفيديو بيتوقف عند الدقيقة 15',
@@ -81,7 +82,10 @@ describe('SupportService', () => {
       create: jest.fn((input) => input),
     };
     filesRepository = { find: jest.fn().mockResolvedValue([]) };
-    coursesRepository = { find: jest.fn().mockResolvedValue([]) };
+    coursesRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+    };
     usersRepository = {
       find: jest
         .fn()
@@ -298,6 +302,64 @@ describe('SupportService', () => {
           body: 'رد',
         }),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('course chats', () => {
+    const course = {
+      id: 'course-1',
+      teacherId: 'teacher-1',
+      title: 'الفيزياء',
+      deletedAt: null,
+    } as CourseEntity;
+    const courseChat = {
+      ...baseTicket,
+      courseId: 'course-1',
+      isCourseChat: true,
+      category: 'course' as const,
+      subject: 'متابعة دورة الفيزياء',
+    };
+
+    it('returns the same chat to the teacher and their assistant', async () => {
+      coursesRepository.findOne.mockResolvedValue(course);
+      ticketsRepository.findOne.mockResolvedValue(courseChat);
+
+      const teacherResult = await service.openCourseChat(
+        'course-1',
+        'student-1',
+        makeUser({ id: 'teacher-1', role: 'teacher' }),
+      );
+      const assistantResult = await service.openCourseChat(
+        'course-1',
+        'student-1',
+        makeUser({
+          id: 'assistant-1',
+          role: 'assistant',
+          managedByTeacherId: 'teacher-1',
+        }),
+      );
+
+      expect(teacherResult.id).toBe('ticket-1');
+      expect(assistantResult.id).toBe('ticket-1');
+      expect(ticketsRepository.save).not.toHaveBeenCalled();
+      expect(enrollmentsService.assertStudentEnrolled).toHaveBeenCalledTimes(2);
+    });
+
+    it("rejects an assistant assigned to another teacher's course", async () => {
+      coursesRepository.findOne.mockResolvedValue(course);
+
+      await expect(
+        service.openCourseChat(
+          'course-1',
+          'student-1',
+          makeUser({
+            id: 'assistant-2',
+            role: 'assistant',
+            managedByTeacherId: 'teacher-2',
+          }),
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(enrollmentsService.assertStudentEnrolled).not.toHaveBeenCalled();
     });
   });
 

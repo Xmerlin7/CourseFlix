@@ -31,7 +31,9 @@ export class MockLlmProvider implements LlmProvider {
   async generateAnswer(input: LlmGenerateInput): Promise<LlmGenerateResult> {
     const firstChunk = input.chunks[0];
     return {
-      answer: `حسب المادة المرفوعة: ${firstChunk.excerpt}`,
+      answer: firstChunk
+        ? `حسب المادة المرفوعة: ${firstChunk.excerpt}`
+        : 'إجابة تجريبية من المساعد الذكي.',
       citedChunkIds: firstChunk ? [firstChunk.chunkId] : [],
       modelName: 'mock-courseflix-tutor',
       provider: 'mock',

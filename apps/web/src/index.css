@@ -1396,6 +1396,7 @@
 
 .floating-chat-bubble {
   max-width: 92%;
+  min-width: 0;
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -1445,7 +1446,50 @@
 }
 
 .floating-chat-bubble .citation-list {
+  width: 100%;
+  min-width: 0;
   margin-top: 8px;
+  gap: 8px;
+}
+
+.floating-chat-bubble .citation-list .list-item {
+  width: 100%;
+  min-width: 0;
+  gap: 10px;
+  padding: 10px;
+  border-radius: calc(14px * var(--radius-scale));
+}
+
+.floating-chat-bubble .citation-list .lead {
+  width: 36px;
+  height: 36px;
+}
+
+.floating-chat-bubble .citation-list .lead .ms {
+  font-size: 20px;
+}
+
+.floating-chat-bubble .citation-list .body {
+  min-width: 0;
+}
+
+.floating-chat-bubble .citation-list .body .t,
+.floating-chat-bubble .citation-list .body .s {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+.floating-chat-bubble .citation-list .body .t {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.floating-chat-bubble .citation-list .body .s {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .mini-chip,

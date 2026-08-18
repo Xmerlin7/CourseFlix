@@ -48,6 +48,9 @@ const TermsPage = lazy(() =>
 const PrivacyPage = lazy(() =>
   import('../../features/auth/pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage }))
 )
+const PresentationPage = lazy(() =>
+  import('../../features/presentation/pages/PresentationPage').then((m) => ({ default: m.PresentationPage }))
+)
 const StudentDashboardPage = lazy(() =>
   import('../../features/student/pages/StudentDashboardPage').then((m) => ({ default: m.StudentDashboardPage }))
 )
@@ -308,6 +311,16 @@ export const router = createBrowserRouter([
     element: (
       <SuspenseWrapper fallback={<LegalDocumentSkeleton />}>
         <PrivacyPage />
+      </SuspenseWrapper>
+    ),
+  },
+  /* Graduation-project presentation — public slide deck at /present. */
+  {
+    path: ROUTE_PATHS.PRESENT,
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <SuspenseWrapper fallback={<LoadingState />}>
+        <PresentationPage />
       </SuspenseWrapper>
     ),
   },

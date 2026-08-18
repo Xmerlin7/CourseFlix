@@ -26,7 +26,3 @@ export async function initiatePaymob(
 ): Promise<InitiatePaymobResponse> {
   return httpClient.post<InitiatePaymobResponse>(`/paymob/orders/${orderId}/pay`)
 }
-
-export async function getPaymobPaymentStatus(orderId: string): Promise<Order> {
-  return httpClient.get<Order>(`/paymob/orders/${orderId}/status`)
-}

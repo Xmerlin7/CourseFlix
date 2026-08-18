@@ -36,5 +36,6 @@ import { NotificationEntity } from '../notifications/entities/notification.entit
   ],
   controllers: [SupportController],
   providers: [SupportService],
+  exports: [SupportService],
 })
 export class SupportModule {}

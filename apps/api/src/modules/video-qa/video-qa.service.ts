@@ -19,8 +19,11 @@ import {
   LlmProvider,
 } from '../tutor/adapters/llm.adapter';
 import { AnswerPolicyService } from '../tutor/prompt/answer-policy.service';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { VideoEntity } from '../lessons/entities/video.entity';
+import { CREDIT_COSTS } from '../teacher-billing/teacher-billing.constants';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import {
   VideoTranscriptEntity,
   VideoTranscriptStatus,
@@ -65,6 +68,9 @@ export class VideoQaService {
     private readonly videosRepository: Repository<VideoEntity>,
     @InjectRepository(VideoTranscriptEntity)
     private readonly transcriptsRepository: Repository<VideoTranscriptEntity>,
+    @InjectRepository(CourseEntity)
+    private readonly coursesRepository: Repository<CourseEntity>,
+    private readonly teacherBillingService: TeacherBillingService,
   ) {}
 
   async getStatus(input: {
@@ -178,7 +184,24 @@ export class VideoQaService {
       `Video Q&A answered trace: videoId=${input.videoId} citations=${citations.length} model=${llmResult.modelName} promptVersion=${GROUNDED_VIDEO_QA_PROMPT_VERSION}`,
     );
 
+    await this.consumeTeacherTutorCredit(video.courseId);
+
     return { status: 'answered', answer: llmResult.answer, citations };
+  }
+
+  private async consumeTeacherTutorCredit(courseId: string): Promise<void> {
+    const course = await this.coursesRepository.findOne({
+      where: { id: courseId },
+      select: { id: true, teacherId: true },
+    });
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+
+    await this.teacherBillingService.consumeCredits(
+      course.teacherId,
+      CREDIT_COSTS.tutorMessage,
+    );
   }
 
   private async loadVideo(videoId: string): Promise<VideoEntity> {

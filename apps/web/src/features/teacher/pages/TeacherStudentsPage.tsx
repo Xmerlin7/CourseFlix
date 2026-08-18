@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Pagination } from '../../../shared/components/Pagination'
 import { SearchField } from '../../../shared/components/SearchField'
@@ -10,6 +11,7 @@ import { COURSE_STATUS, ENROLLMENT_STATUS } from '../../../shared/lib/status-lab
 import { updateStudentEnrollmentStatus } from '../api/teacher.api'
 import { useTeacherStudents } from '../hooks/useTeacherStudents'
 import { TeacherStudentsSkeleton } from '../components/TeacherStudentsSkeleton'
+import { openCourseChat } from '../../support/api/support.api'
 
 type Filter = 'all' | 'subscribed' | 'unsubscribed'
 
@@ -20,9 +22,11 @@ function formatMoney(minor: number, currency: string) {
 }
 
 export function TeacherStudentsPage() {
+  const navigate = useNavigate()
   const [filter, setFilter] = useState<Filter>('all')
   const [studentIdSearch, setStudentIdSearch] = useState('')
   const [pendingKey, setPendingKey] = useState<string | null>(null)
+  const [openingChatKey, setOpeningChatKey] = useState<string | null>(null)
   // The ID lookup is server-side (it matches a watermark code the client
   // never receives), so it has to be debounced — un-debounced it fired a
   // request per character, and each one swapped the table for a skeleton.
@@ -54,6 +58,18 @@ export function TeacherStudentsPage() {
       showToast('تعذر تحديث حالة الاشتراك، حاول مرة أخرى', 'error')
     } finally {
       setPendingKey(null)
+    }
+  }
+
+  async function handleOpenChat(studentId: string, courseId: string) {
+    const key = `${studentId}:${courseId}`
+    setOpeningChatKey(key)
+    try {
+      const chat = await openCourseChat(courseId, studentId)
+      navigate(`/teacher/support/${chat.id}`)
+    } catch {
+      showToast('تعذر فتح محادثة الطالب، حاول مرة أخرى', 'error')
+      setOpeningChatKey(null)
     }
   }
 
@@ -233,6 +249,18 @@ export function TeacherStudentsPage() {
                                   {isSuspended ? 'تفعيل' : 'إيقاف'}
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                className="btn tonal btn-compact"
+                                disabled={openingChatKey === key}
+                                onClick={() => handleOpenChat(student.id, course.id)}
+                                title="فتح المحادثة المشتركة مع الطالب"
+                              >
+                                <span className={`ms sm${openingChatKey === key ? ' spin' : ''}`} aria-hidden="true">
+                                  {openingChatKey === key ? 'progress_activity' : 'chat'}
+                                </span>
+                                تواصل
+                              </button>
                             </div>
                           )
                         })}

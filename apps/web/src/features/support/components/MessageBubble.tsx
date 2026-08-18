@@ -11,6 +11,7 @@ interface MessageBubbleProps {
   isUnread?: boolean
   onRetry?: () => void
   onDismiss?: () => void
+  staffLabel?: string
 }
 
 function formatTime(iso: string): string {
@@ -28,6 +29,7 @@ export function MessageBubble({
   isUnread,
   onRetry,
   onDismiss,
+  staffLabel = 'فريق الدعم',
 }: MessageBubbleProps) {
   const variant = isStaffReply ? 'support' : 'student'
 
@@ -45,7 +47,7 @@ export function MessageBubble({
           </span>
           <span className="chat-msg-author-name">{authorName}</span>
           <span className={`chat-role-tag ${isStaffReply ? 'support-tag' : 'student-tag'}`}>
-            {isStaffReply ? 'فريق الدعم' : 'الطالب'}
+            {isStaffReply ? staffLabel : 'الطالب'}
           </span>
         </div>
       )}
@@ -87,4 +89,3 @@ export function MessageBubble({
     </div>
   )
 }
-

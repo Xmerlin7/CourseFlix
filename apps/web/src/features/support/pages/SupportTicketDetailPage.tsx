@@ -93,14 +93,16 @@ export function SupportTicketDetailPage() {
       body: message.body,
       createdAt: message.createdAt,
     })),
-    ...confirmedExtra.map((message) => ({
-      key: message.id,
-      authorName: message.authorName,
-      authorAvatarUrl: message.authorAvatarUrl,
-      isStaffReply: message.isStaffReply,
-      body: message.body,
-      createdAt: message.createdAt,
-    })),
+    ...confirmedExtra
+      .filter((message) => !data?.messages.some((saved) => saved.id === message.id))
+      .map((message) => ({
+        key: message.id,
+        authorName: message.authorName,
+        authorAvatarUrl: message.authorAvatarUrl,
+        isStaffReply: message.isStaffReply,
+        body: message.body,
+        createdAt: message.createdAt,
+      })),
     ...(pending
       ? [
           {
@@ -189,14 +191,16 @@ export function SupportTicketDetailPage() {
     <div style={{ maxWidth: 880, margin: '0 auto', width: '100%' }}>
       <Link to={backPath} className="meta-link support-back-link">
         <span className="ms" aria-hidden="true">arrow_forward</span>
-        العودة للدعم
+        {data.isCourseChat ? 'العودة للمحادثات' : 'العودة للدعم'}
       </Link>
 
       <div className="card support-ticket-header">
         <div className="support-ticket-header-top">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 260 }}>
             <div className="support-ticket-chips">
-              <span className="support-ticket-id">طلب دعم #{data.id.slice(0, 8)}</span>
+              <span className="support-ticket-id">
+                {data.isCourseChat ? 'محادثة دورة' : 'طلب دعم'} #{data.id.slice(0, 8)}
+              </span>
               <span className="chip outline">
                 <span className="ms sm" aria-hidden="true">
                   {CATEGORY_ICONS[data.category] ?? 'label'}
@@ -272,6 +276,7 @@ export function SupportTicketDetailPage() {
                 pendingStatus={message.pendingStatus}
                 onRetry={message.pendingStatus === 'failed' ? handleRetry : undefined}
                 onDismiss={message.pendingStatus === 'failed' ? handleDismissFailed : undefined}
+                staffLabel={data.isCourseChat ? 'فريق الدورة' : 'فريق الدعم'}
               />
             ))}
 

@@ -17,6 +17,7 @@ export interface SupportTicketListItem {
   createdAt: string
   updatedAt: string
   hasUnread?: boolean
+  isCourseChat: boolean
 }
 
 export interface SupportMessage {

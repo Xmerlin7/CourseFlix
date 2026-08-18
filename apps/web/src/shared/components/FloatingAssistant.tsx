@@ -143,7 +143,7 @@ export function FloatingAssistant({ role }: FloatingAssistantProps) {
               <p>
                 {role === 'teacher'
                   ? 'اسأل عن طلابك ودوراتك ومبيعاتك'
-                  : 'اسأل عن محتوى الدورة الحالية'}
+                  : 'اسأل عن المذكرة والمواد المرفوعة مع الدورة'}
               </p>
             </div>
             <button
@@ -202,7 +202,9 @@ function StudentFloatingAssistant({ courseId }: { courseId: string }) {
         {isLoadingHistory && messages.length === 0 ? (
           <p className="floating-assistant-empty">جارٍ تحميل المحادثة...</p>
         ) : messages.length === 0 ? (
-          <p className="floating-assistant-empty">ابدأ بسؤال من المادة المرفوعة للدورة.</p>
+          <p className="floating-assistant-empty">
+            اسأل عن شرح أو تلخيص أي جزء من المذكرة والمواد المرفوعة مع الدورة.
+          </p>
         ) : (
           messages.map((message) => (
             <article
@@ -246,7 +248,7 @@ function StudentFloatingAssistant({ courseId }: { courseId: string }) {
           }
           rows={2}
           maxLength={1000}
-          placeholder="اسأل عن محتوى الدورة..."
+          placeholder="اسأل عن المذكرة أو مواد الدورة..."
           disabled={isSending || isLoadingHistory}
           aria-label="سؤالك للمساعد"
         />

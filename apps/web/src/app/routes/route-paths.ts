@@ -8,6 +8,7 @@ export const ROUTE_PATHS = {
   REGISTER: '/register',
   TERMS: '/terms',
   PRIVACY: '/privacy',
+  PRESENT: '/present',
   FORBIDDEN: '/403',
   NOT_FOUND: '/404',
 
