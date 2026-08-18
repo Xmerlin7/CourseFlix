@@ -3,10 +3,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentEntity } from '../documents/entities/document.entity';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { InterventionsModule } from '../interventions/interventions.module';
 import { RetrievalModule } from '../retrieval/retrieval.module';
 import { SessionsModule } from '../sessions/sessions.module';
+import { TeacherBillingModule } from '../teacher-billing/teacher-billing.module';
 import {
   LLM_PROVIDER,
   MockLlmProvider,
@@ -28,11 +30,13 @@ import { TutorService } from './tutor.service';
       ChatMessageEntity,
       ChatMessageSourceChunkEntity,
       DocumentEntity,
+      CourseEntity,
     ]),
     EnrollmentsModule,
     InterventionsModule,
     RetrievalModule,
     SessionsModule,
+    TeacherBillingModule,
     ThrottlerModule.forRoot([
       {
         ttl: Number(process.env.LOGIN_RATE_LIMIT_WINDOW_SECONDS ?? 900) * 1000,

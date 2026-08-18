@@ -16,8 +16,11 @@ import {
   RetrievedChunk,
   RetrievalPort,
 } from '../../common/ports/retrieval.port';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { DocumentEntity } from '../documents/entities/document.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { CREDIT_COSTS } from '../teacher-billing/teacher-billing.constants';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import { LLM_PROVIDER, LlmProvider } from './adapters/llm.adapter';
 import { ConversationsService } from './conversations.service';
 import { AnswerPolicyService } from './prompt/answer-policy.service';
@@ -42,6 +45,8 @@ describe('TutorService', () => {
   let documentsRepository: jest.Mocked<
     Pick<Repository<DocumentEntity>, 'find'>
   >;
+  let coursesRepository: jest.Mocked<Pick<Repository<CourseEntity>, 'findOne'>>;
+  let teacherBillingService: jest.Mocked<Pick<TeacherBillingService, 'consumeCredits'>>;
   let interventionEvaluator: jest.Mocked<InterventionEvaluatorPort>;
 
   const relevantChunk: RetrievedChunk = {
@@ -90,6 +95,21 @@ describe('TutorService', () => {
           { id: 'doc-1', fileName: 'physics.pdf' } as DocumentEntity,
         ]),
     };
+    coursesRepository = {
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: 'course-1', teacherId: 'teacher-1' } as CourseEntity),
+    };
+    teacherBillingService = {
+      consumeCredits: jest.fn().mockResolvedValue({
+        monthlyAllowance: 100,
+        totalCredits: 100,
+        usedCredits: 1,
+        remainingCredits: 99,
+        percentUsed: 1,
+        resetAt: new Date('2026-09-01T00:00:00.000Z').toISOString(),
+      }),
+    };
     interventionEvaluator = {
       evaluateSignal: jest.fn().mockResolvedValue(undefined),
     };
@@ -125,8 +145,16 @@ describe('TutorService', () => {
           useValue: documentsRepository,
         },
         {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
+        {
           provide: INTERVENTION_EVALUATOR_PORT,
           useValue: interventionEvaluator,
+        },
+        {
+          provide: TeacherBillingService,
+          useValue: teacherBillingService,
         },
       ],
     }).compile();
@@ -171,6 +199,7 @@ describe('TutorService', () => {
     expect(result.citations).toEqual([]);
     expect(retrievalPort.search).not.toHaveBeenCalled();
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('introduces Saif on Arabic greetings', async () => {
@@ -198,6 +227,7 @@ describe('TutorService', () => {
     expect(result.citations).toEqual([]);
     expect(retrievalPort.search).not.toHaveBeenCalled();
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns no_answer without calling the provider when relevance is too low', async () => {
@@ -214,6 +244,7 @@ describe('TutorService', () => {
     expect(result.status).toBe('no_answer');
     expect(result.citations).toEqual([]);
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns a cited answer and persists source chunks', async () => {
@@ -245,6 +276,10 @@ describe('TutorService', () => {
         vectorId: 'doc-1:1:0',
       },
     ]);
+    expect(teacherBillingService.consumeCredits).toHaveBeenCalledWith(
+      'teacher-1',
+      CREDIT_COSTS.tutorMessage,
+    );
   });
 
   it('reports explicit confusion chat messages to the intervention evaluator', async () => {
@@ -283,6 +318,7 @@ describe('TutorService', () => {
     expect(result.status).toBe('no_answer');
     expect(result.citations).toEqual([]);
     expect(conversationsService.saveSourceChunks).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns safe 503 when the provider fails', async () => {
