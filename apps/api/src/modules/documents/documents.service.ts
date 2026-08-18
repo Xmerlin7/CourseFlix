@@ -217,8 +217,16 @@ export class DocumentsService {
 
     // Only 'completed' — a student has no business seeing a document that's
     // still processing or that failed; those aren't real content yet.
+    // `isAgentDraft` excludes an agent-written handout the teacher hasn't
+    // approved: the file exists and is fully ingested, it just isn't
+    // published content yet (see migration 1786613700000).
     const documents = await this.documentsRepository.find({
-      where: { courseId, processingStatus: 'completed', deletedAt: IsNull() },
+      where: {
+        courseId,
+        processingStatus: 'completed',
+        isAgentDraft: false,
+        deletedAt: IsNull(),
+      },
       order: { createdAt: 'DESC' },
     });
 
@@ -236,9 +244,14 @@ export class DocumentsService {
     const document = await this.documentsRepository.findOne({
       where: { id: documentId, deletedAt: IsNull() },
     });
-    if (!document || document.processingStatus !== 'completed') {
-      // Same 404 whether the row is missing or just not ready yet — a
-      // student has no legitimate reason to distinguish the two cases.
+    if (
+      !document ||
+      document.processingStatus !== 'completed' ||
+      document.isAgentDraft
+    ) {
+      // Same 404 whether the row is missing, not ready yet, or still an
+      // unapproved agent draft — a student has no legitimate reason to
+      // distinguish those cases, and guessing an id must not reveal one.
       throw new NotFoundException('Document not found.');
     }
 

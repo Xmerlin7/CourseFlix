@@ -83,6 +83,13 @@ export class DocumentEntity {
   @Column({ type: 'integer', default: 1 })
   version!: number;
 
+  // Set by the lesson agent pipeline's handout writer: the row and its
+  // PDF are real, but the teacher hasn't approved them yet, so every
+  // student-facing query filters this out. Publishing the run clears it.
+  // Ordinary teacher uploads never set it — see migration 1786613700000.
+  @Column({ name: 'is_agent_draft', type: 'boolean', default: false })
+  isAgentDraft!: boolean;
+
   // Not in schemaV2.sql — added by migration 1785000032000 because the
   // Sprint 2 endpoint contract (sprint2-plan.md §8) requires surfacing
   // a failure reason to the teacher, and the worker's own failure
