@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router'
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
@@ -123,6 +123,81 @@ describe('StudentLessonPage', () => {
       'ID 6205C1FD03',
     )
     expect(screen.getAllByText('ID 6205C1FD03')).toHaveLength(10)
+  })
+
+  it('scrolls back to the video player when a video Q&A timestamp is clicked', async () => {
+    const scrollIntoView = vi.fn()
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView
+    HTMLElement.prototype.scrollIntoView = scrollIntoView
+
+    server.use(
+      http.get(`${env.apiBaseUrl}/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          id: 'lesson-1',
+          title: 'قانون نيوتن الأول',
+          video: {
+            id: 'video-1',
+            url: 'https://cdn.example.com/newton.mp4',
+            durationSeconds: 600,
+          },
+          course: {
+            id: 'course-1',
+            title: 'فيزياء',
+            currentSectionId: 'section-1',
+            sections: [
+              {
+                id: 'section-1',
+                title: 'الحركة',
+                sortOrder: 1,
+                lessons: [{ id: 'lesson-1', title: 'قانون نيوتن الأول', sortOrder: 1 }],
+              },
+            ],
+          },
+          progress: {
+            lastPositionSeconds: 0,
+            watchedPercentage: 0,
+            status: 'not_started',
+          },
+        }),
+      ),
+      http.get(`${env.apiBaseUrl}/student/videos/video-1/qa-status`, () =>
+        HttpResponse.json({ status: 'completed' }),
+      ),
+      http.post(`${env.apiBaseUrl}/student/videos/video-1/ask`, () =>
+        HttpResponse.json({
+          status: 'answered',
+          answer: 'الإجابة موجودة عند الثانية المطلوبة.',
+          citations: [
+            {
+              chunkId: 'video-chunk-1',
+              startSeconds: 48,
+              endSeconds: 60,
+              excerpt: 'شرح الكثافة يبدأ هنا.',
+            },
+          ],
+        }),
+      ),
+    )
+
+    try {
+      const user = userEvent.setup()
+      renderPage(['/student/lessons/lesson-1'], studentAuth)
+
+      expect(await screen.findByRole('heading', { name: 'قانون نيوتن الأول' })).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /اسأل عن هذا الفيديو/ }))
+
+      const input = await screen.findByLabelText('سؤالك عن الفيديو')
+      await waitFor(() => expect(input).not.toBeDisabled())
+      await user.type(input, 'اشرح الجزء ده')
+      await user.click(screen.getByRole('button', { name: 'إرسال السؤال' }))
+
+      const timestampButton = await screen.findByRole('button', { name: /عند 0:48/ })
+      await user.click(timestampButton)
+
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+    } finally {
+      HTMLElement.prototype.scrollIntoView = originalScrollIntoView
+    }
   })
 
   it('renders Bunny Stream iframe embed codes as an embedded player', async () => {

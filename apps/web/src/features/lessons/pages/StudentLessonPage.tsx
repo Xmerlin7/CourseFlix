@@ -169,6 +169,7 @@ export function StudentLessonPage() {
   function handleSeekTo(seconds: number) {
     if (canSeekVideo) {
       activeController.seek(seconds)
+      playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
