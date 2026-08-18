@@ -2512,6 +2512,16 @@ textarea:placeholder-shown {
   border: none;
 }
 
+.actions .chip.clickable:not(.selected) {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+.actions .chip.clickable:not(.selected):focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
 /* ---------- Sections / headings ---------- */
 .section {
   margin-bottom: 36px;
