@@ -59,7 +59,6 @@ const teacherNavItems: NavItem[] = [
   { path: ROUTE_PATHS.TEACHER.COURSES, label: 'دوراتي', icon: 'menu_book' },
   { path: ROUTE_PATHS.TEACHER.COMMUNITY, label: 'المجتمع', icon: 'groups' },
   { path: ROUTE_PATHS.TEACHER.STUDENTS, label: 'الطلاب', icon: 'groups' },
-  { path: ROUTE_PATHS.TEACHER.AGENT_LOGS, label: 'سجل الوكيل', icon: 'smart_toy' },
   { path: ROUTE_PATHS.TEACHER.INTERVENTIONS, label: 'تقارير المتابعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.TEACHER.SALES, label: 'المبيعات', icon: 'payments' },
   { path: ROUTE_PATHS.TEACHER.ANALYTICS, label: 'مساعد التحليلات', icon: 'insights' },
@@ -96,7 +95,6 @@ const adminNavItems: NavItem[] = [
   { path: ROUTE_PATHS.ADMIN.DOCUMENTS, label: 'المستندات', icon: 'description' },
   { path: ROUTE_PATHS.ADMIN.INTERVENTIONS, label: 'تنبيهات المتابعة', icon: 'monitoring' },
   { path: ROUTE_PATHS.ADMIN.NOTIFICATIONS_LOG, label: 'سجل الإشعارات', icon: 'history' },
-  { path: ROUTE_PATHS.ADMIN.AGENT_LOGS, label: 'سجل الوكلاء', icon: 'smart_toy' },
   { path: ROUTE_PATHS.ADMIN.SUPPORT, label: 'صندوق الدعم', icon: 'support_agent' },
 ]
 

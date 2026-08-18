@@ -279,6 +279,7 @@
 
 .sheet {
   background: var(--surface);
+  box-shadow: var(--shadow);
   border-radius: calc(28px * var(--radius-scale));
   height: 100%;
   overflow: hidden;
@@ -2470,6 +2471,21 @@ textarea:placeholder-shown {
   gap: calc(5px * var(--space-scale));
 }
 
+/* Unselected action options use the same surface and foreground pairing as
+   the shared search field, so only the selected option carries the accent. */
+.actions > .chip.clickable.outline:not(.selected),
+.actions.section > .chip.clickable.outline:not(.selected) {
+  background: var(--surface-container-high);
+  border: none;
+  color: var(--on-surface);
+}
+
+.actions > .chip.clickable:hover:not(.selected),
+.actions.section > .chip.clickable:hover:not(.selected) {
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+}
+
 /* Filled with --primary, the same token the Switch track uses when it's
    on — so a chosen chip and an enabled toggle read as the same "this one
    is active" colour instead of two different accents on one screen. Both
@@ -2485,6 +2501,15 @@ textarea:placeholder-shown {
   color: var(--on-primary);
   border: 1px solid var(--primary);
   font-weight: 700;
+}
+
+/* Action filters are fill-only controls. Keep this after the selected rule
+   so neither native button chrome nor a selected/outline variant can restore
+   a dark edge around them. Keyboard focus remains visible via box-shadow. */
+.actions > .chip.clickable,
+.actions.section > .chip.clickable {
+  appearance: none;
+  border: none;
 }
 
 /* ---------- Sections / headings ---------- */
