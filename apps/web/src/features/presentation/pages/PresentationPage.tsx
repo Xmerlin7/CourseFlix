@@ -1,31 +1,45 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactElement } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useTheme } from '../../../shared/hooks/useTheme'
 import shotLogin from '../assets/shot-login.png'
 import shotRegister from '../assets/shot-register.png'
 import shotStudentDashboard from '../assets/shot-student-dashboard.png'
 import shotCourseDetail from '../assets/shot-course-detail.png'
-import shotNotifications from '../assets/shot-notifications.png'
+import shotLessonPlayer from '../assets/shot-lesson-player.png'
+import shotQuiz from '../assets/shot-quiz.png'
+import shotTutor from '../assets/shot-tutor.png'
 import shotCommunity from '../assets/shot-community.png'
+import shotNotifications from '../assets/shot-notifications.png'
 import shotSettings from '../assets/shot-settings.png'
+import shotTeacherDashboard from '../assets/shot-teacher-dashboard.png'
+import shotTeacherSales from '../assets/shot-teacher-sales.png'
 import './PresentationPage.css'
 
-// CourseFlix graduation-project presentation — a slide deck styled like
-// the platform (light Material palette, purple/teal accents) with a
-// keyboard/click-driven flow mirroring the HR System deck structure.
-// Reach it at /present.
+// CourseFlix graduation-project presentation — a slide deck styled with
+// the platform's Material 3 design tokens (index.css) and fresh screenshots
+// of the running app. Reach it at /present. Append ?print to render every
+// slide as a fixed 16:9 page for PDF export.
 
 interface SlideMeta {
   kicker: string
   title: string
 }
 
-type SlideRenderer = (meta: SlideMeta) => JSX.Element
+type SlideRenderer = (meta: SlideMeta) => ReactElement
 
 interface DeckEntry {
   meta: SlideMeta
   render: SlideRenderer
 }
+
+const TEAM = [
+  { initials: 'AH', name: 'Abdallah Habsa', title: 'Abdallah Ahmed Hassan Habsa' },
+  { initials: 'AN', name: 'Albraa Nawara', title: 'Albraa Mahfouz Abdalaziz Nawara' },
+  { initials: 'MA', name: 'Mahmoud Abohessain', title: 'Mahmoud Nabil Mahmoud Abohessain' },
+  { initials: 'ME', name: 'Mohamed Elgendy', title: 'Mohamed Reda Galal Elgendy' },
+  { initials: 'SE', name: 'Seif-Allah Eldarageely', title: 'Seif-Allah Ahmed Mostafa Eldarageely' },
+] as const
 
 // ─── Shared visual atoms ───────────────────────────────────────────────
 function SlideShell({ meta, children }: { meta: SlideMeta; children: React.ReactNode }) {
@@ -50,6 +64,24 @@ function Card({ title, body }: { title: string; body: string }) {
   )
 }
 
+function MemberCard({ member }: { member: (typeof TEAM)[number] }) {
+  return (
+    <div className="pres-member" title={member.title}>
+      <span className="pres-member-initials">{member.initials}</span>
+      <span className="pres-member-name">{member.name}</span>
+    </div>
+  )
+}
+
+function ShotTile({ src, caption }: { src: string; caption: string }) {
+  return (
+    <figure className="pres-shot">
+      <img src={src} alt={caption} loading="lazy" />
+      <figcaption>{caption}</figcaption>
+    </figure>
+  )
+}
+
 // ─── Slides ────────────────────────────────────────────────────────────
 const SLIDES: DeckEntry[] = [
   {
@@ -59,33 +91,19 @@ const SLIDES: DeckEntry[] = [
         <span className="pres-logo">COURSEFLIX</span>
         <p className="pres-hero-sub">An Arabic-First Online Learning Platform</p>
         <p className="pres-hero-tag">
-          Full-stack LMS · RAG AI Tutor · Learning Interventions · Paymob Payments · Sales Analytics
+          Full-stack LMS &middot; RAG AI Tutor &middot; Learning Interventions &middot; Paymob Payments &middot; Sales Analytics
         </p>
         <div className="pres-hero-team">
           <span className="pres-hero-label">Team Members</span>
-          <div className="pres-avatars">
-            <div className="pres-avatar" title="Abdallah Ahmed Hassan Habsa">
-              <span className="pres-avatar-initials">AH</span>
-              <span className="pres-avatar-name">Abdallah Habsa</span>
-            </div>
-            <div className="pres-avatar" title="Albraa Mahfouz Abdalaziz Nawara">
-              <span className="pres-avatar-initials">AN</span>
-              <span className="pres-avatar-name">Albraa Nawara</span>
-            </div>
-            <div className="pres-avatar" title="Mahmoud Nabil Mahmoud Abohessain">
-              <span className="pres-avatar-initials">MA</span>
-              <span className="pres-avatar-name">Mahmoud Abohessain</span>
-            </div>
-            <div className="pres-avatar" title="Mohamed Reda Galal Elgendy">
-              <span className="pres-avatar-initials">ME</span>
-              <span className="pres-avatar-name">Mohamed Elgendy</span>
-            </div>
-            <div className="pres-avatar" title="Seif-Allah Ahmed Mostafa Eldarageely">
-              <span className="pres-avatar-initials">SE</span>
-              <span className="pres-avatar-name">Seif-Allah Eldarageely</span>
-            </div>
+          <div className="pres-team-grid">
+            <MemberCard member={TEAM[0]} />
+            <MemberCard member={TEAM[1]} />
+            <MemberCard member={TEAM[2]} />
+            <MemberCard member={TEAM[3]} />
           </div>
-          <p className="pres-hero-supervisor">Supervisor: Eng. Ayaat Abdelazim</p>
+          <div className="pres-team-solo">
+            <MemberCard member={TEAM[4]} />
+          </div>
         </div>
       </div>
     ),
@@ -104,13 +122,9 @@ const SLIDES: DeckEntry[] = [
           ['7', 'System Architecture'],
           ['8', 'Backend Walkthrough'],
           ['9', 'Frontend Walkthrough'],
-          ['10', 'Screens · Auth'],
-          ['11', 'Screens · Student'],
-          ['12', 'Screens · In Sync'],
-          ['13', 'Screens · Settings'],
-          ['14', 'System Demonstration'],
-          ['15', 'Future Enhancements'],
-          ['16', 'Conclusion'],
+          ['10', 'Screens'],
+          ['11', 'Future Enhancements'],
+          ['12', 'Conclusion'],
         ].map(([num, label]) => (
           <li key={num} className="pres-agenda-item">
             <span className="pres-agenda-num">{num}</span>
@@ -347,9 +361,9 @@ const SLIDES: DeckEntry[] = [
     ),
   },
   {
-    meta: { kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend Overview — Student & Teacher' },
+    meta: { kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend — Learning Flow' },
     render: () => (
-      <SlideShell meta={{ kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend Overview — Student & Teacher' }}>
+      <SlideShell meta={{ kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend — Learning Flow' }}>
         <FrontendList
           items={[
             ['Login / Register', 'Email+password or Google OTP step; role-guarded redirect; reset password.'],
@@ -364,10 +378,10 @@ const SLIDES: DeckEntry[] = [
     ),
   },
   {
-    meta: { kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend Overview — Community, Commerce, Admin' },
+    meta: { kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend — Community, Commerce, Admin' },
     render: () => (
       <SlideShell
-        meta={{ kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend Overview — Community, Commerce, Admin' }}
+        meta={{ kicker: 'FRONTEND WALKTHROUGH', title: 'Frontend — Community, Commerce, Admin' }}
       >
         <FrontendList
           items={[
@@ -383,94 +397,73 @@ const SLIDES: DeckEntry[] = [
     ),
   },
   {
-    meta: { kicker: 'SCREEN · 1/7', title: 'Login' },
+    meta: { kicker: 'SCREENS · 1/5', title: 'Screens — Auth' },
     render: () => (
-      <SlideShell meta={{ kicker: 'SCREEN · 1/7', title: 'Login' }}>
-        <p className="pres-lead">Sign in with email/password or Google OTP.</p>
-        <figure className="pres-shot pres-shot--full">
-          <img src={shotLogin} alt="Login screen" loading="lazy" />
-        </figure>
+      <SlideShell meta={{ kicker: 'SCREENS · 1/5', title: 'Screens — Auth' }}>
+        <p className="pres-lead">Sign in with email/password or Google OTP; self-registration wizard.</p>
+        <div className="pres-shots pres-shots--pair">
+          <ShotTile src={shotLogin} caption="Login" />
+          <ShotTile src={shotRegister} caption="Register" />
+        </div>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'SCREEN · 2/7', title: 'Register' },
+    meta: { kicker: 'SCREENS · 2/5', title: 'Screens — Student Home' },
     render: () => (
-      <SlideShell meta={{ kicker: 'SCREEN · 2/7', title: 'Register' }}>
-        <p className="pres-lead">Student self-registration wizard.</p>
-        <figure className="pres-shot pres-shot--full">
-          <img src={shotRegister} alt="Register screen" loading="lazy" />
-        </figure>
+      <SlideShell meta={{ kicker: 'SCREENS · 2/5', title: 'Screens — Student Home' }}>
+        <p className="pres-lead">Enrolled courses with progress and a structured course detail page.</p>
+        <div className="pres-shots pres-shots--pair">
+          <ShotTile src={shotStudentDashboard} caption="Student Dashboard" />
+          <ShotTile src={shotCourseDetail} caption="Course Detail" />
+        </div>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'SCREEN · 3/7', title: 'Student Dashboard' },
+    meta: { kicker: 'SCREENS · 3/5', title: 'Screens — Learning' },
     render: () => (
-      <SlideShell meta={{ kicker: 'SCREEN · 3/7', title: 'Student Dashboard' }}>
-        <p className="pres-lead">Enrolled courses with progress and status.</p>
-        <figure className="pres-shot pres-shot--full">
-          <img src={shotStudentDashboard} alt="Student dashboard" loading="lazy" />
-        </figure>
+      <SlideShell meta={{ kicker: 'SCREENS · 3/5', title: 'Screens — Learning' }}>
+        <p className="pres-lead">Video lessons with resume + attendance, and server-graded quizzes.</p>
+        <div className="pres-shots pres-shots--pair">
+          <ShotTile src={shotLessonPlayer} caption="Lesson Player" />
+          <ShotTile src={shotQuiz} caption="Quiz" />
+        </div>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'SCREEN · 4/7', title: 'Course Detail' },
+    meta: { kicker: 'SCREENS · 4/5', title: 'Screens — AI & Engagement' },
     render: () => (
-      <SlideShell meta={{ kicker: 'SCREEN · 4/7', title: 'Course Detail' }}>
-        <p className="pres-lead">A structured course page with sections and lessons.</p>
-        <figure className="pres-shot pres-shot--full">
-          <img src={shotCourseDetail} alt="Course detail" loading="lazy" />
-        </figure>
+      <SlideShell meta={{ kicker: 'SCREENS · 4/5', title: 'Screens — AI & Engagement' }}>
+        <p className="pres-lead">The course-scoped AI Tutor and the community / discussions surface.</p>
+        <div className="pres-shots pres-shots--pair">
+          <ShotTile src={shotTutor} caption="AI Tutor Chat" />
+          <ShotTile src={shotCommunity} caption="Community" />
+        </div>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'SCREEN · 5/7', title: 'Notifications' },
+    meta: { kicker: 'SCREENS · 5/5', title: 'Screens — Account & Alerts' },
     render: () => (
-      <SlideShell meta={{ kicker: 'SCREEN · 5/7', title: 'Notifications' }}>
-        <p className="pres-lead">Filterable feed with deep-links to the exact entity.</p>
-        <figure className="pres-shot pres-shot--full">
-          <img src={shotNotifications} alt="Notifications" loading="lazy" />
-        </figure>
+      <SlideShell meta={{ kicker: 'SCREENS · 5/5', title: 'Screens — Account & Alerts' }}>
+        <p className="pres-lead">Notifications with deep links, and theme/account preferences.</p>
+        <div className="pres-shots pres-shots--pair">
+          <ShotTile src={shotNotifications} caption="Notifications" />
+          <ShotTile src={shotSettings} caption="Settings" />
+        </div>
       </SlideShell>
     ),
   },
   {
-    meta: { kicker: 'SCREEN · 6/7', title: 'Community' },
+    meta: { kicker: 'TEACHER WORKSPACE', title: 'Teacher Workspace' },
     render: () => (
-      <SlideShell meta={{ kicker: 'SCREEN · 6/7', title: 'Community' }}>
-        <p className="pres-lead">Course discussions and teacher announcements.</p>
-        <figure className="pres-shot pres-shot--full">
-          <img src={shotCommunity} alt="Community" loading="lazy" />
-        </figure>
-      </SlideShell>
-    ),
-  },
-  {
-    meta: { kicker: 'SCREEN · 7/7', title: 'Settings' },
-    render: () => (
-      <SlideShell meta={{ kicker: 'SCREEN · 7/7', title: 'Settings' }}>
-        <p className="pres-lead">Theme, notifications and account preferences.</p>
-        <figure className="pres-shot pres-shot--full">
-          <img src={shotSettings} alt="Settings" loading="lazy" />
-        </figure>
-      </SlideShell>
-    ),
-  },
-  {
-    meta: { kicker: 'DEMONSTRATION', title: 'System Demonstration' },
-    render: () => (
-      <SlideShell meta={{ kicker: 'DEMONSTRATION', title: 'System Demonstration' }}>
-        <div className="pres-demo">
-          <span className="pres-demo-play">▶</span>
-          <p className="pres-demo-title">Video Link</p>
-          <p className="pres-demo-desc">
-            Live end-to-end demo: teacher publishes a lesson and uploads a PDF → student learns, asks
-            the Tutor, triggers an intervention, and completes checkout → teacher reviews sales and
-            agent logs.
-          </p>
+      <SlideShell meta={{ kicker: 'TEACHER WORKSPACE', title: 'Teacher Workspace' }}>
+        <p className="pres-lead">Course management, students, and backend-sourced sales metrics.</p>
+        <div className="pres-shots pres-shots--pair">
+          <ShotTile src={shotTeacherDashboard} caption="Teacher Dashboard" />
+          <ShotTile src={shotTeacherSales} caption="Sales & Analytics" />
         </div>
       </SlideShell>
     ),
@@ -534,29 +527,6 @@ const SLIDES: DeckEntry[] = [
       <div className="pres-thanks">
         <h2 className="pres-thanks-title">Thank You!</h2>
         <p className="pres-thanks-sub">Feel free to ask any questions</p>
-        <div className="pres-avatars pres-avatars--thanks">
-          <div className="pres-avatar" title="Abdallah Ahmed Hassan Habsa">
-            <span className="pres-avatar-initials">AH</span>
-            <span className="pres-avatar-name">Abdallah Habsa</span>
-          </div>
-          <div className="pres-avatar" title="Albraa Mahfouz Abdalaziz Nawara">
-            <span className="pres-avatar-initials">AN</span>
-            <span className="pres-avatar-name">Albraa Nawara</span>
-          </div>
-          <div className="pres-avatar" title="Mahmoud Nabil Mahmoud Abohessain">
-            <span className="pres-avatar-initials">MA</span>
-            <span className="pres-avatar-name">Mahmoud Abohessain</span>
-          </div>
-          <div className="pres-avatar" title="Mohamed Reda Galal Elgendy">
-            <span className="pres-avatar-initials">ME</span>
-            <span className="pres-avatar-name">Mohamed Elgendy</span>
-          </div>
-          <div className="pres-avatar" title="Seif-Allah Ahmed Mostafa Eldarageely">
-            <span className="pres-avatar-initials">SE</span>
-            <span className="pres-avatar-name">Seif-Allah Eldarageely</span>
-          </div>
-        </div>
-        <p className="pres-thanks-supervisor">Supervisor: Eng. Ayaat Abdelazim</p>
       </div>
     ),
   },
@@ -604,9 +574,27 @@ function FrontendList({ items }: { items: Array<[string, string]> }) {
   )
 }
 
+// ─── Print / PDF mode — renders every slide on a fixed 16:9 page ───────
+function PrintDeck() {
+  return (
+    <div className="pres-print-root">
+      {SLIDES.map((slide, i) => (
+        <div className="pres-print-slide" key={slide.meta.title}>
+          <div className="pres-print-note" aria-hidden="true">
+            {i + 1} / {SLIDES.length}
+          </div>
+          {slide.render(slide.meta)}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── Deck controller ───────────────────────────────────────────────────
 export function PresentationPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const printMode = searchParams.get('print') === '1' || searchParams.get('print') === 'true'
   const { mode, resolvedTheme, setMode } = useTheme()
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState<1 | -1>(1)
@@ -621,7 +609,7 @@ export function PresentationPage() {
 
   const goTo = useCallback(
     (next: number, dir: 1 | -1) => {
-      setIndex((current) => {
+      setIndex(() => {
         const clamped = Math.min(total - 1, Math.max(0, next))
         setDirection(dir)
         return clamped
@@ -633,7 +621,10 @@ export function PresentationPage() {
   const next = useCallback(() => goTo(index + 1, 1), [goTo, index])
   const prev = useCallback(() => goTo(index - 1, -1), [goTo, index])
 
+  const current = SLIDES[Math.min(index, total - 1)]
+
   useEffect(() => {
+    if (printMode) return
     function onKey(event: KeyboardEvent) {
       if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === ' ') {
         event.preventDefault()
@@ -647,9 +638,11 @@ export function PresentationPage() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [next, prev, navigate])
+  }, [next, prev, navigate, printMode])
 
-  const current = useMemo(() => SLIDES[index], [index])
+  if (printMode) {
+    return <PrintDeck />
+  }
 
   return (
     <div
