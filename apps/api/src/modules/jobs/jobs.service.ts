@@ -23,6 +23,9 @@ export class JobsService {
 
     @InjectQueue('exam-generation')
     private readonly examGenerationQueue: Queue,
+
+    @InjectQueue('lesson-agents')
+    private readonly lessonAgentsQueue: Queue,
   ) {}
 
   /**
@@ -194,6 +197,47 @@ export class JobsService {
         jobId: bullJobId,
         attempts: 1,
       },
+    );
+
+    return bullJobId;
+  }
+
+  /**
+   * Dispatches the multi-agent lesson pipeline.
+   *
+   * `onlyAgentKey` is the "redo just this one" path: the teacher
+   * commented on a single agent's output, so the orchestrator skips
+   * straight to that agent instead of re-transcribing and re-indexing a
+   * video that hasn't changed.
+   *
+   * Like `enqueueExamGeneration` there is no idempotency key — each call
+   * *is* a distinct attempt, and `LessonAgentsService` is the one
+   * deciding when another attempt is allowed (a lesson can't have two
+   * in-flight runs, and a step can only be re-run from a completed
+   * review state).
+   *
+   * `attempts: 1`, also matching exam generation: a failed agent leaves
+   * a reviewable failure on the step for the teacher to act on, which is
+   * more useful than silently burning retries against an LLM that is
+   * going to give the same answer.
+   */
+  async enqueueLessonAgents(
+    runId: string,
+    onlyAgentKey?: string,
+  ): Promise<string> {
+    const savedJob = await this.aiJobsRepository.save(
+      this.aiJobsRepository.create({
+        jobType: 'lesson_agents',
+        targetEntityType: 'lesson_agent_run',
+        targetEntityId: runId,
+      }),
+    );
+
+    const bullJobId = `lesson-agents:${runId}:${savedJob.id}`;
+    await this.lessonAgentsQueue.add(
+      'lesson-agents',
+      { jobId: savedJob.id, onlyAgentKey },
+      { jobId: bullJobId, attempts: 1 },
     );
 
     return bullJobId;
