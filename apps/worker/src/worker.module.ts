@@ -5,6 +5,17 @@ import { BullModule } from '@nestjs/bullmq';
 import { IngestionProcessor } from './processors/ingestion.processor';
 import { VideoIngestionProcessor } from './processors/video-ingestion.processor';
 import { ExamGenerationProcessor } from './processors/exam-generation.processor';
+import { LessonAgentsProcessor } from './processors/lesson-agents.processor';
+import { TranscriptAgent } from './agents/transcript.agent';
+import { ReviewerAgent } from './agents/reviewer.agent';
+import { IndexerAgent } from './agents/indexer.agent';
+import { HandoutAgent } from './agents/handout.agent';
+import { QuizmasterAgent } from './agents/quizmaster.agent';
+import {
+  HANDOUT_LLM_PROVIDER,
+  MockHandoutLlmProvider,
+  OpenAIHandoutLlmProvider,
+} from './adapters/handout-llm.adapter';
 import {
   EMBEDDING_PROVIDER,
   MockEmbeddingProvider,
@@ -66,12 +77,19 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
       { name: 'ingestion' },
       { name: 'video-ingestion' },
       { name: 'exam-generation' },
+      { name: 'lesson-agents' },
     ),
   ],
   providers: [
     IngestionProcessor,
     VideoIngestionProcessor,
     ExamGenerationProcessor,
+    LessonAgentsProcessor,
+    TranscriptAgent,
+    ReviewerAgent,
+    IndexerAgent,
+    HandoutAgent,
+    QuizmasterAgent,
     BunnyCaptionsAdapter,
     YoutubeCaptionsAdapter,
     WhisperCaptionsAdapter,
@@ -104,6 +122,21 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
           return new MockExamLlmProvider();
         }
         return new OpenAIExamLlmProvider(configService);
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: HANDOUT_LLM_PROVIDER,
+      useFactory: (configService: ConfigService) => {
+        const apiKey =
+          configService.get<string>('OPENAI_API_KEY') ||
+          configService.get<string>('LLM_API_KEY');
+        const env = configService.get<string>('NODE_ENV');
+
+        if (!apiKey || apiKey === 'replace-me' || env === 'test') {
+          return new MockHandoutLlmProvider();
+        }
+        return new OpenAIHandoutLlmProvider(configService);
       },
       inject: [ConfigService],
     },

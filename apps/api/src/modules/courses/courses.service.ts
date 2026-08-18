@@ -415,7 +415,7 @@ export class CoursesService {
   async createLesson(
     sectionId: string,
     teacherId: string,
-    fields: { title: string; videoUrl?: string | null },
+    fields: { title: string; videoUrl?: string | null; useAgents?: boolean },
   ): Promise<LessonEntity> {
     const section = await this.getSection(sectionId, teacherId);
     const videoUrl = normalizeLessonVideoUrl(fields.videoUrl);
@@ -439,7 +439,7 @@ export class CoursesService {
       }),
     );
 
-    await this.syncLessonVideo(lesson, videoUrl);
+    await this.syncLessonVideo(lesson, videoUrl, fields.useAgents === true);
 
     return lesson;
   }
@@ -514,9 +514,17 @@ export class CoursesService {
 
   // ── Private ──
 
+  /**
+   * `deferIngestionToAgents` is set when the teacher picked the
+   * multi-agent path for this lesson: that pipeline transcribes and
+   * indexes the same video itself, so firing the plain caption job here
+   * too would put two workers on one transcript, racing over which
+   * version's chunks end up active.
+   */
   private async syncLessonVideo(
     lesson: LessonEntity,
     videoUrl: string | null,
+    deferIngestionToAgents = false,
   ): Promise<void> {
     const existingVideo = await this.videosRepository.findOne({
       where: { lessonId: lesson.id, deletedAt: IsNull() },
@@ -564,6 +572,13 @@ export class CoursesService {
         });
 
     const savedVideo = await this.videosRepository.save(video);
+
+    if (deferIngestionToAgents) {
+      this.logger.log(
+        `Skipping plain caption ingestion for video=${savedVideo.id}; the lesson agent pipeline owns it.`,
+      );
+      return;
+    }
 
     // Fire-and-forget: caption ingestion must never block saving the
     // lesson. A provider fetch failure lands on the video_transcripts
