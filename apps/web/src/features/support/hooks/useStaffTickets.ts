@@ -19,8 +19,8 @@ export function useStaffTickets(filters: StaffTicketFilters): UseStaffTicketsRes
   useEffect(() => {
     const controller = new AbortController()
 
-    async function load() {
-      setIsLoading(true)
+    async function load(showLoading: boolean) {
+      if (showLoading) setIsLoading(true)
       setError(null)
       try {
         const tickets = await getStaffTickets(filters)
@@ -34,8 +34,12 @@ export function useStaffTickets(filters: StaffTicketFilters): UseStaffTicketsRes
       }
     }
 
-    void load()
-    return () => controller.abort()
+    void load(true)
+    const intervalId = window.setInterval(() => void load(false), 30_000)
+    return () => {
+      window.clearInterval(intervalId)
+      controller.abort()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- filters is a plain object; its fields are the real deps.
   }, [filters.status, filters.category, filters.courseId, filters.search, refetchToken])
 

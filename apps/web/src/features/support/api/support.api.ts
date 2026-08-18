@@ -63,9 +63,10 @@ export function addTicketMessage(ticketId: string, body: string): Promise<Suppor
   return httpClient.post<SupportMessage>(`/support/tickets/${ticketId}/messages`, { body })
 }
 
-export function updateTicketStatus(
-  ticketId: string,
-  status: SupportTicketStatus,
-): Promise<SupportTicketDetail> {
+export function updateTicketStatus(ticketId: string, status: SupportTicketStatus): Promise<SupportTicketDetail> {
   return httpClient.patch<SupportTicketDetail>(`/support/tickets/${ticketId}/status`, { status })
+}
+
+export function openCourseChat(courseId: string, studentId: string): Promise<SupportTicketDetail> {
+  return httpClient.post<SupportTicketDetail>(`/support/course-chats/${courseId}/students/${studentId}`, {})
 }

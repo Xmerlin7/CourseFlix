@@ -19,8 +19,8 @@ export function useTicket(ticketId: string): UseTicketResult {
   useEffect(() => {
     const controller = new AbortController()
 
-    async function load() {
-      setIsLoading(true)
+    async function load(showLoading: boolean) {
+      if (showLoading) setIsLoading(true)
       setError(null)
       try {
         const ticket = await getTicket(ticketId)
@@ -34,8 +34,12 @@ export function useTicket(ticketId: string): UseTicketResult {
       }
     }
 
-    void load()
-    return () => controller.abort()
+    void load(true)
+    const intervalId = window.setInterval(() => void load(false), 30_000)
+    return () => {
+      window.clearInterval(intervalId)
+      controller.abort()
+    }
   }, [ticketId, refetchToken])
 
   return { data, isLoading, error, refetch: () => setRefetchToken((t) => t + 1) }

@@ -12,6 +12,7 @@ import { InterventionEntity } from './entities/intervention.entity';
 import { ProgressReportEntity } from './entities/progress-report.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { MiniQuizService } from './mini-quiz.service';
+import { SupportService } from '../support/support.service';
 
 describe('InterventionsService', () => {
   let service: InterventionsService;
@@ -21,6 +22,7 @@ describe('InterventionsService', () => {
   let notificationPort: { notify: jest.Mock };
   let agentLogPort: jest.Mocked<AgentLogPort>;
   let miniQuizService: { generateForIntervention: jest.Mock };
+  let supportService: { ensureCourseChatForIntervention: jest.Mock };
   let queryRunner: {
     connect: jest.Mock;
     startTransaction: jest.Mock;
@@ -56,6 +58,11 @@ describe('InterventionsService', () => {
     miniQuizService = {
       generateForIntervention: jest.fn().mockResolvedValue('mini-quiz-1'),
     };
+    supportService = {
+      ensureCourseChatForIntervention: jest
+        .fn()
+        .mockResolvedValue('support-ticket-1'),
+    };
 
     queryRunner = {
       connect: jest.fn().mockResolvedValue(undefined),
@@ -84,6 +91,7 @@ describe('InterventionsService', () => {
         { provide: NOTIFICATION_PRODUCER_PORT, useValue: notificationPort },
         { provide: AGENT_LOG_PORT, useValue: agentLogPort },
         { provide: MiniQuizService, useValue: miniQuizService },
+        { provide: SupportService, useValue: supportService },
       ],
     }).compile();
 
@@ -174,7 +182,7 @@ describe('InterventionsService', () => {
       expect(agentLogPort.record).not.toHaveBeenCalled();
     });
 
-    it('sends the student directly to the generated mini quiz and keeps teacher/log tied to the intervention', async () => {
+    it('opens a support chat and sends the student directly to the generated mini quiz', async () => {
       await service.evaluateSignal({
         kind: 'quiz_score',
         studentId,
@@ -193,7 +201,7 @@ describe('InterventionsService', () => {
           },
         ]
       >;
-      expect(notifyCalls).toHaveLength(2);
+      expect(notifyCalls).toHaveLength(1);
       expect(notifyCalls[0][0]).toEqual(
         expect.objectContaining({
           type: 'quiz_ready',
@@ -201,8 +209,14 @@ describe('InterventionsService', () => {
           relatedEntityId: 'mini-quiz-1',
         }),
       );
-      expect(notifyCalls[1][0].relatedEntityType).toBe('intervention');
-      expect(notifyCalls[1][0].relatedEntityId).toBe('intervention-1');
+      expect(
+        supportService.ensureCourseChatForIntervention,
+      ).toHaveBeenCalledWith({
+        studentId,
+        courseId: course.id,
+        courseTitle: course.title,
+        weakConcept: 'قوانين نيوتن',
+      });
 
       const [logCall] = agentLogPort.record.mock.calls[0] as [
         { targetEntityId: string; agentType: string },

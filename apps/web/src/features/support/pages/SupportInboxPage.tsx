@@ -194,7 +194,9 @@ export function SupportInboxPage() {
                       <span>جديد</span>
                     </span>
                   )}
-                  <span className="support-card-id">#{ticket.id.slice(0, 8)}</span>
+                  <span className="support-card-id">
+                    {ticket.isCourseChat ? 'متابعة طالب' : `#${ticket.id.slice(0, 8)}`}
+                  </span>
                   <span className="chip outline sm">
                     {SUPPORT_TICKET_CATEGORY_LABELS[ticket.category]}
                   </span>
@@ -243,4 +245,3 @@ export function SupportInboxPage() {
     </>
   )
 }
-

@@ -126,6 +126,16 @@ export class SupportController {
     return this.supportService.listStaffTickets(filters, user);
   }
 
+  @Post('course-chats/:courseId/students/:studentId')
+  @UseGuards(SupportStaffRoleGuard)
+  openCourseChat(
+    @Param('courseId') courseId: string,
+    @Param('studentId') studentId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.supportService.openCourseChat(courseId, studentId, user);
+  }
+
   // Reachable by the owning student or any support staff — resolved in
   // the service, same reasoning as DiscussionsController.
   @Get('tickets/:ticketId')
