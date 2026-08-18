@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { AgentSettingsForm } from '../../lesson-agents/components/AgentSettingsForm'
 import { TeacherWhatsappContactForm } from '../../profile/components/TeacherWhatsappContactForm'
 import { AppearanceSettingsForm } from '../components/AppearanceSettingsForm'
 import { ExperienceSettingsForm } from '../components/ExperienceSettingsForm'
 import { NotificationSettingsForm } from '../components/NotificationSettingsForm'
 
-type SettingsTab = 'appearance' | 'experience' | 'notifications' | 'student-contact'
+type SettingsTab =
+  | 'appearance'
+  | 'experience'
+  | 'notifications'
+  | 'student-contact'
+  | 'agents'
 
 const TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
   { value: 'appearance', label: 'المظهر', icon: 'palette' },
@@ -16,6 +22,7 @@ const TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
 
 const TEACHER_TABS: Array<{ value: SettingsTab; label: string; icon: string }> = [
   { value: 'student-contact', label: 'تواصل الطلاب', icon: 'forum' },
+  { value: 'agents', label: 'وكلاء الدروس', icon: 'smart_toy' },
 ]
 
 export function SettingsPage() {
@@ -48,6 +55,7 @@ export function SettingsPage() {
           {activeTab === 'experience' && <ExperienceSettingsForm />}
           {activeTab === 'notifications' && <NotificationSettingsForm />}
           {activeTab === 'student-contact' && <TeacherWhatsappContactForm />}
+          {activeTab === 'agents' && <AgentSettingsForm />}
         </div>
       </div>
     </>
