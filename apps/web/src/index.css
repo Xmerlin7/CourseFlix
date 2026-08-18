@@ -265,6 +265,7 @@
 
 /* ===== App Layout ===== */
 .app {
+  --shell-gap: 14px;
   display: flex;
   height: 100vh;
 }
@@ -273,7 +274,8 @@
   flex: 1;
   min-width: 0;
   height: 100vh;
-  padding: 14px;
+  margin: 0;
+  padding: var(--shell-gap);
   padding-inline-start: 0;
 }
 
@@ -521,7 +523,9 @@
 
 .app[data-sidebar-pos='left'] .main {
   order: 1;
-  padding-inline: 0 14px;
+  padding-left: 0;
+  padding-right: var(--shell-gap);
+  margin-left: var(--shell-gap);
 }
 
 /* ---------- Docked bottom ---------- */
@@ -534,7 +538,9 @@
   height: auto;
   min-height: 0;
   flex: 1;
-  padding: 14px 14px 0;
+  margin-bottom: var(--shell-gap);
+  padding-block: var(--shell-gap) 0;
+  padding-inline: var(--shell-gap);
 }
 
 .app[data-sidebar-pos='bottom'] .sidebar {
@@ -1806,6 +1812,7 @@ code {
   .app[data-sidebar-pos='bottom'] .main,
   .app[data-sidebar-pos='left'] .main {
     order: 0;
+    margin: 0;
   }
 
   .app[data-sidebar-pos='bottom'] .main {
