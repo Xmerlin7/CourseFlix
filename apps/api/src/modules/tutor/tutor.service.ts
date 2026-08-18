@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,7 +18,10 @@ import {
   RetrievalPort,
 } from '../../common/ports/retrieval.port';
 import { DocumentEntity } from '../documents/entities/document.entity';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { CREDIT_COSTS } from '../teacher-billing/teacher-billing.constants';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import {
   LLM_PROVIDER,
   LlmGenerateResult,
@@ -103,10 +107,13 @@ export class TutorService {
     private readonly retrievalPort: RetrievalPort,
     @Inject(LLM_PROVIDER)
     private readonly llmProvider: LlmProvider,
+    @InjectRepository(CourseEntity)
+    private readonly coursesRepository: Repository<CourseEntity>,
     @InjectRepository(DocumentEntity)
     private readonly documentsRepository: Repository<DocumentEntity>,
     @Inject(INTERVENTION_EVALUATOR_PORT)
     private readonly interventionEvaluator: InterventionEvaluatorPort,
+    private readonly teacherBillingService: TeacherBillingService,
   ) {}
 
   async sendMessage(input: {
@@ -291,6 +298,8 @@ export class TutorService {
       `Tutor answered trace: messageId=${assistantMessage.id} courseId=${input.courseId} citations=${citations.length} model=${llmResult.modelName}`,
     );
 
+    await this.consumeTeacherTutorCredit(input.courseId);
+
     return {
       messageId: assistantMessage.id,
       status: 'answered',
@@ -321,6 +330,21 @@ export class TutorService {
       text: message.messageText,
       createdAt: message.createdAt.toISOString(),
     }));
+  }
+
+  private async consumeTeacherTutorCredit(courseId: string): Promise<void> {
+    const course = await this.coursesRepository.findOne({
+      where: { id: courseId },
+      select: { id: true, teacherId: true },
+    });
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+
+    await this.teacherBillingService.consumeCredits(
+      course.teacherId,
+      CREDIT_COSTS.tutorMessage,
+    );
   }
 
   private async persistNoAnswer(
