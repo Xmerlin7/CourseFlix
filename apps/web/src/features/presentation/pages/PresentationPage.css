@@ -28,7 +28,8 @@
 }
 
 /* Glows are MD3 container tints (primary/secondary/tertiary containers). */
-.pres-root {
+.pres-root,
+.pres-print-root {
   --pres-glow-1: color-mix(in srgb, var(--primary-container) 70%, transparent);
   --pres-glow-2: color-mix(in srgb, var(--secondary-container) 62%, transparent);
   --pres-glow-3: color-mix(in srgb, var(--tertiary-container) 48%, transparent);
@@ -1418,8 +1419,25 @@
 
 /* ── Print / PDF mode — every slide on a fixed 16:9 page ──────────────── */
 .pres-print-root {
+  position: relative;
   direction: ltr;
-  background: linear-gradient(160deg, var(--bg) 0%, var(--surface) 50%, var(--bg) 100%);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 10%, var(--pres-glow-1), transparent 30%),
+    radial-gradient(circle at 86% 14%, var(--pres-glow-2), transparent 34%),
+    radial-gradient(circle at 50% 108%, var(--pres-glow-3), transparent 40%),
+    linear-gradient(160deg, var(--bg) 0%, var(--surface) 50%, var(--bg) 100%);
+}
+
+.pres-print-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  z-index: 3;
+  background: linear-gradient(90deg, var(--pres-brand), var(--pres-brand-container), var(--pres-accent-container));
 }
 
 .pres-print-slide {
@@ -1441,7 +1459,6 @@
   height: 100%;
   box-sizing: border-box;
   animation: none !important;
-  box-shadow: none;
   border-radius: calc(28px * var(--radius-scale));
 }
 

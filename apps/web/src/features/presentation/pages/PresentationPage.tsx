@@ -109,29 +109,33 @@ const SLIDES: DeckEntry[] = [
     ),
   },
   {
-    meta: { kicker: 'AGENDA', title: 'Agenda' },
+    meta: { kicker: 'TABLE OF CONTENTS', title: 'Table of Contents' },
     render: () => (
-      <ol className="pres-agenda">
-        {[
-          ['1', 'Introduction'],
-          ['2', 'Overview'],
-          ['3', 'User Journey'],
-          ['4', 'Objectives'],
-          ['5', 'Technologies Used'],
-          ['6', 'System Features'],
-          ['7', 'System Architecture'],
-          ['8', 'Backend Walkthrough'],
-          ['9', 'Frontend Walkthrough'],
-          ['10', 'Screens'],
-          ['11', 'Future Enhancements'],
-          ['12', 'Conclusion'],
-        ].map(([num, label]) => (
-          <li key={num} className="pres-agenda-item">
-            <span className="pres-agenda-num">{num}</span>
-            <span className="pres-agenda-label">{label}</span>
-          </li>
-        ))}
-      </ol>
+      <SlideShell
+        meta={{ kicker: 'TABLE OF CONTENTS', title: 'Table of Contents' }}
+      >
+        <ol className="pres-agenda">
+          {[
+            ['1', 'Introduction'],
+            ['2', 'Overview'],
+            ['3', 'User Journey'],
+            ['4', 'Objectives'],
+            ['5', 'Technologies Used'],
+            ['6', 'System Features'],
+            ['7', 'System Architecture'],
+            ['8', 'Backend Walkthrough'],
+            ['9', 'Frontend Walkthrough'],
+            ['10', 'Screens'],
+            ['11', 'Future Enhancements'],
+            ['12', 'Conclusion'],
+          ].map(([num, label]) => (
+            <li key={num} className="pres-agenda-item">
+              <span className="pres-agenda-num">{num}</span>
+              <span className="pres-agenda-label">{label}</span>
+            </li>
+          ))}
+        </ol>
+      </SlideShell>
     ),
   },
   {

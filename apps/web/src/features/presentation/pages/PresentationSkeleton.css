@@ -1,0 +1,125 @@
+/* ── /present loading skeleton ──────────────────────────────────────────
+   Mirrors the hero slide (logo, subtitle, tagline, team grid + solo member)
+   using the platform's Material 3 tokens and the shared .skeleton pulse. */
+
+.pres-skeleton-root {
+  min-height: 100vh;
+  min-height: 100svh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 5vh 3vw;
+  box-sizing: border-box;
+  direction: ltr;
+  background:
+    radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--primary-container) 70%, transparent), transparent 30%),
+    radial-gradient(circle at 86% 14%, color-mix(in srgb, var(--secondary-container) 62%, transparent), transparent 34%),
+    radial-gradient(circle at 50% 108%, color-mix(in srgb, var(--tertiary-container) 48%, transparent), transparent 40%),
+    linear-gradient(160deg, var(--bg) 0%, var(--surface) 50%, var(--bg) 100%);
+  animation: loading-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.pres-skeleton-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-container), var(--secondary-container));
+  z-index: 3;
+}
+
+.pres-skeleton-card {
+  width: min(1280px, 100%);
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(32px * var(--radius-scale));
+  box-shadow: var(--shadow-lg);
+  padding: clamp(36px, 5vh, 60px) clamp(24px, 4vw, 56px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.pres-skeleton-logo {
+  width: min(320px, 70%);
+  height: 64px;
+  border-radius: 999px;
+}
+
+.pres-skeleton-sub {
+  width: min(260px, 60%);
+  height: 26px;
+  border-radius: 999px;
+}
+
+.pres-skeleton-tag {
+  width: min(440px, 90%);
+  height: 18px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.pres-skeleton-divider {
+  width: 70%;
+  height: 1px;
+  background: var(--outline-variant);
+  margin-bottom: 10px;
+}
+
+.pres-skeleton-label {
+  width: min(150px, 40%);
+  height: 16px;
+  border-radius: 999px;
+}
+
+.pres-skeleton-team {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: min(640px, 100%);
+}
+
+.pres-skeleton-solo {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.pres-skeleton-solo .pres-skeleton-member {
+  width: min(312px, 100%);
+}
+
+.pres-skeleton-member {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: calc(22px * var(--radius-scale));
+  padding: 14px 20px;
+  box-sizing: border-box;
+}
+
+.pres-skeleton-avatar {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+}
+
+.pres-skeleton-name {
+  width: 60%;
+  height: 16px;
+  border-radius: 999px;
+}
+
+@media (max-width: 560px) {
+  .pres-skeleton-team {
+    grid-template-columns: 1fr;
+  }
+}
