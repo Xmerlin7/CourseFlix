@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { VideoEntity } from '../lessons/entities/video.entity';
 import { RetrievalModule } from '../retrieval/retrieval.module';
 import { SessionsModule } from '../sessions/sessions.module';
+import { TeacherBillingModule } from '../teacher-billing/teacher-billing.module';
 import {
   LLM_PROVIDER,
   MockLlmProvider,
@@ -19,10 +21,11 @@ import { VideoQaService } from './video-qa.service';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([VideoEntity, VideoTranscriptEntity]),
+    TypeOrmModule.forFeature([CourseEntity, VideoEntity, VideoTranscriptEntity]),
     EnrollmentsModule,
     RetrievalModule,
     SessionsModule,
+    TeacherBillingModule,
     ThrottlerModule.forRoot([
       {
         ttl: Number(process.env.LOGIN_RATE_LIMIT_WINDOW_SECONDS ?? 900) * 1000,

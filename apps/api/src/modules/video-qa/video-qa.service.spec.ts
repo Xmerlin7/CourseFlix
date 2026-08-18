@@ -13,10 +13,13 @@ import {
   RetrievalPort,
   RetrievedVideoChunk,
 } from '../../common/ports/retrieval.port';
+import { CourseEntity } from '../courses/entities/course.entity';
 import { LLM_PROVIDER, LlmProvider } from '../tutor/adapters/llm.adapter';
 import { AnswerPolicyService } from '../tutor/prompt/answer-policy.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { VideoEntity } from '../lessons/entities/video.entity';
+import { CREDIT_COSTS } from '../teacher-billing/teacher-billing.constants';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import { VideoTranscriptEntity } from '../video-ingestion/entities/video-transcript.entity';
 import { VideoQaService } from './video-qa.service';
 
@@ -31,6 +34,8 @@ describe('VideoQaService', () => {
   let transcriptsRepository: jest.Mocked<
     Pick<Repository<VideoTranscriptEntity>, 'findOne'>
   >;
+  let coursesRepository: jest.Mocked<Pick<Repository<CourseEntity>, 'findOne'>>;
+  let teacherBillingService: jest.Mocked<Pick<TeacherBillingService, 'consumeCredits'>>;
 
   const video = {
     id: 'video-1',
@@ -79,6 +84,21 @@ describe('VideoQaService', () => {
     transcriptsRepository = {
       findOne: jest.fn().mockResolvedValue(completedTranscript),
     };
+    coursesRepository = {
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: 'course-1', teacherId: 'teacher-1' } as CourseEntity),
+    };
+    teacherBillingService = {
+      consumeCredits: jest.fn().mockResolvedValue({
+        monthlyAllowance: 100,
+        totalCredits: 100,
+        usedCredits: 1,
+        remainingCredits: 99,
+        percentUsed: 1,
+        resetAt: new Date('2026-09-01T00:00:00.000Z').toISOString(),
+      }),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -109,6 +129,14 @@ describe('VideoQaService', () => {
         {
           provide: getRepositoryToken(VideoTranscriptEntity),
           useValue: transcriptsRepository,
+        },
+        {
+          provide: getRepositoryToken(CourseEntity),
+          useValue: coursesRepository,
+        },
+        {
+          provide: TeacherBillingService,
+          useValue: teacherBillingService,
         },
       ],
     }).compile();
@@ -171,6 +199,7 @@ describe('VideoQaService', () => {
       expect(result.citations).toEqual([]);
       expect(retrievalPort.searchVideo).not.toHaveBeenCalled();
       expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+      expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
     },
   );
 
@@ -185,6 +214,7 @@ describe('VideoQaService', () => {
 
     expect(result.status).toBe('not_ready');
     expect(retrievalPort.searchVideo).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns no_answer without calling the provider when zero chunks are retrieved', async () => {
@@ -199,6 +229,7 @@ describe('VideoQaService', () => {
     expect(result.status).toBe('no_answer');
     expect(result.citations).toEqual([]);
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns no_answer without calling the provider when relevance is too low', async () => {
@@ -214,6 +245,7 @@ describe('VideoQaService', () => {
 
     expect(result.status).toBe('no_answer');
     expect(llmProvider.generateAnswer).not.toHaveBeenCalled();
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns a grounded answer with timestamped citations on the happy path', async () => {
@@ -240,6 +272,10 @@ describe('VideoQaService', () => {
       query: 'ما هو قانون نيوتن الثالث؟',
       topK: 5,
     });
+    expect(teacherBillingService.consumeCredits).toHaveBeenCalledWith(
+      'teacher-1',
+      CREDIT_COSTS.tutorMessage,
+    );
   });
 
   it('downgrades invented citations to no_answer', async () => {
@@ -259,6 +295,7 @@ describe('VideoQaService', () => {
 
     expect(result.status).toBe('no_answer');
     expect(result.citations).toEqual([]);
+    expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it('returns safe 503 when the provider fails', async () => {
