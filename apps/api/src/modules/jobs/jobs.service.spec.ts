@@ -24,6 +24,7 @@ describe('JobsService', () => {
   let ingestionQueue: { add: jest.Mock; getJob: jest.Mock };
   let videoIngestionQueue: { add: jest.Mock; getJob: jest.Mock };
   let examGenerationQueue: { add: jest.Mock; getJob: jest.Mock };
+  let lessonAgentsQueue: { add: jest.Mock; getJob: jest.Mock };
 
   const documentId = 'document-1';
 
@@ -45,6 +46,7 @@ describe('JobsService', () => {
     ingestionQueue = { add: jest.fn(), getJob: jest.fn() };
     videoIngestionQueue = { add: jest.fn(), getJob: jest.fn() };
     examGenerationQueue = { add: jest.fn(), getJob: jest.fn() };
+    lessonAgentsQueue = { add: jest.fn(), getJob: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -65,6 +67,10 @@ describe('JobsService', () => {
         {
           provide: getQueueToken('exam-generation'),
           useValue: examGenerationQueue,
+        },
+        {
+          provide: getQueueToken('lesson-agents'),
+          useValue: lessonAgentsQueue,
         },
       ],
     }).compile();
@@ -193,6 +199,40 @@ describe('JobsService', () => {
         'exam-generation',
         { jobId: 'ai-job-3' },
         expect.objectContaining({ jobId: bullJobId }),
+      );
+    });
+  });
+
+  describe('enqueueLessonAgents', () => {
+    it('creates an ai_jobs row and dispatches the whole pipeline', async () => {
+      aiJobsRepository.save.mockResolvedValue({ id: 'ai-job-4' });
+
+      const bullJobId = await jobsService.enqueueLessonAgents('run-1');
+
+      expect(bullJobId).toBe('lesson-agents:run-1:ai-job-4');
+      expect(aiJobsRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jobType: 'lesson_agents',
+          targetEntityType: 'lesson_agent_run',
+          targetEntityId: 'run-1',
+        }),
+      );
+      expect(lessonAgentsQueue.add).toHaveBeenCalledWith(
+        'lesson-agents',
+        { jobId: 'ai-job-4', onlyAgentKey: undefined },
+        expect.objectContaining({ jobId: bullJobId }),
+      );
+    });
+
+    it('passes the agent key through for a single-step re-run', async () => {
+      aiJobsRepository.save.mockResolvedValue({ id: 'ai-job-5' });
+
+      await jobsService.enqueueLessonAgents('run-1', 'handout');
+
+      expect(lessonAgentsQueue.add).toHaveBeenCalledWith(
+        'lesson-agents',
+        { jobId: 'ai-job-5', onlyAgentKey: 'handout' },
+        expect.anything(),
       );
     });
   });

@@ -107,6 +107,9 @@ describe('TeacherContentManager', () => {
     expect(payload).toEqual({
       title: 'Bunny lesson',
       videoUrl: embedCode,
+      // The default mode is the plain upload, so the API is told to run
+      // its own caption ingestion rather than wait for an agent crew.
+      useAgents: false,
     })
     expect(onChange).toHaveBeenCalledTimes(1)
   })

@@ -52,7 +52,13 @@ export function AgentFeed({ events, isLive }: AgentFeedProps) {
 
   useEffect(() => {
     if (!isLive) return
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    // Guarded rather than called outright: `scrollIntoView` is absent in
+    // jsdom and in older embedded browsers, and this runs inside an
+    // effect where a throw is unhandled — losing auto-scroll is a fine
+    // degradation, taking the panel down with it is not.
+    const bottom = bottomRef.current
+    if (typeof bottom?.scrollIntoView !== 'function') return
+    bottom.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [events.length, isLive])
 
   if (events.length === 0) {

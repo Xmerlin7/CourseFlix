@@ -454,4 +454,25 @@ export const handlers = [
 
   http.delete(apiUrl("/admin/users/:userId"), () => new HttpResponse(null, { status: 204 })),
   http.delete(apiUrl("/admin/users/:userId/hard"), () => new HttpResponse(null, { status: 204 })),
+
+  // The content manager asks for a course's agent runs on mount, so
+  // every test that renders it needs this even when agents aren't what
+  // it's testing (the server runs with onUnhandledRequest: 'error').
+  http.get(apiUrl("/teacher/courses/:courseId/agent-runs"), () => HttpResponse.json([])),
+
+  http.get(apiUrl("/teacher/agent-settings"), () =>
+    HttpResponse.json({
+      handoutEnabled: true,
+      handoutPageCount: 4,
+      handoutTone: "simple",
+      handoutIncludeExamples: true,
+      handoutIncludeKeyTerms: true,
+      handoutIncludeSummary: true,
+      quizEnabled: true,
+      quizDifficulty: "medium",
+      quizQuestionCount: 8,
+      quizTypes: ["mcq", "true_false"],
+      quizDueInDays: 7,
+    }),
+  ),
 ];
