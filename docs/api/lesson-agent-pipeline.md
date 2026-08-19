@@ -60,6 +60,15 @@ Migration `1786613700000-CreateLessonAgentPipeline`, five tables:
 - `teacher_agent_settings` — per-teacher, keyed by teacher (no surrogate id). A
   teacher who never opened the form has **no row**; the defaults live in
   `LessonAgentsService.DEFAULT_SETTINGS` so they can change without a backfill.
+  Reshaped by migration `1786613800000-ReshapeAgentSettings`: question counts are
+  stated **per type** (`quiz_mcq_count`, `quiz_true_false_count`) instead of one
+  total the quizmaster divided up — teachers think in "5 MCQ and 3 true/false",
+  and the old split was invisible until the draft came back. Zero on a type means
+  "none of these"; the service rejects zero on *both* while the quiz agent is
+  enabled, a cross-field rule the DTO can't express. `handout_tone` became
+  `handout_detail_level` (concise/standard/deep) for the same reason: teachers
+  reached for the tone control to make the notes longer or shorter, which a voice
+  setting could not do.
 - `lesson_agent_runs` — one per execution. `config` is a frozen snapshot of the
   settings at submit time, so editing settings later can't rewrite what a
   finished run says it did.
