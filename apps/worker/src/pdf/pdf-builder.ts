@@ -114,7 +114,8 @@ async function readFontFile(fileName: string): Promise<Buffer> {
  * draw goes through a coverage check first and falls back to Helvetica.
  * Characters neither face can encode are dropped rather than thrown on.
  */
-const LATIN_FALLBACK_SAFE = /[\u0020-\u007e\u00a0-\u00ff\u2013\u2014\u2018\u2019\u201c\u201d\u2022\u2026]/;
+const LATIN_FALLBACK_SAFE =
+  /[\u0020-\u007e\u00a0-\u00ff\u2013\u2014\u2018\u2019\u201c\u201d\u2022\u2026]/;
 
 /**
  * Helvetica is a WinAnsi face, so a Greek letter or arrow in a formula
@@ -126,21 +127,21 @@ const LATIN_FALLBACK_SAFE = /[\u0020-\u007e\u00a0-\u00ff\u2013\u2014\u2018\u2019
  * prints stay character-identical.
  */
 const SYMBOL_ALIASES: Record<string, string> = {
-  'Σ': 'sum', // Σ
-  'Δ': 'delta', // Δ
-  'δ': 'delta', // δ
-  'θ': 'theta', // θ
-  'π': 'pi', // π
-  'λ': 'lambda', // λ
-  'μ': 'mu', // μ
-  'Ω': 'ohm', // Ω
-  'ρ': 'rho', // ρ
-  'ε': 'epsilon', // ε
-  'φ': 'phi', // φ
-  'ω': 'omega', // ω
-  'α': 'alpha', // α
-  'β': 'beta', // β
-  'γ': 'gamma', // γ
+  Σ: 'sum', // Σ
+  Δ: 'delta', // Δ
+  δ: 'delta', // δ
+  θ: 'theta', // θ
+  π: 'pi', // π
+  λ: 'lambda', // λ
+  μ: 'mu', // μ
+  Ω: 'ohm', // Ω
+  ρ: 'rho', // ρ
+  ε: 'epsilon', // ε
+  φ: 'phi', // φ
+  ω: 'omega', // ω
+  α: 'alpha', // α
+  β: 'beta', // β
+  γ: 'gamma', // γ
   '→': '->', // →
   '⇒': '=>', // ⇒
   '≈': '~=', // ≈
@@ -166,6 +167,34 @@ interface Segment {
   latin: boolean;
 }
 
+/**
+ * Paired punctuation is *mirrored* in a right-to-left context: the
+ * character that opens a phrase is drawn on its right-hand side, so the
+ * logical `(` has to become a `)` glyph to still look like it opens.
+ *
+ * Unicode calls this the bidi mirroring property and a full bidi engine
+ * applies it; fontkit shapes but does not, and these characters are
+ * missing from the Arabic face anyway so they are drawn separately as
+ * Latin segments. Without this, "(حسب قانون أوم)" printed with both
+ * brackets pointing the wrong way.
+ */
+const MIRRORED: Record<string, string> = {
+  '(': ')',
+  ')': '(',
+  '[': ']',
+  ']': '[',
+  '{': '}',
+  '}': '{',
+  '<': '>',
+  '>': '<',
+};
+
+function mirrorForRtl(text: string): string {
+  return Array.from(text)
+    .map((char) => MIRRORED[char] ?? char)
+    .join('');
+}
+
 /** Drawn text is measured per run, so every helper needs both fonts. */
 function pickFont(fonts: Fonts, rtl: boolean, bold: boolean): PDFFont {
   if (rtl) return bold ? fonts.arabicBold : fonts.arabic;
@@ -178,11 +207,7 @@ function pickFont(fonts: Fonts, rtl: boolean, bold: boolean): PDFFont {
  * the handful of characters the Arabic face lacks. Order is preserved, so
  * drawing the segments left to right reproduces the run exactly.
  */
-function splitByCoverage(
-  text: string,
-  fonts: Fonts,
-  rtl: boolean,
-): Segment[] {
+function splitByCoverage(text: string, fonts: Fonts, rtl: boolean): Segment[] {
   // A Latin run still has to survive WinAnsi: anything outside it would
   // make pdf-lib throw, so it is filtered here rather than at every call
   // site. `sanitizeForFonts` has already rescued the symbols worth
@@ -231,8 +256,10 @@ function measureLine(
       splitByCoverage(run.text, fonts, run.rtl).reduce(
         (width, segment) =>
           width +
-          (segment.latin ? pickFont(fonts, false, bold) : runFont)
-            .widthOfTextAtSize(segment.text, size),
+          (segment.latin
+            ? pickFont(fonts, false, bold)
+            : runFont
+          ).widthOfTextAtSize(segment.text, size),
         0,
       )
     );
@@ -308,10 +335,24 @@ function drawLine(
 
   for (const run of runs) {
     const runFont = pickFont(fonts, run.rtl, bold);
-    for (const segment of splitByCoverage(run.text, fonts, run.rtl)) {
+    const segments = splitByCoverage(run.text, fonts, run.rtl);
+
+    // Segments are cut in logical order, and each is drawn by its own
+    // `drawText` — fontkit only reorders *within* one call. So an Arabic
+    // run broken around a character the Arabic face lacks (`م/ث` splits
+    // into `م`, `/`, `ث`, since Noto Naskh has no ASCII slash) would come
+    // out left-to-right unless the pieces are placed right-to-left here.
+    const placed = run.rtl ? [...segments].reverse() : segments;
+
+    for (const segment of placed) {
       const font = segment.latin ? pickFont(fonts, false, bold) : runFont;
-      page.drawText(segment.text, { x: cursor, y, size, font, color });
-      cursor += font.widthOfTextAtSize(segment.text, size);
+      // Only the fallback pieces inside an RTL run need mirroring — the
+      // Arabic face's own punctuation is already RTL-correct, and a
+      // genuinely Latin run keeps its brackets as written.
+      const text =
+        run.rtl && segment.latin ? mirrorForRtl(segment.text) : segment.text;
+      page.drawText(text, { x: cursor, y, size, font, color });
+      cursor += font.widthOfTextAtSize(text, size);
     }
   }
 }
@@ -353,11 +394,7 @@ async function loadFonts(document: PDFDocument): Promise<Fonts> {
   };
 }
 
-function drawCover(
-  page: PDFPage,
-  spec: PdfDocumentSpec,
-  fonts: Fonts,
-): void {
+function drawCover(page: PDFPage, spec: PdfDocumentSpec, fonts: Fonts): void {
   page.drawRectangle({
     x: 0,
     y: A4[1] - 210,
