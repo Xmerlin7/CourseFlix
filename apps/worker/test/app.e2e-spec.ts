@@ -8,9 +8,15 @@ import { getDataSourceToken } from '@nestjs/typeorm';
 import { getQueueToken } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { IngestionProcessor } from '../src/processors/ingestion.processor';
-import { EMBEDDING_PROVIDER, MockEmbeddingProvider } from '../src/adapters/embedding.adapter';
+import {
+  EMBEDDING_PROVIDER,
+  MockEmbeddingProvider,
+} from '../src/adapters/embedding.adapter';
 import { ChromaAdapter } from '../src/adapters/chroma.adapter';
-import { NOTIFICATION_PRODUCER_PORT, NoopNotificationProducer } from '../../api/src/common/ports/notification-producer.port';
+import {
+  NOTIFICATION_PRODUCER_PORT,
+  NoopNotificationProducer,
+} from '../../api/src/common/ports/notification-producer.port';
 
 describe('WorkerModule (smoke)', () => {
   let moduleRef: TestingModule;

@@ -21,11 +21,16 @@ describe('AttachmentsController', () => {
     mockRes = {
       set: jest.fn(),
     };
-    controller = new AttachmentsController(service as unknown as AttachmentsService);
+    controller = new AttachmentsController(
+      service as unknown as AttachmentsService,
+    );
   });
 
   it('streams the attachment and sets headers', async () => {
-    const streamableFile = await controller.downloadAttachment('file-1', mockRes as any);
+    const streamableFile = await controller.downloadAttachment(
+      'file-1',
+      mockRes as any,
+    );
 
     expect(service.getFileForDownload).toHaveBeenCalledWith('file-1');
     expect(mockRes.set).toHaveBeenCalledWith({

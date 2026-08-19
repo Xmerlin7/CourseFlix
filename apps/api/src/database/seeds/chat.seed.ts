@@ -34,7 +34,9 @@ export async function seedChatHistory(
 ): Promise<{ conversationsCreated: number; messagesCreated: number }> {
   const courseRepository = dataSource.getRepository(CourseEntity);
   const enrollmentRepository = dataSource.getRepository(EnrollmentEntity);
-  const conversationRepository = dataSource.getRepository(ChatConversationEntity);
+  const conversationRepository = dataSource.getRepository(
+    ChatConversationEntity,
+  );
   const messageRepository = dataSource.getRepository(ChatMessageEntity);
   const sourceChunkRepository = dataSource.getRepository(
     ChatMessageSourceChunkEntity,

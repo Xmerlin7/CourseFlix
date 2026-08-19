@@ -34,14 +34,15 @@ export async function seedDiscussions(
     });
     if (!course) continue;
 
-    const enrolledStudentIds = (
+    const enrolledStudentIds =
       // `EnrollmentEntity.deletedAt` is a plain column, not a
       // `@DeleteDateColumn` — must be filtered explicitly (see
       // `order.seed.ts`'s docblock for why this matters across resets).
-      await enrollmentRepository.find({
-        where: { courseId: course.id, deletedAt: IsNull() },
-      })
-    ).map((enrollment) => enrollment.studentId);
+      (
+        await enrollmentRepository.find({
+          where: { courseId: course.id, deletedAt: IsNull() },
+        })
+      ).map((enrollment) => enrollment.studentId);
 
     const authorPool =
       enrolledStudentIds.length > 0 ? enrolledStudentIds : studentIds;

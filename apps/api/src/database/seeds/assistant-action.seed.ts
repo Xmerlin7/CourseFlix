@@ -26,10 +26,7 @@ interface AssistantActionBlueprint {
  */
 export async function seedAssistantActions(
   dataSource: DataSource,
-  {
-    teacherId,
-    assistantIds,
-  }: { teacherId: string; assistantIds: string[] },
+  { teacherId, assistantIds }: { teacherId: string; assistantIds: string[] },
 ): Promise<number> {
   const courseRepository = dataSource.getRepository(CourseEntity);
   const actionRepository = dataSource.getRepository(AssistantActionEntity);

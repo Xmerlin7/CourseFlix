@@ -27,7 +27,9 @@ export async function seedVideo(dataSource: DataSource): Promise<number> {
     order: { courseId: 'ASC', sortOrder: 'ASC' },
   });
   const courses = await courseRepository.find();
-  const courseSlugById = new Map(courses.map((course) => [course.id, course.slug]));
+  const courseSlugById = new Map(
+    courses.map((course) => [course.id, course.slug]),
+  );
 
   let created = 0;
   let updated = 0;

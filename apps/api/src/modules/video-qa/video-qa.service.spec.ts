@@ -35,7 +35,9 @@ describe('VideoQaService', () => {
     Pick<Repository<VideoTranscriptEntity>, 'findOne'>
   >;
   let coursesRepository: jest.Mocked<Pick<Repository<CourseEntity>, 'findOne'>>;
-  let teacherBillingService: jest.Mocked<Pick<TeacherBillingService, 'consumeCredits'>>;
+  let teacherBillingService: jest.Mocked<
+    Pick<TeacherBillingService, 'consumeCredits'>
+  >;
 
   const video = {
     id: 'video-1',
@@ -85,9 +87,10 @@ describe('VideoQaService', () => {
       findOne: jest.fn().mockResolvedValue(completedTranscript),
     };
     coursesRepository = {
-      findOne: jest
-        .fn()
-        .mockResolvedValue({ id: 'course-1', teacherId: 'teacher-1' } as CourseEntity),
+      findOne: jest.fn().mockResolvedValue({
+        id: 'course-1',
+        teacherId: 'teacher-1',
+      }),
     };
     teacherBillingService = {
       consumeCredits: jest.fn().mockResolvedValue({

@@ -76,7 +76,7 @@ export class MailService {
       return false;
     }
 
-    const from = process.env.EMAIL_FROM ?? (process.env.SMTP_USER as string);
+    const from = process.env.EMAIL_FROM ?? process.env.SMTP_USER;
     const subject = OTP_SUBJECTS[purpose];
 
     try {

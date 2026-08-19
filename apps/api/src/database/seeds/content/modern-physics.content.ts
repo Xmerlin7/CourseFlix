@@ -72,7 +72,12 @@ export const MODERN_PHYSICS_CONTENT: CourseContent = {
         {
           text: 'تمدد الزمن يعني أن الساعة المتحركة بسرعة عالية، بالنسبة لمراقب ساكن، تبدو:',
           type: 'mcq',
-          options: ['أبطأ من ساعته', 'أسرع من ساعته', 'متوقفة تماماً', 'لا فرق يُذكر أبداً'],
+          options: [
+            'أبطأ من ساعته',
+            'أسرع من ساعته',
+            'متوقفة تماماً',
+            'لا فرق يُذكر أبداً',
+          ],
           correctAnswer: 'أبطأ من ساعته',
           difficulty: 'medium',
         },
@@ -108,7 +113,12 @@ export const MODERN_PHYSICS_CONTENT: CourseContent = {
         {
           text: 'وفقاً لمعادلة تكافؤ الكتلة والطاقة، فإن الطاقة الناتجة عن تحول كتلة معينة بالكامل تُحسب من:',
           type: 'mcq',
-          options: ['E = m x c^2', 'E = m x c', 'E = m x g', 'E = 0.5 x m x c^2'],
+          options: [
+            'E = m x c^2',
+            'E = m x c',
+            'E = m x g',
+            'E = 0.5 x m x c^2',
+          ],
           correctAnswer: 'E = m x c^2',
           difficulty: 'easy',
         },
@@ -151,7 +161,12 @@ export const MODERN_PHYSICS_CONTENT: CourseContent = {
         {
           text: 'وفقاً لتفسير أينشتاين للظاهرة الكهروضوئية، تعتمد طاقة الفوتون الواحد على:',
           type: 'mcq',
-          options: ['تردد الضوء', 'شدة الضوء فقط', 'لون المعدن', 'مساحة السطح المعدني'],
+          options: [
+            'تردد الضوء',
+            'شدة الضوء فقط',
+            'لون المعدن',
+            'مساحة السطح المعدني',
+          ],
           correctAnswer: 'تردد الضوء',
           difficulty: 'medium',
         },

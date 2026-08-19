@@ -41,14 +41,17 @@ export function chunkDocument(options: ChunkDocumentOptions): DocumentChunk[] {
     : undefined;
 
   const chunkTokens = options.chunkTokens ?? envTokens ?? DEFAULT_CHUNK_TOKENS;
-  const chunkOverlap = options.chunkOverlap ?? envOverlap ?? DEFAULT_CHUNK_OVERLAP;
+  const chunkOverlap =
+    options.chunkOverlap ?? envOverlap ?? DEFAULT_CHUNK_OVERLAP;
 
   if (chunkTokens <= 0) {
     throw new Error('chunkTokens must be greater than 0');
   }
 
   if (chunkOverlap < 0 || chunkOverlap >= chunkTokens) {
-    throw new Error('chunkOverlap must be non-negative and less than chunkTokens');
+    throw new Error(
+      'chunkOverlap must be non-negative and less than chunkTokens',
+    );
   }
 
   const step = chunkTokens - chunkOverlap;

@@ -77,9 +77,10 @@ export async function seedVideoTranscripts(
     if (!content) continue;
 
     try {
-      const existingTranscripts = await dataSource.query<
-        Array<{ id: string }>
-      >(`SELECT id FROM video_transcripts WHERE video_id = $1`, [video.id]);
+      const existingTranscripts = await dataSource.query<Array<{ id: string }>>(
+        `SELECT id FROM video_transcripts WHERE video_id = $1`,
+        [video.id],
+      );
 
       let transcriptId: string;
 

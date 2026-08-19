@@ -368,7 +368,8 @@ export class StudentService {
       .map((e) => e.courseId);
 
     if (courseIds.length === 0) {
-      const ownedCourses = await this.coursesService.findOwnedCourses(studentId);
+      const ownedCourses =
+        await this.coursesService.findOwnedCourses(studentId);
       courseIds = ownedCourses.map((c) => c.id);
     }
 

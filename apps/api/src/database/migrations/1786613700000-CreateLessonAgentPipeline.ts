@@ -34,9 +34,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * partially-applied run can be re-run safely, which is the reason that
  * actually still holds.
  */
-export class CreateLessonAgentPipeline1786613700000
-  implements MigrationInterface
-{
+export class CreateLessonAgentPipeline1786613700000 implements MigrationInterface {
   name = 'CreateLessonAgentPipeline1786613700000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -66,7 +64,10 @@ export class CreateLessonAgentPipeline1786613700000
    * as before.
    */
   private async addDocumentDraftFlag(queryRunner: QueryRunner): Promise<void> {
-    const hasColumn = await queryRunner.hasColumn('documents', 'is_agent_draft');
+    const hasColumn = await queryRunner.hasColumn(
+      'documents',
+      'is_agent_draft',
+    );
     if (!hasColumn) {
       await queryRunner.query(`
         ALTER TABLE "documents"

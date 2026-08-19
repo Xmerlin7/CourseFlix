@@ -219,7 +219,9 @@ export class NotificationsService implements NotificationProducerPort {
       .update(NotificationEntity)
       .set({ isRead: true, readAt: new Date() })
       .where('user_id = :userId', { userId })
-      .andWhere('related_entity_type = :relatedEntityType', { relatedEntityType })
+      .andWhere('related_entity_type = :relatedEntityType', {
+        relatedEntityType,
+      })
       .andWhere('related_entity_id = :relatedEntityId', { relatedEntityId })
       .andWhere('is_read = false')
       .andWhere('deleted_at IS NULL')
@@ -239,8 +241,12 @@ export class NotificationsService implements NotificationProducerPort {
       .update(NotificationEntity)
       .set({ isRead: true, readAt: new Date() })
       .where('user_id = :userId', { userId })
-      .andWhere('related_entity_type = :relatedEntityType', { relatedEntityType })
-      .andWhere('related_entity_id IN (:...relatedEntityIds)', { relatedEntityIds })
+      .andWhere('related_entity_type = :relatedEntityType', {
+        relatedEntityType,
+      })
+      .andWhere('related_entity_id IN (:...relatedEntityIds)', {
+        relatedEntityIds,
+      })
       .andWhere('is_read = false')
       .andWhere('deleted_at IS NULL')
       .execute();

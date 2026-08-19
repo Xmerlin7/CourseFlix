@@ -217,7 +217,8 @@ export async function seedCourse(
     // match the subject (Newton's cradle for mechanics, a prism for
     // optics, the solar system for astronomy) so `CourseThumb.tsx` never
     // falls back to the placeholder for a seeded course.
-    const coverImageUrl = findCourseContent(blueprint.slug)?.coverImageUrl ?? null;
+    const coverImageUrl =
+      findCourseContent(blueprint.slug)?.coverImageUrl ?? null;
 
     let course = await courseRepository.findOne({
       where: { slug: blueprint.slug },

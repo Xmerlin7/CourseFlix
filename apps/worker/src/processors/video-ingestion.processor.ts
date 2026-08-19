@@ -5,7 +5,10 @@ import { DataSource } from 'typeorm';
 import { BunnyCaptionsAdapter } from '../adapters/captions/bunny-captions.adapter';
 import { YoutubeCaptionsAdapter } from '../adapters/captions/youtube-captions.adapter';
 import { WhisperCaptionsAdapter } from '../adapters/captions/whisper-captions.adapter';
-import { CaptionCue, CaptionProvider } from '../adapters/captions/caption-provider';
+import {
+  CaptionCue,
+  CaptionProvider,
+} from '../adapters/captions/caption-provider';
 import { ChromaAdapter } from '../adapters/chroma.adapter';
 import type { EmbeddingProvider } from '../adapters/embedding.adapter';
 import { EMBEDDING_PROVIDER } from '../adapters/embedding.adapter';
@@ -276,7 +279,9 @@ export class VideoIngestionProcessor extends WorkerHost {
     videoId: string | null,
     reason: string,
   ): Promise<void> {
-    const teacherName = teacherId ? await this.getUserName(teacherId) : 'غير معروف';
+    const teacherName = teacherId
+      ? await this.getUserName(teacherId)
+      : 'غير معروف';
     const admins = (await this.dataSource.query(
       `SELECT id FROM users WHERE role = 'admin' AND deleted_at IS NULL`,
     )) as unknown as Array<{ id: string }>;
@@ -329,7 +334,10 @@ export class VideoIngestionProcessor extends WorkerHost {
     await this.persistVideoChunks(transcript.id, chunks);
 
     if (transcript.version > 1) {
-      await this.deactivateSupersededVersions(transcript.id, transcript.version);
+      await this.deactivateSupersededVersions(
+        transcript.id,
+        transcript.version,
+      );
     }
   }
 
@@ -397,7 +405,9 @@ export class VideoIngestionProcessor extends WorkerHost {
     );
   }
 
-  private async deactivatePartialChunks(videoTranscriptId: string): Promise<void> {
+  private async deactivatePartialChunks(
+    videoTranscriptId: string,
+  ): Promise<void> {
     await this.dataSource.query(
       `UPDATE video_chunks SET is_active = false WHERE video_transcript_id = $1`,
       [videoTranscriptId],

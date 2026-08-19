@@ -1,10 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { PDFDocument } from 'pdf-lib';
-import {
-  extractPdfPages,
-  ExtractionFailedError,
-} from './extract.stage';
+import { extractPdfPages, ExtractionFailedError } from './extract.stage';
 
 describe('extractPdfPages stage', () => {
   let digitalPdfBuffer: Buffer;
@@ -12,7 +9,10 @@ describe('extractPdfPages stage', () => {
 
   beforeAll(async () => {
     // 1. Read digital PDF from the sample fixture file
-    const samplePath = path.resolve(__dirname, '../../test/fixtures/sample.pdf');
+    const samplePath = path.resolve(
+      __dirname,
+      '../../test/fixtures/sample.pdf',
+    );
     digitalPdfBuffer = fs.readFileSync(samplePath);
 
     // 2. Create a blank PDF (zero extractable text)

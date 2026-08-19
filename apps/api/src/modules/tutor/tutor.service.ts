@@ -115,11 +115,7 @@ const TWO_WEEK_STUDY_PLAN_PATTERNS = [
   /2\s+weeks/i,
 ];
 
-const MONTH_STUDY_PLAN_PATTERNS = [
-  /شهر/,
-  /month/i,
-  /30\s+days/i,
-];
+const MONTH_STUDY_PLAN_PATTERNS = [/شهر/, /month/i, /30\s+days/i];
 
 const BROAD_EXPLAIN_GUIDANCE_PATTERNS = [
   /اشرح(لي|لى)?\s+(الدورة|الكورس|المادة|الدرس)(\s+(دا|ده|كله))*\s*$/i,
@@ -153,16 +149,12 @@ function getDirectTutorIntent(question: string): TutorDirectIntent {
   }
 
   if (
-    COURSE_MATERIALS_GUIDANCE_PATTERNS.some((pattern) =>
-      pattern.test(question),
-    )
+    COURSE_MATERIALS_GUIDANCE_PATTERNS.some((pattern) => pattern.test(question))
   ) {
     return 'materials_guidance';
   }
 
-  if (
-    STUDY_PLAN_GUIDANCE_PATTERNS.some((pattern) => pattern.test(question))
-  ) {
+  if (STUDY_PLAN_GUIDANCE_PATTERNS.some((pattern) => pattern.test(question))) {
     return 'study_plan_guidance';
   }
 
@@ -292,7 +284,10 @@ export class TutorService {
     }
 
     if (directIntent === 'study_plan_guidance') {
-      const llmResult = await this.buildStudyPlanGuidance(input.courseId, question);
+      const llmResult = await this.buildStudyPlanGuidance(
+        input.courseId,
+        question,
+      );
       const assistantMessage = await this.persistDirectAnswer(
         conversation.id,
         llmResult.answer,
@@ -594,11 +589,7 @@ export class TutorService {
     lessons: string[];
   }): string {
     const durationLabel =
-      input.days === 30
-        ? 'شهر'
-        : input.days === 14
-          ? 'أسبوعين'
-          : 'أسبوع';
+      input.days === 30 ? 'شهر' : input.days === 14 ? 'أسبوعين' : 'أسبوع';
     const lessonsText =
       input.lessons.length > 0
         ? input.lessons

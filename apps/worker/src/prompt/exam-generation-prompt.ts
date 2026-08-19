@@ -31,7 +31,10 @@ export function buildExamGenerationPrompt(input: {
   feedback?: string[];
 }): string {
   const specLines = input.questionSpec
-    .map((item) => `- ${item.count} سؤال من نوع "${TYPE_LABELS[item.type] ?? item.type}"`)
+    .map(
+      (item) =>
+        `- ${item.count} سؤال من نوع "${TYPE_LABELS[item.type] ?? item.type}"`,
+    )
     .join('\n');
 
   const lines = [

@@ -48,7 +48,9 @@ describe('TutorService', () => {
   let coursesRepository: jest.Mocked<
     Pick<Repository<CourseEntity>, 'findOne' | 'createQueryBuilder'>
   >;
-  let teacherBillingService: jest.Mocked<Pick<TeacherBillingService, 'consumeCredits'>>;
+  let teacherBillingService: jest.Mocked<
+    Pick<TeacherBillingService, 'consumeCredits'>
+  >;
   let interventionEvaluator: jest.Mocked<InterventionEvaluatorPort>;
 
   const relevantChunk: RetrievedChunk = {
@@ -126,9 +128,10 @@ describe('TutorService', () => {
         ]),
     };
     coursesRepository = {
-      findOne: jest
-        .fn()
-        .mockResolvedValue({ id: 'course-1', teacherId: 'teacher-1' } as CourseEntity),
+      findOne: jest.fn().mockResolvedValue({
+        id: 'course-1',
+        teacherId: 'teacher-1',
+      }),
       createQueryBuilder: jest.fn(),
     };
     const courseOutlineQuery = {

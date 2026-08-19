@@ -116,7 +116,10 @@ export class QuizmasterAgent implements LessonAgent {
    * nothing to divide — a type set to zero is simply left out of the
    * spec rather than asked for and validated against.
    */
-  private buildSpec(mcqCount: number, trueFalseCount: number): QuestionSpecItem[] {
+  private buildSpec(
+    mcqCount: number,
+    trueFalseCount: number,
+  ): QuestionSpecItem[] {
     return (
       [
         { type: 'mcq' as const, count: mcqCount },
