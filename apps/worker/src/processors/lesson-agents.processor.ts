@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { ChromaAdapter } from '../adapters/chroma.adapter';
 import { HandoutAgent } from '../agents/handout.agent';
 import { IndexerAgent } from '../agents/indexer.agent';
+import { NotifierAgent } from '../agents/notifier.agent';
 import { QuizmasterAgent } from '../agents/quizmaster.agent';
 import { ReviewerAgent } from '../agents/reviewer.agent';
 import { TranscriptAgent } from '../agents/transcript.agent';
@@ -89,6 +90,7 @@ export class LessonAgentsProcessor extends WorkerHost {
     indexerAgent: IndexerAgent,
     handoutAgent: HandoutAgent,
     quizmasterAgent: QuizmasterAgent,
+    notifierAgent: NotifierAgent,
     @Inject(NOTIFICATION_PRODUCER_PORT)
     private readonly notificationProducer: NotificationProducerPort,
   ) {
@@ -99,6 +101,7 @@ export class LessonAgentsProcessor extends WorkerHost {
       indexer: indexerAgent,
       handout: handoutAgent,
       quizmaster: quizmasterAgent,
+      notifier: notifierAgent,
     };
   }
 

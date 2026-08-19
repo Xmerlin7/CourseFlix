@@ -48,6 +48,7 @@ describe('LessonAgentsProcessor', () => {
     'indexer',
     'handout',
     'quizmaster',
+    'notifier',
   ];
 
   /** Rows the fake DB hands back, keyed by the query it recognises. */
@@ -156,6 +157,7 @@ describe('LessonAgentsProcessor', () => {
       agents.indexer as never,
       agents.handout as never,
       agents.quizmaster as never,
+      agents.notifier as never,
       notificationProducer,
     );
   }
@@ -173,6 +175,7 @@ describe('LessonAgentsProcessor', () => {
       indexer: makeAgent('indexer'),
       handout: makeAgent('handout'),
       quizmaster: makeAgent('quizmaster'),
+      notifier: makeAgent('notifier'),
     };
     processor = buildProcessor();
   });
@@ -205,6 +208,7 @@ describe('LessonAgentsProcessor', () => {
       'reviewer->indexer',
       'indexer->handout',
       'handout->quizmaster',
+      'quizmaster->notifier',
     ]);
   });
 

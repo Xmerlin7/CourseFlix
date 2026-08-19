@@ -1,5 +1,5 @@
 export type LessonAgentKey =
-  'transcript' | 'reviewer' | 'indexer' | 'handout' | 'quizmaster';
+  'transcript' | 'reviewer' | 'indexer' | 'handout' | 'quizmaster' | 'notifier';
 
 /**
  * Display names for the agents, used to write the handoff narration the
@@ -17,6 +17,7 @@ export const AGENT_NAMES: Readonly<Record<LessonAgentKey, string>> = {
   indexer: 'المُفهرِس',
   handout: 'كاتب الشرح',
   quizmaster: 'واضع الأسئلة',
+  notifier: 'مراسل البريد',
 };
 
 /** Execution order — each agent hands off to the next enabled one. */
@@ -26,6 +27,7 @@ export const AGENT_ORDER: readonly LessonAgentKey[] = [
   'indexer',
   'handout',
   'quizmaster',
+  'notifier',
 ];
 
 /** The two the teacher approves/rejects/comments on. */

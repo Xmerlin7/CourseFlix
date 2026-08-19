@@ -11,6 +11,7 @@ import { ReviewerAgent } from './agents/reviewer.agent';
 import { IndexerAgent } from './agents/indexer.agent';
 import { HandoutAgent } from './agents/handout.agent';
 import { QuizmasterAgent } from './agents/quizmaster.agent';
+import { NotifierAgent } from './agents/notifier.agent';
 import {
   HANDOUT_LLM_PROVIDER,
   MockHandoutLlmProvider,
@@ -90,6 +91,7 @@ import { NOTIFICATION_PRODUCER_PORT } from './common/ports/notification-producer
     IndexerAgent,
     HandoutAgent,
     QuizmasterAgent,
+    NotifierAgent,
     BunnyCaptionsAdapter,
     YoutubeCaptionsAdapter,
     WhisperCaptionsAdapter,
