@@ -204,7 +204,7 @@ describe('LessonAgentsService', () => {
       });
 
       expect(saved.quizMcqCount).toBe(12);
-      // The eleven untouched fields must survive a one-field PATCH.
+      // The twelve untouched fields must survive a one-field PATCH.
       expect(saved.handoutEnabled).toBe(true);
       expect(saved.quizDifficulty).toBe('medium');
       expect(settingsRepo.save).toHaveBeenCalledWith(
@@ -231,6 +231,7 @@ describe('LessonAgentsService', () => {
         quizMcqCount: 5,
         quizTrueFalseCount: 3,
         quizDueInDays: 7,
+        notifierEnabled: true,
       } as TeacherAgentSettingsEntity);
 
       await service.startRun('lesson-1', TEACHER_ID);
@@ -242,11 +243,14 @@ describe('LessonAgentsService', () => {
         }>
       >(stepsRepo.save);
 
-      expect(seeded).toHaveLength(5);
+      expect(seeded).toHaveLength(6);
       expect(
         seeded.find((step) => step.agentKey === 'quizmaster')?.status,
       ).toBe('skipped');
       expect(seeded.find((step) => step.agentKey === 'handout')?.status).toBe(
+        'pending',
+      );
+      expect(seeded.find((step) => step.agentKey === 'notifier')?.status).toBe(
         'pending',
       );
       expect(jobsService.enqueueLessonAgents).toHaveBeenCalledWith('run-1');
@@ -280,6 +284,7 @@ describe('LessonAgentsService', () => {
         'transcript',
         'reviewer',
         'indexer',
+        'notifier',
       ]);
     });
 

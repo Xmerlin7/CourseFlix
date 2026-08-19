@@ -9,7 +9,7 @@
  * web renders the timeline from the labels it ships in the run payload.
  */
 export type LessonAgentKey =
-  'transcript' | 'reviewer' | 'indexer' | 'handout' | 'quizmaster';
+  'transcript' | 'reviewer' | 'indexer' | 'handout' | 'quizmaster' | 'notifier';
 
 export interface AgentDefinition {
   key: LessonAgentKey;
@@ -69,6 +69,14 @@ export const AGENT_ROSTER: readonly AgentDefinition[] = [
     icon: 'quiz',
     mandatory: false,
     reviewable: true,
+  },
+  {
+    key: 'notifier',
+    name: 'مراسل البريد',
+    role: 'يبعتلك على الإيميل ملخص باللي الفريق عمله أول ما يخلص',
+    icon: 'mail',
+    mandatory: false,
+    reviewable: false,
   },
 ] as const;
 

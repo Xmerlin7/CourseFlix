@@ -53,7 +53,14 @@ export class LessonAgentEventEntity {
   @Column({
     name: 'agent_key',
     type: 'enum',
-    enum: ['transcript', 'reviewer', 'indexer', 'handout', 'quizmaster'],
+    enum: [
+      'transcript',
+      'reviewer',
+      'indexer',
+      'handout',
+      'quizmaster',
+      'notifier',
+    ],
     enumName: 'lesson_agent_key',
     nullable: true,
   })
@@ -63,7 +70,14 @@ export class LessonAgentEventEntity {
   @Column({
     name: 'to_agent_key',
     type: 'enum',
-    enum: ['transcript', 'reviewer', 'indexer', 'handout', 'quizmaster'],
+    enum: [
+      'transcript',
+      'reviewer',
+      'indexer',
+      'handout',
+      'quizmaster',
+      'notifier',
+    ],
     enumName: 'lesson_agent_key',
     nullable: true,
   })

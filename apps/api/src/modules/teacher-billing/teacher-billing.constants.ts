@@ -25,9 +25,11 @@ export const CREDIT_COSTS = {
    *  - `handout` — the most expensive by far: a much longer generation
    *    (12k output tokens vs the exam's 4k) plus its own embedding pass
    *    over the PDF it produces.
+   *  - `notifier` — one SMTP send, no LLM call, so it is free.
    *
-   * A full five-agent run therefore costs 14, and a handout rewrite after
-   * feedback costs 6 — the same as having asked for it the first time.
+   * A full run (every paid agent) therefore costs 14, and a handout
+   * rewrite after feedback costs 6 — the same as having asked for it the
+   * first time. The mail-reporting agent adds nothing: its send is free.
    */
   lessonAgent: {
     transcript: 1,
@@ -35,5 +37,6 @@ export const CREDIT_COSTS = {
     indexer: 1,
     handout: 6,
     quizmaster: 5,
+    notifier: 0,
   },
 } as const;

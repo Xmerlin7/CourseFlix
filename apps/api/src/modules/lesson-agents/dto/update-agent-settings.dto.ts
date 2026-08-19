@@ -59,4 +59,6 @@ export class UpdateAgentSettingsDto {
   @Min(QUIZ_DUE_DAYS_RANGE.min)
   @Max(QUIZ_DUE_DAYS_RANGE.max)
   quizDueInDays?: number;
+
+  @IsOptional() @IsBoolean() notifierEnabled?: boolean;
 }

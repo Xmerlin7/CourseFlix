@@ -65,6 +65,9 @@ export class TeacherAgentSettingsEntity {
   @Column({ name: 'quiz_due_in_days', type: 'integer', default: 7 })
   quizDueInDays!: number;
 
+  @Column({ name: 'notifier_enabled', type: 'boolean', default: true })
+  notifierEnabled!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

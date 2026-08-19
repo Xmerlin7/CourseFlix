@@ -54,6 +54,7 @@ export interface AgentSettingsResponse {
   quizMcqCount: number;
   quizTrueFalseCount: number;
   quizDueInDays: number;
+  notifierEnabled: boolean;
 }
 
 export interface LessonAgentStepResponse {
@@ -126,6 +127,7 @@ const DEFAULT_SETTINGS: AgentSettingsResponse = {
   quizMcqCount: 5,
   quizTrueFalseCount: 3,
   quizDueInDays: 7,
+  notifierEnabled: true,
 };
 
 /** A run in one of these is still owned by the worker — don't touch it. */
@@ -184,6 +186,7 @@ export class LessonAgentsService {
       quizMcqCount: row.quizMcqCount,
       quizTrueFalseCount: row.quizTrueFalseCount,
       quizDueInDays: row.quizDueInDays,
+      notifierEnabled: row.notifierEnabled,
     };
   }
 
@@ -224,6 +227,7 @@ export class LessonAgentsService {
         quizMcqCount: merged.quizMcqCount,
         quizTrueFalseCount: merged.quizTrueFalseCount,
         quizDueInDays: merged.quizDueInDays,
+        notifierEnabled: merged.notifierEnabled,
       }),
     );
 
@@ -674,7 +678,8 @@ export class LessonAgentsService {
       (agent) =>
         agent.mandatory ||
         (agent.key === 'handout' && settings.handoutEnabled) ||
-        (agent.key === 'quizmaster' && settings.quizEnabled),
+        (agent.key === 'quizmaster' && settings.quizEnabled) ||
+        (agent.key === 'notifier' && settings.notifierEnabled),
     ).map((agent) => agent.key);
 
     return {
