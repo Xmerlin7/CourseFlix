@@ -46,6 +46,8 @@ export interface TeacherCourseListItem {
   coverImageUrl: string | null;
   gradeLevel: string | null;
   status: CourseStatus;
+  /** `null` = using the platform default price (`COURSE_PRICE_MINOR`). */
+  priceMinor: number | null;
 }
 
 export interface TeacherDashboardResponse {
@@ -451,6 +453,7 @@ export class TeacherService {
       coverImageUrl: course.coverImageUrl,
       gradeLevel: course.gradeLevel,
       status: course.status,
+      priceMinor: course.priceMinor,
     };
   }
 

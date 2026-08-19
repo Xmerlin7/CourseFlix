@@ -116,6 +116,7 @@ export const handlers = [
       description: "دورة فيزياء تجريبية",
       coverImageUrl: null,
       gradeLevel: "ثانوي",
+      priceMinor: null,
       status: "published",
       teacher: { id: "teacher-1", fullName: "معلم الفيزياء" },
       canEdit: false,

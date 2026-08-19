@@ -17,6 +17,8 @@ export interface TeacherCourse {
   coverImageUrl: string | null
   gradeLevel: string | null
   status: CourseStatus
+  /** null = platform default price. In EGP minor units (1/100 EGP). */
+  priceMinor: number | null
 }
 
 export interface TeacherStudentCourseSubscription {
@@ -56,6 +58,7 @@ export interface CreateTeacherCoursePayload {
   description?: string | null
   coverImageUrl?: string | null
   gradeLevel?: string | null
+  priceMinor?: number | null
 }
 
 export interface UpdateTeacherCoursePayload {
@@ -64,6 +67,7 @@ export interface UpdateTeacherCoursePayload {
   coverImageUrl?: string | null
   gradeLevel?: string | null
   status?: 'draft' | 'published'
+  priceMinor?: number | null
 }
 
 export interface TeacherSection {

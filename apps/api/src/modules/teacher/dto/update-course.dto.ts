@@ -1,10 +1,13 @@
 import {
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   IsUrl,
   Length,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 /**
@@ -36,4 +39,13 @@ export class UpdateCourseDto {
   @IsOptional()
   @IsIn(['draft', 'published'])
   status?: 'draft' | 'published';
+
+  // EGP minor units (1/100 EGP), same unit `order_items.price_minor`
+  // uses. `null` explicitly resets the course to the platform default
+  // price; omitted leaves whatever price is already set untouched.
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100_000_00)
+  priceMinor?: number | null;
 }

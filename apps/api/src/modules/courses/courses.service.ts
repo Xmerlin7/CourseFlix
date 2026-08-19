@@ -27,6 +27,7 @@ export interface UpdateCourseFields {
   coverImageUrl?: string | null;
   gradeLevel?: string | null;
   status?: 'draft' | 'published';
+  priceMinor?: number | null;
 }
 
 /**
@@ -193,7 +194,7 @@ export class CoursesService {
       coverImageUrl: course.coverImageUrl,
       gradeLevel: course.gradeLevel,
       teacherName: course.teacher!.fullName,
-      priceMinor: COURSE_PRICE_MINOR,
+      priceMinor: course.priceMinor ?? COURSE_PRICE_MINOR,
       currency: DEFAULT_CURRENCY,
       isEnrolled: enrolledCourseIds.has(course.id),
     }));
@@ -307,6 +308,7 @@ export class CoursesService {
       description?: string | null;
       coverImageUrl?: string | null;
       gradeLevel?: string | null;
+      priceMinor?: number | null;
     },
   ): Promise<CourseEntity> {
     const slug = await this.buildUniqueSlug(fields.title);
@@ -318,6 +320,7 @@ export class CoursesService {
       description: fields.description ?? null,
       coverImageUrl: fields.coverImageUrl ?? null,
       gradeLevel: fields.gradeLevel ?? null,
+      priceMinor: fields.priceMinor ?? null,
       status: 'draft',
     });
     return this.coursesRepository.save(course);
@@ -686,6 +689,7 @@ export class CoursesService {
       coverImageUrl: course.coverImageUrl,
       gradeLevel: course.gradeLevel,
       status: course.status,
+      priceMinor: course.priceMinor,
       teacher: {
         id: course.teacher!.id,
         fullName: course.teacher!.fullName,

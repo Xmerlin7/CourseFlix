@@ -22,6 +22,12 @@ export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
   const [description, setDescription] = useState(course.description ?? '')
   const [coverImageUrl, setCoverImageUrl] = useState(course.coverImageUrl ?? '')
   const [gradeLevel, setGradeLevel] = useState(course.gradeLevel ?? '')
+  // Shown to the teacher in whole EGP, converted to minor units (1/100
+  // EGP) only at submit — `order_items.price_minor`'s unit, not a unit
+  // a teacher should have to think in.
+  const [priceEgp, setPriceEgp] = useState(
+    course.priceMinor != null ? String(course.priceMinor / 100) : '',
+  )
   const [status, setStatus] = useState<'draft' | 'published'>(
     course.status === 'archived' ? 'draft' : course.status,
   )
@@ -41,6 +47,7 @@ export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
         coverImageUrl: coverImageUrl || null,
         gradeLevel: gradeLevel || null,
         status,
+        priceMinor: priceEgp.trim() === '' ? null : Math.round(Number(priceEgp) * 100),
       })
       setSavedAt(Date.now())
       onSaved?.(updated)
@@ -120,6 +127,21 @@ export function TeacherCourseForm({ course, onSaved }: TeacherCourseFormProps) {
             onChange={(event) => setGradeLevel(event.target.value)}
             maxLength={100}
           />
+        </div>
+
+        <div className="tf">
+          <label htmlFor="course-price">سعر الدورة (جنيه)</label>
+          <input
+            id="course-price"
+            type="number"
+            min={0}
+            step={1}
+            inputMode="decimal"
+            value={priceEgp}
+            onChange={(event) => setPriceEgp(event.target.value)}
+            placeholder="السعر الافتراضي للمنصة"
+          />
+          <span className="meta">سيبه فاضي عشان يستخدم السعر الافتراضي للمنصة.</span>
         </div>
 
         <div className="tf">

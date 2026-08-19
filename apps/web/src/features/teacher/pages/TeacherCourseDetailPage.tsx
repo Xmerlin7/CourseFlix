@@ -117,6 +117,7 @@ export function TeacherCourseDetailPage() {
                 coverImageUrl: data.coverImageUrl,
                 gradeLevel: data.gradeLevel,
                 status: data.status,
+                priceMinor: data.priceMinor,
               }}
               onSaved={refetch}
             />

@@ -99,13 +99,18 @@ export class CommerceService {
       }
     }
 
+    // Per-course price if the teacher set one, otherwise the platform
+    // default — the fallback every course used exclusively before this
+    // column existed.
+    const priceMinor = course.priceMinor ?? COURSE_PRICE_MINOR;
+
     const savedOrder = await this.ordersRepository.save(
       this.ordersRepository.create({
         studentId,
         status: 'pending',
         paymentStatus: 'pending',
         currency: DEFAULT_CURRENCY,
-        totalMinor: COURSE_PRICE_MINOR,
+        totalMinor: priceMinor,
         idempotencyKey: dto.idempotencyKey ?? null,
       }),
     );
@@ -115,7 +120,7 @@ export class CommerceService {
         orderId: savedOrder.id,
         courseId: course.id,
         titleSnapshot: course.title,
-        priceMinor: COURSE_PRICE_MINOR,
+        priceMinor,
       }),
     );
 

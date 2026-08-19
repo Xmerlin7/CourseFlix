@@ -42,6 +42,8 @@ export class CourseDetailResponseDto {
   coverImageUrl!: string | null;
   gradeLevel!: string | null;
   status!: CourseStatus;
+  /** `null` = platform default price. In EGP minor units (1/100 EGP). */
+  priceMinor!: number | null;
   teacher!: { id: string; fullName: string };
   canEdit!: boolean;
   sections!: CourseSectionResponseDto[];

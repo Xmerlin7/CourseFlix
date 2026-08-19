@@ -1,9 +1,12 @@
 import {
+  IsInt,
   IsOptional,
   IsString,
   IsUrl,
   Length,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 export class CreateCourseDto {
@@ -14,4 +17,8 @@ export class CreateCourseDto {
   @IsOptional() @IsUrl() coverImageUrl?: string | null;
 
   @IsOptional() @IsString() @MaxLength(100) gradeLevel?: string | null;
+
+  // EGP minor units (1/100 EGP). Omitted (or null) means "use the
+  // platform default price" — see `CourseEntity.priceMinor`.
+  @IsOptional() @IsInt() @Min(0) @Max(100_000_00) priceMinor?: number | null;
 }

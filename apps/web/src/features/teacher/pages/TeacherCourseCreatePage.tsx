@@ -9,6 +9,7 @@ export function TeacherCourseCreatePage() {
   const [description, setDescription] = useState('')
   const [coverImageUrl, setCoverImageUrl] = useState('')
   const [gradeLevel, setGradeLevel] = useState('')
+  const [priceEgp, setPriceEgp] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,6 +24,7 @@ export function TeacherCourseCreatePage() {
         description: description || null,
         coverImageUrl: coverImageUrl || null,
         gradeLevel: gradeLevel || null,
+        priceMinor: priceEgp.trim() === '' ? null : Math.round(Number(priceEgp) * 100),
       })
       navigate(`/teacher/courses/${course.id}`, { replace: true })
     } catch (caughtError) {
@@ -87,6 +89,21 @@ export function TeacherCourseCreatePage() {
             maxLength={100}
             placeholder="مثال: الصف الثالث الثانوي"
           />
+        </div>
+
+        <div className="tf">
+          <label htmlFor="new-course-price">سعر الدورة (جنيه)</label>
+          <input
+            id="new-course-price"
+            type="number"
+            min={0}
+            step={1}
+            inputMode="decimal"
+            value={priceEgp}
+            onChange={(event) => setPriceEgp(event.target.value)}
+            placeholder="السعر الافتراضي للمنصة"
+          />
+          <span className="meta">سيبه فاضي عشان يستخدم السعر الافتراضي للمنصة.</span>
         </div>
 
         {error && (

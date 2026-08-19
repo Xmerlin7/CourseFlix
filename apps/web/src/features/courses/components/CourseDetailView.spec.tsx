@@ -16,6 +16,7 @@ const course: CourseDetail = {
   description: null,
   coverImageUrl: null,
   gradeLevel: null,
+  priceMinor: null,
   status: 'published',
   teacher: {
     id: 'teacher-1',

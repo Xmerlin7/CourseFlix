@@ -60,6 +60,14 @@ export class CourseEntity {
   @Column({ name: 'grade_level', type: 'text', nullable: true })
   gradeLevel!: string | null;
 
+  // Null means "use the platform default price"
+  // (`commerce.constants.ts#COURSE_PRICE_MINOR`) — every course that
+  // predates this column, and every teacher who hasn't set one, prices
+  // exactly as before. In EGP minor units (1/100 EGP), same unit as
+  // `order_items.price_minor`.
+  @Column({ name: 'price_minor', type: 'integer', nullable: true })
+  priceMinor!: number | null;
+
   @Column({
     type: 'enum',
     enum: ['draft', 'published', 'archived'],
