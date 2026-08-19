@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { ApiError } from '../../../shared/api/api-error'
 import { getCourseAgentRuns, startLessonAgentRun } from '../api/lesson-agents.api'
-import type { LessonAgentRunSummary } from '../types/lesson-agents.types'
+import type {
+  LessonAgentRunSummary,
+  UpdateAgentSettingsPayload,
+} from '../types/lesson-agents.types'
 
 const POLL_INTERVAL_MS = 5000
 
@@ -9,7 +12,10 @@ interface UseCourseAgentRunsResult {
   data: LessonAgentRunSummary[]
   isLoading: boolean
   error: ApiError | null
-  start: (lessonId: string) => Promise<LessonAgentRunSummary>
+  start: (
+    lessonId: string,
+    overrides?: UpdateAgentSettingsPayload,
+  ) => Promise<LessonAgentRunSummary>
   refetch: () => void
 }
 
@@ -64,8 +70,11 @@ export function useCourseAgentRuns(courseId: string): UseCourseAgentRunsResult {
     return () => clearInterval(timer)
   }, [hasWorkInFlight])
 
-  async function start(lessonId: string): Promise<LessonAgentRunSummary> {
-    const run = await startLessonAgentRun(lessonId)
+  async function start(
+    lessonId: string,
+    overrides?: UpdateAgentSettingsPayload,
+  ): Promise<LessonAgentRunSummary> {
+    const run = await startLessonAgentRun(lessonId, overrides)
     setRefetchToken((token) => token + 1)
     return run
   }

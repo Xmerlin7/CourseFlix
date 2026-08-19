@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
@@ -112,6 +112,76 @@ describe('TeacherContentManager', () => {
       useAgents: false,
     })
     expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('sends the picked crew as a per-run override when launching agents', async () => {
+    const user = userEvent.setup()
+    let lessonBody: unknown
+    let runBody: unknown
+
+    server.use(
+      http.post(`${env.apiBaseUrl}/teacher/sections/section-1/lessons`, async ({ request }) => {
+        lessonBody = await request.json()
+        return HttpResponse.json({
+          id: 'lesson-2',
+          title: 'درس بالوكلاء',
+          videoUrl: 'https://youtube.com/watch?v=abc',
+          sortOrder: 2,
+          status: 'published',
+        })
+      }),
+      http.post(`${env.apiBaseUrl}/teacher/lessons/lesson-2/agent-runs`, async ({ request }) => {
+        runBody = await request.json()
+        return HttpResponse.json({ id: 'run-1', lessonId: 'lesson-2' })
+      }),
+    )
+
+    renderWithProviders(<TeacherContentManager course={course} onChange={vi.fn()} />)
+
+    await user.type(screen.getByPlaceholderText('اسم الدرس'), 'درس بالوكلاء')
+    await user.click(screen.getByRole('radio', { name: /وكلاء ذكيون/ }))
+
+    fireEvent.change(screen.getByPlaceholderText(/رابط الفيديو \(مطلوب/), {
+      target: { value: 'https://youtube.com/watch?v=abc' },
+    })
+
+    // Defaults come from the saved settings (both agents on); switching
+    // the handout off here must apply to this run only.
+    await user.click(await screen.findByRole('switch', { name: /كاتب الشرح/ }))
+    await user.click(screen.getByRole('button', { name: /أضف وشغّل الفريق/ }))
+
+    await waitFor(() =>
+      expect(lessonBody).toEqual({
+        title: 'درس بالوكلاء',
+        videoUrl: 'https://youtube.com/watch?v=abc',
+        useAgents: true,
+      }),
+    )
+    await waitFor(() =>
+      expect(runBody).toEqual({
+        overrides: { handoutEnabled: false, quizEnabled: true },
+      }),
+    )
+  })
+
+  it('refuses to launch agents without a video, since every agent reads the transcript', async () => {
+    const user = userEvent.setup()
+    let started = false
+
+    server.use(
+      http.post(`${env.apiBaseUrl}/teacher/sections/section-1/lessons`, () => {
+        started = true
+        return HttpResponse.json({ id: 'lesson-2' })
+      }),
+    )
+
+    renderWithProviders(<TeacherContentManager course={course} onChange={vi.fn()} />)
+
+    await user.type(screen.getByPlaceholderText('اسم الدرس'), 'درس من غير فيديو')
+    await user.click(screen.getByRole('radio', { name: /وكلاء ذكيون/ }))
+    await user.click(screen.getByRole('button', { name: /أضف وشغّل الفريق/ }))
+
+    expect(started).toBe(false)
   })
 
   it('opens custom confirmation modal when deleting a section', async () => {

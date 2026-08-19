@@ -16,8 +16,20 @@ export async function updateAgentSettings(
   return httpClient.patch<AgentSettings>('/teacher/agent-settings', payload)
 }
 
-export async function startLessonAgentRun(lessonId: string): Promise<LessonAgentRunDetail> {
-  return httpClient.post<LessonAgentRunDetail>(`/teacher/lessons/${lessonId}/agent-runs`, {})
+/**
+ * `overrides` is a one-off tweak for this lesson only — the API merges it
+ * over the teacher's saved settings into the run's frozen config and
+ * never writes it back, so turning the handout off for one short lesson
+ * doesn't change their default.
+ */
+export async function startLessonAgentRun(
+  lessonId: string,
+  overrides?: UpdateAgentSettingsPayload,
+): Promise<LessonAgentRunDetail> {
+  return httpClient.post<LessonAgentRunDetail>(
+    `/teacher/lessons/${lessonId}/agent-runs`,
+    overrides ? { overrides } : {},
+  )
 }
 
 export async function getCourseAgentRuns(courseId: string): Promise<LessonAgentRunSummary[]> {

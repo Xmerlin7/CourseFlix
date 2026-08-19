@@ -73,7 +73,38 @@ interface Fonts {
   arabicCovers: (codePoint: number) => boolean;
 }
 
-const ASSETS = join(__dirname, 'assets');
+/**
+ * Where the vendored Noto Naskh faces live at runtime.
+ *
+ * Normally `dist/pdf/assets`, copied there by the `assets` entry in
+ * `nest-cli.json`. That copy is a build step that can silently be out of
+ * date — a `nest start --watch` process started before the entry existed
+ * keeps serving a `dist` without it — and when it is, the failure lands
+ * as a bare `ENOENT` from deep inside font embedding, which says nothing
+ * about what to do. So the source tree is checked as a fallback (it is
+ * two levels up from `dist/pdf`), and anything else raises a message that
+ * names the real problem.
+ */
+const ASSET_CANDIDATES = [
+  join(__dirname, 'assets'),
+  join(__dirname, '..', '..', 'src', 'pdf', 'assets'),
+];
+
+async function readFontFile(fileName: string): Promise<Buffer> {
+  for (const directory of ASSET_CANDIDATES) {
+    try {
+      return await readFile(join(directory, fileName));
+    } catch {
+      // Try the next candidate; the throw below reports them all at once.
+    }
+  }
+
+  throw new Error(
+    `Arabic font "${fileName}" not found. The handout PDF cannot be drawn ` +
+      `without it. Looked in: ${ASSET_CANDIDATES.join(', ')}. ` +
+      `Rebuild the worker (its nest-cli.json copies src/pdf/assets into dist).`,
+  );
+}
 
 /**
  * Noto Naskh Arabic is an Arabic-only face: it has no Latin letters, and
@@ -290,8 +321,8 @@ async function loadFonts(document: PDFDocument): Promise<Fonts> {
   document.registerFontkit(fontkit);
 
   const [regular, bold] = await Promise.all([
-    readFile(join(ASSETS, 'NotoNaskhArabic-Regular.ttf')),
-    readFile(join(ASSETS, 'NotoNaskhArabic-Bold.ttf')),
+    readFontFile('NotoNaskhArabic-Regular.ttf'),
+    readFontFile('NotoNaskhArabic-Bold.ttf'),
   ]);
 
   // The same buffer pdf-lib embeds is read back through fontkit to learn

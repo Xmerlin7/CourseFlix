@@ -5851,3 +5851,36 @@ table.mtable {
     animation: none;
   }
 }
+
+/* The per-run crew picker sits inside the add-lesson form, so it stays
+   visually subordinate to it — a bordered strip rather than another card,
+   which at this nesting depth would read as a separate section. */
+.agent-crew-picker {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--space-scale));
+  padding: calc(12px * var(--space-scale));
+  border: 1px dashed var(--outline-variant);
+  border-radius: 14px;
+}
+
+.agent-crew-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* The optional agents are real toggles, so they get the button reset the
+   `.chip.clickable` styling assumes but doesn't provide on its own. */
+.agent-crew-picker-row button.chip {
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.agent-crew-picker-row button.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

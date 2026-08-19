@@ -2,7 +2,10 @@ import { useState, type FormEvent } from 'react'
 import { ConfirmModal } from '../../../shared/components/ConfirmModal'
 import { showToast } from '../../../shared/components/Toast'
 import { AGENT_RUN_STATUS } from '../../../shared/lib/status-labels'
+import { AgentCrewPicker } from '../../lesson-agents/components/AgentCrewPicker'
+import type { AgentCrewSelection } from '../../lesson-agents/components/AgentCrewPicker'
 import { AgentRunPanel } from '../../lesson-agents/components/AgentRunPanel'
+import { useAgentSettings } from '../../lesson-agents/hooks/useAgentSettings'
 import { useCourseAgentRuns } from '../../lesson-agents/hooks/useCourseAgentRuns'
 import {
   createLesson,
@@ -65,7 +68,22 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
   const [isDeleting, setIsDeleting] = useState(false)
 
   const agentRuns = useCourseAgentRuns(course.id)
+  const agentSettings = useAgentSettings()
   const [openRunId, setOpenRunId] = useState<string | null>(null)
+
+  // Per-section, per-run crew choice. `undefined` means "not touched",
+  // which falls back to the teacher's saved defaults rather than to a
+  // hardcoded pair — so the picker opens showing what would actually run.
+  const [crewChoices, setCrewChoices] = useState<Record<string, AgentCrewSelection>>({})
+
+  function crewFor(sectionId: string): AgentCrewSelection {
+    return (
+      crewChoices[sectionId] ?? {
+        handout: agentSettings.data?.handoutEnabled ?? true,
+        quiz: agentSettings.data?.quizEnabled ?? true,
+      }
+    )
+  }
 
   function draftFor(sectionId: string): LessonDraft {
     return lessonDrafts[sectionId] ?? EMPTY_LESSON_DRAFT
@@ -132,7 +150,11 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
       onChange()
 
       if (useAgents) {
-        const run = await agentRuns.start(lesson.id)
+        const crew = crewFor(sectionId)
+        const run = await agentRuns.start(lesson.id, {
+          handoutEnabled: crew.handout,
+          quizEnabled: crew.quiz,
+        })
         setOpenRunId(run.id)
         showToast('الفريق بدأ شغله على الدرس', 'success')
       }
@@ -582,11 +604,19 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
                 </button>
               </div>
 
-              <p className="meta" style={{ margin: 0 }}>
-                {draft.mode === 'agents'
-                  ? 'فريق من الوكلاء هيفرّغ الفيديو، يراجعه، يفهرسه للمساعد الذكي، ويكتب مذكّرة شرح واختبار — وتراجع شغلهم قبل النشر.'
-                  : 'الدرس هيتحفظ وهيتفهرس للمساعد الذكي بالطريقة المعتادة.'}
-              </p>
+              {draft.mode === 'agents' ? (
+                <AgentCrewPicker
+                  value={crewFor(section.id)}
+                  disabled={busyLessonSectionId === section.id}
+                  onChange={(next) =>
+                    setCrewChoices((current) => ({ ...current, [section.id]: next }))
+                  }
+                />
+              ) : (
+                <p className="meta" style={{ margin: 0 }}>
+                  الدرس هيتحفظ وهيتفهرس للمساعد الذكي بالطريقة المعتادة.
+                </p>
+              )}
             </form>
             {lessonErrorSectionId === section.id && (
               <p role="alert" style={{ color: 'var(--error)', fontSize: 13.5, marginTop: -10 }}>
