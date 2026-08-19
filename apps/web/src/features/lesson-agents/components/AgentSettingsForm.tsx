@@ -333,6 +333,26 @@ export function AgentSettingsForm() {
           </>
         )}
       </div>
+
+      <div className="card settings-card">
+        <div className="settings-row">
+          <div className="lbl-group">
+            <span className="t">
+              <span className="ms" style={{ fontSize: 18, verticalAlign: 'middle', marginInlineEnd: 6 }}>
+                mail
+              </span>
+              مراسل البريد
+            </span>
+            <span className="meta">لما الفريق يخلص، يبعتلك على الإيميل ملخص باللي اتعمل على الدرس.</span>
+          </div>
+          <Switch
+            checked={settings.notifierEnabled}
+            disabled={isSaving}
+            onChange={(checked) => void apply({ notifierEnabled: checked })}
+            label="تفعيل مراسل البريد"
+          />
+        </div>
+      </div>
     </div>
   )
 }

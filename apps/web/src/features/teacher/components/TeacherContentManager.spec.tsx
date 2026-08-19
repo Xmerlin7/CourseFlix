@@ -159,7 +159,11 @@ describe('TeacherContentManager', () => {
     )
     await waitFor(() =>
       expect(runBody).toEqual({
-        overrides: { handoutEnabled: false, quizEnabled: true },
+        overrides: {
+          handoutEnabled: false,
+          quizEnabled: true,
+          notifierEnabled: true,
+        },
       }),
     )
   })

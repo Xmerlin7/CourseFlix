@@ -4,6 +4,7 @@ export type LessonAgentKey =
   | 'indexer'
   | 'handout'
   | 'quizmaster'
+  | 'notifier'
 
 export type LessonAgentRunStatus =
   | 'queued'
@@ -156,6 +157,7 @@ export interface AgentSettings {
   quizMcqCount: number
   quizTrueFalseCount: number
   quizDueInDays: number
+  notifierEnabled: boolean
 }
 
 export type UpdateAgentSettingsPayload = Partial<AgentSettings>

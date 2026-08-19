@@ -4,6 +4,7 @@ import { ROUTE_PATHS } from '../../../app/routes/route-paths'
 export interface AgentCrewSelection {
   handout: boolean
   quiz: boolean
+  notifier: boolean
 }
 
 interface AgentCrewPickerProps {
@@ -40,6 +41,12 @@ export function AgentCrewPicker({ value, onChange, disabled }: AgentCrewPickerPr
       label: 'واضع الأسئلة',
       icon: 'quiz',
       on: value.quiz,
+    },
+    {
+      key: 'notifier' as const,
+      label: 'مراسل البريد',
+      icon: 'mail',
+      on: value.notifier,
     },
   ]
 

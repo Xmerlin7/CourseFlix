@@ -81,6 +81,7 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
       crewChoices[sectionId] ?? {
         handout: agentSettings.data?.handoutEnabled ?? true,
         quiz: agentSettings.data?.quizEnabled ?? true,
+        notifier: agentSettings.data?.notifierEnabled ?? true,
       }
     )
   }
@@ -154,6 +155,7 @@ export function TeacherContentManager({ course, onChange }: TeacherContentManage
         const run = await agentRuns.start(lesson.id, {
           handoutEnabled: crew.handout,
           quizEnabled: crew.quiz,
+          notifierEnabled: crew.notifier,
         })
         setOpenRunId(run.id)
         showToast('الفريق بدأ شغله على الدرس', 'success')

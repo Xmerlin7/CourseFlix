@@ -473,6 +473,7 @@ export const handlers = [
       quizMcqCount: 5,
       quizTrueFalseCount: 3,
       quizDueInDays: 7,
+      notifierEnabled: true,
     }),
   ),
 ];
