@@ -1,9 +1,5 @@
 export type LessonAgentKey =
-  | 'transcript'
-  | 'reviewer'
-  | 'indexer'
-  | 'handout'
-  | 'quizmaster';
+  'transcript' | 'reviewer' | 'indexer' | 'handout' | 'quizmaster';
 
 /**
  * Display names for the agents, used to write the handoff narration the

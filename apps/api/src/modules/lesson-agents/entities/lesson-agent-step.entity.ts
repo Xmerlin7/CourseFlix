@@ -9,18 +9,10 @@ import {
 import type { LessonAgentKey } from '../lesson-agents.constants';
 
 export type LessonAgentStepStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'skipped';
+  'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export type LessonAgentReviewStatus =
-  | 'not_required'
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'revision_requested';
+  'not_required' | 'pending' | 'approved' | 'rejected' | 'revision_requested';
 
 /**
  * What each agent produced, in a shape the review panel can render

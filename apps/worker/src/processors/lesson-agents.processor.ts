@@ -129,7 +129,9 @@ export class LessonAgentsProcessor extends WorkerHost {
       this.logger.log(`[${job.id}] ai_jobs row ${jobId} (run ${runId}) → done`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`[${job.id}] ai_jobs row ${jobId} → failed: ${message}`);
+      this.logger.error(
+        `[${job.id}] ai_jobs row ${jobId} → failed: ${message}`,
+      );
 
       await this.markJobFailed(jobId, message);
       if (runId) {
@@ -321,7 +323,8 @@ export class LessonAgentsProcessor extends WorkerHost {
     );
     const reviewableProduced = steps.some(
       (step) =>
-        REVIEWABLE_AGENTS.includes(step.agent_key) && step.status === 'completed',
+        REVIEWABLE_AGENTS.includes(step.agent_key) &&
+        step.status === 'completed',
     );
 
     const status = mandatoryFailed
@@ -339,7 +342,8 @@ export class LessonAgentsProcessor extends WorkerHost {
 
     if (status !== 'failed') {
       await this.recordEvent(runId, {
-        type: status === 'pending_review' ? 'review_requested' : 'run_completed',
+        type:
+          status === 'pending_review' ? 'review_requested' : 'run_completed',
         message:
           status === 'pending_review'
             ? 'الفريق خلّص شغله — راجع اللي عملوه واعتمده.'
@@ -484,8 +488,7 @@ export class LessonAgentsProcessor extends WorkerHost {
       .filter((text): text is string => Boolean(text));
     if (ordered.length === 0) return;
 
-    const stride =
-      DEFAULT_VIDEO_CHUNK_WORDS - DEFAULT_VIDEO_CHUNK_WORD_OVERLAP;
+    const stride = DEFAULT_VIDEO_CHUNK_WORDS - DEFAULT_VIDEO_CHUNK_WORD_OVERLAP;
 
     const words: string[] = [];
     ordered.forEach((text, index) => {
@@ -586,10 +589,7 @@ export class LessonAgentsProcessor extends WorkerHost {
     );
   }
 
-  private async markStepFailed(
-    stepId: string,
-    message: string,
-  ): Promise<void> {
+  private async markStepFailed(stepId: string, message: string): Promise<void> {
     await this.dataSource.query(
       `UPDATE lesson_agent_steps
           SET status = 'failed', error_message = $2, finished_at = NOW(), updated_at = NOW()

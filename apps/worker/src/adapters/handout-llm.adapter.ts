@@ -42,9 +42,7 @@ export interface HandoutLlmProvider {
  * exercised end to end without a real LLM call.
  */
 export class MockHandoutLlmProvider implements HandoutLlmProvider {
-  generateHandout(
-    input: HandoutGenerateInput,
-  ): Promise<HandoutGenerateResult> {
+  generateHandout(input: HandoutGenerateInput): Promise<HandoutGenerateResult> {
     const sections: HandoutSection[] = [];
 
     for (let index = 0; index < input.pageCount; index++) {
@@ -196,10 +194,11 @@ export class OpenAIHandoutLlmProvider implements HandoutLlmProvider {
         for (const blockItem of candidate.blocks) {
           if (!blockItem || typeof blockItem !== 'object') continue;
           const block = blockItem as { type?: unknown; text?: unknown };
-          const text =
-            typeof block.text === 'string' ? block.text.trim() : '';
+          const text = typeof block.text === 'string' ? block.text.trim() : '';
           if (!text) continue;
-          const type = VALID_BLOCK_TYPES.includes(block.type as HandoutBlockType)
+          const type = VALID_BLOCK_TYPES.includes(
+            block.type as HandoutBlockType,
+          )
             ? (block.type as HandoutBlockType)
             : 'paragraph';
           blocks.push({ type, text });

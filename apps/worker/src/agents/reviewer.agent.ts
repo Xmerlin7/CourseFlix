@@ -51,7 +51,10 @@ export class ReviewerAgent implements LessonAgent {
       throw new AgentFailure('مفيش نص أراجعه — المُفرِّغ ما سلّمش حاجة.');
     }
 
-    await reporter.progress(40, 'بفحص المحتوى: أمان الطلاب أولًا، وبعدين مدى ارتباطه بالمادة.');
+    await reporter.progress(
+      40,
+      'بفحص المحتوى: أمان الطلاب أولًا، وبعدين مدى ارتباطه بالمادة.',
+    );
 
     const result = await this.moderationProvider.checkCaptions({
       videoTitle: context.video.title,

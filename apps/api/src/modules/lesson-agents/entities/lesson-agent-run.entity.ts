@@ -9,11 +9,7 @@ import {
 import type { LessonAgentRunConfig } from '../lesson-agents.constants';
 
 export type LessonAgentRunStatus =
-  | 'queued'
-  | 'running'
-  | 'pending_review'
-  | 'completed'
-  | 'failed';
+  'queued' | 'running' | 'pending_review' | 'completed' | 'failed';
 
 /**
  * One execution of the agent pipeline over a single lesson.

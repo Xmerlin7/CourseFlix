@@ -39,14 +39,15 @@ export function useAgentRun(runId: string | null): UseAgentRunResult {
   const [error, setError] = useState<ApiError | null>(null)
   const [refetchToken, setRefetchToken] = useState(0)
 
-  const isWorking = data?.status === 'queued' || data?.status === 'running'
+  // Derived rather than cleared in the effect: with no run selected there
+  // is nothing to show, and blanking state from inside an effect costs an
+  // extra render pass for a value that's a pure function of `runId`.
+  const visibleData = runId ? data : null
+  const isWorking =
+    visibleData?.status === 'queued' || visibleData?.status === 'running'
 
   useEffect(() => {
-    if (!runId) {
-      setData(null)
-      setIsLoading(false)
-      return
-    }
+    if (!runId) return
 
     const controller = new AbortController()
 
@@ -105,8 +106,8 @@ export function useAgentRun(runId: string | null): UseAgentRunResult {
   }
 
   return {
-    data,
-    isLoading,
+    data: visibleData,
+    isLoading: runId ? isLoading : false,
     error,
     approve,
     reject,

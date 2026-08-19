@@ -46,7 +46,10 @@ export class IndexerAgent implements LessonAgent {
       throw new AgentFailure('مستلمتش نص من المُفرِّغ، فمش قادر أفهرس.');
     }
 
-    await reporter.progress(20, 'بقسّم النص لمقاطع صغيرة عشان الإجابات تبقى دقيقة ومربوطة بتوقيتها.');
+    await reporter.progress(
+      20,
+      'بقسّم النص لمقاطع صغيرة عشان الإجابات تبقى دقيقة ومربوطة بتوقيتها.',
+    );
 
     const chunks = chunkCaptions({
       videoTranscriptId: transcriptId,

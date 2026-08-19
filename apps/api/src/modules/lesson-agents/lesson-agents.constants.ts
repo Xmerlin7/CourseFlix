@@ -9,11 +9,7 @@
  * web renders the timeline from the labels it ships in the run payload.
  */
 export type LessonAgentKey =
-  | 'transcript'
-  | 'reviewer'
-  | 'indexer'
-  | 'handout'
-  | 'quizmaster';
+  'transcript' | 'reviewer' | 'indexer' | 'handout' | 'quizmaster';
 
 export interface AgentDefinition {
   key: LessonAgentKey;

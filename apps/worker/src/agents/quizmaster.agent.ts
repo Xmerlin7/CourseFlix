@@ -59,10 +59,7 @@ export class QuizmasterAgent implements LessonAgent {
     }
 
     const settings = context.config.quiz;
-    const questionSpec = this.buildSpec(
-      settings.types,
-      settings.questionCount,
-    );
+    const questionSpec = this.buildSpec(settings.types, settings.questionCount);
     const feedback = await this.loadFeedbackThread(context.run.id);
 
     await reporter.progress(
@@ -117,7 +114,11 @@ export class QuizmasterAgent implements LessonAgent {
     types: Array<'mcq' | 'true_false'>,
     total: number,
   ): QuestionSpecItem[] {
-    const chosen = types.length > 0 ? types : (['mcq'] as const);
+    // Widened to a single concrete array type rather than a union with a
+    // `readonly` tuple fallback — a union of array types degrades the
+    // `.map` callback's parameter to `any`.
+    const chosen: Array<'mcq' | 'true_false'> =
+      types.length > 0 ? types : ['mcq'];
     const base = Math.floor(total / chosen.length);
     const remainder = total % chosen.length;
 
@@ -154,7 +155,9 @@ export class QuizmasterAgent implements LessonAgent {
         throw new AgentFailure('طلع سؤال من غير نص — جرّب تاني.');
       }
       if (!Array.isArray(question.options) || question.options.length < 2) {
-        throw new AgentFailure(`السؤال "${question.text}" من غير اختيارات كافية.`);
+        throw new AgentFailure(
+          `السؤال "${question.text}" من غير اختيارات كافية.`,
+        );
       }
       if (!question.options.includes(question.correctAnswer)) {
         throw new AgentFailure(
@@ -185,7 +188,9 @@ export class QuizmasterAgent implements LessonAgent {
           context.course.id,
           question.type,
           question.text,
-          question.type === 'true_false' ? TRUE_FALSE_OPTIONS : question.options,
+          question.type === 'true_false'
+            ? TRUE_FALSE_OPTIONS
+            : question.options,
           question.correctAnswer,
           question.difficulty,
         ],
@@ -237,9 +242,7 @@ export class QuizmasterAgent implements LessonAgent {
     return rows.map((row) => row.message);
   }
 
-  private async loadPreviousDraft(
-    runId: string,
-  ): Promise<
+  private async loadPreviousDraft(runId: string): Promise<
     | Array<{
         type: string;
         text: string;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import {
   BadRequestException,
   ConflictException,
@@ -21,7 +22,9 @@ const OTHER_TEACHER_ID = 'teacher-2';
  * module — the service takes them as constructor arguments, and the
  * behaviour worth pinning here is its own decision-making, not TypeORM's.
  */
-function makeRepo<T extends object>(overrides: Partial<Record<string, unknown>> = {}) {
+function makeRepo<T extends object>(
+  overrides: Partial<Record<string, unknown>> = {},
+) {
   return {
     find: jest.fn().mockResolvedValue([]),
     findOne: jest.fn().mockResolvedValue(null),
@@ -31,6 +34,12 @@ function makeRepo<T extends object>(overrides: Partial<Record<string, unknown>> 
     softRemove: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   } as unknown as jest.Mocked<Repository<T>>;
+}
+
+/** Typed read of a stub's first recorded argument — `mock.calls` is `any[][]`. */
+function firstArg<T>(fn: unknown): T {
+  const calls = (fn as jest.Mock).mock.calls as unknown[][];
+  return calls[0][0] as T;
 }
 
 describe('LessonAgentsService', () => {
@@ -113,7 +122,9 @@ describe('LessonAgentsService', () => {
   function stubRunLookups(run: LessonAgentRunEntity | null, inFlight = null) {
     (runsRepo.findOne as jest.Mock).mockImplementation(
       (options: { where?: { id?: string; lessonId?: string } }) =>
-        Promise.resolve(options?.where?.lessonId !== undefined ? inFlight : run),
+        Promise.resolve(
+          options?.where?.lessonId !== undefined ? inFlight : run,
+        ),
     );
   }
 
@@ -188,7 +199,10 @@ describe('LessonAgentsService', () => {
       expect(saved.handoutEnabled).toBe(true);
       expect(saved.quizDifficulty).toBe('medium');
       expect(settingsRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ teacherId: TEACHER_ID, quizQuestionCount: 12 }),
+        expect.objectContaining({
+          teacherId: TEACHER_ID,
+          quizQuestionCount: 12,
+        }),
       );
     });
   });
@@ -212,10 +226,12 @@ describe('LessonAgentsService', () => {
 
       await service.startRun('lesson-1', TEACHER_ID);
 
-      const seeded = (stepsRepo.save as jest.Mock).mock.calls[0][0] as Array<{
-        agentKey: string;
-        status: string;
-      }>;
+      const seeded = firstArg<
+        Array<{
+          agentKey: string;
+          status: string;
+        }>
+      >(stepsRepo.save);
 
       expect(seeded).toHaveLength(5);
       expect(
@@ -232,9 +248,9 @@ describe('LessonAgentsService', () => {
         overrides: { quizQuestionCount: 3, handoutEnabled: false },
       });
 
-      const savedRun = (runsRepo.save as jest.Mock).mock.calls[0][0] as {
+      const savedRun = firstArg<{
         config: { enabledAgents: string[]; quiz: { questionCount: number } };
-      };
+      }>(runsRepo.save);
 
       expect(savedRun.config.quiz.questionCount).toBe(3);
       expect(savedRun.config.enabledAgents).not.toContain('handout');
@@ -247,9 +263,9 @@ describe('LessonAgentsService', () => {
         overrides: { handoutEnabled: false, quizEnabled: false },
       });
 
-      const savedRun = (runsRepo.save as jest.Mock).mock.calls[0][0] as {
+      const savedRun = firstArg<{
         config: { enabledAgents: string[] };
-      };
+      }>(runsRepo.save);
 
       expect(savedRun.config.enabledAgents).toEqual([
         'transcript',
@@ -317,7 +333,9 @@ describe('LessonAgentsService', () => {
         'زوّد أمثلة',
       );
 
-      expect(documentsRepo.softRemove).toHaveBeenCalledWith({ id: 'doc-1' });
+      expect(documentsRepo.softRemove).toHaveBeenCalledWith({
+        id: 'doc-1',
+      });
       expect(dataSource.query).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE document_chunks SET is_active = false'),
         ['doc-1'],

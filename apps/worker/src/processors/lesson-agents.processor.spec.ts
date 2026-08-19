@@ -2,7 +2,6 @@ import { Job } from 'bullmq';
 import {
   AgentFailure,
   AgentOutcome,
-  AgentReporter,
   LessonAgentContext,
 } from '../agents/agent-context';
 import type { LessonAgentKey } from '../agents/roster';
@@ -19,12 +18,15 @@ type QueryHandler = (sql: string, params?: unknown[]) => unknown;
  * the two different things a mandatory versus an optional failure does
  * to the run. The agents' real work is covered by their own paths.
  */
-function makeAgent(key: LessonAgentKey, behaviour?: () => Promise<AgentOutcome>) {
+function makeAgent(
+  key: LessonAgentKey,
+  behaviour?: () => Promise<AgentOutcome>,
+) {
   return {
     key,
     run: jest.fn(
       behaviour ??
-        ((_context: LessonAgentContext, _reporter: AgentReporter) =>
+        (() =>
           Promise.resolve({
             headline: `${key} done`,
             output: { ok: true },
@@ -127,7 +129,9 @@ describe('LessonAgentsProcessor', () => {
     message: string;
   }> {
     return dataSource.query.mock.calls
-      .filter(([sql]: [string]) => sql.includes('INSERT INTO lesson_agent_events'))
+      .filter(([sql]: [string]) =>
+        sql.includes('INSERT INTO lesson_agent_events'),
+      )
       .map(([, params]: [string, unknown[]]) => ({
         agentKey: params[2] as string | null,
         toAgentKey: params[3] as string | null,
@@ -205,12 +209,10 @@ describe('LessonAgentsProcessor', () => {
   });
 
   it('passes one shared context down the chain, so each agent sees the last one’s work', async () => {
-    agents.transcript.run.mockImplementation(
-      (context: LessonAgentContext) => {
-        context.transcriptText = 'نص الدرس';
-        return Promise.resolve({ headline: 'ok', output: {} });
-      },
-    );
+    agents.transcript.run.mockImplementation((context: LessonAgentContext) => {
+      context.transcriptText = 'نص الدرس';
+      return Promise.resolve({ headline: 'ok', output: {} });
+    });
 
     let seenByQuizmaster: string | undefined;
     agents.quizmaster.run.mockImplementation((context: LessonAgentContext) => {
@@ -227,7 +229,9 @@ describe('LessonAgentsProcessor', () => {
     await processor.process(job({ jobId: 'job-1' }));
 
     const reviewFlags = dataSource.query.mock.calls
-      .filter(([sql]: [string]) => sql.includes('SET status = \'completed\', progress = 100'))
+      .filter(([sql]: [string]) =>
+        sql.includes("SET status = 'completed', progress = 100"),
+      )
       .map(([, params]: [string, unknown[]]) => ({
         stepId: params[0] as string,
         reviewStatus: params[3] as string,
@@ -258,7 +262,9 @@ describe('LessonAgentsProcessor', () => {
   });
 
   it('carries on past an optional agent that fails, so one bad handout costs no quiz', async () => {
-    agents.handout.run.mockRejectedValue(new AgentFailure('النموذج رجّع شرح تالف'));
+    agents.handout.run.mockRejectedValue(
+      new AgentFailure('النموذج رجّع شرح تالف'),
+    );
     stepStatuses = { handout: 'failed' };
 
     await processor.process(job({ jobId: 'job-1' }));
@@ -275,13 +281,15 @@ describe('LessonAgentsProcessor', () => {
     await processor.process(job({ jobId: 'job-1' }));
 
     const failures = dataSource.query.mock.calls
-      .filter(([sql]: [string]) => sql.includes("SET status = 'failed', error_message"))
+      .filter(([sql]: [string]) =>
+        sql.includes("SET status = 'failed', error_message"),
+      )
       .map(([, params]: [string, unknown[]]) => params[1] as string);
 
     expect(failures).toContain('الشرح خرج فاضي');
-    expect(failures.some((message) => message.startsWith('حصلت مشكلة تقنية'))).toBe(
-      true,
-    );
+    expect(
+      failures.some((message) => message.startsWith('حصلت مشكلة تقنية')),
+    ).toBe(true);
   });
 
   it('runs only the named agent on a feedback re-run', async () => {
@@ -291,9 +299,9 @@ describe('LessonAgentsProcessor', () => {
     expect(agents.transcript.run).not.toHaveBeenCalled();
     expect(agents.quizmaster.run).not.toHaveBeenCalled();
     // A single-agent pass has nobody to hand off from.
-    expect(recordedEvents().filter((event) => event.type === 'handoff')).toHaveLength(
-      0,
-    );
+    expect(
+      recordedEvents().filter((event) => event.type === 'handoff'),
+    ).toHaveLength(0);
   });
 
   it('completes without asking for a review when no reviewable agent produced anything', async () => {
@@ -308,7 +316,9 @@ describe('LessonAgentsProcessor', () => {
   it('skips a job whose ai_jobs row was already claimed', async () => {
     dataSource.query.mockImplementation((sql: string) =>
       Promise.resolve(
-        sql.includes('UPDATE ai_jobs') && sql.includes("'processing'") ? [] : [],
+        sql.includes('UPDATE ai_jobs') && sql.includes("'processing'")
+          ? []
+          : [],
       ),
     );
 
