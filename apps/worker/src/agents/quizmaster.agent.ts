@@ -59,14 +59,22 @@ export class QuizmasterAgent implements LessonAgent {
     }
 
     const settings = context.config.quiz;
-    const questionSpec = this.buildSpec(settings.types, settings.questionCount);
+    const questionSpec = this.buildSpec(
+      settings.mcqCount,
+      settings.trueFalseCount,
+    );
+    if (questionSpec.length === 0) {
+      throw new AgentFailure('مطلوب مني صفر سؤال — راجع إعدادات واضع الأسئلة.');
+    }
+
+    const total = settings.mcqCount + settings.trueFalseCount;
     const feedback = await this.loadFeedbackThread(context.run.id);
 
     await reporter.progress(
       20,
       feedback.length > 0
         ? `بعيد صياغة الأسئلة ومعايا ${feedback.length} ملاحظة منك.`
-        : `بصيغ ${settings.questionCount} سؤال مستوى "${settings.difficulty}".`,
+        : `بصيغ ${total} سؤال مستوى "${settings.difficulty}".`,
     );
 
     const result = await this.llmProvider.generateExam({
@@ -104,30 +112,17 @@ export class QuizmasterAgent implements LessonAgent {
   }
 
   /**
-   * The teacher picks a total and a set of types, not a per-type
-   * breakdown, so the total is split as evenly as possible with the
-   * remainder going to the earlier types — which keeps
-   * `questionCount: 5, types: [mcq, true_false]` at 3 + 2 rather than
-   * silently rounding to 4 or 6.
+   * The teacher now states each type's count directly, so there is
+   * nothing to divide — a type set to zero is simply left out of the
+   * spec rather than asked for and validated against.
    */
-  private buildSpec(
-    types: Array<'mcq' | 'true_false'>,
-    total: number,
-  ): QuestionSpecItem[] {
-    // Widened to a single concrete array type rather than a union with a
-    // `readonly` tuple fallback — a union of array types degrades the
-    // `.map` callback's parameter to `any`.
-    const chosen: Array<'mcq' | 'true_false'> =
-      types.length > 0 ? types : ['mcq'];
-    const base = Math.floor(total / chosen.length);
-    const remainder = total % chosen.length;
-
-    return chosen
-      .map((type, index) => ({
-        type,
-        count: base + (index < remainder ? 1 : 0),
-      }))
-      .filter((item) => item.count > 0);
+  private buildSpec(mcqCount: number, trueFalseCount: number): QuestionSpecItem[] {
+    return (
+      [
+        { type: 'mcq' as const, count: mcqCount },
+        { type: 'true_false' as const, count: trueFalseCount },
+      ] satisfies QuestionSpecItem[]
+    ).filter((item) => item.count > 0);
   }
 
   /**

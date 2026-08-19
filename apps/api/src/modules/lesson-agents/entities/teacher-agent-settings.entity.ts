@@ -6,9 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import type {
-  HandoutTone,
+  HandoutDetailLevel,
   QuizDifficulty,
-  QuizQuestionType,
 } from '../lesson-agents.constants';
 
 /**
@@ -37,8 +36,8 @@ export class TeacherAgentSettingsEntity {
   @Column({ name: 'handout_page_count', type: 'integer', default: 4 })
   handoutPageCount!: number;
 
-  @Column({ name: 'handout_tone', type: 'text', default: 'simple' })
-  handoutTone!: HandoutTone;
+  @Column({ name: 'handout_detail_level', type: 'text', default: 'standard' })
+  handoutDetailLevel!: HandoutDetailLevel;
 
   @Column({ name: 'handout_include_examples', type: 'boolean', default: true })
   handoutIncludeExamples!: boolean;
@@ -55,15 +54,13 @@ export class TeacherAgentSettingsEntity {
   @Column({ name: 'quiz_difficulty', type: 'text', default: 'medium' })
   quizDifficulty!: QuizDifficulty;
 
-  @Column({ name: 'quiz_question_count', type: 'integer', default: 8 })
-  quizQuestionCount!: number;
+  // Per type, so the teacher gets exactly the breakdown they asked for
+  // instead of a total the quizmaster divides up (migration 1786613800000).
+  @Column({ name: 'quiz_mcq_count', type: 'integer', default: 5 })
+  quizMcqCount!: number;
 
-  @Column({
-    name: 'quiz_types',
-    type: 'jsonb',
-    default: () => `'["mcq","true_false"]'::jsonb`,
-  })
-  quizTypes!: QuizQuestionType[];
+  @Column({ name: 'quiz_true_false_count', type: 'integer', default: 3 })
+  quizTrueFalseCount!: number;
 
   @Column({ name: 'quiz_due_in_days', type: 'integer', default: 7 })
   quizDueInDays!: number;

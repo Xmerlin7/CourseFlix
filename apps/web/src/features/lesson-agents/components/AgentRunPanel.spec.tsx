@@ -51,12 +51,12 @@ function run(overrides: Partial<LessonAgentRunDetail> = {}): LessonAgentRunDetai
       enabledAgents: ['transcript', 'reviewer', 'indexer', 'handout', 'quizmaster'],
       handout: {
         pageCount: 4,
-        tone: 'simple',
+        detailLevel: 'standard',
         includeExamples: true,
         includeKeyTerms: true,
         includeSummary: true,
       },
-      quiz: { difficulty: 'medium', questionCount: 8, types: ['mcq'], dueInDays: 7 },
+      quiz: { difficulty: 'medium', mcqCount: 5, trueFalseCount: 3, dueInDays: 7 },
     },
     steps: [
       step(),

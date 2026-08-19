@@ -41,7 +41,7 @@ export type LessonAgentEventType =
   | 'run_completed'
   | 'run_failed'
 
-export type HandoutTone = 'simple' | 'academic' | 'exam_focused'
+export type HandoutDetailLevel = 'concise' | 'standard' | 'deep'
 export type AgentQuizDifficulty = 'easy' | 'medium' | 'hard'
 export type AgentQuizQuestionType = 'mcq' | 'true_false'
 
@@ -109,15 +109,15 @@ export interface LessonAgentRunConfig {
   enabledAgents: LessonAgentKey[]
   handout: {
     pageCount: number
-    tone: HandoutTone
+    detailLevel: HandoutDetailLevel
     includeExamples: boolean
     includeKeyTerms: boolean
     includeSummary: boolean
   }
   quiz: {
     difficulty: AgentQuizDifficulty
-    questionCount: number
-    types: AgentQuizQuestionType[]
+    mcqCount: number
+    trueFalseCount: number
     dueInDays: number
   }
 }
@@ -147,14 +147,14 @@ export interface LessonAgentRunDetail extends LessonAgentRunSummary {
 export interface AgentSettings {
   handoutEnabled: boolean
   handoutPageCount: number
-  handoutTone: HandoutTone
+  handoutDetailLevel: HandoutDetailLevel
   handoutIncludeExamples: boolean
   handoutIncludeKeyTerms: boolean
   handoutIncludeSummary: boolean
   quizEnabled: boolean
   quizDifficulty: AgentQuizDifficulty
-  quizQuestionCount: number
-  quizTypes: AgentQuizQuestionType[]
+  quizMcqCount: number
+  quizTrueFalseCount: number
   quizDueInDays: number
 }
 

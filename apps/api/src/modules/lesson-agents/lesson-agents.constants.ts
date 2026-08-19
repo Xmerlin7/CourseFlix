@@ -78,14 +78,20 @@ export const AGENT_BY_KEY: Readonly<Record<LessonAgentKey, AgentDefinition>> =
     AgentDefinition
   >;
 
-export type HandoutTone = 'simple' | 'academic' | 'exam_focused';
+/**
+ * How much the handout says, not what voice it says it in. Replaced
+ * `HandoutTone` (see migration 1786613800000) — teachers were reaching
+ * for this control to make the notes longer or shorter, which a tone
+ * setting could not do.
+ */
+export type HandoutDetailLevel = 'concise' | 'standard' | 'deep';
 export type QuizDifficulty = 'easy' | 'medium' | 'hard';
 export type QuizQuestionType = 'mcq' | 'true_false';
 
-export const HANDOUT_TONES: readonly HandoutTone[] = [
-  'simple',
-  'academic',
-  'exam_focused',
+export const HANDOUT_DETAIL_LEVELS: readonly HandoutDetailLevel[] = [
+  'concise',
+  'standard',
+  'deep',
 ];
 export const QUIZ_DIFFICULTIES: readonly QuizDifficulty[] = [
   'easy',
@@ -104,7 +110,11 @@ export const QUIZ_QUESTION_TYPES: readonly QuizQuestionType[] = [
  * padding, not a technical limit of the PDF writer.
  */
 export const HANDOUT_PAGE_RANGE = { min: 1, max: 12 } as const;
-export const QUIZ_QUESTION_RANGE = { min: 1, max: 30 } as const;
+/**
+ * Per type, and the floor is 0 — a teacher wanting MCQ only sets
+ * true/false to zero. The service rejects a spec that is zero on both.
+ */
+export const QUIZ_QUESTION_RANGE = { min: 0, max: 30 } as const;
 export const QUIZ_DUE_DAYS_RANGE = { min: 1, max: 90 } as const;
 
 /**
@@ -116,15 +126,15 @@ export interface LessonAgentRunConfig {
   enabledAgents: LessonAgentKey[];
   handout: {
     pageCount: number;
-    tone: HandoutTone;
+    detailLevel: HandoutDetailLevel;
     includeExamples: boolean;
     includeKeyTerms: boolean;
     includeSummary: boolean;
   };
   quiz: {
     difficulty: QuizDifficulty;
-    questionCount: number;
-    types: QuizQuestionType[];
+    mcqCount: number;
+    trueFalseCount: number;
     dueInDays: number;
   };
 }

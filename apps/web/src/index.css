@@ -1622,6 +1622,65 @@ select {
   font-family: inherit;
 }
 
+/* ---------- Select fields ----------
+   Every <select> in the app (19 of them, from course filters to the agent
+   settings) rendered with the browser's own arrow: a thin native chevron
+   jammed flush against the edge with no gap, so a long option label ran
+   straight into it. `appearance: none` drops it, and the chevron is drawn
+   as a background image instead, with real space reserved for it.
+
+   The chevron colour has to be baked into the data URI (an SVG in
+   `background-image` can't read `currentColor`), so it's a token with a
+   light and a dark value rather than a hardcoded hue that would go
+   invisible in one theme. */
+:root {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%234A4458' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+:root.dark {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23CBC3D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: var(--select-chevron);
+  background-repeat: no-repeat;
+  /* The document is `dir="rtl"`, so the arrow belongs on the left; the
+     LTR rule below keeps this honest if a subtree ever flips. */
+  background-position: left calc(16px * var(--space-scale)) center;
+  /* Reserves the arrow's lane so the longest option label can never
+     collide with it — the bug this block exists to fix. */
+  padding-inline-end: calc(42px * var(--space-scale));
+}
+
+[dir='ltr'] select {
+  background-position: right calc(16px * var(--space-scale)) center;
+}
+
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* The open dropdown is drawn by the OS, and only `background-color` /
+   `color` on the options are reliably honoured (Chrome and Firefox do,
+   Safari ignores them and keeps its native panel — acceptable, since
+   that panel is legible on its own). Setting them at least stops the
+   list rendering as a white sheet of black text in dark mode. */
+select option {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  padding: 10px 12px;
+}
+
+select option:checked {
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+  font-weight: 700;
+}
+
 /* box-shadow, not outline: `outline` is drawn as its own approximated
    shape and several engines don't round it cleanly around a large
    border-radius (999px chips/buttons, 50% avatars) — it renders with a
@@ -1985,7 +2044,10 @@ code {
 .tf textarea,
 .tf select,
 .field {
-  background: var(--surface-container-high);
+  /* `background-color`, not the `background` shorthand: the shorthand
+     resets `background-image` too, which silently wiped the custom
+     chevron the `select` rule above paints. */
+  background-color: var(--surface-container-high);
   border: 1.5px solid transparent;
   border-radius: calc(14px * var(--radius-scale));
   padding: calc(13px * var(--space-scale)) calc(16px * var(--space-scale));
@@ -1998,6 +2060,27 @@ code {
 .tf textarea {
   resize: vertical;
   min-height: 96px;
+}
+
+/* Number fields in an RTL document: on focus Chrome lays the value out
+   against the physical right edge, ignoring the inline padding, so the
+   digits visibly slide out of the box the moment you type in them.
+   Pinning the *value's* direction to ltr (digits are read left-to-right
+   regardless) while keeping it right-aligned restores the padding, and
+   the native spinners go with it — they render on the wrong side in RTL
+   and are what crowds the value out in the first place. */
+.tf input[type='number'] {
+  direction: ltr;
+  text-align: right;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.tf input[type='number']::-webkit-outer-spin-button,
+.tf input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
 }
 
 /* Every placeholder in the product is Arabic, so every placeholder is

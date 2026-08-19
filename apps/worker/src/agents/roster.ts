@@ -34,22 +34,22 @@ export const REVIEWABLE_AGENTS: readonly LessonAgentKey[] = [
   'quizmaster',
 ];
 
-export type HandoutTone = 'simple' | 'academic' | 'exam_focused';
+export type HandoutDetailLevel = 'concise' | 'standard' | 'deep';
 
 /** Frozen snapshot read from `lesson_agent_runs.config`. */
 export interface LessonAgentRunConfig {
   enabledAgents: LessonAgentKey[];
   handout: {
     pageCount: number;
-    tone: HandoutTone;
+    detailLevel: HandoutDetailLevel;
     includeExamples: boolean;
     includeKeyTerms: boolean;
     includeSummary: boolean;
   };
   quiz: {
     difficulty: string;
-    questionCount: number;
-    types: Array<'mcq' | 'true_false'>;
+    mcqCount: number;
+    trueFalseCount: number;
     dueInDays: number;
   };
 }

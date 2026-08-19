@@ -45,14 +45,14 @@ import {
 export interface AgentSettingsResponse {
   handoutEnabled: boolean;
   handoutPageCount: number;
-  handoutTone: string;
+  handoutDetailLevel: string;
   handoutIncludeExamples: boolean;
   handoutIncludeKeyTerms: boolean;
   handoutIncludeSummary: boolean;
   quizEnabled: boolean;
   quizDifficulty: string;
-  quizQuestionCount: number;
-  quizTypes: string[];
+  quizMcqCount: number;
+  quizTrueFalseCount: number;
   quizDueInDays: number;
 }
 
@@ -117,14 +117,14 @@ export interface LessonAgentRunDetail extends LessonAgentRunSummary {
 const DEFAULT_SETTINGS: AgentSettingsResponse = {
   handoutEnabled: true,
   handoutPageCount: 4,
-  handoutTone: 'simple',
+  handoutDetailLevel: 'standard',
   handoutIncludeExamples: true,
   handoutIncludeKeyTerms: true,
   handoutIncludeSummary: true,
   quizEnabled: true,
   quizDifficulty: 'medium',
-  quizQuestionCount: 8,
-  quizTypes: ['mcq', 'true_false'],
+  quizMcqCount: 5,
+  quizTrueFalseCount: 3,
   quizDueInDays: 7,
 };
 
@@ -175,14 +175,14 @@ export class LessonAgentsService {
     return {
       handoutEnabled: row.handoutEnabled,
       handoutPageCount: row.handoutPageCount,
-      handoutTone: row.handoutTone,
+      handoutDetailLevel: row.handoutDetailLevel,
       handoutIncludeExamples: row.handoutIncludeExamples,
       handoutIncludeKeyTerms: row.handoutIncludeKeyTerms,
       handoutIncludeSummary: row.handoutIncludeSummary,
       quizEnabled: row.quizEnabled,
       quizDifficulty: row.quizDifficulty,
-      quizQuestionCount: row.quizQuestionCount,
-      quizTypes: row.quizTypes,
+      quizMcqCount: row.quizMcqCount,
+      quizTrueFalseCount: row.quizTrueFalseCount,
       quizDueInDays: row.quizDueInDays,
     };
   }
@@ -198,19 +198,31 @@ export class LessonAgentsService {
     const current = await this.getSettings(teacherId);
     const merged = { ...current, ...this.stripUndefined(dto) };
 
+    // Checked here, not in the DTO: it's a rule about the *combination*
+    // of two fields, and a PATCH may carry only one of them, so the
+    // merged result is the only place it can be judged.
+    if (
+      merged.quizEnabled &&
+      merged.quizMcqCount + merged.quizTrueFalseCount === 0
+    ) {
+      throw new BadRequestException(
+        'لازم تطلب سؤال واحد على الأقل من أي نوع، أو تقفل واضع الأسئلة.',
+      );
+    }
+
     await this.settingsRepo.save(
       this.settingsRepo.create({
         teacherId,
         handoutEnabled: merged.handoutEnabled,
         handoutPageCount: merged.handoutPageCount,
-        handoutTone: merged.handoutTone as never,
+        handoutDetailLevel: merged.handoutDetailLevel as never,
         handoutIncludeExamples: merged.handoutIncludeExamples,
         handoutIncludeKeyTerms: merged.handoutIncludeKeyTerms,
         handoutIncludeSummary: merged.handoutIncludeSummary,
         quizEnabled: merged.quizEnabled,
         quizDifficulty: merged.quizDifficulty as never,
-        quizQuestionCount: merged.quizQuestionCount,
-        quizTypes: merged.quizTypes as never,
+        quizMcqCount: merged.quizMcqCount,
+        quizTrueFalseCount: merged.quizTrueFalseCount,
         quizDueInDays: merged.quizDueInDays,
       }),
     );
@@ -669,7 +681,8 @@ export class LessonAgentsService {
       enabledAgents,
       handout: {
         pageCount: settings.handoutPageCount,
-        tone: settings.handoutTone as LessonAgentRunConfig['handout']['tone'],
+        detailLevel:
+          settings.handoutDetailLevel as LessonAgentRunConfig['handout']['detailLevel'],
         includeExamples: settings.handoutIncludeExamples,
         includeKeyTerms: settings.handoutIncludeKeyTerms,
         includeSummary: settings.handoutIncludeSummary,
@@ -677,8 +690,8 @@ export class LessonAgentsService {
       quiz: {
         difficulty:
           settings.quizDifficulty as LessonAgentRunConfig['quiz']['difficulty'],
-        questionCount: settings.quizQuestionCount,
-        types: settings.quizTypes as LessonAgentRunConfig['quiz']['types'],
+        mcqCount: settings.quizMcqCount,
+        trueFalseCount: settings.quizTrueFalseCount,
         dueInDays: settings.quizDueInDays,
       },
     };

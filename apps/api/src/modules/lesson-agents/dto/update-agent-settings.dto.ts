@@ -1,24 +1,12 @@
+import { IsBoolean, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import {
-  ArrayMinSize,
-  ArrayUnique,
-  IsArray,
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsOptional,
-  Max,
-  Min,
-} from 'class-validator';
-import {
+  HANDOUT_DETAIL_LEVELS,
   HANDOUT_PAGE_RANGE,
-  HANDOUT_TONES,
   QUIZ_DIFFICULTIES,
   QUIZ_DUE_DAYS_RANGE,
   QUIZ_QUESTION_RANGE,
-  QUIZ_QUESTION_TYPES,
-  type HandoutTone,
+  type HandoutDetailLevel,
   type QuizDifficulty,
-  type QuizQuestionType,
 } from '../lesson-agents.constants';
 
 /**
@@ -39,7 +27,10 @@ export class UpdateAgentSettingsDto {
   @Max(HANDOUT_PAGE_RANGE.max)
   handoutPageCount?: number;
 
-  @IsOptional() @IsIn(HANDOUT_TONES) handoutTone?: HandoutTone;
+  @IsOptional()
+  @IsIn(HANDOUT_DETAIL_LEVELS)
+  handoutDetailLevel?: HandoutDetailLevel;
+
   @IsOptional() @IsBoolean() handoutIncludeExamples?: boolean;
   @IsOptional() @IsBoolean() handoutIncludeKeyTerms?: boolean;
   @IsOptional() @IsBoolean() handoutIncludeSummary?: boolean;
@@ -47,20 +38,21 @@ export class UpdateAgentSettingsDto {
   @IsOptional() @IsBoolean() quizEnabled?: boolean;
   @IsOptional() @IsIn(QUIZ_DIFFICULTIES) quizDifficulty?: QuizDifficulty;
 
+  // Counted per type rather than as one total the quizmaster splits, so
+  // the teacher gets the breakdown they asked for. Either may be 0; the
+  // service rejects the combination that leaves the quiz empty, which
+  // class-validator can't express across two fields.
   @IsOptional()
   @IsInt()
   @Min(QUIZ_QUESTION_RANGE.min)
   @Max(QUIZ_QUESTION_RANGE.max)
-  quizQuestionCount?: number;
+  quizMcqCount?: number;
 
-  // At least one type, no duplicates — a quiz with an empty type list
-  // would send the quizmaster a prompt it cannot satisfy.
   @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayUnique()
-  @IsIn(QUIZ_QUESTION_TYPES, { each: true })
-  quizTypes?: QuizQuestionType[];
+  @IsInt()
+  @Min(QUIZ_QUESTION_RANGE.min)
+  @Max(QUIZ_QUESTION_RANGE.max)
+  quizTrueFalseCount?: number;
 
   @IsOptional()
   @IsInt()

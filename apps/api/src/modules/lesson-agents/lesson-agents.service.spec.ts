@@ -192,24 +192,25 @@ describe('LessonAgentsService', () => {
 
       expect(settings.handoutEnabled).toBe(true);
       expect(settings.handoutPageCount).toBe(4);
-      expect(settings.quizTypes).toEqual(['mcq', 'true_false']);
+      expect(settings.quizMcqCount).toBe(5);
+      expect(settings.quizTrueFalseCount).toBe(3);
     });
   });
 
   describe('updateSettings', () => {
     it('merges a partial patch onto the defaults instead of blanking the rest', async () => {
       const saved = await service.updateSettings(TEACHER_ID, {
-        quizQuestionCount: 12,
+        quizMcqCount: 12,
       });
 
-      expect(saved.quizQuestionCount).toBe(12);
+      expect(saved.quizMcqCount).toBe(12);
       // The eleven untouched fields must survive a one-field PATCH.
       expect(saved.handoutEnabled).toBe(true);
       expect(saved.quizDifficulty).toBe('medium');
       expect(settingsRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
           teacherId: TEACHER_ID,
-          quizQuestionCount: 12,
+          quizMcqCount: 12,
         }),
       );
     });
@@ -221,14 +222,14 @@ describe('LessonAgentsService', () => {
         teacherId: TEACHER_ID,
         handoutEnabled: true,
         handoutPageCount: 4,
-        handoutTone: 'simple',
+        handoutDetailLevel: 'standard',
         handoutIncludeExamples: true,
         handoutIncludeKeyTerms: true,
         handoutIncludeSummary: true,
         quizEnabled: false,
         quizDifficulty: 'medium',
-        quizQuestionCount: 8,
-        quizTypes: ['mcq'],
+        quizMcqCount: 5,
+        quizTrueFalseCount: 3,
         quizDueInDays: 7,
       } as TeacherAgentSettingsEntity);
 
@@ -253,14 +254,14 @@ describe('LessonAgentsService', () => {
 
     it('freezes the settings into the run config so a later settings change cannot rewrite history', async () => {
       await service.startRun('lesson-1', TEACHER_ID, {
-        overrides: { quizQuestionCount: 3, handoutEnabled: false },
+        overrides: { quizMcqCount: 3, handoutEnabled: false },
       });
 
       const savedRun = firstArg<{
-        config: { enabledAgents: string[]; quiz: { questionCount: number } };
+        config: { enabledAgents: string[]; quiz: { mcqCount: number } };
       }>(runsRepo.save);
 
-      expect(savedRun.config.quiz.questionCount).toBe(3);
+      expect(savedRun.config.quiz.mcqCount).toBe(3);
       expect(savedRun.config.enabledAgents).not.toContain('handout');
       // The override is per-run; it must not be written back as a preference.
       expect(settingsRepo.save).not.toHaveBeenCalled();

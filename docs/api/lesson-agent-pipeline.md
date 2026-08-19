@@ -164,6 +164,20 @@ exactly the requested section count, so the whole pipeline runs end to end
 offline. `pdf/` is vendored from `apps/api/src/database/seeds/pdf/` (Arabic
 shaping + Noto Naskh); the two copies differ only in PDF metadata.
 
+## The quiz deadline is display-only
+
+`quizDueInDays` produces a real `quizzes.due_at`, and students do see it —
+`StudentCourseQuizzes.tsx` renders `آخر موعد: <date>`. But **nothing enforces
+it**: `QuizzesService.submitQuiz` checks only that the quiz exists, is published,
+that the student is enrolled, and that they haven't already submitted. A student
+can answer a week late and the submission is accepted and scored exactly the same,
+with no late marker for the teacher and no notification when the date passes.
+
+The setting is kept because the date is genuinely shown, but it should be read as
+"the date printed on the quiz", not a gate. Making it one means deciding what
+"late" does — block, or accept-and-flag — which is a product decision, not a
+missing line of code.
+
 ## Known gaps
 
 - No live Postgres/Redis integration test in this environment — coverage is

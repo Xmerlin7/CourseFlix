@@ -5,15 +5,14 @@ import { showToast } from '../../../shared/components/Toast'
 import { useAgentSettings } from '../hooks/useAgentSettings'
 import type {
   AgentQuizDifficulty,
-  AgentQuizQuestionType,
-  HandoutTone,
+  HandoutDetailLevel,
   UpdateAgentSettingsPayload,
 } from '../types/lesson-agents.types'
 
-const TONE_LABELS: Record<HandoutTone, string> = {
-  simple: 'مبسّط — كأنك بتشرح لأول مرة',
-  academic: 'أكاديمي — مصطلحات دقيقة وترتيب صارم',
-  exam_focused: 'موجّه للامتحان — النقاط اللي بتتسأل',
+const DETAIL_LEVEL_LABELS: Record<HandoutDetailLevel, string> = {
+  concise: 'مختصر — الفكرة وأهم نقطة أو اتنين',
+  standard: 'متوازن — شرح وافٍ ومثال لكل فكرة',
+  deep: 'مفصّل — كل زاوية وحالة خاصة وخطأ شائع',
 }
 
 const DIFFICULTY_LABELS: Record<AgentQuizDifficulty, string> = {
@@ -21,13 +20,6 @@ const DIFFICULTY_LABELS: Record<AgentQuizDifficulty, string> = {
   medium: 'متوسط',
   hard: 'صعب',
 }
-
-const QUESTION_TYPE_LABELS: Record<AgentQuizQuestionType, string> = {
-  mcq: 'اختيار من متعدد',
-  true_false: 'صح أو خطأ',
-}
-
-const ALL_QUESTION_TYPES = Object.keys(QUESTION_TYPE_LABELS) as AgentQuizQuestionType[]
 
 interface NumberSettingProps {
   id: string
@@ -146,23 +138,6 @@ export function AgentSettingsForm() {
     }
   }
 
-  /**
-   * The last remaining question type can't be unticked — an empty list
-   * would send the quizmaster a prompt it has no way to satisfy, so the
-   * UI refuses instead of letting the request fail in the worker.
-   */
-  function toggleQuestionType(type: AgentQuizQuestionType, checked: boolean) {
-    const next = checked
-      ? [...settings.quizTypes, type]
-      : settings.quizTypes.filter((value) => value !== type)
-
-    if (next.length === 0) {
-      showToast('لازم تسيب نوع سؤال واحد على الأقل', 'error')
-      return
-    }
-    void apply({ quizTypes: next })
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div className="card settings-card">
@@ -221,21 +196,24 @@ export function AgentSettingsForm() {
             />
 
             <div className="tf">
-              <label htmlFor="handout-tone">أسلوب الكتابة</label>
+              <label htmlFor="handout-detail">مستوى التفاصيل</label>
               <select
-                id="handout-tone"
-                value={settings.handoutTone}
+                id="handout-detail"
+                value={settings.handoutDetailLevel}
                 disabled={isSaving}
                 onChange={(event) =>
-                  void apply({ handoutTone: event.target.value as HandoutTone })
+                  void apply({
+                    handoutDetailLevel: event.target.value as HandoutDetailLevel,
+                  })
                 }
               >
-                {(Object.keys(TONE_LABELS) as HandoutTone[]).map((tone) => (
-                  <option key={tone} value={tone}>
-                    {TONE_LABELS[tone]}
+                {(Object.keys(DETAIL_LEVEL_LABELS) as HandoutDetailLevel[]).map((level) => (
+                  <option key={level} value={level}>
+                    {DETAIL_LEVEL_LABELS[level]}
                   </option>
                 ))}
               </select>
+              <span className="meta">بيحدد قد إيه الوكيل يفصّل في كل فكرة، مش أسلوب كتابته.</span>
             </div>
 
             <div className="settings-row">
@@ -317,30 +295,29 @@ export function AgentSettingsForm() {
             </div>
 
             <NumberSetting
-              key={`quiz-count-${settings.quizQuestionCount}`}
-              id="quiz-count"
-              label="عدد الأسئلة"
-              hint="هيتوزّعوا على الأنواع اللي مفعّلة تحت."
-              value={settings.quizQuestionCount}
-              min={1}
+              key={`quiz-mcq-${settings.quizMcqCount}`}
+              id="quiz-mcq"
+              label="عدد أسئلة الاختيار من متعدد"
+              hint="حطّ صفر لو مش عايز النوع ده خالص."
+              value={settings.quizMcqCount}
+              min={0}
               max={30}
               disabled={isSaving}
-              onCommit={(value) => void apply({ quizQuestionCount: value })}
+              onCommit={(value) => void apply({ quizMcqCount: value })}
             />
 
-            {ALL_QUESTION_TYPES.map((type) => (
-              <div key={type} className="settings-row">
-                <div className="lbl-group">
-                  <span className="t">{QUESTION_TYPE_LABELS[type]}</span>
-                </div>
-                <Switch
-                  checked={settings.quizTypes.includes(type)}
-                  disabled={isSaving}
-                  onChange={(checked) => toggleQuestionType(type, checked)}
-                  label={`تفعيل أسئلة ${QUESTION_TYPE_LABELS[type]}`}
-                />
-              </div>
-            ))}
+            <NumberSetting
+              key={`quiz-tf-${settings.quizTrueFalseCount}`}
+              id="quiz-tf"
+              label="عدد أسئلة صح أو خطأ"
+              hint="حطّ صفر لو مش عايز النوع ده خالص."
+              value={settings.quizTrueFalseCount}
+              min={0}
+              max={30}
+              disabled={isSaving}
+              onCommit={(value) => void apply({ quizTrueFalseCount: value })}
+            />
+
 
             <NumberSetting
               key={`quiz-due-${settings.quizDueInDays}`}

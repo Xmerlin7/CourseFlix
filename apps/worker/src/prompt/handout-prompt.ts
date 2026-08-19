@@ -1,14 +1,19 @@
-import type { HandoutTone } from '../agents/roster';
+import type { HandoutDetailLevel } from '../agents/roster';
 
 export const HANDOUT_PROMPT_VERSION = 'handout-v1';
 
-const TONE_GUIDANCE: Record<HandoutTone, string> = {
-  simple:
-    'اكتب بأسلوب بسيط ومباشر كأنك بتشرح لطالب لأول مرة، وابعد عن المصطلحات المعقدة من غير داعي.',
-  academic:
-    'اكتب بأسلوب أكاديمي منضبط، بمصطلحات دقيقة وتعريفات واضحة وترتيب منطقي صارم.',
-  exam_focused:
-    'اكتب بأسلوب مركّز على الامتحان: النقاط اللي بتتسأل، الأخطاء الشائعة، وخطوات الحل النموذجية.',
+/**
+ * How deep to go, not what voice to use. Each level says something the
+ * model can actually act on — how much to unpack per idea — rather than
+ * a style label it would interpret loosely.
+ */
+const DETAIL_GUIDANCE: Record<HandoutDetailLevel, string> = {
+  concise:
+    'خلّي الشرح مركّز ومختصر: الفكرة الأساسية وأهم نقطة أو اتنين لكل عنوان، من غير استطراد. الطالب المفروض يقراها في دقايق.',
+  standard:
+    'اشرح كل فكرة شرحًا وافيًا: تعريف واضح، وسبب أهميتها، ومثال أو تطبيق واحد. متوازن بين الاختصار والتفصيل.',
+  deep:
+    'فصّل قدر ما تقدر: اشرح الفكرة من أكتر من زاوية، اربطها باللي قبلها، وضّح الحالات الخاصة والأخطاء الشائعة، وفكّك كل خطوة.',
 };
 
 /**
@@ -28,7 +33,7 @@ export function buildHandoutPrompt(input: {
   courseTitle: string;
   transcript: string;
   pageCount: number;
-  tone: HandoutTone;
+  detailLevel: HandoutDetailLevel;
   includeExamples: boolean;
   includeKeyTerms: boolean;
   includeSummary: boolean;
@@ -60,7 +65,7 @@ export function buildHandoutPrompt(input: {
     `اسم الدورة: ${input.courseTitle}`,
     '',
     `المطلوب بالظبط ${input.pageCount} قسم (section) — كل قسم بيتحول لصفحة مطبوعة واحدة، فوزّع الشرح عليهم بالتساوي.`,
-    TONE_GUIDANCE[input.tone] ?? TONE_GUIDANCE.simple,
+    DETAIL_GUIDANCE[input.detailLevel] ?? DETAIL_GUIDANCE.standard,
     '',
     'قواعد:',
     '- كل معلومة لازم تكون مستخرجة من نص الدرس. ممنوع تمامًا تخترع معلومات مش موجودة فيه.',
