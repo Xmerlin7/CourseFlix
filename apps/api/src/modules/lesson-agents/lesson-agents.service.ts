@@ -20,6 +20,8 @@ import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { JobsService } from '../jobs/jobs.service';
 import { VideoEntity } from '../lessons/entities/video.entity';
 import { QuizEntity } from '../quizzes/entities/quiz.entity';
+import { CREDIT_COSTS } from '../teacher-billing/teacher-billing.constants';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import { StartLessonAgentRunDto } from './dto/start-lesson-agent-run.dto';
 import { UpdateAgentSettingsDto } from './dto/update-agent-settings.dto';
 import { LessonAgentEventEntity } from './entities/lesson-agent-event.entity';
@@ -62,6 +64,8 @@ export interface LessonAgentStepResponse {
   icon: string;
   mandatory: boolean;
   reviewable: boolean;
+  /** What re-running this one agent costs, so the rewrite button can say so. */
+  creditCost: number;
   orderIndex: number;
   status: string;
   reviewStatus: string;
@@ -81,6 +85,7 @@ export interface LessonAgentRunSummary {
   courseId: string;
   status: LessonAgentRunStatus;
   progress: number;
+  creditsCharged: number;
   errorMessage: string | null;
   createdAt: string;
   finishedAt: string | null;
@@ -155,6 +160,7 @@ export class LessonAgentsService {
     private readonly dataSource: DataSource,
     private readonly jobsService: JobsService,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly teacherBillingService: TeacherBillingService,
     @Inject(NOTIFICATION_PRODUCER_PORT)
     private readonly notificationProducer: NotificationProducerPort,
   ) {}
@@ -249,6 +255,8 @@ export class LessonAgentsService {
     const merged = { ...settings, ...this.stripUndefined(dto.overrides ?? {}) };
     const config = this.toRunConfig(merged);
 
+    const credits = this.creditsFor(config.enabledAgents);
+
     const run = await this.runsRepo.save(
       this.runsRepo.create({
         lessonId: lesson.id,
@@ -257,8 +265,15 @@ export class LessonAgentsService {
         teacherId,
         status: 'queued',
         config,
+        creditsCharged: credits,
       }),
     );
+
+    // Reservation model, same as `ExamGenerationService.createRequest`:
+    // the run consumes its credits the moment the teacher submits it,
+    // not when the worker finishes. Never blocks — quota exhaustion only
+    // warns, per the billing policy.
+    await this.teacherBillingService.consumeCredits(teacherId, credits);
 
     await this.seedSteps(run.id, config);
     await this.recordEvent(run.id, {
@@ -436,10 +451,18 @@ export class LessonAgentsService {
     step.finishedAt = null;
     await this.stepsRepo.save(step);
 
+    // A rewrite is a fresh LLM call, so it costs the same as asking that
+    // agent the first time — otherwise "send back with a note" would be
+    // an unlimited free retry of the most expensive operation there is.
+    const credits = this.creditsFor([step.agentKey]);
+
     run.status = 'running';
     run.finishedAt = null;
     run.errorMessage = null;
+    run.creditsCharged += credits;
     await this.runsRepo.save(run);
+
+    await this.teacherBillingService.consumeCredits(teacherId, credits);
 
     await this.recordEvent(run.id, {
       stepId: step.id,
@@ -622,6 +645,18 @@ export class LessonAgentsService {
     await this.stepsRepo.save(rows);
   }
 
+  /**
+   * What a set of agents costs, summed from the per-agent prices in
+   * `CREDIT_COSTS.lessonAgent`. Used both for the initial charge (every
+   * enabled agent) and for a rewrite (the one agent re-running).
+   */
+  private creditsFor(agents: LessonAgentKey[]): number {
+    return agents.reduce(
+      (total, agent) => total + CREDIT_COSTS.lessonAgent[agent],
+      0,
+    );
+  }
+
   private toRunConfig(settings: AgentSettingsResponse): LessonAgentRunConfig {
     const enabledAgents = AGENT_ROSTER.filter(
       (agent) =>
@@ -787,6 +822,7 @@ export class LessonAgentsService {
       courseId: run.courseId,
       status: run.status,
       progress: this.overallProgress(steps),
+      creditsCharged: run.creditsCharged,
       errorMessage: run.errorMessage,
       createdAt: run.createdAt.toISOString(),
       finishedAt: run.finishedAt?.toISOString() ?? null,
@@ -806,6 +842,7 @@ export class LessonAgentsService {
       icon: definition.icon,
       mandatory: definition.mandatory,
       reviewable: definition.reviewable,
+      creditCost: CREDIT_COSTS.lessonAgent[step.agentKey],
       orderIndex: step.orderIndex,
       status: step.status,
       reviewStatus: step.reviewStatus,

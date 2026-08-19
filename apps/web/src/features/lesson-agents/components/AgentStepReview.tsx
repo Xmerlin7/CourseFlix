@@ -182,6 +182,10 @@ export function AgentStepReview({
               <span className="ms">refresh</span>
               اعمله تاني بالملاحظة دي
             </button>
+            {/* A rewrite is a fresh LLM call and is charged like one — say
+                so next to the button rather than letting the teacher find
+                out from their balance. */}
+            <span className="meta">هيخصم {step.creditCost} كريدت زي أول مرة.</span>
           </form>
         </>
       )}

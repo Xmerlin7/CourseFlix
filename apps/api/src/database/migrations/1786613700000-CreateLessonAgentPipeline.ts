@@ -25,10 +25,14 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *    step's re-run, same append-only shape as
  *    `quiz_generation_feedback`.
  *
- * Defensive (IF NOT EXISTS / DO-block) like
- * `1785000081000-CreateQuizGenerationRequests.ts` — the app runs with
- * `synchronize: true` (see `app.module.ts`), so TypeORM's schema sync
- * can beat this migration to creating these types and tables.
+ * Defensive (IF NOT EXISTS / DO-block) in the same style as
+ * `1785000081000-CreateQuizGenerationRequests.ts`. Note that the older
+ * migrations justify that style with "the app runs with
+ * `synchronize: true`" — that is no longer true (`app.module.ts` sets
+ * `synchronize: false`), so nothing auto-creates these tables and this
+ * migration is the only thing that does. The guards are kept anyway so a
+ * partially-applied run can be re-run safely, which is the reason that
+ * actually still holds.
  */
 export class CreateLessonAgentPipeline1786613700000
   implements MigrationInterface
@@ -158,6 +162,7 @@ export class CreateLessonAgentPipeline1786613700000
         "teacher_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE RESTRICT,
         "status" lesson_agent_run_status NOT NULL DEFAULT 'queued',
         "config" JSONB NOT NULL,
+        "credits_charged" INTEGER NOT NULL DEFAULT 0,
         "error_message" TEXT,
         "started_at" TIMESTAMPTZ,
         "finished_at" TIMESTAMPTZ,

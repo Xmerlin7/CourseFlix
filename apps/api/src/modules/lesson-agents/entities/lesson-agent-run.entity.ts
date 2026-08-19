@@ -60,6 +60,14 @@ export class LessonAgentRunEntity {
   @Column({ type: 'jsonb' })
   config!: LessonAgentRunConfig;
 
+  // Running total of what this run has cost the teacher's quota: the
+  // initial charge for its enabled agents, plus one agent's cost again
+  // every time they send that agent back for a rewrite. Stored so the
+  // charge is auditable rather than only visible as a drop in the
+  // remaining balance.
+  @Column({ name: 'credits_charged', type: 'integer', default: 0 })
+  creditsCharged!: number;
+
   @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage!: string | null;
 

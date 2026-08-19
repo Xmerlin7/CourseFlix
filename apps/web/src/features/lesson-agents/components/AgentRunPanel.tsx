@@ -84,6 +84,12 @@ export function AgentRunPanel({ runId, onClose }: AgentRunPanelProps) {
           </p>
         </div>
         <div className="actions" style={{ gap: 8 }}>
+          {/* Every rewrite adds to this, so it's shown on the panel where
+              the rewrite button is — not only on the billing page. */}
+          <span className="chip outline" title="رصيد الذكاء الاصطناعي المستهلك في التشغيلة دي">
+            <span className="ms sm">toll</span>
+            {data.creditsCharged} كريدت
+          </span>
           <span className={`chip ${status.chip}`}>
             <span className="ms sm">{status.icon}</span>
             {status.label}

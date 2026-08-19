@@ -9,6 +9,7 @@ import { VideoEntity } from '../lessons/entities/video.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { QuizEntity } from '../quizzes/entities/quiz.entity';
 import { SessionsModule } from '../sessions/sessions.module';
+import { TeacherBillingModule } from '../teacher-billing/teacher-billing.module';
 import { LessonAgentEventEntity } from './entities/lesson-agent-event.entity';
 import { LessonAgentRunEntity } from './entities/lesson-agent-run.entity';
 import { LessonAgentStepFeedbackEntity } from './entities/lesson-agent-step-feedback.entity';
@@ -37,6 +38,7 @@ import { LessonAgentsService } from './lesson-agents.service';
     JobsModule,
     EnrollmentsModule,
     NotificationsModule,
+    TeacherBillingModule,
   ],
   controllers: [LessonAgentsController],
   providers: [LessonAgentsService],

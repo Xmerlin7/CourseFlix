@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ErrorState } from '../../../shared/components/ErrorState'
 import { Switch } from '../../../shared/components/Switch'
 import { showToast } from '../../../shared/components/Toast'
@@ -27,6 +28,84 @@ const QUESTION_TYPE_LABELS: Record<AgentQuizQuestionType, string> = {
 }
 
 const ALL_QUESTION_TYPES = Object.keys(QUESTION_TYPE_LABELS) as AgentQuizQuestionType[]
+
+interface NumberSettingProps {
+  id: string
+  label: string
+  hint: string
+  value: number
+  min: number
+  max: number
+  disabled: boolean
+  onCommit: (value: number) => void
+}
+
+/**
+ * A numeric setting that saves when the teacher is *done*, not on every
+ * keystroke.
+ *
+ * Binding a number input straight to server state and PATCHing in
+ * `onChange` sends one write per character — typing "12" saved 1 and then
+ * 12 — and it also fights the teacher: clearing the field to retype it
+ * produces `Number('') === 0`, which a range guard rejects, so the old
+ * value snaps back mid-edit. Keeping a local draft and committing on blur
+ * or Enter fixes both, and the clamp means an out-of-range draft is
+ * corrected rather than silently dropped.
+ */
+function NumberSetting({
+  id,
+  label,
+  hint,
+  value,
+  min,
+  max,
+  disabled,
+  onCommit,
+}: NumberSettingProps) {
+  // Seeded once per mount. Re-syncing to a changed `value` is handled by
+  // the caller remounting this via `key` rather than by an effect that
+  // writes state — the saved value only ever changes *after* a commit, so
+  // a remount then is exactly the intent, and it can never interrupt
+  // someone mid-edit.
+  const [draft, setDraft] = useState(String(value))
+
+  function commit() {
+    const parsed = Number(draft)
+    if (!Number.isFinite(parsed)) {
+      setDraft(String(value))
+      return
+    }
+
+    const clamped = Math.min(max, Math.max(min, Math.round(parsed)))
+    setDraft(String(clamped))
+    if (clamped !== value) {
+      onCommit(clamped)
+    }
+  }
+
+  return (
+    <div className="tf">
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        type="number"
+        min={min}
+        max={max}
+        value={draft}
+        disabled={disabled}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            commit()
+          }
+        }}
+      />
+      <span className="meta">{hint}</span>
+    </div>
+  )
+}
 
 /**
  * The teacher's standing instructions to the agent crew.
@@ -129,24 +208,17 @@ export function AgentSettingsForm() {
 
         {settings.handoutEnabled && (
           <>
-            <div className="tf">
-              <label htmlFor="handout-pages">عدد صفحات المذكّرة</label>
-              <input
-                id="handout-pages"
-                type="number"
-                min={1}
-                max={12}
-                value={settings.handoutPageCount}
-                disabled={isSaving}
-                onChange={(event) => {
-                  const value = Number(event.target.value)
-                  if (value >= 1 && value <= 12) {
-                    void apply({ handoutPageCount: value })
-                  }
-                }}
-              />
-              <span className="meta">من صفحة لـ ١٢ صفحة. كل صفحة = محور من محاور الدرس.</span>
-            </div>
+            <NumberSetting
+              key={`handout-pages-${settings.handoutPageCount}`}
+              id="handout-pages"
+              label="عدد صفحات المذكّرة"
+              hint="من صفحة لـ ١٢ صفحة. كل صفحة = محور من محاور الدرس."
+              value={settings.handoutPageCount}
+              min={1}
+              max={12}
+              disabled={isSaving}
+              onCommit={(value) => void apply({ handoutPageCount: value })}
+            />
 
             <div className="tf">
               <label htmlFor="handout-tone">أسلوب الكتابة</label>
@@ -244,24 +316,17 @@ export function AgentSettingsForm() {
               </select>
             </div>
 
-            <div className="tf">
-              <label htmlFor="quiz-count">عدد الأسئلة</label>
-              <input
-                id="quiz-count"
-                type="number"
-                min={1}
-                max={30}
-                value={settings.quizQuestionCount}
-                disabled={isSaving}
-                onChange={(event) => {
-                  const value = Number(event.target.value)
-                  if (value >= 1 && value <= 30) {
-                    void apply({ quizQuestionCount: value })
-                  }
-                }}
-              />
-              <span className="meta">هيتوزّعوا على الأنواع اللي مفعّلة تحت.</span>
-            </div>
+            <NumberSetting
+              key={`quiz-count-${settings.quizQuestionCount}`}
+              id="quiz-count"
+              label="عدد الأسئلة"
+              hint="هيتوزّعوا على الأنواع اللي مفعّلة تحت."
+              value={settings.quizQuestionCount}
+              min={1}
+              max={30}
+              disabled={isSaving}
+              onCommit={(value) => void apply({ quizQuestionCount: value })}
+            />
 
             {ALL_QUESTION_TYPES.map((type) => (
               <div key={type} className="settings-row">
@@ -277,24 +342,17 @@ export function AgentSettingsForm() {
               </div>
             ))}
 
-            <div className="tf">
-              <label htmlFor="quiz-due">مدة تسليم الاختبار (أيام)</label>
-              <input
-                id="quiz-due"
-                type="number"
-                min={1}
-                max={90}
-                value={settings.quizDueInDays}
-                disabled={isSaving}
-                onChange={(event) => {
-                  const value = Number(event.target.value)
-                  if (value >= 1 && value <= 90) {
-                    void apply({ quizDueInDays: value })
-                  }
-                }}
-              />
-              <span className="meta">الديدلاين بيتحسب من لحظة نشرك للاختبار.</span>
-            </div>
+            <NumberSetting
+              key={`quiz-due-${settings.quizDueInDays}`}
+              id="quiz-due"
+              label="مدة تسليم الاختبار (أيام)"
+              hint="الديدلاين بيتحسب من لحظة نشرك للاختبار."
+              value={settings.quizDueInDays}
+              min={1}
+              max={90}
+              disabled={isSaving}
+              onCommit={(value) => void apply({ quizDueInDays: value })}
+            />
           </>
         )}
       </div>

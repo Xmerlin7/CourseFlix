@@ -80,6 +80,8 @@ export interface LessonAgentStep {
   icon: string
   mandatory: boolean
   reviewable: boolean
+  /** Quota cost of re-running this one agent. */
+  creditCost: number
   orderIndex: number
   status: LessonAgentStepStatus
   reviewStatus: LessonAgentReviewStatus
@@ -126,6 +128,8 @@ export interface LessonAgentRunSummary {
   courseId: string
   status: LessonAgentRunStatus
   progress: number
+  /** Quota credits this run has cost so far, rewrites included. */
+  creditsCharged: number
   errorMessage: string | null
   createdAt: string
   finishedAt: string | null

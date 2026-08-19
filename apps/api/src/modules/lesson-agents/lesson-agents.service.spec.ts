@@ -7,6 +7,7 @@ import {
 import { DataSource, Repository } from 'typeorm';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { JobsService } from '../jobs/jobs.service';
+import { TeacherBillingService } from '../teacher-billing/teacher-billing.service';
 import { LessonAgentEventEntity } from './entities/lesson-agent-event.entity';
 import { LessonAgentRunEntity } from './entities/lesson-agent-run.entity';
 import { LessonAgentStepFeedbackEntity } from './entities/lesson-agent-step-feedback.entity';
@@ -58,6 +59,9 @@ describe('LessonAgentsService', () => {
   let jobsService: jest.Mocked<Pick<JobsService, 'enqueueLessonAgents'>>;
   let enrollmentsService: jest.Mocked<
     Pick<EnrollmentsService, 'listActiveStudentIds'>
+  >;
+  let teacherBillingService: jest.Mocked<
+    Pick<TeacherBillingService, 'consumeCredits'>
   >;
   let notificationProducer: { notify: jest.Mock };
 
@@ -154,6 +158,9 @@ describe('LessonAgentsService', () => {
     enrollmentsService = {
       listActiveStudentIds: jest.fn().mockResolvedValue([]),
     };
+    teacherBillingService = {
+      consumeCredits: jest.fn().mockResolvedValue(undefined),
+    };
     notificationProducer = { notify: jest.fn().mockResolvedValue(undefined) };
 
     service = new LessonAgentsService(
@@ -170,6 +177,7 @@ describe('LessonAgentsService', () => {
       dataSource as unknown as DataSource,
       jobsService as unknown as JobsService,
       enrollmentsService as unknown as EnrollmentsService,
+      teacherBillingService as unknown as TeacherBillingService,
       notificationProducer,
     );
 
@@ -274,6 +282,39 @@ describe('LessonAgentsService', () => {
       ]);
     });
 
+    it('charges the teacher for every agent the run will actually use', async () => {
+      await service.startRun('lesson-1', TEACHER_ID);
+
+      // transcript 1 + reviewer 1 + indexer 1 + handout 6 + quizmaster 5
+      expect(teacherBillingService.consumeCredits).toHaveBeenCalledWith(
+        TEACHER_ID,
+        14,
+      );
+      expect(
+        firstArg<{ creditsCharged: number }>(runsRepo.save).creditsCharged,
+      ).toBe(14);
+    });
+
+    it('charges only for the agents that run when the optional ones are off', async () => {
+      await service.startRun('lesson-1', TEACHER_ID, {
+        overrides: { handoutEnabled: false, quizEnabled: false },
+      });
+
+      expect(teacherBillingService.consumeCredits).toHaveBeenCalledWith(
+        TEACHER_ID,
+        3,
+      );
+    });
+
+    it('charges nothing when the run is refused', async () => {
+      videosRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.startRun('lesson-1', TEACHER_ID)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(teacherBillingService.consumeCredits).not.toHaveBeenCalled();
+    });
+
     it('refuses a lesson with no video rather than queueing a crew with nothing to work on', async () => {
       videosRepo.findOne.mockResolvedValue(null);
 
@@ -339,6 +380,20 @@ describe('LessonAgentsService', () => {
       expect(dataSource.query).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE document_chunks SET is_active = false'),
         ['doc-1'],
+      );
+    });
+
+    it('charges again for a rewrite — the same price as asking that agent the first time', async () => {
+      await service.sendStepFeedback(
+        'run-1',
+        'step-handout',
+        TEACHER_ID,
+        'زوّد أمثلة',
+      );
+
+      expect(teacherBillingService.consumeCredits).toHaveBeenCalledWith(
+        TEACHER_ID,
+        6,
       );
     });
 

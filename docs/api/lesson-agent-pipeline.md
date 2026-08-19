@@ -89,6 +89,32 @@ All under `AuthGuard` + `TeacherOrAssistantRoleGuard`, scoped via `scopeTeacherI
 Every review action returns the full refreshed run, so the panel updates from the
 response instead of waiting out a poll.
 
+## Billing
+
+Priced **per agent** (`CREDIT_COSTS.lessonAgent`), not per run, because the
+teacher picks which agents run and can send one back for a rewrite:
+
+| agent | credits | why |
+| --- | --- | --- |
+| `transcript` | 1 | a captions fetch, or a Whisper pass for a local file |
+| `reviewer` | 1 | one short moderation call over a capped excerpt |
+| `indexer` | 1 | no LLM, but an embedding call per chunk |
+| `quizmaster` | 5 | identical work to `examGeneration`, so identically priced |
+| `handout` | 6 | 12k output tokens vs the exam's 4k, plus its own embedding pass |
+
+A full five-agent run costs **14**; mandatory-only costs **3**. A rewrite
+charges that agent's price again — otherwise "send back with a note" would be an
+unlimited free retry of the most expensive operation in the product.
+
+Charged on the **reservation model**, same as `ExamGenerationService`: consumed
+when the teacher submits, not when the worker finishes, and it **never blocks** —
+quota exhaustion only warns. A run refused before it starts (no video, one
+already in flight) charges nothing.
+
+`lesson_agent_runs.credits_charged` accumulates the total so the charge is
+auditable; the panel shows it as a chip, and each rewrite button states its own
+cost.
+
 ## Run lifecycle
 
 ```
