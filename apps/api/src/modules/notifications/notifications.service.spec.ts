@@ -303,7 +303,9 @@ describe('NotificationsService', () => {
         'thread-123',
       );
 
-      expect(updateQueryBuilder.update).toHaveBeenCalledWith(NotificationEntity);
+      expect(updateQueryBuilder.update).toHaveBeenCalledWith(
+        NotificationEntity,
+      );
       expect(updateQueryBuilder.where).toHaveBeenCalledWith(
         'user_id = :userId',
         { userId: userA },
@@ -338,7 +340,9 @@ describe('NotificationsService', () => {
         ['thread-1', 'thread-2'],
       );
 
-      expect(updateQueryBuilder.update).toHaveBeenCalledWith(NotificationEntity);
+      expect(updateQueryBuilder.update).toHaveBeenCalledWith(
+        NotificationEntity,
+      );
       expect(updateQueryBuilder.andWhere).toHaveBeenCalledWith(
         'related_entity_id IN (:...relatedEntityIds)',
         { relatedEntityIds: ['thread-1', 'thread-2'] },
@@ -347,4 +351,3 @@ describe('NotificationsService', () => {
     });
   });
 });
-

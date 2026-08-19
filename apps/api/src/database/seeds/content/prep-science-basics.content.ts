@@ -4,7 +4,7 @@ import { cuesAcross, CourseContent } from './content.types';
 export const PREP_SCIENCE_BASICS_CONTENT: CourseContent = {
   slug: 'prep-science-basics',
   coverImageUrl:
-    'https://commons.wikimedia.org/wiki/Special:FilePath/Experiment%20in%20the%20University%20of%20Szeged.jpg?width=1200',
+    'https://scienceshepherd.com/cdn/shop/articles/science-shepherd-homeschool-curriculum-blog-post-biology_1f989013-4908-49a6-9b6b-841046b8c9ad_1400x.jpg?v=1748543621',
   handoutIntro:
     'مذكرة تأسيسية في العلوم للمرحلة الإعدادية: حالات المادة والكثافة والضغط، والسرعة والتسارع والرسم البياني للحركة، بأمثلة بسيطة ومحلولة.',
   lessons: [

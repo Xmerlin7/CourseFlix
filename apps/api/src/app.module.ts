@@ -17,6 +17,7 @@ import { DiscussionsModule } from './modules/discussions/discussions.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { ExamGenerationModule } from './modules/exam-generation/exam-generation.module';
+import { LessonAgentsModule } from './modules/lesson-agents/lesson-agents.module';
 import { HealthModule } from './modules/health/health.module';
 import { InterventionsModule } from './modules/interventions/interventions.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
@@ -96,6 +97,7 @@ const isLocalDatabaseUrl = /localhost|127\.0\.0\.1/.test(
     PaymobModule,
     QuizzesModule,
     ExamGenerationModule,
+    LessonAgentsModule,
     JobsModule,
     RetrievalModule,
     LessonsModule,

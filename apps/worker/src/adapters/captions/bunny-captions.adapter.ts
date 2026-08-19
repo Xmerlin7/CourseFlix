@@ -42,7 +42,9 @@ function parseVtt(vtt: string): CaptionCue[] {
       continue;
     }
 
-    const [startRaw, endRaw] = lines[timingLineIndex].split('-->').map((s) => s.trim());
+    const [startRaw, endRaw] = lines[timingLineIndex]
+      .split('-->')
+      .map((s) => s.trim());
     const text = lines
       .slice(timingLineIndex + 1)
       .join(' ')
@@ -137,7 +139,9 @@ export class BunnyCaptionsAdapter implements CaptionProvider {
     try {
       parsed = new URL(videoUrl);
     } catch {
-      throw new CaptionsUnavailableError(`Invalid Bunny embed URL: ${videoUrl}`);
+      throw new CaptionsUnavailableError(
+        `Invalid Bunny embed URL: ${videoUrl}`,
+      );
     }
 
     // /embed/{libraryId}/{videoGuid}

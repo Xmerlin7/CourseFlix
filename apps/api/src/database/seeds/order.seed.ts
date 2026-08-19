@@ -82,7 +82,8 @@ export async function seedOrders(
       purchasable[studentIndex % purchasable.length],
       purchasable[(studentIndex + 1) % purchasable.length],
     ].filter(
-      (course, index, all) => all.findIndex((c) => c.id === course.id) === index,
+      (course, index, all) =>
+        all.findIndex((c) => c.id === course.id) === index,
     );
 
     for (const course of coursesToBuy) {

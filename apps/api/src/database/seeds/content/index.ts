@@ -27,11 +27,13 @@ export function findLessonContent(
   courseSlug: string,
   lessonTitle: string,
 ): LessonContent | undefined {
-  return COURSE_CONTENT.find((course) => course.slug === courseSlug)?.lessons.find(
-    (lesson) => lesson.lesson === lessonTitle,
-  );
+  return COURSE_CONTENT.find(
+    (course) => course.slug === courseSlug,
+  )?.lessons.find((lesson) => lesson.lesson === lessonTitle);
 }
 
-export function findCourseContent(courseSlug: string): CourseContent | undefined {
+export function findCourseContent(
+  courseSlug: string,
+): CourseContent | undefined {
   return COURSE_CONTENT.find((course) => course.slug === courseSlug);
 }

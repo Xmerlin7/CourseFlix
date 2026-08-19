@@ -62,11 +62,17 @@ function runFfmpeg(args: string[]): Promise<Buffer> {
       stderr += chunk.toString();
     });
     child.on('error', (err) =>
-      reject(new CaptionsUnavailableError(`Could not start ffmpeg: ${err.message}`)),
+      reject(
+        new CaptionsUnavailableError(`Could not start ffmpeg: ${err.message}`),
+      ),
     );
     child.on('close', (code) => {
       if (code !== 0) {
-        reject(new CaptionsUnavailableError(`ffmpeg exited with code ${code}: ${stderr.slice(-500)}`));
+        reject(
+          new CaptionsUnavailableError(
+            `ffmpeg exited with code ${code}: ${stderr.slice(-500)}`,
+          ),
+        );
         return;
       }
       resolve(Buffer.concat(chunks));
@@ -94,7 +100,9 @@ function probeDurationSeconds(filePath: string): Promise<number> {
       stderr += chunk.toString();
     });
     child.on('error', (err) =>
-      reject(new CaptionsUnavailableError(`Could not start ffprobe: ${err.message}`)),
+      reject(
+        new CaptionsUnavailableError(`Could not start ffprobe: ${err.message}`),
+      ),
     );
     child.on('close', (code) => {
       const duration = Number.parseFloat(stdout.trim());
@@ -111,9 +119,16 @@ function probeDurationSeconds(filePath: string): Promise<number> {
   });
 }
 
-async function transcribeChunk(chunkBytes: Buffer, apiKey: string): Promise<string> {
+async function transcribeChunk(
+  chunkBytes: Buffer,
+  apiKey: string,
+): Promise<string> {
   const formData = new FormData();
-  formData.append('file', new Blob([new Uint8Array(chunkBytes)], { type: 'audio/mpeg' }), 'chunk.mp3');
+  formData.append(
+    'file',
+    new Blob([new Uint8Array(chunkBytes)], { type: 'audio/mpeg' }),
+    'chunk.mp3',
+  );
   formData.append('model', TRANSCRIPTION_MODEL);
   formData.append('response_format', 'json');
 
@@ -126,7 +141,9 @@ async function transcribeChunk(chunkBytes: Buffer, apiKey: string): Promise<stri
   if (!response.ok) {
     const errorText = await response.text();
     logger.error(`Transcription failed (${response.status}): ${errorText}`);
-    throw new CaptionsUnavailableError(`Transcription failed with status ${response.status}`);
+    throw new CaptionsUnavailableError(
+      `Transcription failed with status ${response.status}`,
+    );
   }
 
   const result = (await response.json()) as TranscriptionJsonResponse;
@@ -188,12 +205,18 @@ export async function transcribeAudioBytes(
 
       const text = await transcribeChunk(chunkBytes, apiKey);
       if (text.length > 0) {
-        cues.push({ startSeconds: Math.round(start), endSeconds: Math.round(end), text });
+        cues.push({
+          startSeconds: Math.round(start),
+          endSeconds: Math.round(end),
+          text,
+        });
       }
     }
 
     if (cues.length === 0) {
-      throw new CaptionsUnavailableError('Transcription returned no text for this video.');
+      throw new CaptionsUnavailableError(
+        'Transcription returned no text for this video.',
+      );
     }
 
     return cues;

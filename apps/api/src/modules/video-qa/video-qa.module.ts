@@ -21,7 +21,11 @@ import { VideoQaService } from './video-qa.service';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([CourseEntity, VideoEntity, VideoTranscriptEntity]),
+    TypeOrmModule.forFeature([
+      CourseEntity,
+      VideoEntity,
+      VideoTranscriptEntity,
+    ]),
     EnrollmentsModule,
     RetrievalModule,
     SessionsModule,

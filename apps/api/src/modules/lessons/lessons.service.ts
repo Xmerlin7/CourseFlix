@@ -364,7 +364,9 @@ export class LessonsService {
       : 0;
     const nextPercentage = Math.max(previousPercentage, candidatePercentage);
     const status: ContentProgressStatus =
-      nextPercentage >= COMPLETION_THRESHOLD_PERCENT ? 'completed' : 'in_progress';
+      nextPercentage >= COMPLETION_THRESHOLD_PERCENT
+        ? 'completed'
+        : 'in_progress';
 
     if (existing) {
       await this.progressRepository.update(existing.id, {

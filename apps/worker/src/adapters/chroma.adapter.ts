@@ -68,7 +68,9 @@ export class ChromaAdapter {
     const collectionName =
       this.configService.get<string>('CHROMA_COLLECTION') || 'courseflix-dev';
 
-    this.logger.log(`Connecting to ChromaDB at ${chromaUrl}, collection: ${collectionName}`);
+    this.logger.log(
+      `Connecting to ChromaDB at ${chromaUrl}, collection: ${collectionName}`,
+    );
 
     this.client = new ChromaClient({ path: chromaUrl });
     this.collection = await this.client.getOrCreateCollection({
@@ -132,7 +134,9 @@ export class ChromaAdapter {
 
     await this.upsertWithRetry(payload);
 
-    this.logger.log(`Successfully upserted ${ids.length} vector chunks into ChromaDB`);
+    this.logger.log(
+      `Successfully upserted ${ids.length} vector chunks into ChromaDB`,
+    );
   }
 
   private async upsertWithRetry(
@@ -167,19 +171,41 @@ export class ChromaAdapter {
     page: number | null | undefined;
   }): void {
     if (!fields.courseId || typeof fields.courseId !== 'string') {
-      throw new Error('Chroma metadata validation failed: courseId is required and must be a string');
+      throw new Error(
+        'Chroma metadata validation failed: courseId is required and must be a string',
+      );
     }
     if (!fields.documentId || typeof fields.documentId !== 'string') {
-      throw new Error('Chroma metadata validation failed: documentId is required and must be a string');
+      throw new Error(
+        'Chroma metadata validation failed: documentId is required and must be a string',
+      );
     }
-    if (fields.version === undefined || fields.version === null || typeof fields.version !== 'number') {
-      throw new Error('Chroma metadata validation failed: version is required and must be a number');
+    if (
+      fields.version === undefined ||
+      fields.version === null ||
+      typeof fields.version !== 'number'
+    ) {
+      throw new Error(
+        'Chroma metadata validation failed: version is required and must be a number',
+      );
     }
-    if (fields.chunkIndex === undefined || fields.chunkIndex === null || typeof fields.chunkIndex !== 'number') {
-      throw new Error('Chroma metadata validation failed: chunkIndex is required and must be a number');
+    if (
+      fields.chunkIndex === undefined ||
+      fields.chunkIndex === null ||
+      typeof fields.chunkIndex !== 'number'
+    ) {
+      throw new Error(
+        'Chroma metadata validation failed: chunkIndex is required and must be a number',
+      );
     }
-    if (fields.page === undefined || fields.page === null || typeof fields.page !== 'number') {
-      throw new Error('Chroma metadata validation failed: page is required and must be a number');
+    if (
+      fields.page === undefined ||
+      fields.page === null ||
+      typeof fields.page !== 'number'
+    ) {
+      throw new Error(
+        'Chroma metadata validation failed: page is required and must be a number',
+      );
     }
   }
 }

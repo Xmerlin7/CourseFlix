@@ -98,7 +98,9 @@ export class OpenAIExamLlmProvider implements ExamLlmProvider {
 
   constructor(private readonly configService: ConfigService) {}
 
-  async generateExam(input: ExamLlmGenerateInput): Promise<ExamLlmGenerateResult> {
+  async generateExam(
+    input: ExamLlmGenerateInput,
+  ): Promise<ExamLlmGenerateResult> {
     const apiKey =
       this.configService.get<string>('OPENAI_API_KEY') ||
       this.configService.get<string>('LLM_API_KEY');

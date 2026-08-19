@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CaptionCue, CaptionProvider, CaptionsUnavailableError } from './caption-provider';
+import {
+  CaptionCue,
+  CaptionProvider,
+  CaptionsUnavailableError,
+} from './caption-provider';
 import {
   MAX_SOURCE_MEDIA_BYTES,
   transcribeAudioBytes,
@@ -36,7 +40,8 @@ export class WhisperCaptionsAdapter implements CaptionProvider {
     }
 
     const videoBytes = Buffer.from(await videoResponse.arrayBuffer());
-    const contentType = videoResponse.headers.get('content-type') || 'video/mp4';
+    const contentType =
+      videoResponse.headers.get('content-type') || 'video/mp4';
 
     return transcribeAudioBytes(videoBytes, contentType, this.configService);
   }

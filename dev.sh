@@ -510,6 +510,90 @@ NODE
   )
 }
 
+# Names any migration file on disk that the `migrations` table hasn't
+# recorded yet, one per line, and exits non-zero if there are none to
+# report only when the database itself is unreachable.
+#
+# Compares files to applied rows directly rather than parsing
+# `typeorm migration:show` output, which is a human-readable format with
+# no stability guarantee. TypeORM stores a migration as `<Class><timestamp>`
+# while the file is named `<timestamp>-<Class>.ts`, hence the flip.
+list_pending_migrations() {
+  (
+    cd "$ROOT/apps/api"
+
+    node <<'NODE'
+const { resolve } = require('path');
+const { readdirSync } = require('fs');
+const { config } = require('dotenv');
+const { Client } = require('pg');
+
+config({ path: resolve(process.cwd(), '../../.env') });
+
+const client = new Client({ connectionString: process.env.DATABASE_URL });
+
+async function main() {
+  await client.connect();
+
+  const onDisk = readdirSync(resolve(process.cwd(), 'src/database/migrations'))
+    .filter((file) => file.endsWith('.ts'))
+    .map((file) => {
+      const [timestamp, ...rest] = file.replace(/\.ts$/, '').split('-');
+      return { file, name: `${rest.join('-')}${timestamp}` };
+    });
+
+  // A fresh database has no `migrations` table yet — everything is pending.
+  const { rows } = await client.query(`
+    select name from migrations
+    where exists (
+      select 1 from information_schema.tables
+      where table_schema = 'public' and table_name = 'migrations'
+    )
+  `).catch(() => ({ rows: [] }));
+
+  const applied = new Set(rows.map((row) => row.name));
+
+  for (const migration of onDisk) {
+    if (!applied.has(migration.name)) {
+      console.log(migration.file);
+    }
+  }
+}
+
+main()
+  .catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await client.end().catch(() => undefined);
+  });
+NODE
+  )
+}
+
+# Fast mode deliberately skips migrations, which is fine until someone
+# pulls (or writes) a branch that adds one: the API then boots happily and
+# every request touching the new table 500s with a bare
+# `relation "..." does not exist` in the log. Cheap to detect, so it warns
+# rather than letting that be discovered through the UI.
+warn_if_migrations_pending() {
+  local pending
+
+  pending="$(list_pending_migrations 2>/dev/null)" || {
+    warn "couldn't check for pending migrations (is Postgres up?)"
+    return 0
+  }
+
+  [ -z "$pending" ] && return 0
+
+  # `printf '%s\n'` so the last line is counted too — `$pending` has no
+  # trailing newline of its own.
+  warn "$(printf '%s\n' "$pending" | wc -l | tr -d ' ') pending migration(s) — fast mode does not apply them:"
+  printf '%s\n' "$pending" | sed 's/^/      /'
+  warn "run ${BOLD}./dev.sh up${RESET} (or ${BOLD}npm run migration:run -w apps/api${RESET}) or the new tables won't exist"
+}
+
 setup_database() {
   step "Preparing the database"
 
@@ -708,7 +792,7 @@ start_apps() {
     "Worker started" \
     "worker"
 
-  ok "worker running (PDF ingestion)"
+  ok "worker running (PDF + video ingestion, exam generation, lesson agents)"
 }
 
 # ─── summary ─────────────────────────────────────────────────────────────
@@ -749,7 +833,7 @@ ${GREEN}${BOLD}CourseFlix is running.${RESET}
     Postgres       localhost:$POSTGRES_PORT
     Redis          localhost:${REDIS_PORT:-6379}
     Chroma         http://localhost:${CHROMA_PORT:-8000}
-    worker         PDF ingestion jobs
+    worker         queues: ingestion, video-ingestion, exam-generation, lesson-agents
 
   ${BOLD}Paymob callbacks${RESET}
     ngrok tunnel   ${ngrok_url:-not running}
@@ -790,6 +874,8 @@ cmd_fast() {
 
   step "Fast restart — API + web + worker only (no Docker/migrations/seed/ngrok)"
   warn "the ngrok tunnel is not (re)started in fast mode — Paymob callbacks rely on an existing tunnel"
+
+  warn_if_migrations_pending
 
   start_apps
 

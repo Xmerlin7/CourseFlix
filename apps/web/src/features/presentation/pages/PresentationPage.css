@@ -1,6 +1,8 @@
-/* ── /present — CourseFlix slide deck ────────────────────────────────
-   Styled with the platform's Material palette (purple/teal accents).
-   Uses theme tokens so it adapts to both light and dark mode. */
+/* ── /present — CourseFlix slide deck ────────────────────────────────────
+   Built directly on the platform's Material 3 design tokens (index.css):
+   --primary / --primary-container / --secondary-container / surface
+   containers / --on-surface / --outline-variant / shadows / radius scale.
+   Adapts to light + dark mode and the user's accent color automatically. */
 
 .pres-root {
   min-height: 100vh;
@@ -9,7 +11,7 @@
   position: relative;
   display: grid;
   place-items: center;
-  padding: 6vh 4vw;
+  padding: 4vh 2vw;
   overflow: hidden;
   isolation: isolate;
   color-scheme: light dark;
@@ -19,51 +21,31 @@
   direction: ltr;
   text-align: left;
   background:
-    radial-gradient(circle at 11% 12%, var(--pres-glow-1), transparent 25%),
-    radial-gradient(circle at 83% 18%, var(--pres-glow-2), transparent 31%),
-    radial-gradient(circle at 46% 104%, var(--pres-glow-3), transparent 36%),
-    linear-gradient(135deg, var(--pres-bg-a) 0%, var(--pres-bg-b) 48%, var(--pres-bg-c) 100%);
+    radial-gradient(circle at 12% 10%, var(--pres-glow-1), transparent 30%),
+    radial-gradient(circle at 86% 14%, var(--pres-glow-2), transparent 34%),
+    radial-gradient(circle at 50% 108%, var(--pres-glow-3), transparent 40%),
+    linear-gradient(160deg, var(--bg) 0%, var(--surface) 50%, var(--bg) 100%);
 }
 
-/* Theme-aware background tokens (light defaults; overridden for dark). */
-.pres-root {
-  --pres-bg-a: #f8fcff;
-  --pres-bg-b: #eef7fc;
-  --pres-bg-c: #f4effb;
-  --pres-glow-1: rgba(255, 255, 255, 0.98);
-  --pres-glow-2: rgba(214, 244, 250, 0.9);
-  --pres-glow-3: rgba(233, 221, 255, 0.78);
-  --pres-card-bg: #ffffff;
-  --pres-card-alt: #f7f1fa;
-  --pres-card-muted: #f1eaf6;
-  --pres-line: #d5ccdd;
-  --pres-ink: #1d1b20;
-  --pres-ink-soft: #4a4458;
-  --pres-brand: #65558f;
-  --pres-brand-deep: #432b87;
-  --pres-teal: #0891b2;
-  --pres-brand-tint: #e9ddff;
-  --pres-rule-grad: linear-gradient(90deg, #0891b2, #9c27b0, #65558f);
-}
-
-/* Dark-mode overrides — the site marks dark via .dark on <html>. */
-:root.dark .pres-root {
-  --pres-bg-a: #120e17;
-  --pres-bg-b: #191225;
-  --pres-bg-c: #100d16;
-  --pres-glow-1: rgba(101, 85, 143, 0.2);
-  --pres-glow-2: rgba(8, 145, 178, 0.16);
-  --pres-glow-3: rgba(101, 85, 143, 0.22);
-  --pres-card-bg: var(--surface);
-  --pres-card-alt: var(--surface-container-low);
-  --pres-card-muted: var(--surface-container);
-  --pres-line: var(--outline-variant);
+/* Glows are MD3 container tints (primary/secondary/tertiary containers). */
+.pres-root,
+.pres-print-root {
+  --pres-glow-1: color-mix(in srgb, var(--primary-container) 70%, transparent);
+  --pres-glow-2: color-mix(in srgb, var(--secondary-container) 62%, transparent);
+  --pres-glow-3: color-mix(in srgb, var(--tertiary-container) 48%, transparent);
   --pres-ink: var(--on-surface);
   --pres-ink-soft: var(--on-surface-variant);
-  --pres-brand: #cfbcff;
-  --pres-brand-deep: #d9ccff;
-  --pres-teal: #7cd6ea;
-  --pres-brand-tint: rgba(101, 85, 143, 0.24);
+  --pres-brand: var(--primary);
+  --pres-on-brand: var(--on-primary);
+  --pres-brand-container: var(--primary-container);
+  --pres-on-brand-container: var(--on-primary-container);
+  --pres-accent-container: var(--secondary-container);
+  --pres-on-accent-container: var(--on-secondary-container);
+  --pres-surface: var(--surface);
+  --pres-surface-alt: var(--surface-container-low);
+  --pres-surface-hi: var(--surface-container);
+  --pres-line: var(--outline-variant);
+  --pres-state-hover: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 /* Top brand rule */
@@ -73,15 +55,15 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--pres-brand), var(--pres-brand), var(--pres-teal));
+  height: 5px;
+  background: linear-gradient(90deg, var(--pres-brand), var(--pres-brand-container), var(--pres-accent-container));
   z-index: 3;
 }
 
-/* ── Slide stage + transition animation ───────────────────────────── */
+/* ── Slide stage + transition animation ───────────────────────────────── */
 .pres-stage {
-  width: min(1080px, 100%);
-  min-height: 62vh;
+  width: min(1400px, 100%);
+  min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,17 +100,17 @@
   }
 }
 
-/* ── Slide shell (header + content) ───────────────────────────────── */
-.pres-slide {
+/* ── Slide shell (header + content) ───────────────────────────────────── */
+.pres-slide,
+.pres-hero,
+.pres-thanks {
   width: 100%;
-  background: color-mix(in srgb, var(--pres-card-bg) 96%, transparent);
-  border: 1px solid color-mix(in srgb, var(--outline-variant) 80%, white);
-  border-radius: calc(28px * var(--radius-scale));
-  box-shadow:
-    0 1px 3px rgba(30, 20, 50, 0.1),
-    0 18px 52px rgba(56, 44, 85, 0.12);
+  background: color-mix(in srgb, var(--pres-surface) 96%, transparent);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(36px * var(--radius-scale));
+  box-shadow: var(--shadow-lg), 0 1px 2px color-mix(in srgb, var(--outline) 24%, transparent);
   backdrop-filter: blur(22px) saturate(1.06);
-  padding: clamp(24px, 4.5vh, 48px) clamp(18px, 4vw, 44px);
+  padding: clamp(32px, 5vh, 64px) clamp(26px, 4vw, 60px);
   animation:
     pres-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
     pres-float 7s ease-in-out 1s infinite;
@@ -156,16 +138,19 @@
 }
 
 .pres-slide-header {
-  margin-bottom: 22px;
+  margin-bottom: 30px;
 }
 
 .pres-kicker {
   display: inline-block;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: 2.2px;
-  color: var(--pres-teal);
-  margin-bottom: 4px;
+  letter-spacing: 1.6px;
+  color: var(--pres-on-accent-container);
+  background: var(--pres-accent-container);
+  margin-bottom: 12px;
   animation: pres-kicker-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -178,14 +163,15 @@
   100% {
     opacity: 1;
     transform: translateX(0);
-    letter-spacing: 2.2px;
+    letter-spacing: 1.6px;
   }
 }
 
 .pres-title {
   margin: 0;
-  font-size: clamp(22px, 3.2vw, 30px);
+  font-size: clamp(34px, 4vw, 48px);
   font-weight: 800;
+  line-height: 1.12;
   color: var(--pres-ink);
   animation: pres-title-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
 }
@@ -203,9 +189,9 @@
 
 .pres-rule {
   display: block;
-  width: 64px;
-  height: 3px;
-  margin-top: 12px;
+  width: 96px;
+  height: 4px;
+  margin-top: 16px;
   border-radius: 999px;
   background: var(--pres-brand);
   position: relative;
@@ -217,7 +203,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, var(--pres-teal), var(--pres-brand), var(--pres-brand));
+  background: linear-gradient(90deg, var(--pres-accent-container), var(--pres-brand), var(--pres-brand));
   transform: translateX(-100%);
   animation: pres-rule-sheen 2.6s ease-in-out 0.8s infinite;
 }
@@ -247,18 +233,18 @@
   }
 }
 
-/* ── Reusable primitives ──────────────────────────────────────────── */
+/* ── Reusable primitives ──────────────────────────────────────────────── */
 .pres-lead {
-  font-size: 16.5px;
-  line-height: 1.65;
+  font-size: 21px;
+  line-height: 1.6;
   color: var(--pres-ink-soft);
-  margin: 0 0 20px;
+  margin: 0 0 24px;
   animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
 }
 
 .pres-grid {
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
 .pres-grid-3 {
@@ -270,10 +256,10 @@
 }
 
 .pres-card {
-  background: var(--pres-card-alt);
+  background: var(--pres-surface-alt);
   border: 1px solid var(--pres-line);
-  border-radius: calc(22px * var(--radius-scale));
-  padding: clamp(14px, 2vh, 22px);
+  border-radius: calc(26px * var(--radius-scale));
+  padding: clamp(20px, 2.4vh, 30px);
   box-shadow: var(--shadow);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   animation: pres-card-pop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -303,45 +289,36 @@
 }
 
 .pres-card-title {
-  margin: 0 0 8px;
-  font-size: 15px;
+  margin: 0 0 10px;
+  font-size: 19.5px;
   font-weight: 800;
   color: var(--pres-brand);
 }
 
 .pres-card-body {
   margin: 0;
-  font-size: 12.5px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.65;
   color: var(--pres-ink-soft);
   white-space: pre-line;
 }
 
-.pres-badge {
-  display: inline-block;
-  padding: 5px 12px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 800;
-  color: #4f378b;
-  background: var(--pres-brand-tint);
-}
-
-/* ── Hero (title slide) ───────────────────────────────────────────── */
+/* ── Hero (title slide) ───────────────────────────────────────────────── */
 .pres-hero {
-  width: 100%;
   text-align: center;
-  padding: 30px 12px;
+  animation:
+    pres-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
+    pres-float 7s ease-in-out 1s infinite;
 }
 
 .pres-logo {
   display: inline-block;
   font-family: var(--heading);
-  font-size: clamp(44px, 8vw, 72px);
+  font-size: clamp(56px, 9vw, 94px);
   font-weight: 900;
   letter-spacing: 1.5px;
-  color: var(--pres-brand-deep);
-  text-shadow: 0 4px 22px rgba(101, 85, 143, 0.28);
+  color: var(--pres-brand);
+  text-shadow: 0 5px 28px color-mix(in srgb, var(--pres-brand) 32%, transparent);
   animation: pres-logo-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -364,9 +341,9 @@
 }
 
 .pres-hero-sub {
-  font-size: clamp(17px, 2.4vw, 22px);
+  font-size: clamp(21px, 2.8vw, 27px);
   color: var(--pres-ink-soft);
-  margin: 14px 0 8px;
+  margin: 18px 0 12px;
   animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
 }
 
@@ -382,111 +359,125 @@
 }
 
 .pres-hero-tag {
-  font-size: 13.5px;
-  color: var(--pres-teal);
-  font-weight: 700;
+  font-size: 17px;
+  color: var(--pres-brand);
+  font-weight: 800;
   letter-spacing: 0.4px;
-  margin: 0 0 34px;
+  margin: 0 0 32px;
   animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
 }
 
 .pres-hero-team {
-  max-width: 560px;
+  max-width: 840px;
   margin: 0 auto;
-  padding-top: 24px;
-  border-top: 1px solid var(--outline-variant);
+  padding-top: 28px;
+  border-top: 1px solid var(--pres-line);
   animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.65s both;
 }
 
 .pres-hero-label {
-  font-size: 13px;
+  display: block;
+  font-size: 15.5px;
   font-weight: 800;
-  letter-spacing: 1.6px;
-  color: var(--pres-brand);
-}
-
-.pres-hero-names {
-  font-size: 13.5px;
-  font-weight: 700;
-  line-height: 1.55;
-  color: var(--pres-ink);
-  margin: 8px 0 4px;
-  max-width: 720px;
-  margin-inline: auto;
-  overflow-wrap: anywhere;
-}
-
-.pres-hero-supervisor {
-  font-size: 13px;
+  letter-spacing: 2.6px;
   color: var(--pres-ink-soft);
-  margin: 14px 0 0;
+  margin-bottom: 20px;
 }
 
-/* ── Team avatars ─────────────────────────────────────────────────── */
-.pres-avatars {
+/* Team names — two per row facing each other; the fifth (Seif) alone below. */
+.pres-team-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.pres-team-solo {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 14px 22px;
   margin-top: 16px;
 }
 
-.pres-avatar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  max-width: 210px;
+.pres-team-solo .pres-member {
+  width: min(342px, 100%);
 }
 
-.pres-avatar-initials {
+.pres-member {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(24px * var(--radius-scale));
+  padding: 16px 22px;
+  box-shadow: var(--shadow);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+  animation: pres-member-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pres-team-grid .pres-member:nth-child(2) { animation-delay: 0.08s; }
+.pres-team-grid .pres-member:nth-child(3) { animation-delay: 0.16s; }
+.pres-team-grid .pres-member:nth-child(4) { animation-delay: 0.24s; }
+.pres-team-solo .pres-member { animation-delay: 0.32s; }
+
+@keyframes pres-member-in {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pres-member:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--pres-brand) 40%, transparent);
+  background: var(--pres-state-hover);
+  box-shadow: var(--shadow-lg);
+}
+
+.pres-member-initials {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.4px;
-  color: #ffffff;
-  background: linear-gradient(135deg, var(--pres-brand), var(--pres-teal));
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--pres-brand) 45%, transparent);
-  border: 2px solid color-mix(in srgb, var(--pres-card-bg) 70%, transparent);
+  color: var(--pres-on-brand);
+  background: var(--pres-brand);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--pres-brand) 40%, transparent);
+  border: 2px solid color-mix(in srgb, var(--pres-surface) 70%, transparent);
 }
 
-.pres-avatar-name {
-  font-size: 12.5px;
+.pres-member-name {
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.3;
   color: var(--pres-ink);
   overflow-wrap: anywhere;
 }
 
-.pres-avatars--thanks {
-  margin: 0 0 18px;
-}
-
-.pres-thanks-supervisor {
-  font-size: 13px;
-  color: var(--pres-ink-soft);
-  margin: 0;
-}
-
-/* ── Overview slide ───────────────────────────────────────────────── */
+/* ── Overview slide ───────────────────────────────────────────────────── */
 .pres-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .pres-overview-row {
   display: flex;
   align-items: baseline;
-  gap: 18px;
-  background: var(--pres-card-alt);
+  gap: 20px;
+  background: var(--pres-surface-alt);
   border: 1px solid var(--pres-line);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 13px 16px;
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 20px 22px;
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s ease;
   animation: pres-overview-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -509,36 +500,40 @@
 .pres-overview-row:hover {
   transform: translateX(5px);
   border-color: color-mix(in srgb, var(--pres-brand) 45%, transparent);
-  box-shadow: 0 6px 18px rgba(56, 44, 85, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-overview-label {
   flex: none;
-  width: 120px;
-  font-size: 15px;
+  min-width: 132px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 17.5px;
   font-weight: 800;
-  color: var(--pres-brand);
+  color: var(--pres-on-brand-container);
+  background: var(--pres-brand-container);
 }
 
 .pres-overview-desc {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 16.5px;
+  line-height: 1.55;
   color: var(--pres-ink-soft);
 }
 
-/* ── User Journey ─────────────────────────────────────────────────── */
+/* ── User Journey ─────────────────────────────────────────────────────── */
 .pres-journey {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 24px;
 }
 
 .pres-journey-col {
-  background: var(--pres-card-alt);
+  background: var(--pres-surface-alt);
   border: 1px solid var(--pres-line);
-  border-radius: calc(16px * var(--radius-scale));
-  padding: 18px;
-  box-shadow: 0 4px 16px rgba(56, 44, 85, 0.07);
+  border-radius: calc(22px * var(--radius-scale));
+  padding: 24px;
+  box-shadow: var(--shadow);
   animation: pres-journey-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -557,10 +552,13 @@
 
 .pres-journey-head {
   display: inline-block;
-  margin-bottom: 12px;
-  font-size: 15px;
+  margin-bottom: 16px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-size: 18.5px;
   font-weight: 800;
-  color: var(--pres-brand);
+  color: var(--pres-on-accent-container);
+  background: var(--pres-accent-container);
 }
 
 .pres-journey-list {
@@ -569,13 +567,13 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 12px;
 }
 
 .pres-journey-list li {
-  font-size: 13px;
+  font-size: 16.5px;
   color: var(--pres-ink-soft);
-  padding-inline-start: 18px;
+  padding-inline-start: 22px;
   position: relative;
 }
 
@@ -583,12 +581,12 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 7px;
-  width: 7px;
-  height: 7px;
+  top: 9px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--pres-teal);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pres-teal) 20%, transparent);
+  background: var(--pres-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pres-brand) 18%, transparent);
 }
 
 .pres-journey-list li b {
@@ -596,10 +594,10 @@
   font-weight: 800;
 }
 
-/* ── Platform screens (UI Overview) ───────────────────────────────── */
+/* ── Screens (UI shots) ───────────────────────────────────────────────── */
 .pres-shots {
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
 .pres-shots--pair {
@@ -608,12 +606,12 @@
 
 .pres-shot {
   margin: 0;
-  background: var(--pres-card-alt);
+  background: var(--pres-surface-alt);
   border: 1px solid var(--pres-line);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 10px;
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 13px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(56, 44, 85, 0.09);
+  box-shadow: var(--shadow);
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
   animation: pres-shot-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -634,62 +632,44 @@
 .pres-shot:hover {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--pres-brand) 45%, transparent);
-  box-shadow: 0 14px 30px rgba(56, 44, 85, 0.18);
+  box-shadow: var(--shadow-lg);
 }
 
-.pres-shot--big img {
+.pres-shot img {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 360px;
-  object-fit: cover;
-  object-position: top;
-  border-radius: calc(9px * var(--radius-scale));
-  background: var(--pres-card-alt);
+  border-radius: calc(13px * var(--radius-scale));
+  background: var(--pres-surface-alt);
   border: 1px solid var(--pres-line);
 }
 
 .pres-shot figcaption {
-  padding: 9px 4px 3px;
-  font-size: 13px;
+  padding: 12px 4px 4px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--pres-brand);
   text-align: center;
 }
 
-.pres-shot--placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 360px;
-  gap: 10px;
-  background: var(--pres-card-alt);
-}
-
-.pres-shot-placeholder-icon {
-  font-size: 44px;
-  color: color-mix(in srgb, var(--pres-brand) 60%, transparent);
-}
-
-/* ── Agenda ───────────────────────────────────────────────────────── */
+/* ── Agenda ───────────────────────────────────────────────────────────── */
 .pres-agenda {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px 22px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
 }
 
 .pres-agenda-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 13px 16px;
+  gap: 15px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 15px 20px;
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s ease;
   animation: pres-agenda-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -703,6 +683,8 @@
 .pres-agenda-item:nth-child(8) { animation-delay: 0.42s; }
 .pres-agenda-item:nth-child(9) { animation-delay: 0.48s; }
 .pres-agenda-item:nth-child(10) { animation-delay: 0.54s; }
+.pres-agenda-item:nth-child(11) { animation-delay: 0.6s; }
+.pres-agenda-item:nth-child(12) { animation-delay: 0.66s; }
 
 @keyframes pres-agenda-in {
   0% {
@@ -718,45 +700,46 @@
 .pres-agenda-item:hover {
   transform: translateX(5px);
   border-color: color-mix(in srgb, var(--pres-brand) 45%, transparent);
-  box-shadow: 0 6px 18px rgba(56, 44, 85, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-agenda-num {
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 17px;
+  font-size: 18.5px;
   font-weight: 800;
-  color: var(--pres-card-bg);
-  background: var(--pres-brand);
+  color: var(--pres-on-brand-container);
+  background: var(--pres-brand-container);
 }
 
 .pres-agenda-label {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--pres-ink);
 }
 
-/* ── Objectives ───────────────────────────────────────────────────── */
+/* ── Objectives ───────────────────────────────────────────────────────── */
 .pres-objectives {
   margin: 0;
-  padding: 0 0 0 6px;
+  padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
 .pres-objectives li {
   position: relative;
-  padding: 13px 18px 13px 52px;
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  font-size: 14.5px;
+  padding: 18px 20px 18px 60px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  font-size: 17px;
+  line-height: 1.5;
   color: var(--pres-ink);
   animation: pres-objective-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -783,31 +766,31 @@
 .pres-objectives li::before {
   content: '';
   position: absolute;
-  left: 20px;
+  left: 26px;
   top: 50%;
   transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  background: var(--pres-teal);
-  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.14);
+  background: var(--pres-brand);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--pres-brand) 16%, transparent);
 }
 
-/* ── Features grid ────────────────────────────────────────────────── */
+/* ── Features grid ────────────────────────────────────────────────────── */
 .pres-features {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .pres-feature {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 12px 14px;
+  gap: 12px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 15px 18px;
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
   animation: pres-feature-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -837,53 +820,53 @@
 
 .pres-feature:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 24px rgba(56, 44, 85, 0.14);
+  box-shadow: var(--shadow-lg);
   border-color: color-mix(in srgb, var(--pres-brand) 40%, transparent);
 }
 
 .pres-feature-check {
   flex: none;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
-  color: var(--pres-brand);
-  background: var(--pres-brand-tint);
+  color: var(--pres-on-brand-container);
+  background: var(--pres-brand-container);
 }
 
 .pres-feature-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 .pres-feature-text strong {
-  font-size: 13.5px;
+  font-size: 17px;
   color: var(--pres-ink);
 }
 
 .pres-feature-text small {
-  font-size: 11.5px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--pres-ink-soft);
 }
 
-/* ── Architecture ─────────────────────────────────────────────────── */
+/* ── Architecture ─────────────────────────────────────────────────────── */
 .pres-arch {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
-  gap: 18px;
+  gap: 22px;
   align-items: center;
 }
 
 .pres-arch-col {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .pres-arch-center {
@@ -892,11 +875,11 @@
 }
 
 .pres-node {
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 12px 16px;
-  box-shadow: 0 4px 14px rgba(56, 44, 85, 0.08);
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 17px 20px;
+  box-shadow: var(--shadow);
   text-align: center;
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   animation: pres-node-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -921,88 +904,90 @@
 
 .pres-node:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(56, 44, 85, 0.18);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-node strong {
   display: block;
-  font-size: 14.5px;
+  font-size: 18.5px;
   color: var(--pres-ink);
 }
 
 .pres-node span {
   display: block;
-  font-size: 11px;
+  font-size: 14px;
   color: var(--pres-ink-soft);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .pres-node-web {
-  border-color: color-mix(in srgb, var(--pres-brand) 55%, transparent);
+  border-color: color-mix(in srgb, var(--pres-brand) 60%, transparent);
   background: var(--pres-brand);
+  color: var(--pres-on-brand);
 }
 
 .pres-node-web strong,
 .pres-node-web span {
-  color: var(--pres-card-bg);
+  color: var(--pres-on-brand);
 }
 
 .pres-node-worker {
-  border-color: color-mix(in srgb, var(--pres-teal) 55%, transparent);
-  background: var(--pres-teal);
+  border-color: color-mix(in srgb, var(--pres-brand-container) 60%, transparent);
+  background: var(--pres-brand-container);
 }
 
 .pres-node-worker strong,
 .pres-node-worker span {
-  color: var(--pres-card-bg);
+  color: var(--pres-on-brand-container);
 }
 
 .pres-node-api {
   border: 2px solid var(--pres-brand);
-  background: var(--pres-card-alt);
-  padding: 18px 20px;
+  background: var(--pres-surface-alt);
+  padding: 24px 26px;
 }
 
 .pres-node-api strong {
-  font-size: 17px;
+  font-size: 21px;
   color: var(--pres-brand);
 }
 
-/* ── Backend table ────────────────────────────────────────────────── */
+/* ── Backend table ────────────────────────────────────────────────────── */
 .pres-table-wrap {
   overflow-x: auto;
-  border-radius: calc(16px * var(--radius-scale));
-  border: 1px solid var(--outline-variant);
-  background: var(--pres-card-alt);
-  box-shadow: 0 4px 16px rgba(56, 44, 85, 0.07);
+  border-radius: calc(22px * var(--radius-scale));
+  border: 1px solid var(--pres-line);
+  background: var(--pres-surface-alt);
+  box-shadow: var(--shadow);
 }
 
 .pres-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 15.5px;
 }
 
 .pres-table th {
   text-align: left;
-  padding: 11px 14px;
-  font-size: 12.5px;
-  color: var(--pres-card-bg);
+  padding: 14px 18px;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  color: var(--pres-on-brand);
   background: var(--pres-brand);
 }
 
 .pres-table th:not(:last-child) {
-  border-right: 1px solid rgba(255, 255, 255, 0.18);
+  border-right: 1px solid color-mix(in srgb, var(--pres-on-brand) 22%, transparent);
 }
 
 .pres-table td {
-  padding: 9px 14px;
+  padding: 12px 18px;
   color: var(--pres-ink-soft);
-  border-top: 1px solid var(--outline-variant);
+  border-top: 1px solid var(--pres-line);
 }
 
 .pres-table tbody tr:nth-child(even) td {
-  background: var(--pres-card-alt);
+  background: var(--pres-surface-hi);
 }
 
 .pres-table tbody tr {
@@ -1035,32 +1020,43 @@
 
 .pres-td-method {
   font-weight: 800;
-  color: var(--pres-teal);
+  color: var(--pres-brand);
+  background: var(--pres-brand-container);
+  border-radius: 999px;
+  padding: 3px 10px !important;
+  display: inline-block;
+  font-size: 14px;
 }
 
 .pres-td-path {
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--mono);
+  font-size: 14.5px;
   color: var(--pres-ink);
 }
 
-/* ── Frontend list ────────────────────────────────────────────────── */
+.pres-td-desc {
+  min-width: 320px;
+}
+
+/* ── Frontend list ────────────────────────────────────────────────────── */
 .pres-frontend {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
 .pres-frontend-item {
   display: flex;
-  align-items: baseline;
-  gap: 18px;
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 13px 16px;
+  flex-direction: column;
+  gap: 7px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 18px 20px;
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s ease;
   animation: pres-frontend-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -1084,85 +1080,42 @@
 
 .pres-frontend-item:hover {
   transform: translateX(5px);
-  border-color: color-mix(in srgb, var(--pres-teal) 45%, transparent);
-  box-shadow: 0 6px 18px rgba(56, 44, 85, 0.12);
+  border-color: color-mix(in srgb, var(--pres-brand) 45%, transparent);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-frontend-t {
-  flex: none;
-  width: 34%;
-  font-size: 14.5px;
+  font-size: 17.5px;
   font-weight: 800;
   color: var(--pres-brand);
 }
 
 .pres-frontend-d {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
   color: var(--pres-ink-soft);
 }
 
-/* ── Demo ─────────────────────────────────────────────────────────── */
-.pres-demo {
-  text-align: center;
-  padding: 26px 12px;
-}
-
-.pres-demo-play {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  font-size: 30px;
-  color: var(--pres-brand);
-  background: var(--pres-brand-tint);
-  box-shadow: 0 8px 28px rgba(101, 85, 143, 0.3);
-  animation: pres-pulse 2.2s ease-in-out infinite;
-}
-
-@keyframes pres-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 8px 28px rgba(101, 85, 143, 0.3); }
-  50% { transform: scale(1.06); box-shadow: 0 10px 34px rgba(101, 85, 143, 0.42); }
-}
-
-.pres-demo-title {
-  font-size: 21px;
-  font-weight: 800;
-  color: var(--pres-brand);
-  margin: 18px 0 6px;
-  animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
-}
-
-.pres-demo-desc {
-  max-width: 620px;
-  margin: 0 auto;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--pres-ink-soft);
-  animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
-}
-
-/* ── Future ───────────────────────────────────────────────────────── */
+/* ── Future enhancements ──────────────────────────────────────────────── */
 .pres-future {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px 20px;
+  gap: 14px 24px;
 }
 
 .pres-future li {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 12px 14px;
-  font-size: 13.5px;
+  gap: 14px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 17px 19px;
+  font-size: 16.5px;
+  line-height: 1.5;
   color: var(--pres-ink);
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s ease;
   animation: pres-future-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -1189,31 +1142,38 @@
 
 .pres-future li:hover {
   transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--pres-teal) 40%, transparent);
-  box-shadow: 0 8px 20px rgba(56, 44, 85, 0.12);
+  border-color: color-mix(in srgb, var(--pres-brand) 40%, transparent);
+  box-shadow: var(--shadow-lg);
 }
 
 .pres-future-num {
   flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
   font-size: 15px;
   font-weight: 800;
-  color: var(--pres-teal);
+  color: var(--pres-on-accent-container);
+  background: var(--pres-accent-container);
 }
 
-/* ── Conclusion ───────────────────────────────────────────────────── */
+/* ── Conclusion ───────────────────────────────────────────────────────── */
 .pres-conclusion {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
 .pres-conclusion p {
   margin: 0;
-  padding: 14px 18px;
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  font-size: 14.5px;
+  padding: 18px 20px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  font-size: 17px;
+  line-height: 1.55;
   color: var(--pres-ink);
   animation: pres-conclusion-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -1236,34 +1196,53 @@
 }
 
 .pres-conclusion-lead {
-  font-size: 16.5px !important;
+  grid-column: 1 / -1;
+  font-size: 20px !important;
   font-weight: 800;
   color: var(--pres-brand) !important;
+  background: var(--pres-brand-container) !important;
+  border-color: color-mix(in srgb, var(--pres-brand) 30%, transparent) !important;
+  text-align: center;
 }
 
 .pres-conclusion-italic {
+  grid-column: 1 / -1;
   font-style: italic;
+  text-align: center;
   color: var(--pres-ink-soft) !important;
 }
 
-/* ── References ───────────────────────────────────────────────────── */
+/* ── References ───────────────────────────────────────────────────────── */
 .pres-references {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
 }
 
 .pres-references li {
-  background: var(--pres-card-alt);
-  border: 1px solid var(--outline-variant);
-  border-radius: calc(14px * var(--radius-scale));
-  padding: 14px 18px;
-  font-size: 14.5px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: var(--pres-surface-alt);
+  border: 1px solid var(--pres-line);
+  border-radius: calc(20px * var(--radius-scale));
+  padding: 19px 22px;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--pres-ink);
   animation: pres-reference-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pres-references li::before {
+  content: '';
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--pres-brand);
 }
 
 .pres-references li:nth-child(2) { animation-delay: 0.1s; }
@@ -1282,40 +1261,36 @@
   }
 }
 
-/* ── Thanks ───────────────────────────────────────────────────────── */
+/* ── Thank you ────────────────────────────────────────────────────────── */
 .pres-thanks {
   text-align: center;
-  padding: 30px 12px;
+  display: grid;
+  place-items: center;
+  min-height: 62vh;
+  animation:
+    pres-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both,
+    pres-float 7s ease-in-out 1s infinite;
 }
 
 .pres-thanks-title {
   margin: 0;
-  font-size: clamp(40px, 7vw, 60px);
+  font-size: clamp(58px, 9vw, 86px);
   font-weight: 900;
-  color: var(--pres-brand-deep);
+  letter-spacing: 1px;
+  color: var(--pres-brand);
+  text-shadow: 0 5px 28px color-mix(in srgb, var(--pres-brand) 32%, transparent);
   animation: pres-logo-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .pres-thanks-sub {
-  font-size: 18px;
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 600;
   color: var(--pres-ink-soft);
-  margin: 12px 0 30px;
+  margin: 16px 0 0;
   animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
 }
 
-.pres-thanks-names {
-  font-size: 13.5px;
-  font-weight: 700;
-  line-height: 1.55;
-  color: var(--pres-ink);
-  margin: 0;
-  max-width: 760px;
-  margin-inline: auto;
-  overflow-wrap: anywhere;
-  animation: pres-hero-sub-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
-}
-
-/* ── Controls ─────────────────────────────────────────────────────── */
+/* ── Controls ─────────────────────────────────────────────────────────── */
 .pres-controls {
   position: absolute;
   bottom: 3vh;
@@ -1328,14 +1303,14 @@
 }
 
 .pres-btn {
-  min-width: 44px;
-  height: 44px;
-  padding: 0 14px;
+  min-width: 48px;
+  height: 48px;
+  padding: 0 16px;
   border-radius: 999px;
-  border: 1px solid var(--outline-variant);
-  background: var(--pres-card-bg);
+  border: 1px solid var(--pres-line);
+  background: var(--pres-surface);
   color: var(--pres-brand);
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
@@ -1343,7 +1318,7 @@
 
 .pres-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: var(--pres-brand-tint);
+  background: var(--pres-brand-container);
   box-shadow: var(--shadow-lg);
 }
 
@@ -1353,10 +1328,10 @@
 }
 
 .pres-counter {
-  font-size: 13.5px;
+  font-size: 15.5px;
   font-weight: 800;
   color: var(--pres-ink-soft);
-  min-width: 58px;
+  min-width: 62px;
   text-align: center;
 }
 
@@ -1367,24 +1342,24 @@
   left: 1.5vw;
   display: flex;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   z-index: 5;
   flex-wrap: wrap;
 }
 
 .pres-dot {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   border: none;
   padding: 0;
   cursor: pointer;
-  background: rgba(101, 85, 143, 0.22);
+  background: color-mix(in srgb, var(--pres-brand) 24%, transparent);
   transition: width 0.2s ease, background 0.2s ease;
 }
 
 .pres-dot.active {
-  width: 22px;
+  width: 26px;
   background: var(--pres-brand);
 }
 
@@ -1393,14 +1368,14 @@
   top: 2.5vh;
   left: 1.5vw;
   z-index: 5;
-  min-width: 40px;
-  height: 40px;
+  min-width: 44px;
+  height: 44px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid var(--outline-variant);
-  background: var(--pres-card-bg);
+  border: 1px solid var(--pres-line);
+  background: var(--pres-surface);
   color: var(--pres-ink-soft);
-  font-size: 15px;
+  font-size: 17px;
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
@@ -1408,23 +1383,23 @@
 
 .pres-exit:hover {
   transform: translateY(-1px);
-  background: var(--pres-brand-tint);
+  background: var(--pres-brand-container);
   box-shadow: var(--shadow-lg);
 }
 
 .pres-theme {
   position: absolute;
   top: 2.5vh;
-  left: calc(1.5vw + 52px);
+  left: calc(1.5vw + 56px);
   z-index: 5;
-  min-width: 40px;
-  height: 40px;
+  min-width: 44px;
+  height: 44px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid var(--outline-variant);
-  background: var(--pres-card-bg);
+  border: 1px solid var(--pres-line);
+  background: var(--pres-surface);
   color: var(--pres-ink-soft);
-  font-size: 17px;
+  font-size: 19px;
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
@@ -1432,7 +1407,7 @@
 
 .pres-theme:hover {
   transform: translateY(-1px);
-  background: var(--pres-brand-tint);
+  background: var(--pres-brand-container);
   color: var(--pres-brand);
   box-shadow: var(--shadow-lg);
 }
@@ -1442,7 +1417,114 @@
   place-items: center;
 }
 
-/* ── Responsive ───────────────────────────────────────────────────── */
+/* ── Print / PDF mode — every slide on a fixed 16:9 page ──────────────── */
+.pres-print-root {
+  position: relative;
+  direction: ltr;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 10%, var(--pres-glow-1), transparent 30%),
+    radial-gradient(circle at 86% 14%, var(--pres-glow-2), transparent 34%),
+    radial-gradient(circle at 50% 108%, var(--pres-glow-3), transparent 40%),
+    linear-gradient(160deg, var(--bg) 0%, var(--surface) 50%, var(--bg) 100%);
+}
+
+.pres-print-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  z-index: 3;
+  background: linear-gradient(90deg, var(--pres-brand), var(--pres-brand-container), var(--pres-accent-container));
+}
+
+.pres-print-slide {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  padding: 40px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  break-after: page;
+}
+
+/* Fonts grew for the on-site deck — keep the 16:9 PDF pages fitting by
+   zooming the slide card down slightly inside the fixed print frame. */
+.pres-print-slide .pres-slide,
+.pres-print-slide .pres-hero,
+.pres-print-slide .pres-thanks {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  animation: none !important;
+  border-radius: calc(28px * var(--radius-scale));
+  zoom: 0.92;
+}
+
+.pres-print-slide .pres-thanks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pres-print-note {
+  position: absolute;
+  bottom: 14px;
+  right: 22px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--outline);
+  z-index: 2;
+}
+
+@media print {
+  .pres-root .pres-controls,
+  .pres-root .pres-dots,
+  .pres-root .pres-exit,
+  .pres-root .pres-theme,
+  .pres-root::before {
+    display: none !important;
+  }
+
+  .pres-print-root {
+    background: inherit;
+  }
+
+  .pres-print-slide .pres-slide,
+  .pres-print-slide .pres-hero,
+  .pres-print-slide .pres-thanks,
+  .pres-slide,
+  .pres-hero,
+  .pres-thanks {
+    animation: none !important;
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .pres-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pres-features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pres-agenda {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pres-arch {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 @media (max-width: 860px) {
   .pres-root {
     padding: 4vh 4vw;
@@ -1452,21 +1534,8 @@
     min-height: 0;
   }
 
-  .pres-grid-4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .pres-features {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .pres-arch {
+  .pres-overview {
     grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .pres-frontend-t {
-    width: 40%;
   }
 }
 
@@ -1477,11 +1546,18 @@
   .pres-agenda,
   .pres-future,
   .pres-journey,
-  .pres-shots--pair {
+  .pres-shots--pair,
+  .pres-objectives,
+  .pres-frontend,
+  .pres-references,
+  .pres-conclusion,
+  .pres-team-grid {
     grid-template-columns: 1fr;
   }
 
-  .pres-slide {
+  .pres-slide,
+  .pres-hero,
+  .pres-thanks {
     padding: 3vh 3vw;
   }
 
@@ -1489,28 +1565,25 @@
     display: none;
   }
 
-  .pres-frontend-item {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .pres-frontend-t {
-    width: 100%;
-  }
-
   .pres-overview-row {
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 
   .pres-overview-label {
-    width: 100%;
+    align-self: flex-start;
+  }
+
+  .pres-thanks {
+    min-height: 40vh;
   }
 }
 
-/* ── Accessibility: respect reduced-motion ────────────────────────── */
+/* ── Accessibility: respect reduced-motion ────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .pres-slide,
+  .pres-hero,
+  .pres-thanks,
   .pres-card,
   .pres-feature,
   .pres-agenda-item,
@@ -1531,13 +1604,10 @@
   .pres-kicker,
   .pres-title,
   .pres-rule,
-  .pres-demo-play,
-  .pres-demo-title,
-  .pres-demo-desc,
   .pres-thanks-title,
   .pres-thanks-sub,
-  .pres-thanks-names,
   .pres-lead,
+  .pres-member,
   .pres-anim-1,
   .pres-anim--1 {
     animation: none !important;

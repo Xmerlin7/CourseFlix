@@ -7,6 +7,7 @@ import { StudentLayout } from '../layouts/StudentLayout'
 import { TeacherLayout } from '../layouts/TeacherLayout'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { LoadingState } from '../../shared/components/LoadingState'
+import { PresentationSkeleton } from '../../features/presentation/pages/PresentationSkeleton'
 import { ErrorState } from '../../shared/components/ErrorState'
 import { StudentLessonSkeleton } from '../../features/lessons/components/StudentLessonSkeleton'
 import { TeacherSalesSkeleton } from '../../features/sales/components/TeacherSalesSkeleton'
@@ -319,7 +320,7 @@ export const router = createBrowserRouter([
     path: ROUTE_PATHS.PRESENT,
     errorElement: <RouteErrorBoundary />,
     element: (
-      <SuspenseWrapper fallback={<LoadingState />}>
+      <SuspenseWrapper fallback={<PresentationSkeleton />}>
         <PresentationPage />
       </SuspenseWrapper>
     ),

@@ -13,7 +13,9 @@ export class PdfExtractionError extends Error {
 }
 
 export class ExtractionFailedError extends PdfExtractionError {
-  constructor(message: string = 'no_extractable_text: the PDF appears to be scanned or empty') {
+  constructor(
+    message: string = 'no_extractable_text: the PDF appears to be scanned or empty',
+  ) {
     super(message);
     this.name = 'ExtractionFailedError';
   }

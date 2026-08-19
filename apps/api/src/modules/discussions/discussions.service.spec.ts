@@ -452,7 +452,10 @@ describe('DiscussionsService', () => {
     });
 
     it('lets the course teacher unaccept a specific reply', async () => {
-      threadsRepository.findOne.mockResolvedValue({ ...baseThread, acceptedReplyId: 'reply-1' });
+      threadsRepository.findOne.mockResolvedValue({
+        ...baseThread,
+        acceptedReplyId: 'reply-1',
+      });
       repliesRepository.findOne
         .mockResolvedValueOnce({
           id: 'reply-1',
@@ -461,8 +464,12 @@ describe('DiscussionsService', () => {
           isAccepted: true,
         })
         .mockResolvedValueOnce(null);
-      repliesRepository.save.mockImplementation((input) => Promise.resolve(input));
-      threadsRepository.save.mockImplementation((input) => Promise.resolve(input));
+      repliesRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
+      threadsRepository.save.mockImplementation((input) =>
+        Promise.resolve(input),
+      );
       repliesRepository.find.mockResolvedValue([]);
 
       await service.unacceptAnswer(
