@@ -88,7 +88,10 @@ export class ExamGenerationProcessor extends WorkerHost {
 
     try {
       const jobRecord = await this.getJobRecord(jobId);
-      if (!jobRecord || jobRecord.target_entity_type !== 'quiz_generation_request') {
+      if (
+        !jobRecord ||
+        jobRecord.target_entity_type !== 'quiz_generation_request'
+      ) {
         throw new Error(`Invalid job target entity for ai_jobs row ${jobId}`);
       }
 
@@ -142,7 +145,8 @@ export class ExamGenerationProcessor extends WorkerHost {
         userId: request.teacher_id,
         type: 'exam_generation_ready',
         title: 'الاختبار المولّد بالذكاء الاصطناعي جاهز للمراجعة',
-        message: 'انتهى الذكاء الاصطناعي من إعداد الاختبار، راجعه واقبله أو اطلب تعديله.',
+        message:
+          'انتهى الذكاء الاصطناعي من إعداد الاختبار، راجعه واقبله أو اطلب تعديله.',
         relatedEntityType: 'quiz_generation_request',
         relatedEntityId: request.id,
       });
@@ -178,7 +182,9 @@ export class ExamGenerationProcessor extends WorkerHost {
   // Content gathering
   // ---------------------------------------------------------------------------
 
-  private async gatherScopeContent(request: RequestRecord): Promise<string | null> {
+  private async gatherScopeContent(
+    request: RequestRecord,
+  ): Promise<string | null> {
     const documentIds = await this.resolveDocumentIds(request);
     const videoTranscriptIds = await this.resolveVideoTranscriptIds(request);
 
@@ -214,7 +220,9 @@ export class ExamGenerationProcessor extends WorkerHost {
       documents?: (string | null)[];
     };
 
-    const texts = (got.documents ?? []).filter((text): text is string => Boolean(text));
+    const texts = (got.documents ?? []).filter((text): text is string =>
+      Boolean(text),
+    );
 
     let budget = MAX_CONTENT_CHARS;
     const included: string[] = [];
@@ -235,7 +243,8 @@ export class ExamGenerationProcessor extends WorkerHost {
         : request.scope_type === 'section'
           ? 'section_id'
           : 'course_id';
-    const scopeValue = request.scope_type === 'course' ? request.course_id : request.scope_id;
+    const scopeValue =
+      request.scope_type === 'course' ? request.course_id : request.scope_id;
 
     const rows = (await this.dataSource.query(
       `SELECT id FROM documents
@@ -245,14 +254,17 @@ export class ExamGenerationProcessor extends WorkerHost {
     return rows.map((r) => r.id);
   }
 
-  private async resolveVideoTranscriptIds(request: RequestRecord): Promise<string[]> {
+  private async resolveVideoTranscriptIds(
+    request: RequestRecord,
+  ): Promise<string[]> {
     const column =
       request.scope_type === 'lesson'
         ? 'lesson_id'
         : request.scope_type === 'section'
           ? 'section_id'
           : 'course_id';
-    const scopeValue = request.scope_type === 'course' ? request.course_id : request.scope_id;
+    const scopeValue =
+      request.scope_type === 'course' ? request.course_id : request.scope_id;
 
     const rows = (await this.dataSource.query(
       `SELECT id FROM video_transcripts
@@ -421,7 +433,10 @@ export class ExamGenerationProcessor extends WorkerHost {
       `SELECT section_id FROM lessons WHERE id = $1`,
       [request.scope_id],
     )) as unknown as Array<{ section_id: string }>;
-    return { sectionId: rows[0]?.section_id ?? null, lessonId: request.scope_id };
+    return {
+      sectionId: rows[0]?.section_id ?? null,
+      lessonId: request.scope_id,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -448,7 +463,9 @@ export class ExamGenerationProcessor extends WorkerHost {
     return rows[0] || null;
   }
 
-  private async getRequestRecord(requestId: string): Promise<RequestRecord | null> {
+  private async getRequestRecord(
+    requestId: string,
+  ): Promise<RequestRecord | null> {
     const rows = (await this.dataSource.query(
       `SELECT id, course_id, scope_type, scope_id, teacher_id, quiz_id,
               difficulty, question_spec, due_at, attempt_number
@@ -482,7 +499,10 @@ export class ExamGenerationProcessor extends WorkerHost {
     );
   }
 
-  private async markRequestPendingReview(requestId: string, quizId: string): Promise<void> {
+  private async markRequestPendingReview(
+    requestId: string,
+    quizId: string,
+  ): Promise<void> {
     await this.dataSource.query(
       `UPDATE quiz_generation_requests
           SET status = 'pending_review', quiz_id = $2, error_message = NULL, updated_at = NOW()
@@ -491,7 +511,10 @@ export class ExamGenerationProcessor extends WorkerHost {
     );
   }
 
-  private async markRequestFailed(requestId: string, errorMessage: string): Promise<void> {
+  private async markRequestFailed(
+    requestId: string,
+    errorMessage: string,
+  ): Promise<void> {
     await this.dataSource.query(
       `UPDATE quiz_generation_requests
           SET status = 'failed', error_message = $2, updated_at = NOW()

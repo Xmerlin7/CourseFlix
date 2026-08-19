@@ -1,7 +1,11 @@
 import { spawn } from 'node:child_process';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CaptionCue, CaptionProvider, CaptionsUnavailableError } from './caption-provider';
+import {
+  CaptionCue,
+  CaptionProvider,
+  CaptionsUnavailableError,
+} from './caption-provider';
 import { transcribeAudioBytes } from './whisper-transcribe';
 
 const DEFAULT_YT_DLP_PATH = 'yt-dlp';

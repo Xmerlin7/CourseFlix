@@ -2,9 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { DataSource } from 'typeorm';
-import {
-  DocumentEntity,
-} from '../../modules/documents/entities/document.entity';
+import { DocumentEntity } from '../../modules/documents/entities/document.entity';
 import { FileEntity } from '../../modules/documents/entities/file.entity';
 import { CourseEntity } from '../../modules/courses/entities/course.entity';
 import { COURSE_CONTENT, LessonContent } from './content';
@@ -16,9 +14,10 @@ function lessonToPage(lesson: LessonContent): PdfPageSpec {
   const blocks: PdfBlock[] = [
     { type: 'paragraph', text: lesson.summary },
     { type: 'heading', text: 'النقاط الأساسية' },
-    ...lesson.keyPoints.map(
-      (point): PdfBlock => ({ type: 'bullet', text: point }),
-    ),
+    ...lesson.keyPoints.map((point): PdfBlock => ({
+      type: 'bullet',
+      text: point,
+    })),
   ];
 
   if (lesson.formula) {
@@ -212,7 +211,9 @@ export async function seedCourseHandouts(
     );
     const chunksMatch =
       storedChunks.length === desiredChunks.length &&
-      storedChunks.every((row, index) => row.text_preview === desiredChunks[index].text);
+      storedChunks.every(
+        (row, index) => row.text_preview === desiredChunks[index].text,
+      );
 
     if (chunksMatch) continue;
 

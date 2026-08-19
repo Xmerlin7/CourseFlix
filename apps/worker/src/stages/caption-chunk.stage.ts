@@ -50,7 +50,9 @@ export function chunkCaptions(options: ChunkCaptionsOptions): VideoChunk[] {
     throw new Error('chunkTokens must be greater than 0');
   }
   if (chunkOverlap < 0 || chunkOverlap >= chunkTokens) {
-    throw new Error('chunkOverlap must be non-negative and less than chunkTokens');
+    throw new Error(
+      'chunkOverlap must be non-negative and less than chunkTokens',
+    );
   }
 
   const tokens: TimedToken[] = [];

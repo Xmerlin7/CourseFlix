@@ -96,6 +96,13 @@ export interface TeacherLesson {
 export interface CreateLessonPayload {
   title: string
   videoUrl?: string | null
+  /**
+   * Suppresses the plain caption-ingestion job the API normally fires
+   * for a new video, because the agent pipeline transcribes and indexes
+   * it instead. Starting the run is a separate call — see
+   * `startLessonAgentRun`.
+   */
+  useAgents?: boolean
 }
 
 export interface UpdateLessonPayload {

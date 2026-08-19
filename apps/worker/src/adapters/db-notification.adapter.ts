@@ -35,6 +35,12 @@ function toEnumType(type: string): string {
   if (type.startsWith('video_moderation')) {
     return 'course_update';
   }
+  // The lesson agent pipeline's own notifications are all "something
+  // changed about your course content", which is what course_update
+  // means — same bucket the moderation outcomes land in.
+  if (type.startsWith('lesson_agents')) {
+    return 'course_update';
+  }
   return 'system';
 }
 

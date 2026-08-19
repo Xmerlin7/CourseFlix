@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddIsAcceptedToDiscussionReplies1785000102000
-  implements MigrationInterface
-{
+export class AddIsAcceptedToDiscussionReplies1785000102000 implements MigrationInterface {
   name = 'AddIsAcceptedToDiscussionReplies1785000102000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

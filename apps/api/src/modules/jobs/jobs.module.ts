@@ -14,6 +14,7 @@ import { BullMqJobQueue } from './adapters/bullmq-job-queue.adapter';
       { name: 'ingestion' },
       { name: 'video-ingestion' },
       { name: 'exam-generation' },
+      { name: 'lesson-agents' },
     ),
   ],
   providers: [

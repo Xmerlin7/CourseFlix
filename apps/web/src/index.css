@@ -1631,6 +1631,65 @@ select {
   font-family: inherit;
 }
 
+/* ---------- Select fields ----------
+   Every <select> in the app (19 of them, from course filters to the agent
+   settings) rendered with the browser's own arrow: a thin native chevron
+   jammed flush against the edge with no gap, so a long option label ran
+   straight into it. `appearance: none` drops it, and the chevron is drawn
+   as a background image instead, with real space reserved for it.
+
+   The chevron colour has to be baked into the data URI (an SVG in
+   `background-image` can't read `currentColor`), so it's a token with a
+   light and a dark value rather than a hardcoded hue that would go
+   invisible in one theme. */
+:root {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%234A4458' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+:root.dark {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23CBC3D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: var(--select-chevron);
+  background-repeat: no-repeat;
+  /* The document is `dir="rtl"`, so the arrow belongs on the left; the
+     LTR rule below keeps this honest if a subtree ever flips. */
+  background-position: left calc(16px * var(--space-scale)) center;
+  /* Reserves the arrow's lane so the longest option label can never
+     collide with it — the bug this block exists to fix. */
+  padding-inline-end: calc(42px * var(--space-scale));
+}
+
+[dir='ltr'] select {
+  background-position: right calc(16px * var(--space-scale)) center;
+}
+
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* The open dropdown is drawn by the OS, and only `background-color` /
+   `color` on the options are reliably honoured (Chrome and Firefox do,
+   Safari ignores them and keeps its native panel — acceptable, since
+   that panel is legible on its own). Setting them at least stops the
+   list rendering as a white sheet of black text in dark mode. */
+select option {
+  background-color: var(--surface);
+  color: var(--on-surface);
+  padding: 10px 12px;
+}
+
+select option:checked {
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+  font-weight: 700;
+}
+
 /* box-shadow, not outline: `outline` is drawn as its own approximated
    shape and several engines don't round it cleanly around a large
    border-radius (999px chips/buttons, 50% avatars) — it renders with a
@@ -1995,7 +2054,10 @@ code {
 .tf textarea,
 .tf select,
 .field {
-  background: var(--surface-container-high);
+  /* `background-color`, not the `background` shorthand: the shorthand
+     resets `background-image` too, which silently wiped the custom
+     chevron the `select` rule above paints. */
+  background-color: var(--surface-container-high);
   border: 1.5px solid transparent;
   border-radius: calc(14px * var(--radius-scale));
   padding: calc(13px * var(--space-scale)) calc(16px * var(--space-scale));
@@ -2008,6 +2070,27 @@ code {
 .tf textarea {
   resize: vertical;
   min-height: 96px;
+}
+
+/* Number fields in an RTL document: on focus Chrome lays the value out
+   against the physical right edge, ignoring the inline padding, so the
+   digits visibly slide out of the box the moment you type in them.
+   Pinning the *value's* direction to ltr (digits are read left-to-right
+   regardless) while keeping it right-aligned restores the padding, and
+   the native spinners go with it — they render on the wrong side in RTL
+   and are what crowds the value out in the first place. */
+.tf input[type='number'] {
+  direction: ltr;
+  text-align: right;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.tf input[type='number']::-webkit-outer-spin-button,
+.tf input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
 }
 
 /* Every placeholder in the product is Arabic, so every placeholder is
@@ -5530,4 +5613,284 @@ table.mtable {
   .pay-frame-iframe {
     height: 540px;
   }
+}
+
+/* ── Lesson agent pipeline ───────────────────────────────────────────
+   The teacher watches a crew of agents hand work to one another. The
+   crew strip is the "who is on this" view; the feed underneath is the
+   running commentary. Both are RTL like the rest of the app, so the
+   connectors point right-to-left. */
+
+.agent-run-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(12px * var(--space-scale));
+  flex-wrap: wrap;
+}
+
+.agent-run-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-container-highest);
+  overflow: hidden;
+}
+
+.agent-run-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: width 0.5s ease;
+}
+
+.agent-crew {
+  display: flex;
+  align-items: stretch;
+  gap: calc(6px * var(--space-scale));
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.agent-crew-card {
+  flex: 1 1 0;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: calc(12px * var(--space-scale));
+  border-radius: 14px;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-low);
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+.agent-crew-card.is-running {
+  border-color: var(--primary);
+  background: var(--primary-container);
+}
+
+.agent-crew-card.is-done {
+  border-color: color-mix(in srgb, var(--on-success-container) 35%, transparent);
+  background: var(--success-container);
+}
+
+.agent-crew-card.is-failed {
+  border-color: var(--error);
+  background: var(--error-container);
+}
+
+/* A switched-off agent still occupies its slot, so the crew reads as a
+   fixed line-up with a gap rather than a shorter, different team. */
+.agent-crew-card.is-skipped {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.agent-crew-card .agent-crew-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.agent-crew-card .agent-crew-role {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+}
+
+.agent-crew-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--on-surface) 10%, transparent);
+  overflow: hidden;
+}
+
+.agent-crew-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.5s ease;
+}
+
+.agent-crew-arrow {
+  align-self: center;
+  color: var(--outline);
+  flex: 0 0 auto;
+}
+
+.agent-crew-arrow.is-live {
+  color: var(--primary);
+  animation: agent-baton 1.2s ease-in-out infinite;
+}
+
+/* The baton visibly travels leftward — the reading direction of the
+   crew strip — so a handoff looks like a handoff, not a blink. */
+@keyframes agent-baton {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateX(-5px);
+    opacity: 1;
+  }
+}
+
+.agent-feed {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--space-scale));
+  padding-inline-end: 6px;
+}
+
+.agent-feed-row {
+  display: flex;
+  gap: calc(10px * var(--space-scale));
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.agent-feed-row .agent-feed-dot {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.agent-feed-row.is-handoff .agent-feed-dot {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.agent-feed-row.is-handoff {
+  font-weight: 700;
+}
+
+.agent-feed-row.is-failed .agent-feed-dot {
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+
+.agent-feed-row.is-done .agent-feed-dot {
+  background: var(--success-container);
+  color: var(--on-success-container);
+}
+
+.agent-feed-time {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  color: var(--on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.agent-review-card {
+  border: 1px solid var(--outline-variant);
+  border-radius: 14px;
+  padding: calc(14px * var(--space-scale));
+  display: flex;
+  flex-direction: column;
+  gap: calc(10px * var(--space-scale));
+  background: var(--surface-container-low);
+}
+
+.agent-review-preview {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--on-surface-variant);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: calc(12px * var(--space-scale));
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.agent-mode-switch {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--surface-container-high);
+  width: fit-content;
+}
+
+.agent-mode-switch button {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-mode-switch button.active {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+@media (max-width: 720px) {
+  .agent-crew {
+    flex-direction: column;
+  }
+
+  .agent-crew-arrow {
+    transform: rotate(-90deg);
+  }
+
+  .agent-crew-arrow.is-live {
+    animation: none;
+  }
+}
+
+/* The per-run crew picker sits inside the add-lesson form, so it stays
+   visually subordinate to it — a bordered strip rather than another card,
+   which at this nesting depth would read as a separate section. */
+.agent-crew-picker {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--space-scale));
+  padding: calc(12px * var(--space-scale));
+  border: 1px dashed var(--outline-variant);
+  border-radius: 14px;
+}
+
+.agent-crew-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* The optional agents are real toggles, so they get the button reset the
+   `.chip.clickable` styling assumes but doesn't provide on its own. */
+.agent-crew-picker-row button.chip {
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.agent-crew-picker-row button.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

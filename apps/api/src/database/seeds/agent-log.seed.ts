@@ -31,9 +31,7 @@ interface AgentLogBlueprint {
  * `correlation_id` is a fixed `seed-agent-log-N` marker, checked before
  * insert, making a plain `npm run seed` (no reset) idempotent too.
  */
-export async function seedAgentLogs(
-  dataSource: DataSource,
-): Promise<number> {
+export async function seedAgentLogs(dataSource: DataSource): Promise<number> {
   const courseRepository = dataSource.getRepository(CourseEntity);
   const agentLogRepository = dataSource.getRepository(AgentLogEntity);
 

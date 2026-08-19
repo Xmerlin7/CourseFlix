@@ -127,11 +127,18 @@ export async function runSeed(
   const studentIds = students.map((s) => s.id);
   const assistantIds = assistants.map((a) => a.id);
 
-  const { threadsCreated: discussionThreadsCreated, repliesCreated: discussionRepliesCreated } =
-    await seedDiscussions(dataSource, { teacherId: teacher.id, studentIds });
+  const {
+    threadsCreated: discussionThreadsCreated,
+    repliesCreated: discussionRepliesCreated,
+  } = await seedDiscussions(dataSource, { teacherId: teacher.id, studentIds });
 
-  const { ticketsCreated: supportTicketsCreated, messagesCreated: supportMessagesCreated } =
-    await seedSupportTickets(dataSource, { teacherId: teacher.id, studentIds });
+  const {
+    ticketsCreated: supportTicketsCreated,
+    messagesCreated: supportMessagesCreated,
+  } = await seedSupportTickets(dataSource, {
+    teacherId: teacher.id,
+    studentIds,
+  });
 
   const agentLogsCreated = await seedAgentLogs(dataSource);
 
@@ -241,7 +248,9 @@ export function printSeedSummary(summary: SeedSummary, heading: string): void {
   console.log(
     `  enrollments:    ${summary.enrollmentsCreated} new (baseline: ${summary.primaryEnrollmentStatus})`,
   );
-  console.log(`  content progress: ${summary.contentProgressCreated} new (lesson unlock state)`);
+  console.log(
+    `  content progress: ${summary.contentProgressCreated} new (lesson unlock state)`,
+  );
   console.log(
     `  documents:      ${summary.documentsCreated} new, ${summary.documentsReset} reset to blueprint`,
   );
@@ -258,7 +267,9 @@ export function printSeedSummary(summary: SeedSummary, heading: string): void {
   console.log(
     `  support:        ${summary.supportTicketsCreated} ticket(s), ${summary.supportMessagesCreated} message(s)`,
   );
-  console.log(`  tutor chats:    ${summary.chatConversationsCreated} conversation(s)`);
+  console.log(
+    `  tutor chats:    ${summary.chatConversationsCreated} conversation(s)`,
+  );
   console.log(`  agent logs:     ${summary.agentLogsCreated} new`);
   console.log(`  assistant reqs: ${summary.assistantActionsCreated} new`);
   console.log(
